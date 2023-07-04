@@ -1,0 +1,27 @@
+# Credentials
+credentials.yml
+
+# MACOS
+.DS_Store
+
+# Data & log
+data/*
+*.log
+src/scripts/VVe__CoagIA__training_with_choices/data
+src/scripts/VVe__CoagIA__training_with_choices/saved_results
+notebooks/temp-plot.html
+
+# Python
+__pycache__
+
+# Documentation
+public/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/

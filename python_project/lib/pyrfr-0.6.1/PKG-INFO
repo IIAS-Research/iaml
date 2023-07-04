@@ -1,0 +1,13 @@
+Metadata-Version: 1.2
+Name: pyrfr
+Version: 0.6.1
+Summary: UNKNOWN
+Home-page: UNKNOWN
+Author: Stefan Falkner
+Author-email: sfalkner@cs.uni-freiburg.de
+License: Use as you wish. No guarantees whatsoever.
+Description-Content-Type: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Requires-Python: >=3
