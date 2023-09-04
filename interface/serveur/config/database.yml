@@ -13,4 +13,4 @@ default: &default
 development:
   primary:
     <<: *default
-    database: agagou_dev
+    database: automl_dev

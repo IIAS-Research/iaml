@@ -24,7 +24,8 @@ class ApplicationController < ActionController::API
     '/api/login.json',
     '/api/renouvellement-jeton',
   ].include? uri \
-    or uri.match(/\/api\/verification-jeton/)
+    or uri.match(/\/api\/verification-jeton/) \
+    or uri.match(/projet/) # TODO Gestion des droits 
   end
 
   def pundit_user
