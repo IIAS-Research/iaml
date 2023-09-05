@@ -21,16 +21,16 @@ class MetaStep(Step):
             self.add_step(step())
     
     
-    # Run steps self ordered by "evaluate" function
+    # Run steps self ordered by "priorize" function
     def run(self, dataset):
         steps_to_run = self.steps.copy()
         
         current_dataset = dataset
         while steps_to_run:
-            max_eval = steps_to_run[0].evaluate(current_dataset)
+            max_eval = steps_to_run[0].priorize(current_dataset)
             max_index = 0
             for index, step in enumerate(steps_to_run[1:]):
-                current_eval = step.evaluate(current_dataset)
+                current_eval = step.priorize(current_dataset)
                 if current_eval > max_eval:
                     max_eval = current_eval
                     max_index = index

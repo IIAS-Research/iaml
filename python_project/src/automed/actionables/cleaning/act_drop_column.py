@@ -12,12 +12,13 @@ class ActDropColumn(Actionable):
     
     @runner
     def run(self, dataset):
-        for column, values in dataset.items():
+        for column, values in dataset.train_data.items():
             if values.isnull().sum()/len(values) >= self.get_config()['empty_threshold']:
-                dataset.drop(columns=[column], inplace=True)
+                dataset.train_data.drop(columns=[column], inplace=True)
+                dataset.test_data.drop(columns=[column], inplace=True)
         
         return dataset
         
     
-    def evaluate(self, dataset=None):
+    def priorize(self, dataset=None):
         return 0 # Last cleaning action

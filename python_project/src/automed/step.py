@@ -45,13 +45,13 @@ class Step:
     
     
     ############
-    # Evaluate #
+    # Priorize #
     ############
     #
-    # Base on the dataset (or not) evaluate usefulness of this actionable.
+    # Base on the dataset (or not) priorize usefulness of this actionable.
     # Result is a value between 0 and 1. 0 stand for not useful
     #
-    def evaluate(self, dataset=None):
+    def priorize(self, dataset=None):
         return 0  
     
     ##########
@@ -72,20 +72,45 @@ class Step:
     
     
     
-    
-# Decorator
+#############   
+# Decorator #
+#############
+
+#
+# Class decorators
+#
+
 def isStep(*tags):
     def stepWrapper(cls):
-        print("->>>", cls)
         Step.available_steps[cls] = tags
         return cls
         
     return stepWrapper
 
+def assessable(cls): # Évaluable
+    cls.metric = lambda output: 0 # Arbitrary metic
+    cls.assessable = True
+    
+    def evaluate(self):
+        return self.metric(self.output.dataset)
+    
+    def set_metric(self, metric):
+        self.metric = metric
+        
+    cls.evaluate = evaluate
+    cls.set_metric = set_metric
+    
+    return cls
+
+#
+# Method decorator
+#
 def runner(func):
     def runner_wrapper(self, dataset, *args, **kw):
         result = func(self, dataset, *args, **kw)
         self.output_dataset = result
         return result
     return runner_wrapper
+
+
     
