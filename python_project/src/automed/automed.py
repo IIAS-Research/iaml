@@ -1,31 +1,38 @@
 from step import *
 from metastep import MetaStep
-# from orderedmetastep import OrderedMetaStep
 from actionable import Actionable
 from output import Output
 from dataset import Dataset
+from metric import Metric
+
+from meta_ordered_step import MetaOrderedStep
+
 
 # Default Actionables
 from actionables.cleaning.act_mean_column import ActMeanColumn
-from actionables.cleaning.act_drop_column import ActDropColumn
+from actionables.cleaning.act_drop_numerical_column import ActDropNumericalColumn
+from actionables.cleaning.act_drop_textual_column import ActDropTextualColumn
+from actionables.cleaning.act_onehot import ActOnehot
 from actionables.learning.act_autosklearn import ActAutoSkLearn
 
 class AutoMed:
     output = None 
     
-    def __init__(self, input):
-        self.input = input
+    def __init__(self, dataset:Dataset):
+        self.input = Output(dataset, None, None)
         self.first_step = None
     
     def load_pipe(self, pipe):
         pass
     
-    def debug_load(self):
-        self.first_step = MetaStep()
-        # self.first_step.add_step(ActMeanColumn())
-        # self.first_step.add_step(ActDropColumn())
-        self.first_step.add_step_by_tag('cleaning')
-        
+    def debug_load(self, only=None):
+        if only:
+            self.first_step = MetaStep(tag=only)
+        else: 
+            self.first_step = MetaOrderedStep()
+            self.first_step.add_step(MetaStep(tag='cleaning'))
+            self.first_step.add_step(MetaStep(tag='learning'))
+    
     def run(self):
         self.output = self.first_step.run(self.input)
         return self.output

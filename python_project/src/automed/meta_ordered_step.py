@@ -1,0 +1,14 @@
+from step import Step, isStep, runner
+from metastep import MetaStep
+
+@isStep('meta')
+class MetaOrderedStep(MetaStep):
+    # Run steps self ordered by "priorize" function
+    @runner
+    def run(self, input):
+        current_input = input
+        for step in self.steps:
+            current_input = step.run(current_input)
+        
+        return current_input
+            

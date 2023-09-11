@@ -1,12 +1,11 @@
-from step import Step, isStep
+from step import Step, isStep, runner
 
 @isStep('meta')
 class MetaStep(Step):
-    steps = []
-    
-    
-    def __init__(self):
-        pass
+    def __init__(self, tag=None):
+        self.steps = []
+        if tag:
+            self.add_step_by_tag(tag) 
     
     
     def add_step(self, step):
@@ -22,21 +21,23 @@ class MetaStep(Step):
     
     
     # Run steps self ordered by "priorize" function
-    def run(self, dataset):
+    @runner
+    def run(self, input):
         steps_to_run = self.steps.copy()
         
-        current_dataset = dataset
+        current_input = input
+        
         while steps_to_run:
-            max_eval = steps_to_run[0].priorize(current_dataset)
+            max_eval = steps_to_run[0].priorize(current_input)
             max_index = 0
             for index, step in enumerate(steps_to_run[1:]):
-                current_eval = step.priorize(current_dataset)
+                current_eval = step.priorize(current_input)
                 if current_eval > max_eval:
                     max_eval = current_eval
-                    max_index = index
-                    
-            current_dataset = steps_to_run[max_index].run(current_dataset)
+                    max_index = index+1
+            
+            current_input = steps_to_run[max_index].run(current_input)
             del steps_to_run[max_index]
         
-        return current_dataset
+        return current_input
             

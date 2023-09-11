@@ -2,7 +2,7 @@ from step import *
 
 @isStep('actionable')
 class Actionable(Step):
-    output_dataset = None
+    output = None
     configuration = {
         'ratio' : {
             'description': 'Description of the parameter\'s role',
@@ -13,4 +13,3 @@ class Actionable(Step):
             'default': 12
         }
     }
-    

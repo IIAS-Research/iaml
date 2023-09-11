@@ -1,9 +1,11 @@
 from actionable import *
+from automed import Output, Metric
+import autosklearn.classification
+
 
 @isStep('learning', 'tabular')
 @assessable
 class ActAutoSkLearn(Actionable):
-    import autosklearn.classification
     
     configuration = {
         'running_time': {
@@ -13,11 +15,19 @@ class ActAutoSkLearn(Actionable):
     }
     
     @runner
-    def run(self, dataset):
-        cls = autosklearn.classification.AutoSklearnClassifier()
-        cls.fit(X_train, y_train)
-        predictions = cls.predict(X_test)
+    def run(self, input:Output):
+        dataset = input.dataset
+        metric = input.metric or Metric()
+        model = autosklearn.classification.AutoSklearnClassifier(
+            time_left_for_this_task=self.get_config('running_time'),
+            max_models_on_disc=5,
+            memory_limit = 102400)
+        
+        model.fit(dataset.X_train, dataset.y_train)
+        
+        return input.to_output(None, metric, model)
+
         
     
-    def priorize(self, dataset=None):
+    def priorize(self, input=None):
         return 0.5 # neutral

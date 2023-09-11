@@ -1,13 +1,29 @@
+from output import Output
+from dataset import Dataset
+
 class Step:
     # Available steps
     available_steps = {}
-    
-    output_dataset = None
+    output = None
     configuration = {}
     
-    def __init__(self):
-        self.default_configuration()
+    input:Output = Output(None, None, None)
     
+    def __init__(self, input:Output = Output(None, None, None)):
+        self.default_configuration()
+        self.input = input
+    
+    @property
+    def dataset(self):
+        return self.input.dataset
+    
+    @property
+    def metric(self):
+        return self.input.metric
+    
+    @property
+    def model(self):
+        return self.input.model
     
     ################
     # Configurable #
@@ -31,11 +47,12 @@ class Step:
     def resume_configuration(self):
         return {k: v['value'] for k, v in self.configuration.items()}
     
-    # Alias for resume_configuration()
-    def get_config(self):
-        return self.resume_configuration()
     
-    def default_values(self, dataset):
+    def get_config(self, key):
+        return self.resume_configuration()[key]
+            
+    
+    def default_values(self, input=None):
         return {k: v['default'] for k, v in self.configuration.items()}
     
     
@@ -51,7 +68,7 @@ class Step:
     # Base on the dataset (or not) priorize usefulness of this actionable.
     # Result is a value between 0 and 1. 0 stand for not useful
     #
-    def priorize(self, dataset=None):
+    def priorize(self, input=None):
         return 0  
     
     ##########
@@ -107,8 +124,9 @@ def assessable(cls): # Évaluable
 #
 def runner(func):
     def runner_wrapper(self, dataset, *args, **kw):
+        print(self)
         result = func(self, dataset, *args, **kw)
-        self.output_dataset = result
+        self.output = result
         return result
     return runner_wrapper
 

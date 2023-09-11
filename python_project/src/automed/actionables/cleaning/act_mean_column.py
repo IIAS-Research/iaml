@@ -1,4 +1,5 @@
 from actionable import *
+from automed import Output
 from pandas.api.types import is_numeric_dtype
 
 @isStep('cleaning')
@@ -12,14 +13,15 @@ class ActMeanColumn(Actionable):
     }
     
     @runner
-    def run(self, dataset):
-        for column, values in dataset.train_data.items():
-            if is_numeric_dtype(values) and values.isnull().sum()/len(values) <= self.get_config()['empty_threshold']:
-                dataset.train_data[column].fillna(values.mean(), inplace=True)
-                dataset.test_data[column].fillna(values.mean(), inplace=True)
+    def run(self, input) -> Output:
+        for column, values in input.dataset.train_data.items():
+            if is_numeric_dtype(values) and values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
+                input.dataset.train_data[column].fillna(values.mean(), inplace=True)
+                input.dataset.test_data[column].fillna(values.mean(), inplace=True)
         
-        return dataset
+        return input.to_output(input.dataset, None, None)
+    
         
     
-    def priorize(self, dataset=None):
-        return 1-(dataset.train_data.isnull().sum().min()/len(dataset.train_data) ) # TODO -> Do something better. This function have no sense for now. Only an example.
+    def priorize(self, input=None):
+        return 1-(input.dataset.train_data.isnull().sum().min()/len(input.dataset.train_data) ) # TODO -> Do something better. This function have no sense for now. Only an example.

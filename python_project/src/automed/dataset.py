@@ -36,7 +36,7 @@ class Dataset:
             if label_name not in self.data[dset]['features'].columns:
                 raise Exception("Column must exist")
             else:
-                if self.data[dset]['labels']:
+                if not self.data[dset]['labels'].empty:
                     self.data[dset]['features'] = self._merge_df(self.data[dset]['features'], self.data[dset]['labels'])
                     self.data[dset]['labels'] = None
                     
@@ -75,15 +75,48 @@ class Dataset:
     def train_data(self):
         return self.data['train']['features']
     
+    @property
+    def X_train(self):
+        return self.data['train']['features']
+    
+    @X_train.setter
+    def X_train(self, value):
+        self.data['train']['features'] = value
+    
     @property      
     def test_data(self):
         return self.data['test']['features']
+    
+    
+    @property
+    def X_test(self):
+        return self.data['test']['features']
+    
+    @X_test.setter
+    def X_test(self, value):
+        self.data['test']['features'] = value
     
     @property      
     def train_labels(self):
         return self.data['train']['labels']
     
+    @property      
+    def y_train(self):
+        return self.data['train']['labels']
+    
+    @y_train.setter
+    def y_train(self, value):
+        self.data['train']['labels'] = value
+    
     @property     
     def test_labels(self):
         return self.data['test']['labels']
+    
+    @property      
+    def y_test(self):
+        return self.data['test']['labels']
+    
+    @y_test.setter
+    def y_test(self, value):
+        self.data['test']['labels'] = value
         
