@@ -14,6 +14,7 @@ from actionables.cleaning.act_drop_numerical_column import ActDropNumericalColum
 from actionables.cleaning.act_drop_textual_column import ActDropTextualColumn
 from actionables.cleaning.act_onehot import ActOnehot
 from actionables.learning.act_autosklearn import ActAutoSkLearn
+from actionables.random_split import RandomSplit
 
 class AutoMed:
     output = None 
@@ -30,6 +31,7 @@ class AutoMed:
             self.first_step = MetaStep(tag=only)
         else: 
             self.first_step = MetaOrderedStep()
+            self.first_step.add_step(RandomSplit())
             self.first_step.add_step(MetaStep(tag='cleaning'))
             self.first_step.add_step(MetaStep(tag='learning'))
     

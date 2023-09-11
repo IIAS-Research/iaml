@@ -123,9 +123,10 @@ def assessable(cls): # Évaluable
 # Method decorator
 #
 def runner(func):
-    def runner_wrapper(self, dataset, *args, **kw):
+    def runner_wrapper(self, input, *args, **kw):
         print(self)
-        result = func(self, dataset, *args, **kw)
+        result = func(self, input, *args, **kw)
+        # print("->", self, len(input.dataset.X_train),len(input.dataset.y_train),len(input.dataset.X_test),len(input.dataset.y_test))
         self.output = result
         return result
     return runner_wrapper

@@ -25,6 +25,15 @@ class Dataset:
             
         if label_name:
             self.set_label(label_name)
+            
+    @classmethod
+    def from_splited_data(cls, X_train, y_train, X_test, y_test):
+        dataset = cls(train_data=X_train)
+        dataset.y_train = y_train
+        dataset.X_test = X_test
+        dataset.y_test = y_test
+        
+        return dataset
         
         
     def _merge_df(self, main_df, add_df):

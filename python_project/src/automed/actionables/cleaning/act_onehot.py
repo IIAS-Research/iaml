@@ -25,14 +25,19 @@ class ActOnehot(Actionable):
                 nb_unique = len(input.dataset.X_train[column].unique())
                 if (nb_unique / nb_rows) < self.get_config('threshold'):
                     jobs_encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
+                    
                     # TRAIN
-                    transformed = jobs_encoder.fit_transform(input.dataset.X_train[column].to_numpy().reshape(-1, 1))
+                    transformed = jobs_encoder.fit_transform(dataset.X_train[column].to_numpy().reshape(-1, 1))
                     ohe_df = pd.DataFrame(transformed, columns=jobs_encoder.get_feature_names([column]))
+                    dataset.X_train.reset_index(drop=True, inplace=True)
+                    ohe_df.reset_index(drop=True, inplace=True)
                     dataset.X_train = pd.concat([dataset.X_train, ohe_df], axis=1).drop([column], axis=1)
                     
                     # TEST
-                    transformed = jobs_encoder.transform(input.dataset.X_test[column].to_numpy().reshape(-1, 1))
+                    transformed = jobs_encoder.transform(dataset.X_test[column].to_numpy().reshape(-1, 1))
                     ohe_df = pd.DataFrame(transformed, columns=jobs_encoder.get_feature_names([column]))
+                    dataset.X_test.reset_index(drop=True, inplace=True)
+                    ohe_df.reset_index(drop=True, inplace=True)
                     dataset.X_test = pd.concat([dataset.X_test, ohe_df], axis=1).drop([column], axis=1)
                 
         
