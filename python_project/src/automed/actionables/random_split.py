@@ -1,12 +1,12 @@
-from actionable import *
-from automed import Output
+from ..actionable import *
+from ..automed import Output
 import numpy as np
 from sklearn.model_selection import train_test_split
 
 
 @isStep('split')
 class RandomSplit(Actionable):
-    
+    name = "Split date to train and test set"
     configuration = {
         'ratio': {
             'description': 'Split ratio',
@@ -19,7 +19,7 @@ class RandomSplit(Actionable):
     }
     
     @runner
-    def run(self, input) -> Output:
+    def run(self, input, callback=None) -> Output:
         X_train, X_test, y_train, y_test = train_test_split(
             input.dataset.X_train,
             input.dataset.y_train,

@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from dataset import Dataset
+from .dataset import Dataset
 
 @dataclass
 class Output:
-    dataset:Dataset = None
-    metric = None
-    model = None
-    stacked_log = []
+    # dataset:Dataset = None
+    # metric = None
+    # model = None
+    # stacked_log = []
     
     def __init__(self, dataset:Dataset, metric, model):
         self.dataset = dataset
@@ -15,7 +15,7 @@ class Output:
         
     def to_output(self, dataset:Dataset=None, metric=None, model=None):
         return Output(
-            dataset or self.dataset,
+            (dataset or self.dataset or Dataset()).copy(),
             metric or self.metric,
             model or self.model)
         

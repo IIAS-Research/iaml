@@ -1,5 +1,5 @@
-from actionable import *
-from automed import Output
+from ...actionable import *
+from ...automed import Output
 import copy
 
 from pandas.api.types import is_string_dtype
@@ -8,16 +8,16 @@ from sklearn.preprocessing import OneHotEncoder
 
 @isStep('cleaning')
 class ActOnehot(Actionable):
-    
+    name="One hot encoding categorical features"
     configuration = {
         'threshold': {
             'description': 'Threshold on the ratio : unique value / number of rows. Columns under the threshold will be computed as categorical data',
-            'default': 0.05
+            'default': 0.2
         }
     }
     
     @runner
-    def run(self, input) -> Output:
+    def run(self, input, callback=None) -> Output:
         dataset = copy.deepcopy(input.dataset)
         nb_rows = len(input.dataset.X_train)
         for column, values in input.dataset.X_train.items():

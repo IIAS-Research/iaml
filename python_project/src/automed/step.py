@@ -1,11 +1,12 @@
-from output import Output
-from dataset import Dataset
+from .output import Output
+from .dataset import Dataset
 
 class Step:
     # Available steps
     available_steps = {}
     output = None
     configuration = {}
+    name = "Step"
     
     input:Output = Output(None, None, None)
     
@@ -123,11 +124,14 @@ def assessable(cls): # Évaluable
 # Method decorator
 #
 def runner(func):
-    def runner_wrapper(self, input, *args, **kw):
+    def runner_wrapper(self, input, callback=None, *args, **kw):
         print(self)
-        result = func(self, input, *args, **kw)
-        # print("->", self, len(input.dataset.X_train),len(input.dataset.y_train),len(input.dataset.X_test),len(input.dataset.y_test))
+        result = func(self, input, callback=callback, *args, **kw)
         self.output = result
+        
+        if callback:
+            callback(self)
+            
         return result
     return runner_wrapper
 

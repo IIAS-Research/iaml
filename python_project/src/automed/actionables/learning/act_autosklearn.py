@@ -1,12 +1,12 @@
-from actionable import *
-from automed import Output, Metric
+from ...actionable import *
+from ...automed import Output, Metric
 import autosklearn.classification
 
 
-@isStep('learning', 'tabular')
+# @isStep('learning', 'tabular')
 @assessable
 class ActAutoSkLearn(Actionable):
-    
+    name="Learn : AutoSkLearn"
     configuration = {
         'running_time': {
             'description': 'In seconds. Auto-SkLearn will search the best models during this time',
@@ -15,7 +15,7 @@ class ActAutoSkLearn(Actionable):
     }
     
     @runner
-    def run(self, input:Output):
+    def run(self, input:Output, callback=None):
         dataset = input.dataset
         metric = input.metric or Metric()
         model = autosklearn.classification.AutoSklearnClassifier(

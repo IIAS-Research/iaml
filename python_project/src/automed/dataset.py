@@ -1,21 +1,22 @@
 import pandas as pd
 
 class Dataset:
-    data = {
-        'train': {
-            'features': pd.DataFrame(),
-            'disabled': pd.DataFrame(),
-            'labels': pd.DataFrame()
-            },
-        'test': {
-            'features': pd.DataFrame(),
-            'disabled': pd.DataFrame(),
-            'labels': pd.DataFrame()
-        }
-    }
-    label_column = None
     
     def __init__(self, train_data, test_data=None, label_name=None):
+        self.data = {
+            'train': {
+                'features': pd.DataFrame(),
+                'disabled': pd.DataFrame(),
+                'labels': pd.DataFrame()
+                },
+            'test': {
+                'features': pd.DataFrame(),
+                'disabled': pd.DataFrame(),
+                'labels': pd.DataFrame()
+            }
+        }
+        self.label_column = None
+        
         self.data['train']['features'] = train_data
         
         if type(test_data) != type(None):
@@ -34,6 +35,23 @@ class Dataset:
         dataset.y_test = y_test
         
         return dataset
+    
+    def reset_label(self, env=['train', 'test']):
+        for dset in env:
+            if not self.data[dset]['labels'].empty:
+                self.data[dset]['features'] = self._merge_df(self.data[dset]['features'], self.data[dset]['labels'])
+                self.data[dset]['labels'] = pd.DataFrame()
+                    
+        
+    
+    def copy(self, deep=True):
+        return Dataset.from_splited_data(
+            self.X_train.copy(deep=deep),
+            self.y_train.copy(deep=deep),
+            self.X_test.copy(deep=deep),
+            self.y_test.copy(deep=deep)
+        )
+
         
         
     def _merge_df(self, main_df, add_df):
@@ -45,9 +63,7 @@ class Dataset:
             if label_name not in self.data[dset]['features'].columns:
                 raise Exception("Column must exist")
             else:
-                if not self.data[dset]['labels'].empty:
-                    self.data[dset]['features'] = self._merge_df(self.data[dset]['features'], self.data[dset]['labels'])
-                    self.data[dset]['labels'] = None
+                self.reset_label(env=[dset])
                     
                 self.data[dset]['labels'] = self.data[dset]['features'][label_name]
                 self.data[dset]['features'].drop(columns=[label_name], inplace=True)

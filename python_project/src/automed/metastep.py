@@ -1,4 +1,4 @@
-from step import Step, isStep, runner
+from .step import Step, isStep, runner
 
 @isStep('meta')
 class MetaStep(Step):
@@ -22,7 +22,7 @@ class MetaStep(Step):
     
     # Run steps self ordered by "priorize" function
     @runner
-    def run(self, input):
+    def run(self, input, callback=None):
         steps_to_run = self.steps.copy()
         
         current_input = input
@@ -36,7 +36,7 @@ class MetaStep(Step):
                     max_eval = current_eval
                     max_index = index+1
             
-            current_input = steps_to_run[max_index].run(current_input)
+            current_input = steps_to_run[max_index].run(current_input, callback=callback)
             del steps_to_run[max_index]
         
         return current_input

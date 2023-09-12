@@ -1,11 +1,11 @@
-from actionable import *
-from automed import Output
+from ...actionable import *
+from ...automed import Output
 from pandas.api.types import is_string_dtype
 
 
 @isStep('cleaning')
 class ActDropTextualColumn(Actionable):
-    
+    name = "Drop textual column"
     configuration = {
         # 'empty_threshold': {
         #     'description': 'Column with more or equal proportion of empty row will dropped. 1 will drop all columns',
@@ -14,7 +14,7 @@ class ActDropTextualColumn(Actionable):
     }
     
     @runner
-    def run(self, input) -> Output:
+    def run(self, input, callback=None) -> Output:
         for column, values in input.dataset.train_data.items():
             if is_string_dtype(values):
                 input.dataset.train_data.drop(columns=[column], inplace=True)

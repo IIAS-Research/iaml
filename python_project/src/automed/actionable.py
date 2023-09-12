@@ -1,4 +1,4 @@
-from step import *
+from .step import *
 
 @isStep('actionable')
 class Actionable(Step):

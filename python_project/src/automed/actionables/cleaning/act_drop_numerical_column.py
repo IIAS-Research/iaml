@@ -1,8 +1,9 @@
-from actionable import *
-from automed import Output
+from ...actionable import *
+from ...automed import Output
 
 @isStep('cleaning')
 class ActDropNumericalColumn(Actionable):
+    name = "Drop Numerical Column"
     
     configuration = {
         'empty_threshold': {
@@ -12,7 +13,7 @@ class ActDropNumericalColumn(Actionable):
     }
     
     @runner
-    def run(self, input) -> Output:
+    def run(self, input, callback=None) -> Output:
         for column, values in input.dataset.train_data.items():
             if values.isnull().sum()/len(values) >= self.get_config('empty_threshold'):
                 input.dataset.train_data.drop(columns=[column], inplace=True)
