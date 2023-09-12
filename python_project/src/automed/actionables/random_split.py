@@ -26,6 +26,12 @@ class RandomSplit(Actionable):
             test_size=self.get_config('ratio'),
             random_state=self.get_config('random_state')
         )
+        
+        X_train.reset_index(drop=True, inplace=True)
+        X_test.reset_index(drop=True, inplace=True)
+        y_train.reset_index(drop=True, inplace=True)
+        y_test.reset_index(drop=True, inplace=True)
+        
         dataset = Dataset.from_splited_data(X_train, y_train, X_test, y_test)
         
         return input.to_output(dataset, None, None)

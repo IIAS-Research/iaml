@@ -29,15 +29,11 @@ class ActOnehot(Actionable):
                     # TRAIN
                     transformed = jobs_encoder.fit_transform(dataset.X_train[column].to_numpy().reshape(-1, 1))
                     ohe_df = pd.DataFrame(transformed, columns=jobs_encoder.get_feature_names([column]))
-                    dataset.X_train.reset_index(drop=True, inplace=True)
-                    ohe_df.reset_index(drop=True, inplace=True)
                     dataset.X_train = pd.concat([dataset.X_train, ohe_df], axis=1).drop([column], axis=1)
                     
                     # TEST
                     transformed = jobs_encoder.transform(dataset.X_test[column].to_numpy().reshape(-1, 1))
                     ohe_df = pd.DataFrame(transformed, columns=jobs_encoder.get_feature_names([column]))
-                    dataset.X_test.reset_index(drop=True, inplace=True)
-                    ohe_df.reset_index(drop=True, inplace=True)
                     dataset.X_test = pd.concat([dataset.X_test, ohe_df], axis=1).drop([column], axis=1)
                 
         
