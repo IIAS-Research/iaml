@@ -9,12 +9,17 @@ from sklearn.preprocessing import OneHotEncoder
 @isStep('cleaning')
 class ActOnehot(Actionable):
     name="One hot encoding categorical features"
-    configuration = {
-        'threshold': {
-            'description': 'Threshold on the ratio : unique value / number of rows. Columns under the threshold will be computed as categorical data',
-            'default': 0.2
-        }
-    }
+    def __init__(self):
+        self.configurations = [{
+            'threshold_ratio': {
+                'description': 'Threshold on the ratio : unique value / number of rows. Columns under the threshold will be computed as categorical data',
+                'default': 0.2
+            },
+            'threshold_value': {
+                'description': 'Threshold value',
+                'default': 5
+            },
+        }]
     
     @runner
     def run(self, input, callback=None) -> Output:
@@ -23,7 +28,7 @@ class ActOnehot(Actionable):
         for column, values in input.dataset.X_train.items():
             if is_string_dtype(values.fillna('EMPTY')):
                 nb_unique = len(input.dataset.X_train[column].unique())
-                if (nb_unique / nb_rows) < self.get_config('threshold'):
+                if (nb_unique / nb_rows) < self.get_config('threshold_ratio') or nb_unique <= self.get_config('threshold_value'):
                     jobs_encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
                     
                     # TRAIN

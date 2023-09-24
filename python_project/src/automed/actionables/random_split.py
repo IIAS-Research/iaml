@@ -7,17 +7,18 @@ from sklearn.model_selection import train_test_split
 @isStep('split')
 class RandomSplit(Actionable):
     name = "Split date to train and test set"
-    configuration = {
-        'ratio': {
-            'description': 'Split ratio',
-            'default': 0.2
-        },
-        'random_state': {
-            'description': 'Random state',
-            'default': 42
-        }
-    }
-    
+    def __init__(self):
+        self.configurations = [{
+            'ratio': {
+                'description': 'Split ratio',
+                'default': 0.2
+            },
+            'random_state': {
+                'description': 'Random state',
+                'default': 42
+            }
+        }]
+        
     @runner
     def run(self, input, callback=None) -> Output:
         X_train, X_test, y_train, y_test = train_test_split(

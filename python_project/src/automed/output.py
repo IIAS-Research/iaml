@@ -8,7 +8,7 @@ class Output:
     # model = None
     # stacked_log = []
     
-    def __init__(self, dataset:Dataset, metric, model):
+    def __init__(self, dataset:Dataset=None, metric=None, model=None):
         self.dataset = dataset
         self.metric = metric
         self.model = model
@@ -18,6 +18,15 @@ class Output:
             (dataset or self.dataset or Dataset()).copy(),
             metric or self.metric,
             model or self.model)
+        
+    def __str__(self):
+        str_out = ""
+        if self.metric:
+            str_out = str_out + str(self.metric) + " "
+        if self.model:
+            str_out = str_out + str(self.model) + " "
+            
+        return str_out
         
     def log(self, test):
         pass

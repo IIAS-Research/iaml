@@ -7,17 +7,18 @@ from sklearn.datasets import make_classification
 @assessable
 class ActRandomForest(Actionable):
     name = "Learn : Random Forest"
-    configuration = {
-        'max_depth': {
-            'description': 'Max depth of each tree',
-            'default': 15
-        },
-        'random_state': {
-            'description': 'random_state',
-            'default': 42
-        }
-    }
-    
+    def __init__(self):
+        self.configurations = [{
+            'max_depth': {
+                'description': 'Max depth of each tree',
+                'default': 15
+            },
+            'random_state': {
+                'description': 'random_state',
+                'default': 42
+            }
+        }]
+        
     @runner
     def run(self, input:Output, callback=None):
         metric = input.metric or Metric()

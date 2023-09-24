@@ -5,14 +5,19 @@ class Step:
     # Available steps
     available_steps = {}
     output = None
-    configuration = {}
+    configurations = [{}]
+    current_configuration = []
     name = "Step"
     
     input:Output = Output(None, None, None)
     
     def __init__(self, input:Output = Output(None, None, None)):
-        self.default_configuration()
+    
+        self.default_configurations()
         self.input = input
+        
+    def __str__(self):
+        return self.name
     
     @property
     def dataset(self):
@@ -35,31 +40,48 @@ class Step:
     #  
     # Each parameters have a name, a description and a default value. Default value can be fixed or computed based on dataset
     
-    def configure_one(self, key, value):
-        if key in self.configuration.keys():
-            self.configuration[key]['value'] = value
+    def configure_one(self, config_id, key, value):
+        if key in self.configurations[config_id].keys():
+            self.configurations[config_id][key]['value'] = value
         else:
             raise(f"Configurable Key '#{key}' does not exist.")
         
-    def configure(self, dict):
-        for key, value in dict.items():
-            self.configure_one(key, value)
+    def configure(self, dict, config_id=None):
+        if config_id:
+            for key, value in dict.items():
+                self.configure_one(config_id, key, value)
+        else:
+            self.add_config(self, dict)
+            
+    def add_config(self, dict):
+        pass
+        # TODO
     
-    def resume_configuration(self):
-        return {k: v['value'] for k, v in self.configuration.items()}
+    def resume_configuration(self, config_id=None):
+        if config_id:
+            return {k: self._get_value(v) for k, v in self.configurations[config_id].items()}
+        else:
+            print("--_>", self.current_configuration)
+            return {k: self._get_value(v) for k, v in self.current_configuration.items()}
     
+    def resume_configurations(self):
+        return {k: self._get_value(v) for k, v in self.configurations.items()}
+    
+    def _get_value(self, elem):
+        return elem['value'] if 'value' in elem.keys() else elem['default']
     
     def get_config(self, key):
         return self.resume_configuration()[key]
             
     
     def default_values(self, input=None):
-        return {k: v['default'] for k, v in self.configuration.items()}
+        return {k: v['default'] for k, v in self.configurations.items()}
     
     
-    def default_configuration(self):
-        for key, elem in self.configuration.items():
-            self.configuration[key]['value'] = self.configuration[key]['default']
+    def default_configurations(self):
+        for index, current in enumerate(self.configurations):
+            for key, elem in current.items():
+                self.configurations[index][key]['value'] = self.configurations[index][key]['default']
     
     
     ############
@@ -124,11 +146,22 @@ def assessable(cls): # Évaluable
 # Method decorator
 #
 def runner(func):
-    def runner_wrapper(self, input, callback=None, *args, **kw):
+    def runner_wrapper(self, inputs, callback=None, *args, **kw):
         print(self)
-        result = func(self, input, callback=callback, *args, **kw)
-        self.output = result
         
+        if inputs.__class__ == Output:
+            inputs = [inputs]
+        
+        result:list[Output] = []
+        for current in self.configurations:
+            self.current_configuration = current
+            for input in inputs:
+                output = func(self, input, callback=callback, *args, **kw)
+                print("=>", output)
+                result = result + ([output] if type(output) == Output else output)
+                print("##", result)
+
+        self.output = result        
         if callback:
             callback(self)
             

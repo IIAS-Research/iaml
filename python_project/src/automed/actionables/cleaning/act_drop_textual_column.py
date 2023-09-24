@@ -6,12 +6,6 @@ from pandas.api.types import is_string_dtype
 @isStep('cleaning')
 class ActDropTextualColumn(Actionable):
     name = "Drop textual column"
-    configuration = {
-        # 'empty_threshold': {
-        #     'description': 'Column with more or equal proportion of empty row will dropped. 1 will drop all columns',
-        #     'default': 0.5
-        # }
-    }
     
     @runner
     def run(self, input, callback=None) -> Output:

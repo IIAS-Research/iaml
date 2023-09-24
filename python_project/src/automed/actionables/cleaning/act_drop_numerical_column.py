@@ -5,12 +5,13 @@ from ...automed import Output
 class ActDropNumericalColumn(Actionable):
     name = "Drop Numerical Column"
     
-    configuration = {
-        'empty_threshold': {
-            'description': 'Column with more or equal proportion of empty row will dropped. 1 will drop all columns',
-            'default': 0.5
-        }
-    }
+    def __init__(self):
+        self.configurations = [{
+            'empty_threshold': {
+                'description': 'Column with more or equal proportion of empty row will dropped. 1 will drop all columns',
+                'default': 0.5
+            }
+        }]
     
     @runner
     def run(self, input, callback=None) -> Output:

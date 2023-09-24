@@ -5,12 +5,13 @@ from pandas.api.types import is_numeric_dtype
 @isStep('cleaning')
 class ActMeanColumn(Actionable):
     name = "Fill missing values with mean"
-    configuration = {
-        'empty_threshold': {
-            'description': 'Column with less or equal proportion of empty row will be fill with mean value. 1 will always fill void values',
-            'default': 0.5
-        }
-    }
+    def __init__(self):
+        self.configurations = [{
+            'empty_threshold': {
+                'description': 'Column with less or equal proportion of empty row will be fill with mean value. 1 will always fill void values',
+                'default': 0.5
+            }
+        }]
     
     @runner
     def run(self, input, callback=None) -> Output:

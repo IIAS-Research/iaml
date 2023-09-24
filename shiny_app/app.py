@@ -14,14 +14,25 @@ app_ui = ui.page_fluid(
         ui.nav("Upload",
             ui.div(
                 ui.h2("Upload file"),
-                ui.input_file("input_data", "Choose CSV File", accept=[".csv"], multiple=False)
+                ui.input_file("input_data", "Choose CSV File", accept=[".csv"], multiple=False),
+                ui.br(),
+                ui.hr(),
+                ui.br(),
+                ui.input_checkbox("automedoc", "Load automedoc", False),
+                ui.output_ui("automedoc_value"),
             )
         ),
         ui.nav("Choose label",
             ui.div(
                 ui.h2("Choose label to predict"),
                 ui.output_ui("select_label"),
-                ui.output_data_frame("show_input"),
+                ui.row(
+                ui.column(9,
+                    ui.h3('Features'),
+                    ui.output_data_frame("show_input")),
+                ui.column(3,
+                    ui.h3('Label'),
+                    ui.output_data_frame("show_input_label")))
             )
         ),
         ui.nav("Pipeline",
@@ -34,6 +45,7 @@ app_ui = ui.page_fluid(
         ui.nav("Results",
             ui.div(
                 ui.h2("Results"),
+                ui.output_ui("select_output"),
                 ui.output_ui("output_result"),
                 ui.h2("Output data"),
                 ui.output_data_frame("show_output"),
@@ -47,6 +59,7 @@ app_ui = ui.page_fluid(
 def server(input, output, session):
     automed = reactive.Value(AutoMed())
     pipe_log = reactive.Value([])
+    current_result = reactive.Value(None)
 
     @output
     @render.data_frame
@@ -56,14 +69,22 @@ def server(input, output, session):
         
         return render.DataTable(automed.get().dataset.X_train)
     
+    @output
+    @render.data_frame
+    def show_input_label():
+        if input.input_data() is None:
+            return "Please choose a label"
+        
+        return render.DataTable(pd.DataFrame(automed.get().dataset.y_train))
+    
     
     @output
     @render.data_frame
     def show_output():
-        if input.input_data() is None:
-            return "Please upload a csv file and run pipeline"
-        
-        return render.DataTable(automed.get().output.dataset.X_train)
+        if current_result.get():
+            return render.DataTable(current_result.get().dataset.X_train)
+        else:
+            return "Choose an output"
     
     @output
     @render.ui
@@ -77,8 +98,25 @@ def server(input, output, session):
     
     @output
     @render.ui
+    def select_output():
+        output_dict = {-1:'Choose...'}
+        for index, value in enumerate(automed.get().output):
+            output_dict[index] = str(index) + " : " + str(value)
+            
+        return ui.input_select(
+            "selected_output",
+            "Choose a output",
+            output_dict
+            )
+        
+    
+    @output
+    @render.ui
     def output_result():
-        return f"Prediction accuracy : {automed.get().output.metric.compute(automed.get().output)}"
+        if current_result.get():
+            return f"Prediction accuracy : {current_result.get().metric.compute(current_result.get())}"
+        else:
+            return "Choose an output"
         
     @output
     @render.ui
@@ -94,7 +132,7 @@ def server(input, output, session):
     def get_data():
         f: list[FileInfo] = input.input_data()
         # return input.header()
-        am = AutoMed(Dataset(pd.read_csv(f[0]["datapath"], sep=",")))
+        am = AutoMed(Dataset(pd.read_csv(f[0]["datapath"], sep=";")))
         am.debug_load() # Loading pipeline
         automed.set(am)
         
@@ -105,6 +143,15 @@ def server(input, output, session):
         if label != "Choose...":
             automed.get().dataset.set_label(label) 
             fetch(automed)
+            
+        
+    @reactive.Effect
+    @reactive.event(input.selected_output)
+    def selected_output():
+        value = int(input.selected_output())
+        if value != -1:
+            current_result.set(automed.get().output[value])
+            print("->", current_result.get())
             
     def fetch(reactive_var):
         tmp = reactive_var.get()
@@ -119,12 +166,20 @@ def server(input, output, session):
         print("Starting Pipeline")
         automed.get().run(callback=pipe_callback)
         add_pipe_log("End !")
+        
+    
+    @output
+    @render.ui
+    def automedoc_value():
+        if input.automedoc():
+            from automedoc.automedoc import ActAtcCode
+            return "Loaded !"
+        return ""
+        
     
     def pipe_callback(step):
-        import time
         if step.name != 'Step':
             add_pipe_log(step.name)
-        # time.sleep(1)
         
     
     def add_pipe_log(text):

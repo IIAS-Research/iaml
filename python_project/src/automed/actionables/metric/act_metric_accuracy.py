@@ -5,7 +5,7 @@ from pandas.api.types import is_numeric_dtype
 @isStep('metric')
 class ActMetricAccuracy(Actionable):
     
-    configuration = {}
+    # configurations = [{}]
     
     @runner
     def run(self, input, callback=None) -> Output:

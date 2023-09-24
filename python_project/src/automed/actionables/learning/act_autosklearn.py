@@ -7,12 +7,13 @@ import autosklearn.classification
 @assessable
 class ActAutoSkLearn(Actionable):
     name="Learn : AutoSkLearn"
-    configuration = {
-        'running_time': {
-            'description': 'In seconds. Auto-SkLearn will search the best models during this time',
-            'default': 60
-        }
-    }
+    def __init__(self):
+        self.configurations = [{
+            'running_time': {
+                'description': 'In seconds. Auto-SkLearn will search the best models during this time',
+                'default': 30
+            }
+        }]
     
     @runner
     def run(self, input:Output, callback=None):
@@ -24,7 +25,7 @@ class ActAutoSkLearn(Actionable):
             memory_limit = 102400)
         
         model.fit(dataset.X_train, dataset.y_train)
-        
+        print("PERFECT FINISH")
         return input.to_output(None, metric, model)
 
         
