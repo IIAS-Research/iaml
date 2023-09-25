@@ -1,5 +1,6 @@
-# POC AutoML
-POC : Plateforme d'AutoML pour l'IIAS.
+# AutoMed
+Plateforme d'AutoML développée par l'IIAS. L'objectif est de simplifier la réalisation des projets de DS par la génération et l'execution automatique de PipeLines.
+L'aspect Data est traité par le développement package Python. Une interface web sera également développée pour que l'outil puisse être utilisé par tous.
 
 **Complet documentation here** : [Documentation](http://docs.example.invalid/poc_automl/main)
 or here for others branches : http://docs.example.invalid/poc_automl/[BRANCH_NAME]
