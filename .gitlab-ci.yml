@@ -1,0 +1,81 @@
+###########
+# Testing #
+###########
+stages:
+  - build
+  # - test # CI
+  - docs
+  # - deploy
+
+job:build:pythonEnv:
+  stage: build
+  tags:
+    - unix
+    - test
+  script:
+    - '/usr/bin/python3 -m venv .venv'
+    - 'source ./.venv/bin/activate'
+    - 'pip install -r requirements.txt'
+  artifacts:
+    expose_as: 'Python virtual env'
+    expire_in: 2h
+    paths: 
+      - .venv
+
+# job:test:unit:
+#   stage: test
+#   tags:
+#     - unix
+#     - test
+#   script:
+#     - 'source ./.venv/bin/activate'
+#     - 'python3 ./tests/tests.py unit'
+
+# job:test:integration:
+#   stage: test
+#   tags:
+#     - unix
+#     - test
+#   script:
+#     # - 'cp /home/gitlab-runner/ehop_toolbox_credentials.yml ./credentials.yml' # Example of a way to get credentials
+#     - 'mkdir ./data'
+#     - 'source ./.venv/bin/activate'
+#     - 'python3 ./tests/tests.py integration'
+#     # - 'rm ./credentials.yml' # Do forget to delete credentials
+
+# Uncomment et complet below to enable CD
+# job:deploy:
+#   stage: deploy
+#   tags:
+#     - <HERE> # Add tag here. Tag will be useful to select gitlab-runner
+#   script:
+#     - <HERE> # Add shell command here
+#   only:
+#     - main # Deploy only after push on the main branch
+    
+
+###################
+## DOCUMENTATION ##
+###################
+
+job:docs:create:
+  stage: docs
+  tags:
+    - unix
+  script:
+    - 'python3 -m pip install mkdocs'
+    - 'python3 -m mkdocs build -d public'
+  artifacts:
+    expose_as: 'HTML Static documentation'
+    paths:
+      - public
+
+job:deploy:docs:
+  stage: deploy
+  tags:
+    - unix
+    - test
+  script:
+    - 'if [ -d "/var/www/docs/$CI_PROJECT_NAME/$CI_COMMIT_BRANCH" ]; then rm -r /var/www/docs/$CI_PROJECT_NAME/$CI_COMMIT_BRANCH; fi'
+    - 'mkdir -p /var/www/docs/$CI_PROJECT_NAME'
+    - 'mv ./public /var/www/docs/$CI_PROJECT_NAME/$CI_COMMIT_BRANCH'
