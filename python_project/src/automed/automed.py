@@ -9,18 +9,7 @@ from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 
 # Default Actionables
-from .actionables.cleaning.act_mean_column import ActMeanColumn
-from .actionables.cleaning.act_drop_numerical_column import ActDropNumericalColumn
-from .actionables.cleaning.act_drop_textual_column import ActDropTextualColumn
-from .actionables.cleaning.act_onehot import ActOnehot
-
-
-from .actionables.learning.act_autosklearn import ActAutoSkLearn
-from .actionables.learning.act_randomforest import ActRandomForest
-from .actionables.learning.act_xgboost import ActXGBoost
-
-
-from .actionables.random_split import RandomSplit
+from .actionables import *
 
 class AutoMed:
     output:list[Output] = None
@@ -40,7 +29,9 @@ class AutoMed:
             self.first_step = MetaOrderedStep()
             self.first_step.add_step(RandomSplit())
             self.first_step.add_step(MetaStep(tag='cleaning'))
+            self.first_step.add_step(MetaStep(tag='features_selection'))
             self.first_step.add_step(MetaExplorerStep(tag='learning'))
+            # self.first_step.add_step(MetaExplorerStep(tag='boosting'))
             
     @property
     def dataset(self):
