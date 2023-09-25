@@ -1,5 +1,5 @@
 # POC AutoML
-POC : PLateforme d'AutoML pour l'IIAS.
+POC : Plateforme d'AutoML pour l'IIAS.
 
 **Complet documentation here** : [Documentation](http://docs.example.invalid/poc_automl/main)
 or here for others branches : http://docs.example.invalid/poc_automl/[BRANCH_NAME]
