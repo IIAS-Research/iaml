@@ -5,7 +5,7 @@ stages:
   - build
   # - test # CI
   - docs
-  # - deploy
+  - deploy
 
 job:build:pythonEnv:
   stage: build
