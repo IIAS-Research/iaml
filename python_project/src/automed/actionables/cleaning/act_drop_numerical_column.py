@@ -15,10 +15,14 @@ class ActDropNumericalColumn(Actionable):
     
     @runner
     def run(self, input, callback=None) -> Output:
+        
+        def transform(x, y, column):
+            x = x.drop(columns=[column])
+            return x, y
+        
         for column, values in input.dataset.train_data.items():
             if values.isnull().sum()/len(values) >= self.get_config('empty_threshold'):
-                input.dataset.train_data.drop(columns=[column], inplace=True)
-                input.dataset.test_data.drop(columns=[column], inplace=True)
+                input.dataset.apply(transform, column=column)
         
         return input.to_output(input.dataset, None, None)
         

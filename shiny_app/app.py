@@ -49,6 +49,8 @@ app_ui = ui.page_fluid(
                 ui.output_ui("output_result"),
                 ui.h2("Output data"),
                 ui.output_data_frame("show_output"),
+                ui.h2("Testing set"),
+                ui.output_data_frame("show_output_test"),
                 
             )
         )
@@ -83,6 +85,15 @@ def server(input, output, session):
     def show_output():
         if current_result.get():
             return render.DataTable(current_result.get().dataset.X_train)
+        else:
+            return "Choose an output"
+        
+    
+    @output
+    @render.data_frame
+    def show_output_test():
+        if current_result.get():
+            return render.DataTable(current_result.get().dataset.check_X_test)
         else:
             return "Choose an output"
     

@@ -15,10 +15,15 @@ class ActMeanColumn(Actionable):
     
     @runner
     def run(self, input, callback=None) -> Output:
+        
+        
+        def transform(x, y, column):
+            x[column].fillna(values.mean(), inplace=True)
+            return x, y
+            
         for column, values in input.dataset.train_data.items():
             if is_numeric_dtype(values) and values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
-                input.dataset.train_data[column].fillna(values.mean(), inplace=True)
-                input.dataset.test_data[column].fillna(values.mean(), inplace=True)
+                input.dataset.apply(transform, column=column)
         
         return input.to_output(input.dataset, None, None)
     

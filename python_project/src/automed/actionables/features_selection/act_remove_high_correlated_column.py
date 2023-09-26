@@ -17,6 +17,11 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     @runner
     def run(self, input, callback=None) -> Output:
         
+        
+        def transform(x, y, columns):
+            x.drop(to_drop, axis=1, inplace=True)
+            return x, y
+        
         # Compute correlation matrix 
         corr_matrix = input.dataset.train_data.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
@@ -26,8 +31,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         print('to_drop : ', to_drop)
         
         # Remove these highly correlated features
-        input.dataset.train_data.drop(to_drop, axis=1, inplace=True)
-        input.dataset.test_data.drop(to_drop, axis=1, inplace=True)
+        input.dataset.apply(transform, to_drop=to_drop)
         
         return input.to_output(input.dataset, None, None)
     

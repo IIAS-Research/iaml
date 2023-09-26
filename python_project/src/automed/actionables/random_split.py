@@ -33,9 +33,9 @@ class RandomSplit(Actionable):
         y_train.reset_index(drop=True, inplace=True)
         y_test.reset_index(drop=True, inplace=True)
         
-        dataset = Dataset.from_splited_data(X_train, y_train, X_test, y_test)
+        input.dataset.split(X_train, y_train, X_test, y_test)
         
-        return input.to_output(dataset, None, None)
+        return input.to_output(input.dataset, None, None)
         
     
     def priorize(self, input=None):

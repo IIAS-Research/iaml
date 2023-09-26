@@ -24,7 +24,11 @@ class AutoMed:
     
     def debug_load(self, only=None):
         if only:
-            self.first_step = MetaStep(tag=only)
+            self.first_step = MetaOrderedStep()
+            self.first_step.add_step(RandomSplit())
+            self.first_step.add_step(MetaStep(tag=only))
+            self.first_step.add_step(MetaStep(tag='features_selection'))
+            
         else: 
             self.first_step = MetaOrderedStep()
             self.first_step.add_step(RandomSplit())
