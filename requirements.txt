@@ -15,6 +15,5 @@ scikit-learn
 scipy
 seaborn
 six
-sklearn
 threadpoolctl
 tzdata
