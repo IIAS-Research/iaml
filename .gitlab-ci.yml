@@ -64,7 +64,7 @@ job:docs:create:
     - unix
   script:
     - 'source /home/gitlab-runner/.automl_venv/bin/activate'
-    - if [ -d "/home/gitlab-runner/automl_hisotry.log" ]; then mv /home/gitlab-runner/automl_history.log ./python_project/src/perf_logger/tests_data/history.log ;fi'
+    - 'if [ -d "/home/gitlab-runner/automl_hisotry.log" ]; then mv /home/gitlab-runner/automl_history.log ./python_project/src/perf_logger/tests_data/history.log ;fi'
     - 'python3 python_project/src/perf_logger/perf_logger.py' # Compute perfs
     - 'python3 -m pip install mkdocs'
     - 'python3 -m mkdocs build -d public'
