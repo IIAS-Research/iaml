@@ -1,0 +1,51 @@
+import pandas as pd 
+import glob
+from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import sys, os
+from os.path import exists
+current_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, current_path+"/../")
+from automed import *
+
+files = glob.glob(current_path+"/tests_data/*.csv")
+
+history_path = current_path+"/tests_data/history.log"
+results = None
+if not exists(history_path):
+    if not exists(current_path+"/tests_data/"):
+        os.mkdir(current_path+"/tests_data/")
+    results = pd.DataFrame(columns=['date','dataset_name','perf'])
+else:
+    results = pd.read_csv(history_path)
+
+
+for file in files:
+    auto = AutoMed(Dataset(pd.read_csv(file, sep=";")))
+    auto.dataset.set_label('label') 
+    auto.debug_load()
+    auto.run()
+    
+    # Find best result
+    max_result = 0
+    for output in auto.output:
+        tmp = output.metric.compute(output)
+        if tmp > max_result:
+            max_result = tmp
+    
+    filename = file.split('/')[-1]
+    new_record = pd.DataFrame([[datetime.today().strftime('%Y-%m-%d %Hh'), filename, max_result]], columns=results.columns)
+    results = pd.concat([new_record, results], ignore_index=True)
+    
+results.to_csv(history_path, index=False)
+    
+# Create graph
+
+df_plot = results.pivot_table(index='date', columns='dataset_name', values='perf')
+plot = sns.lineplot(data=df_plot)
+sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
+plot.set(ylim = (.5,1))
+fig = plot.get_figure()
+fig.savefig(current_path+"/../../../docs/perf_fig.png",dpi=300, bbox_inches = "tight") 

@@ -63,6 +63,7 @@ job:docs:create:
   tags:
     - unix
   script:
+    - 'python3 python_project/src/perf_logger/perf_logger.py' # Compute perfs
     - 'python3 -m pip install mkdocs'
     - 'python3 -m mkdocs build -d public'
   artifacts:
