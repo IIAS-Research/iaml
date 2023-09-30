@@ -12,7 +12,7 @@ from .meta_explorer_step import MetaExplorerStep
 from .actionables import *
 
 class AutoMed:
-    output:list[Output] = None
+    output:list = None
     input:Dataset = None
     
     def __init__(self, dataset:Dataset=None):
