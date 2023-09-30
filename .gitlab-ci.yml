@@ -13,8 +13,8 @@ job:build:pythonEnv:
     - unix
     - test
   script:
-    - '/usr/bin/python3 -m venv .venv'
-    - 'source ./.venv/bin/activate'
+    - '/usr/bin/python3 -m venv /home/gitlab-runner/.automl_venv'
+    - 'source /home/gitlab-runner/.automl_venv'
     - 'pip install -r requirements.txt'
   # artifacts:
   #   expose_as: 'Python virtual env'
@@ -63,6 +63,7 @@ job:docs:create:
   tags:
     - unix
   script:
+    - 'source /home/gitlab-runner/.automl_venv'
     - 'python3 python_project/src/perf_logger/perf_logger.py' # Compute perfs
     - 'python3 -m pip install mkdocs'
     - 'python3 -m mkdocs build -d public'
