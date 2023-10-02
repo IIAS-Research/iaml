@@ -35,6 +35,7 @@ class AutoMed:
             self.first_step.add_step(RandomSplit())
             self.first_step.add_step(MetaStep(tag='cleaning'))
             self.first_step.add_step(MetaStep(tag='features_selection'))
+            self.first_step.add_step(MetaStep(tag='normalize'))
             self.first_step.add_step(MetaExplorerStep(tag='learning'))
             # self.first_step.add_step(MetaExplorerStep(tag='boosting'))
             
