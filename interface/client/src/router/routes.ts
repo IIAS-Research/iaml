@@ -30,6 +30,16 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/project/:id',
+    // beforeEnter: gardeTableauDeBord,
+    // redirect: { name: 'pops' },
+    children: [
+      {
+        name: 'show-project', path: '', component: () => import('pages/ShowProjectPage.vue')
+      }
+    ],
+  },
+  {
     path: '/:catchAll(.*)*',
     component: () => import('src/pages/autres/ErrorNotFound.vue'),
     name: 'erreur404'

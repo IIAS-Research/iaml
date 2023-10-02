@@ -1,0 +1,66 @@
+
+// Nested steps
+// For each step :
+// type -> Class Python de l'étape
+// input -> Array of input Datasets
+// output -> Array of ouput Dataset
+// nested -> Nested steps
+// parameters -> Hash of parameters
+// messages -> Array of messages
+
+{
+    "datasets": {
+        "labels": "test_label.csv",
+        "data": "test_data.csv",
+        "complementaire": "test_com.csv"
+    },
+    "main_step": {
+        "type": "tabularClassifier",
+        "input": ["labels", "data", "complementaire"],
+        "output": ["model"],
+        "nested": [
+            {
+            "type": "Merger",
+            "input": ["labels", "data", "complementaire"],
+            "output": ["merged_data"],,
+            "messages": [
+                {"type": "error", "text": "Step Labeler need your help !"}
+            ]
+            "nested": [
+                {
+                "type": "InnerJoin",
+                "input": ["labels", "data", "complementaire"],
+                "output": ["merged_data"],
+                "parameter": {
+                    "column": "row_id"
+                    },
+                "messages": [
+                    {"type": "valid", "text": "Ready to merge"}
+                ]
+                }]
+            },
+            {
+            "type": "Labeler",
+            "input": ["merged_data"],
+            "ouput": ["labeled_data"],
+            "parameters": {
+                "column": ""
+                },
+            "messages": [
+                {"type": "error", "text": "Enable to automaticaly define label column. Please set it manually"}
+            ]
+            },
+            {
+            "type": "Spliter",
+            "input": ["labeled_data"],
+            "ouput": ["train_data", "test_data"],
+            "parameters": {
+                "ratio": 0.2
+                },
+            "messages": [
+                {"type": "valid", "text": "Ready to split"}
+            ]
+            }
+        ]
+    }
+}
