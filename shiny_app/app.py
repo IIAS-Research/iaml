@@ -143,7 +143,12 @@ def server(input, output, session):
     def get_data():
         f: list[FileInfo] = input.input_data()
         # return input.header()
-        am = AutoMed(Dataset(pd.read_csv(f[0]["datapath"], sep=";")))
+        
+        df = pd.read_csv(f[0]["datapath"], sep=";")
+        if len(df.columns) < 2:
+            df = pd.read_csv(f[0]["datapath"], sep=",")
+            
+        am = AutoMed(Dataset(df))
         am.debug_load() # Loading pipeline
         automed.set(am)
         

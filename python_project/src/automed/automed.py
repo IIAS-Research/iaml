@@ -16,6 +16,7 @@ class AutoMed:
     input:Dataset = None
     
     def __init__(self, dataset:Dataset=None):
+        self.output = None
         self.input = Output(dataset, None, None)
         self.first_step = None
     
