@@ -22,25 +22,8 @@ class ActXGBoost(Actionable):
             },
             'n_estimators': {
                 'description': 'Number of estimators',
-                'default': 100
-            }
-        },
-        {
-            'max_depth': {
-                'description': 'Max depth of each tree',
-                'default': 2
-            },
-            'random_state': {
-                'description': 'random_state',
-                'default': 42
-            },
-            'learning_rate': {
-                'description': 'Learning rate',
-                'default': 1
-            },
-            'n_estimators': {
-                'description': 'Number of estimators',
-                'default': 1
+                'default': 100,
+                'range': [1, float("inf")]
             }
         }]
         

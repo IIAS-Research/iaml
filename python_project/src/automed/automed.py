@@ -11,6 +11,9 @@ from .meta_explorer_step import MetaExplorerStep
 # Default Actionables
 from .actionables import *
 
+# Default Wrappers
+from .wrapper import *
+
 class AutoMed:
     output:list = None
     input:Dataset = None
@@ -36,7 +39,7 @@ class AutoMed:
             self.first_step.add_step(MetaStep(tag='cleaning'))
             self.first_step.add_step(MetaStep(tag='features_selection'))
             self.first_step.add_step(MetaStep(tag='normalize'))
-            self.first_step.add_step(MetaExplorerStep(tag='learning'))
+            self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapBasicGridSearch))
             # self.first_step.add_step(MetaExplorerStep(tag='boosting'))
             
     @property

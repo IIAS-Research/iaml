@@ -1,11 +1,12 @@
 from .step import Step, isStep, runner
+from .step_wrapper import *
 
 @isStep('meta')
 class MetaStep(Step):
-    def __init__(self, tag=None):
+    def __init__(self, tag=None, wrap=None):
         self.steps = []
         if tag:
-            self.add_step_by_tag(tag) 
+            self.add_step_by_tag(tag, wrap=wrap) 
     
     
     def add_step(self, step):
@@ -14,10 +15,16 @@ class MetaStep(Step):
         else:
             raise Exception("step must be an occurence of step (or inherited classes)")
         
-    def add_step_by_tag(self, tag):
+    def add_step_by_tag(self, tag, wrap=None):
         steps_to_add = set(filter(lambda key: tag in Step.available_steps[key], Step.available_steps.keys()))
+        
+        if wrap != None:
+            steps_to_add = list(map(lambda step: wrap(step()), steps_to_add))
+        else:
+            steps_to_add = list(map(lambda step: step(), steps_to_add))
+        
         for step in steps_to_add:
-            self.add_step(step())
+            self.add_step(step);
     
     
     # Run steps self ordered by "priorize" function

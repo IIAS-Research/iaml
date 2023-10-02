@@ -61,7 +61,7 @@ class Step:
         if config_id:
             return {k: self._get_value(v) for k, v in self.configurations[config_id].items()}
         else:
-            print("--_>", self.current_configuration)
+            # print("--_>", self.current_configuration)
             return {k: self._get_value(v) for k, v in self.current_configuration.items()}
     
     def resume_configurations(self):
@@ -82,6 +82,9 @@ class Step:
         for index, current in enumerate(self.configurations):
             for key, elem in current.items():
                 self.configurations[index][key]['value'] = self.configurations[index][key]['default']
+                
+    def keep_only_first_config(self):
+        self.configurations = [self.configurations[0]]
     
     
     ############
@@ -123,6 +126,14 @@ class Step:
 def isStep(*tags):
     def stepWrapper(cls):
         Step.available_steps[cls] = tags
+        
+        initial_init = cls.__init__
+        def __init__(self, *args, **kw):
+            initial_init(self, *args, **kw)
+            self.default_configurations()
+            
+        cls.__init__ = __init__
+            
         return cls
         
     return stepWrapper
@@ -147,7 +158,7 @@ def assessable(cls): # Évaluable
 #
 def runner(func):
     def runner_wrapper(self, inputs, callback=None, *args, **kw):
-        print(self)
+        # print(self)
         
         if inputs.__class__ == Output:
             inputs = [inputs]
@@ -157,9 +168,9 @@ def runner(func):
             self.current_configuration = current
             for input in inputs:
                 output = func(self, input, callback=callback, *args, **kw)
-                print("=>", output)
+                # print("=>", output)
                 result = result + ([output] if type(output) == Output else output)
-                print("##", result)
+                # print("##", result)
 
         self.output = result        
         if callback:
