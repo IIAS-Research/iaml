@@ -70,7 +70,7 @@ job:perfs:compute:
   artifacts:
     expose_as: 'Compute performances of AutoMed'
     paths:
-      - public
+      - docs
 
 ###################
 ## DOCUMENTATION ##
