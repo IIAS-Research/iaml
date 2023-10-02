@@ -23,7 +23,11 @@ else:
 
 
 for file in files:
-    auto = AutoMed(Dataset(pd.read_csv(file, sep=";")))
+    df = pd.read_csv(file, sep=";")
+    if len(df.columns) < 2:
+        df = pd.read_csv(file, sep=",")
+        
+    auto = AutoMed(Dataset(df))
     auto.dataset.set_label('label') 
     auto.debug_load()
     auto.run()
