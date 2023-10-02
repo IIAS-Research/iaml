@@ -61,7 +61,6 @@ class Step:
         if config_id:
             return {k: self._get_value(v) for k, v in self.configurations[config_id].items()}
         else:
-            # print("--_>", self.current_configuration)
             return {k: self._get_value(v) for k, v in self.current_configuration.items()}
     
     def resume_configurations(self):
@@ -158,7 +157,6 @@ def assessable(cls): # Évaluable
 #
 def runner(func):
     def runner_wrapper(self, inputs, callback=None, *args, **kw):
-        # print(self)
         
         if inputs.__class__ == Output:
             inputs = [inputs]
@@ -168,9 +166,7 @@ def runner(func):
             self.current_configuration = current
             for input in inputs:
                 output = func(self, input, callback=callback, *args, **kw)
-                # print("=>", output)
                 result = result + ([output] if type(output) == Output else output)
-                # print("##", result)
 
         self.output = result        
         if callback:
