@@ -10,7 +10,8 @@ class ActKNN(Actionable):
         self.configurations = [{
             'metric': {
                 'description': 'Can be minkowski or manhattan',
-                'default': 'minkowski'
+                'default': 'minkowski',
+                'categorical': ['minkowski', 'manhattan']
             },
             'n_neighbors': {
                 'description': 'Number of neighbors',

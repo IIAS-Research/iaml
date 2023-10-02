@@ -10,7 +10,8 @@ class ActSVM(Actionable):
         self.configurations = [{
             'kernel': {
                 'description': 'Kernel to use in the SVM',
-                'default': 'rbf'
+                'default': 'rbf',
+                'categorical': ['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']
             },
             'random_state': {
                 'description': 'random_state',
@@ -22,7 +23,8 @@ class ActSVM(Actionable):
             },
             'class_weight': {
                 'description': 'Can be set on "balenced" to improve results on unbalenced data',
-                'default': None
+                'default': None,
+                'categorical': [None, 'balenced']
             }
         }]
         
