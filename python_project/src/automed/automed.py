@@ -48,7 +48,7 @@ class AutoMed:
             self.first_step.add_step(MetaStep(tag='cleaning'))
             self.first_step.add_step(MetaStep(tag='features_selection'))
             self.first_step.add_step(MetaStep(tag='normalize'))
-            self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapBasicGridSearch))
+            self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapIterativeGridSearch))
             # self.first_step.add_step(MetaExplorerStep(tag='boosting'))
             
     @property

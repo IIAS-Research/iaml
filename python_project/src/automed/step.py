@@ -41,10 +41,11 @@ class Step:
     # Each parameters have a name, a description and a default value. Default value can be fixed or computed based on dataset
     
     def configure_one(self, config_id, key, value):
+        print("=>", self.configurations[config_id].keys())
         if key in self.configurations[config_id].keys():
             self.configurations[config_id][key]['value'] = value
         else:
-            raise(f"Configurable Key '#{key}' does not exist.")
+            raise Exception(f"Configurable Key '{key}' does not exist.")
         
     def configure(self, dict, config_id=None):
         if config_id:
@@ -61,7 +62,7 @@ class Step:
         if config_id:
             return {k: self._get_value(v) for k, v in self.configurations[config_id].items()}
         else:
-            return {k: self._get_value(v) for k, v in self.current_configuration.items()}
+            return {k: self._get_value(v) for k, v in (self.current_configuration or self.configurations[0]).items()}
     
     def resume_configurations(self):
         return {k: self._get_value(v) for k, v in self.configurations.items()}

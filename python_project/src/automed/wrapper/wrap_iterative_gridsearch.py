@@ -1,11 +1,13 @@
 from ..step_wrapper import *
 from ..output import *
 
+from copy import deepcopy
+
 
 @isStep('wrapper')
 class WrapIterativeGridSearch(StepWrapper):
     name = "Wrap : Iterative GridSearch"
-    def __init__(self):
+    def __init__(self, step):
         self.configurations = [{
             'modificator': {
                 'description': 'Value modificator for each iteration',
@@ -20,6 +22,7 @@ class WrapIterativeGridSearch(StepWrapper):
                 'default': 5
             }
         }]
+        self.step = step
         
     to_avoid = ['random_state']
     @runner
@@ -39,7 +42,7 @@ class WrapIterativeGridSearch(StepWrapper):
             # Other -> keep current value
             
         results = []
-        configs = self.step.configurations
+        configs = deepcopy(self.step.configurations)
         self.step.keep_only_first_config() # Avoid run several config for each run
         for config in configs:
             output = self.__recursive_run(input, config, callback=callback)
@@ -56,14 +59,14 @@ class WrapIterativeGridSearch(StepWrapper):
             
             results = []
             
-            # modificator
-            modi = self.get_config('modificator')
-            minimal_modi = item['value']*0.01
-            
             if key in self.to_avoid: # Nothing to explore here, continue
                 output = self.__recursive_run(input, config, callback=callback)
             else:
                 if type(item['value']) in [int, float]: # Numeric
+                    # modificator
+                    modi = self.get_config('modificator')
+                    minimal_modi = item['value']*0.01
+            
                     # Step 1 -> Base value
                     output = self.__recursive_run(input, config, callback=callback) 
                     results = results + ([output] if type(output) == Output else output)
@@ -95,6 +98,13 @@ class WrapIterativeGridSearch(StepWrapper):
                                 continue
                             
                             value = current_iteration['value'] + current_iteration['modificator']
+                            
+                            if isinstance(item['value'], int):
+                                value = int(value)
+                                
+                            if value == item['value']:
+                                current_iteration['stop'] = True
+                                continue
                             
                             # RUN
                             self.step.configure_one(0, key, value)
@@ -147,6 +157,7 @@ class WrapIterativeGridSearch(StepWrapper):
                         values = [item['value']]
                     
                     for value in values:
+                        print("->", self.step, key, value)
                         self.step.configure_one(0, key, value)
                         output = self.__recursive_run(input, config, callback=callback) 
                         results = results + ([output] if type(output) == Output else output)
