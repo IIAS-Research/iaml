@@ -26,6 +26,15 @@ class AutoMed:
     def load_pipe(self, pipe):
         pass
     
+    def autosklearn_load(self, time=30):
+        self.first_step = MetaOrderedStep()   
+        self.first_step.add_step(RandomSplit()) 
+        
+        sklearn = ActAutoSKLearn()
+        sklearn.configure_one(0, 'running_time', time)
+        
+        self.first_step.add_step(sklearn) 
+    
     def debug_load(self, only=None):
         if only:
             self.first_step = MetaOrderedStep()

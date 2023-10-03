@@ -67,7 +67,7 @@ job:perfs:compute:
     - 'source /home/gitlab-runner/.automl_venv/bin/activate'
     - 'if [ -e "./python_project/src/perf_logger/tests_data/history.log" ]; then rm ./python_project/src/perf_logger/tests_data/history.log ;fi'
     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then cp /home/gitlab-runner/automl_history.log ./python_project/src/perf_logger/tests_data/history.log ;fi'
-    - 'python3 python_project/src/perf_logger/perf_logger.py $CI_COMMIT_SHA' # Compute perfs
+    - 'python3 python_project/src/perf_logger/perf_logger.py $CI_COMMIT_REF_SLUG' # Compute perfs
     - 'if [ -e "/home/gitlab-runner/automl_history.log.old" ]; then rm /home/gitlab-runner/automl_history.log.old ;fi'
     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then mv /home/gitlab-runner/automl_history.log /home/gitlab-runner/automl_history.log.old ;fi'
     - 'cp ./python_project/src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_history.log'
