@@ -24,7 +24,7 @@ class ActSVM(Actionable):
             'class_weight': {
                 'description': 'Can be set on "balenced" to improve results on unbalenced data',
                 'default': None,
-                'categorical': [None, 'balenced']
+                'categorical': [None, {'balanced'}]
             }
         }]
         
