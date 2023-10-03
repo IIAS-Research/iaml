@@ -15,7 +15,7 @@ class Output:
         
     def to_output(self, dataset:Dataset=None, metric=None, model=None):
         return Output(
-            (dataset or self.dataset or Dataset()).copy(),
+            (dataset or self.dataset or Dataset()),
             metric or self.metric,
             model or self.model)
         

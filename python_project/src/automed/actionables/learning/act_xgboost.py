@@ -10,7 +10,8 @@ class ActXGBoost(Actionable):
         self.configurations = [{
             'max_depth': {
                 'description': 'Max depth of each tree',
-                'default': 15
+                'default': 15,
+                'range': [1, float('inf')]
             },
             'random_state': {
                 'description': 'random_state',
@@ -18,7 +19,8 @@ class ActXGBoost(Actionable):
             },
             'learning_rate': {
                 'description': 'Learning rate',
-                'default': 1.0
+                'default': 1.0,
+                'range': [1, float('inf')]
             },
             'n_estimators': {
                 'description': 'Number of estimators',

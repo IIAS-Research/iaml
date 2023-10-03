@@ -11,7 +11,8 @@ class ActRandomForest(Actionable):
         self.configurations = [{
             'max_depth': {
                 'description': 'Max depth of each tree',
-                'default': 15
+                'default': 15,
+                'range': [1, float('inf')]
             },
             'random_state': {
                 'description': 'random_state',
