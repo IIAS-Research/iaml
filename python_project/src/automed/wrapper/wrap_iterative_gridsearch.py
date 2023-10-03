@@ -107,7 +107,7 @@ class WrapIterativeGridSearch(StepWrapper):
                                 continue
                             
                             # Check range
-                            if ('range' in item.keys()) and not(item['range'][0] <= value <= item['range']):
+                            if ('range' in item.keys()) and not(item['range'][0] <= value <= item['range'][1]):
                                 current_iteration['stop'] = True
                                 continue
                                 
