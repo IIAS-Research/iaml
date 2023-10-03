@@ -11,7 +11,7 @@ class ActSVM(Actionable):
             'kernel': {
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
-                'categorical': ['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']
+                'categorical': ['linear', 'poly', 'rbf', 'sigmoid']
             },
             'random_state': {
                 'description': 'random_state',
