@@ -11,6 +11,7 @@ sys.path.insert(0, current_path+"/../")
 from automed import *
 
 commit_id = sys.argv[1]
+time = int(datetime.now().timestamp())
 
 files = glob.glob(current_path+"/tests_data/*.csv")
 
@@ -43,14 +44,16 @@ for file in files:
         if tmp > max_result:
             max_result = tmp
     
-    new_record = pd.DataFrame([[commit_id, datetime.today().strftime('%Y-%m-%d %Hh'), filename, max_result]], columns=results.columns)
+    new_record = pd.DataFrame([[commit_id, str(time), filename, max_result]], columns=results.columns)
     results = pd.concat([new_record, results], ignore_index=True)
     
 results.to_csv(history_path, index=False)
     
 # Create graph
-df_plot = results.pivot_table(index='commit_id', columns='dataset_name', values='perf')
-plot = sns.lineplot(data=df_plot)
+# df_plot = results.pivot_table(index='commit_id', columns='dataset_name', values='perf')
+# plot = sns.lineplot(data=df_plot)
+df_plot = results.sort_values(by=['date'])
+plot = sns.lineplot(data=df_plot, x="commit_id", y="perf", hue="dataset_name")
 sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
 plot.set(ylim = (.5,1))
 fig = plot.get_figure()
