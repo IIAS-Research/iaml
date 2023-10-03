@@ -7,6 +7,7 @@ credentials.yml
 # Data & log
 */data/*
 *.log
+!autosklearn_perf.log
 src/scripts/VVe__CoagIA__training_with_choices/data
 src/scripts/VVe__CoagIA__training_with_choices/saved_results
 notebooks/temp-plot.html
