@@ -3,3 +3,10 @@
 Performance are computed for each new version of the package.
 
 ![Perf_graph](../perf_fig.png)
+
+
+## AutoSKLearn
+Here is the performance of AutoSKLearn on the same datasets. Running for 30s, 1m, 5m and 20 minutes.
+
+
+![Perf_graph_autosklearn](../autosklearn_perf_fig.png)
