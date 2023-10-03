@@ -21,12 +21,9 @@ class WrapBasicGridSearch(StepWrapper):
                     continue
                 
                 
-                if 'categorial' in item.keys(): # Categorial 
-                    to_explore[key] = item['categorial']
+                if 'categorical' in item.keys(): # Categorial 
+                    to_explore[key] = item['categorical']
                 elif type(item['value']) in [int, float]: # Numeric
-                    print("---------------")
-                    print(key)
-                    print(item)
                     current_value = item['value']
                     tmp = map(lambda x: x*current_value, [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
                     
@@ -47,7 +44,6 @@ class WrapBasicGridSearch(StepWrapper):
                     
         self.step.keep_only_first_config() # Avoid run several config for each run
                     
-        print("->", to_explore)
         outputs = self.__recursive_run(input, to_explore, callback=callback)
         
         return outputs
