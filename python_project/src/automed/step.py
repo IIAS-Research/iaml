@@ -165,6 +165,7 @@ def runner(func):
         result:list[Output] = []
         for current in self.configurations:
             self.current_configuration = current
+            print("RUN !", self, self.resume_configuration())
             for input in inputs:
                 output = func(self, input, callback=callback, *args, **kw)
                 result = result + ([output] if type(output) == Output else output)
