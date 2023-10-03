@@ -25,34 +25,31 @@ else:
     results = pd.read_csv(history_path)
 
 # files = [files[2]]
-# for file in files:
-#     filename = file.split('/')[-1]
-#     print('FILE :', filename)
-#     df = pd.read_csv(file, sep=";")
-#     if len(df.columns) < 2:
-#         df = pd.read_csv(file, sep=",")
+for file in files:
+    filename = file.split('/')[-1]
+    print('FILE :', filename)
+    df = pd.read_csv(file, sep=";")
+    if len(df.columns) < 2:
+        df = pd.read_csv(file, sep=",")
         
-#     auto = AutoMed(Dataset(df))
-#     auto.dataset.set_label('label') 
-#     auto.debug_load()
-#     auto.run()
+    auto = AutoMed(Dataset(df))
+    auto.dataset.set_label('label') 
+    auto.debug_load()
+    auto.run()
     
-#     # Find best result
-#     max_result = 0
-#     for output in auto.output:
-#         tmp = output.metric.compute(output)
-#         if tmp > max_result:
-#             max_result = tmp
+    # Find best result
+    max_result = 0
+    for output in auto.output:
+        tmp = output.metric.compute(output)
+        if tmp > max_result:
+            max_result = tmp
     
-#     new_record = pd.DataFrame([[commit_id, str(time), filename, max_result]], columns=results.columns)
-#     results = pd.concat([new_record, results], ignore_index=True)
+    new_record = pd.DataFrame([[commit_id, str(time), filename, max_result]], columns=results.columns)
+    results = pd.concat([new_record, results], ignore_index=True)
     
-# results.to_csv(history_path, index=False)
+results.to_csv(history_path, index=False)
     
 # Create graph
-# df_plot = results.pivot_table(index='commit_id', columns='dataset_name', values='perf')
-# plot = sns.lineplot(data=df_plot)
-# df_plot = results.sort_values(by=['date'])
 df_plot = results.iloc[::-1]
 plot = sns.lineplot(data=df_plot, x="commit_id", y="perf", hue="dataset_name")
 sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
