@@ -23,6 +23,8 @@ else:
 
 
 for file in files:
+    filename = file.split('/')[-1]
+    print('FILE :', filename)
     df = pd.read_csv(file, sep=";")
     if len(df.columns) < 2:
         df = pd.read_csv(file, sep=",")
@@ -39,7 +41,6 @@ for file in files:
         if tmp > max_result:
             max_result = tmp
     
-    filename = file.split('/')[-1]
     new_record = pd.DataFrame([[datetime.today().strftime('%Y-%m-%d %Hh'), filename, max_result]], columns=results.columns)
     results = pd.concat([new_record, results], ignore_index=True)
     

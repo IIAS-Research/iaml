@@ -55,6 +55,11 @@ class AutoMed:
     def run(self, callback=None):
         copied_input = self.input.to_output() # Avoid input to be edited by steps
         self.output = self.first_step.run(copied_input, callback=callback)
+        
+        # Order ouputs 
+        self.output.sort(key=lambda output: output.metric.compute(output), reverse=True)
+        
+        
         return self.output
     
     

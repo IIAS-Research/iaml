@@ -28,7 +28,6 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         
         # Find features with above-threshold correlation
         to_drop = [column for column in upper.columns if any(upper[column] >= self.get_config('threshold'))]
-        print('to_drop : ', to_drop)
         
         # Remove these highly correlated features
         input.dataset.apply(transform, to_drop=to_drop)

@@ -30,7 +30,6 @@ class ActOnehot(Actionable):
             transformed = encoder.transform(x[column].to_numpy().reshape(-1, 1))
             ohe_df = pd.DataFrame(transformed, columns=encoder.get_feature_names_out([column]))
             x = pd.concat([x, ohe_df], axis=1).drop([column], axis=1)
-            print("====>", x.columns)
             return x, y
             
         for column, values in input.dataset.X_train.items():

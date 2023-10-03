@@ -40,7 +40,7 @@ class MetaStep(Step):
             for index, step in enumerate(steps_to_run[1:]):
                 current_eval = step.priorize(current_input)
                 if current_eval > max_eval:
-                    max_eval = current_eval
+                    max_eval = current_eval 
                     max_index = index+1
             
             current_input = steps_to_run[max_index].run(current_input, callback=callback)

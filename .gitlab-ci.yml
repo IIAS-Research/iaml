@@ -60,12 +60,15 @@ job:build:pythonEnv:
 
 job:perfs:compute:
   stage: perfs
+  timeout: 4h
   tags:
     - unix
   script:
     - 'source /home/gitlab-runner/.automl_venv/bin/activate'
-    - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then mv /home/gitlab-runner/automl_history.log ./python_project/src/perf_logger/tests_data/history.log ;fi'
+    - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then cp /home/gitlab-runner/automl_history.log ./python_project/src/perf_logger/tests_data/history.log ;fi'
     - 'python3 python_project/src/perf_logger/perf_logger.py' # Compute perfs
+    - 'if [ -e "/home/gitlab-runner/automl_history.log.old" ]; then rm /home/gitlab-runner/automl_history.log.old ;fi'
+    - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then mv /home/gitlab-runner/automl_history.log /home/gitlab-runner/automl_history.log.old ;fi'
     - 'mv ./python_project/src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_history.log'
   artifacts:
     expose_as: 'Compute performances of AutoMed'
