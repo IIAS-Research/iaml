@@ -15,7 +15,8 @@ class ActKNN(Actionable):
             },
             'n_neighbors': {
                 'description': 'Number of neighbors',
-                'default': 5
+                'default': 5,
+                'range': [1, float('inf')]
             }
         }]
         

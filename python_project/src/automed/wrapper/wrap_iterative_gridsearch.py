@@ -106,6 +106,12 @@ class WrapIterativeGridSearch(StepWrapper):
                                 current_iteration['stop'] = True
                                 continue
                             
+                            # Check range
+                            if ('range' in item.keys()) and not(item['range'][0] <= value <= item['range']):
+                                current_iteration['stop'] = True
+                                continue
+                                
+                                    
                             # RUN
                             self.step.configure_one(0, key, value)
                             output = self.__recursive_run(input, config, callback=callback) 
