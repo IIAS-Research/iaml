@@ -19,7 +19,7 @@ class WrapIterativeGridSearch(StepWrapper):
             },
             'patience': {
                 'description': 'Stop iterations after N tries without improvements',
-                'default': 5
+                'default': 3
             }
         }]
         self.step = step
@@ -50,7 +50,7 @@ class WrapIterativeGridSearch(StepWrapper):
         
         return results
     
-    
+    # TODO refaire tout ça mais avec un objet iteration, ce sera plus clair et maintenable
     def __recursive_run(self, input, config, callback=None):
         if any(list(config.keys())): # Any thing to explore ?
             key = list(config.keys())[0] # Pick a key
@@ -79,13 +79,23 @@ class WrapIterativeGridSearch(StepWrapper):
                         {
                             'value': item['value'],
                             'result': max_result,
+                            'best': {
+                                'prev_value': item['value'], 
+                                'value': item['value'],
+                                'result': max_result
+                            },
                             'modificator': item['value'] * modi,
                             'patience': 0,
-                            'stop': False 
+                            'stop': False
                         },
                         {
                             'value': item['value'],
                             'result': max_result,
+                            'best': {
+                                'prev_value': item['value'], 
+                                'value': item['value'],
+                                'result': max_result
+                            },
                             'modificator': item['value'] * (modi * -1),
                             'patience': 0,
                             'stop': False
@@ -97,18 +107,52 @@ class WrapIterativeGridSearch(StepWrapper):
                             if current_iteration['stop']:
                                 continue
                             
+                            if current_iteration['patience'] < self.get_config('patience'):
+                                if current_iteration['best']['value'] >= very_max_value:
+                                    # Create new iterations
+                                    middle = min([current_iteration['best']['value'], current_iteration['best']['prev_value']]) + abs(current_iteration['best']['value'] - current_iteration['best']['prev_value'])/2
+                                    new_modificator = abs(current_iteration['value'] - current_iteration['best']['prev_value']) * modi
+                                    if new_modificator < minimal_modi:
+                                        continue
+                                    
+                                    current_iterations.append({
+                                        'value': middle,
+                                        'result': -1,
+                                        'best': {
+                                            'prev_value': -1, 
+                                            'value': middle,
+                                            'result': -1
+                                        },
+                                        'modificator': new_modificator,
+                                        'patience': 0,
+                                        'stop': False
+                                    })
+                                    current_iterations.append({
+                                        'value': middle,
+                                        'result': current_iteration['result'],
+                                        'best': {
+                                            'prev_value': -1, 
+                                            'value': middle,
+                                            'result': -1
+                                        },
+                                        'modificator': new_modificator * -1,
+                                        'patience': 0,
+                                        'stop': False
+                                    })
+                                continue
+                            
                             value = current_iteration['value'] + current_iteration['modificator']
                             
                             if isinstance(item['value'], int):
                                 value = int(value)
                                 
                             if value == item['value']:
-                                current_iteration['stop'] = True
+                                current_iteration['patience'] = current_iteration['patience'] + 1
                                 continue
                             
                             # Check range
                             if ('range' in item.keys()) and not(item['range'][0] <= value <= item['range'][1]):
-                                current_iteration['stop'] = True
+                                current_iteration['patience'] = current_iteration['patience'] + 1
                                 continue
                                 
                                     
@@ -118,34 +162,18 @@ class WrapIterativeGridSearch(StepWrapper):
                             results = results + ([output] if type(output) == Output else output)
                             max_result = self.__find_best(output)
                             
-                            if max_result < current_iteration['result']:
-                                current_iteration['stop'] = True
-                                if current_iteration['value'] >= very_max_value:
-                                    change = True
-                                    # Create new iterations
-                                    middle = min([current_iteration['value'], value]) + abs(current_iteration['value'] - value)/2
-                                    new_modificator = abs(current_iteration['value'] - value) * modi
-                                    if new_modificator < minimal_modi:
-                                        continue
-                                    
-                                    current_iterations.append({
-                                        'value': middle,
-                                        'result': current_iteration['result'],
-                                        'modificator': new_modificator,
-                                        'patience': 0,
-                                        'stop': False
-                                    })
-                                    current_iterations.append({
-                                        'value': middle,
-                                        'result': current_iteration['result'],
-                                        'modificator': new_modificator * -1,
-                                        'patience': 0,
-                                        'stop': False
-                                    })
+                            change = True
+                            
+                            if max_result <= current_iteration['best']['result']:
+                                current_iteration['patience'] = current_iteration['patience'] + 1
                             else:
-                                change = True     
+                                # change = True     
                                 if max_result >= very_max_value:
                                     very_max_value = max_result
+                                
+                                current_iteration['best']['prev_value'] = current_iteration['value']
+                                current_iteration['best']['result'] = max_result
+                                current_iteration['best']['value'] = value
                         
                             current_iteration['result'] = max_result
                             current_iteration['value'] = value
@@ -163,7 +191,7 @@ class WrapIterativeGridSearch(StepWrapper):
                         values = [item['value']]
                     
                     for value in values:
-                        print("->", self.step, key, value)
+                        print("MAJ ->", self.step, key, value)
                         self.step.configure_one(0, key, value)
                         output = self.__recursive_run(input, config, callback=callback) 
                         results = results + ([output] if type(output) == Output else output)
