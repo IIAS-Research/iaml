@@ -24,34 +24,34 @@ if not exists(history_path):
 else:
     results = pd.read_csv(history_path)
 
-# files = [files[2]]
-# for file in files:
-#     start_file = datetime.now()
-#     filename = file.split('/')[-1]
-#     print('FILE :', filename)
-#     df = pd.read_csv(file, sep=";")
-#     if len(df.columns) < 2:
-#         df = pd.read_csv(file, sep=",")
+files = [files[2]]
+for file in files:
+    start_file = datetime.now()
+    filename = file.split('/')[-1]
+    print('FILE :', filename)
+    df = pd.read_csv(file, sep=";")
+    if len(df.columns) < 2:
+        df = pd.read_csv(file, sep=",")
         
-#     auto = AutoMed(Dataset(df))
-#     auto.dataset.set_label('label') 
-#     auto.debug_load()
-#     auto.run()
+    auto = AutoMed(Dataset(df))
+    auto.dataset.set_label('label') 
+    auto.debug_load()
+    auto.run()
     
-#     end_file = datetime.now()
-#     compute_time = (end_file - start_file).seconds
+    end_file = datetime.now()
+    compute_time = (end_file - start_file).seconds
     
-#     # Find best result
-#     max_result = 0
-#     for output in auto.output:
-#         tmp = output.metric.compute(output)
-#         if tmp > max_result:
-#             max_result = tmp
+    # Find best result
+    max_result = 0
+    for output in auto.output:
+        tmp = output.metric.compute(output)
+        if tmp > max_result:
+            max_result = tmp
     
-#     new_record = pd.DataFrame([[commit_id, str(time), filename, max_result, compute_time]], columns=results.columns)
-#     results = pd.concat([new_record, results], ignore_index=True)
+    new_record = pd.DataFrame([[commit_id, str(time), filename, max_result, compute_time]], columns=results.columns)
+    results = pd.concat([new_record, results], ignore_index=True)
     
-# results.to_csv(history_path, index=False)
+results.to_csv(history_path, index=False)
     
 # # Create graph
 df_plot = results.iloc[::-1]
