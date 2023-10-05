@@ -8,11 +8,12 @@ class Step:
     configurations = [{}]
     current_configuration = []
     name = "Step"
+    caches = []
     
     input:Output = Output(None, None, None)
     
     def __init__(self, input:Output = Output(None, None, None)):
-    
+        self.caches = []
         self.default_configurations()
         self.input = input
         
@@ -84,6 +85,20 @@ class Step:
                 
     def keep_only_first_config(self):
         self.configurations = [self.configurations[0]]
+        
+    # TODO Valider que le système de cache fonctionne
+    def from_cache(self, input):
+        for cache in self.caches:
+            if same_types(self.current_configuration, cache['config']) and input == cache['input']:
+                return cache['output']
+        return False
+    
+    def add_cache(self, input, output):
+        return self.caches.append({
+            'input': input,
+            'config': self.resume_configuration,
+            'output': output
+        })
     
     
     ############
@@ -166,7 +181,9 @@ def runner(func):
             self.current_configuration = current
             print("# RUN #", self, self.resume_configuration())
             for input in inputs:
+                # if self.from_cache(input):
                 output = func(self, input, callback=callback, *args, **kw)
+                # self.add_cache(input, output)
                 result = result + ([output] if type(output) == Output else output)
 
         self.output = result        
@@ -177,4 +194,13 @@ def runner(func):
     return runner_wrapper
 
 
-    
+## Other methodes
+def same_types(a, b):
+    if len(a) != len(b):
+        return False
+    for key, value in a.items():
+        if key not in b or type(value) != type(b[key]):
+            return False
+        if isinstance(value, dict):
+            return same_types(value, b[key])
+    return True
