@@ -6,8 +6,9 @@ from sklearn.datasets import make_classification
 @isStep('learning', 'tabular')
 @assessable
 class ActRandomForest(Actionable):
-    name = "Learn : Random Forest"
+    name = "Learn : Random Forest" 
     def __init__(self):
+        # TODO Pas de nombre d'arbres ?!
         self.configurations = [{
             'max_depth': {
                 'description': 'Max depth of each tree',

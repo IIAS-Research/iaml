@@ -41,7 +41,6 @@ class Step:
     # Each parameters have a name, a description and a default value. Default value can be fixed or computed based on dataset
     
     def configure_one(self, config_id, key, value):
-        print("=>", self.configurations[config_id].keys())
         if key in self.configurations[config_id].keys():
             self.configurations[config_id][key]['value'] = value
         else:
@@ -165,7 +164,7 @@ def runner(func):
         result:list[Output] = []
         for current in self.configurations:
             self.current_configuration = current
-            print("RUN !", self, self.resume_configuration())
+            print("# RUN #", self, self.resume_configuration())
             for input in inputs:
                 output = func(self, input, callback=callback, *args, **kw)
                 result = result + ([output] if type(output) == Output else output)

@@ -25,7 +25,7 @@ class ActAutoSKLearn(Actionable):
             memory_limit = 102400)
         
         model.fit(dataset.X_train, dataset.y_train)
-        print("PERFECT FINISH")
+        # print("PERFECT FINISH")
         return input.to_output(None, metric, model)
 
         

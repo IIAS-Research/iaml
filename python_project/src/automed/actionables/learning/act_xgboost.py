@@ -20,7 +20,7 @@ class ActXGBoost(Actionable):
             'learning_rate': {
                 'description': 'Learning rate',
                 'default': 1.0,
-                'range': [1, float('inf')]
+                'range': [0.000000001, float('inf')]
             },
             'n_estimators': {
                 'description': 'Number of estimators',

@@ -45,169 +45,245 @@ class WrapIterativeGridSearch(StepWrapper):
         configs = deepcopy(self.step.configurations)
         self.step.keep_only_first_config() # Avoid run several config for each run
         for config in configs:
-            output = self.__recursive_run(input, config, callback=callback)
+            
+            # Avoid useless config
+            for item in self.to_avoid:
+                if item in config.keys():
+                    del config[item]
+                    
+            gi = GridIteration(self.step, self.get_config('modificator'), copy_config=config, patience=self.get_config('patience'))
+            output, _ = gi.run(input, callback=callback)
             results = results + ([output] if type(output) == Output else output)
         
         return results
     
-    # TODO refaire tout ça mais avec un objet iteration, ce sera plus clair et maintenable
-    def __recursive_run(self, input, config, callback=None):
-        if any(list(config.keys())): # Any thing to explore ?
-            key = list(config.keys())[0] # Pick a key
-            item = config[key] # Item to explore
-            del config[key] # Remove for next explorations
+    
+# TODO -> Comment faire pour gérer les sibling de la premiere GridIteration  
+    
+class GridIteration:
+    def __init__(self, step, modificator_rate, value_range=None, patience=5, copy_config=None, key=None, value=None, max_iterations=10, number_of_results=10, minimal_range_diff=None):
+        self.step = step
+        self.modificator_rate = modificator_rate
+        self.patience = patience
+        
+        self.config = (copy_config or deepcopy(step.configurations[0]))
+        
+        if key:
+            self.key = key
+        elif any(self.config.keys()):
+            self.key = list(self.config.keys())[0]
+        else:
+            self.key = None
+        
+        self.max_iterations=max_iterations
+        self.count_iterations = -1
+        self.iterations_without_improvement = 0
+        self.children = []
+        self.ways = []
+        
+        if self.key:
+            self.value = (value or self.config[self.key]['value'])
+        
+            self.modificator = None
+            self.minimal_range_diff = None
+            if minimal_range_diff:
+                self.minimal_range_diff = minimal_range_diff
             
-            results = []
-            
-            if key in self.to_avoid: # Nothing to explore here, continue
-                output = self.__recursive_run(input, config, callback=callback)
-            else:
-                if type(item['value']) in [int, float]: # Numeric
-                    # modificator
-                    modi = self.get_config('modificator')
-                    minimal_modi = item['value']*0.01
-            
-                    # Step 1 -> Base value
-                    output = self.__recursive_run(input, config, callback=callback) 
-                    results = results + ([output] if type(output) == Output else output)
-                    max_result = self.__find_best(output)
-                    very_max_value = max_result
-                    
-                    
-                    # Step 2 -> Explore
-                    current_iterations = [
-                        {
-                            'value': item['value'],
-                            'result': max_result,
-                            'best': {
-                                'prev_value': item['value'], 
-                                'value': item['value'],
-                                'result': max_result
-                            },
-                            'modificator': item['value'] * modi,
-                            'patience': 0,
-                            'stop': False
-                        },
-                        {
-                            'value': item['value'],
-                            'result': max_result,
-                            'best': {
-                                'prev_value': item['value'], 
-                                'value': item['value'],
-                                'result': max_result
-                            },
-                            'modificator': item['value'] * (modi * -1),
-                            'patience': 0,
-                            'stop': False
-                        },]
-                    
-                    for i in range(0, self.get_config('max_iterations')):
-                        change = False
-                        for current_iteration in current_iterations:
-                            if current_iteration['stop']:
-                                continue
-                            
-                            if current_iteration['patience'] < self.get_config('patience'):
-                                if current_iteration['best']['value'] >= very_max_value:
-                                    # Create new iterations
-                                    middle = min([current_iteration['best']['value'], current_iteration['best']['prev_value']]) + abs(current_iteration['best']['value'] - current_iteration['best']['prev_value'])/2
-                                    new_modificator = abs(current_iteration['value'] - current_iteration['best']['prev_value']) * modi
-                                    if new_modificator < minimal_modi:
-                                        continue
-                                    
-                                    current_iterations.append({
-                                        'value': middle,
-                                        'result': -1,
-                                        'best': {
-                                            'prev_value': -1, 
-                                            'value': middle,
-                                            'result': -1
-                                        },
-                                        'modificator': new_modificator,
-                                        'patience': 0,
-                                        'stop': False
-                                    })
-                                    current_iterations.append({
-                                        'value': middle,
-                                        'result': current_iteration['result'],
-                                        'best': {
-                                            'prev_value': -1, 
-                                            'value': middle,
-                                            'result': -1
-                                        },
-                                        'modificator': new_modificator * -1,
-                                        'patience': 0,
-                                        'stop': False
-                                    })
-                                continue
-                            
-                            value = current_iteration['value'] + current_iteration['modificator']
-                            
-                            if isinstance(item['value'], int):
-                                value = int(value)
-                                
-                            if value == item['value']:
-                                current_iteration['patience'] = current_iteration['patience'] + 1
-                                continue
-                            
-                            # Check range
-                            if ('range' in item.keys()) and not(item['range'][0] <= value <= item['range'][1]):
-                                current_iteration['patience'] = current_iteration['patience'] + 1
-                                continue
-                                
-                                    
-                            # RUN
-                            self.step.configure_one(0, key, value)
-                            output = self.__recursive_run(input, config, callback=callback) 
-                            results = results + ([output] if type(output) == Output else output)
-                            max_result = self.__find_best(output)
-                            
-                            change = True
-                            
-                            if max_result <= current_iteration['best']['result']:
-                                current_iteration['patience'] = current_iteration['patience'] + 1
-                            else:
-                                # change = True     
-                                if max_result >= very_max_value:
-                                    very_max_value = max_result
-                                
-                                current_iteration['best']['prev_value'] = current_iteration['value']
-                                current_iteration['best']['result'] = max_result
-                                current_iteration['best']['value'] = value
-                        
-                            current_iteration['result'] = max_result
-                            current_iteration['value'] = value
-                        
-                        if not change:
-                            break
-            
-                    
+            # Type
+            self.can_generate_sibling = False
+            if type(self.value) in [int, float]:
+                self.can_generate_sibling = True
+                if value_range:
+                    # print("RANGE ! ", value_range, (value_range[0]-value_range[1])/2 * modificator_rate)
+                    self.modificator = (value_range[0]-value_range[1])/2 * modificator_rate
                 else:
-                    if 'categorical' in item.keys(): # Categorial 
-                        values = item['categorical']
-                    elif type(item['value']) == bool: # Bool
-                        values = [True, False]
-                    else: # Other 
-                        values = [item['value']]
+                    self.modificator = self.value * self.modificator_rate
                     
-                    for value in values:
-                        print("MAJ ->", self.step, key, value)
-                        self.step.configure_one(0, key, value)
-                        output = self.__recursive_run(input, config, callback=callback) 
-                        results = results + ([output] if type(output) == Output else output)
+                for way_ind, way in enumerate([1, -1]):
+                    way_values = [self.value+(self.modificator*ind*way) for ind in range(way_ind, self.max_iterations)]
+                    if type(self.value) == int:
+                        way_values = map(lambda v: round(v), way_values)
+                        
+                    if ('range' in self.config[self.key]) or value_range:
+                        limits = value_range or self.config[self.key]['range']
+                        way_values = filter(lambda x: limits[0] <= x <= limits[1], way_values)
                     
-            return results
-        else: # Nothing to explore -> RUN
-            return self.step.run(input, callback=callback)
+                    self.ways.append(list(way_values))
                 
+                self.__next_way()
+                
+                if not self.minimal_range_diff:
+                    self.minimal_range_diff = self.modificator * 0.1 # TODO improve this
+                
+            elif 'categorical' in self.config[self.key].keys(): # Categorial 
+                self.values = self.config[self.key]['categorical']
+            elif type(self.value) == bool: # Bool
+                self.values = [True, False]
+            else: # Other 
+                self.values = [self.value]
+                
+            self.outputs = []
+            self.results = []
+            self.number_of_results = number_of_results
+            self.n_bests = [-1]*number_of_results
+        
+        
+        
+    def done(self):
+        return (self.iterations_without_improvement >= self.patience) or (self.count_iterations >= self.max_iterations) or (len(self.values)-1 < self.count_iterations)
+    
+    def go_deeper(self):
+        return len(self.config.keys()) > 1
+        
+    def __generate_child(self):
+        child_config = deepcopy(self.config)
+        del child_config[self.key]
+        
+        self.children.append(self.__class__(
+            self.step,
+            self.modificator_rate,
+            patience=self.patience,
+            copy_config=child_config))
+        
+    def __get_best_range(self):
+        if len(self.results) < 2:
+            return None, None
+        
+        max_index = -1
+        max_value = -1
+        
+        for index, result in enumerate(self.results):
+            if result['result'] > max_value:
+                max_value = result['result']
+                max_index = index
+        
+        around = self.results[max(0, max_index-1):(max_index+2)]
+        around = sorted(around, key=lambda x: x['result'])
+        return around[-2]['value'], around[-1]['value']
+        
+        
+        
+    def __generate_siblings(self):
+        if not self.can_generate_sibling:
+            return []
+        
+        mini, maxi = self.__get_best_range()
+        
+        if maxi == None or maxi == None:
+            return []
+        
+        range = [mini, maxi]
+        middle = mini+(mini-maxi)/2
+        
+        print(mini, maxi, middle)
+        
+        if self.minimal_range_diff <= (mini-maxi):
+            return []
+        
+        if type(maxi) == int:
+            if (mini-maxi) <= 1:
+                return []
             
+            middle = round(middle)
         
-    def __find_best(self, outputs):
-        # Find best result
-        max_result = 0
-        for output in outputs:
-            tmp = output.metric.compute(output)
-            if tmp > max_result:
-                max_result = tmp
+        # TODO parameters
+        prev = self.__class__(
+            self.step,
+            self.modificator_rate,
+            value=middle,
+            value_range=range,
+            patience=self.patience,
+            copy_config=self.config,
+            key=self.key)
         
-        return max_result
+        next = self.__class__(
+            self.step,
+            self.modificator_rate,
+            value=middle,
+            value_range=range,
+            patience=self.patience,
+            copy_config=self.config,
+            key=self.key)
+        
+        return [prev, next]
+    
+    def __next_way(self):
+        if any(self.ways):
+            self.values = self.ways.pop(0)
+            self.count_iterations = 0
+            self.iterations_without_improvement = 0
+        
+    def next_iteration(self):
+        self.count_iterations = self.count_iterations + 1
+        if self.done():
+            self.__next_way()
+    
+    def current_value(self):
+        return self.values[self.count_iterations]
+    
+    # TODO
+    def __stack_results(self, results):
+        if not any(results):
+            return None
+        
+        
+        best_val, best_index = (0, 0)
+        for index, result in enumerate(results):
+            current_val = result.metric.compute(result)
+            if current_val > best_val:
+                best_index = index
+                best_val = current_val
+        
+        self.results.append({'value': self.current_value(), 'result': best_val})
+        # print("Result", best_val)
+        
+        
+        if best_val <= self.n_bests[-1]:
+            self.iterations_without_improvement = self.iterations_without_improvement + 1
+            print('Iteration without improvement', self.iterations_without_improvement, best_val)
+        else:
+            print('IMPROVED !', best_val, ' > ', self.n_bests[-1], best_val > self.n_bests[-1] )
+            self.iterations_without_improvement = 0
+        
+        if best_val > self.n_bests[0]:
+            # To keep X best (to finish)
+            self.n_bests.pop(0)
+            self.n_bests.append(best_val)
+            self.n_bests.sort()
+        
+        self.outputs = self.outputs + [results[best_index]]
+        
+        
+        
+    def run(self, input, callback=None):
+        # Run and Stack results
+        if not self.key:
+            # print("# RUN nk # ", self.step, self.step.resume_configuration())
+            return self.step.run(input, callback=callback), []
+        
+        while not self.done():
+            results = []
+            self.step.configure_one(0, self.key, self.current_value())
+            
+            if self.go_deeper():
+                self.__generate_child()
+                results = []
+                while self.children:
+                    child = self.children.pop(0)
+                    current_results, siblings = child.run(input, callback=callback)
+                    results = results + current_results
+                    
+                    if siblings:
+                        self.children = self.childrfen + siblings
+            else:
+                results = results + self.step.run(input, callback=callback)
+                # print("# RUN # ", self.step, self.step.resume_configuration())
+            
+            self.__stack_results(results)
+            self.next_iteration()
+            
+            
+        siblings = self.__generate_siblings()
+                
+        return self.outputs, siblings
+        
