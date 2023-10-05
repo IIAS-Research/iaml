@@ -80,6 +80,8 @@ class GridIteration:
         self.iterations_without_improvement = 0
         self.children = []
         self.ways = []
+        self.values = []
+        print('R', value_range)
         
         if self.key:
             self.value = (value or self.config[self.key]['value'])
@@ -102,13 +104,13 @@ class GridIteration:
                 for way_ind, way in enumerate([1, -1]):
                     way_values = [self.value+(self.modificator*ind*way) for ind in range(way_ind, self.max_iterations)]
                     if type(self.value) == int:
-                        way_values = map(lambda v: round(v), way_values)
+                        way_values = list(map(lambda v: round(v), way_values))
                         
                     if ('range' in self.config[self.key]) or value_range:
                         limits = value_range or self.config[self.key]['range']
-                        way_values = filter(lambda x: limits[0] <= x <= limits[1], way_values)
+                        way_values = list(filter(lambda x: (limits[0] < x < limits[1]), way_values))
                     
-                    self.ways.append(list(way_values))
+                    self.ways.append(way_values)
                 
                 self.__next_way()
                 
