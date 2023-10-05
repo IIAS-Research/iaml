@@ -274,7 +274,7 @@ class GridIteration:
                     results = results + current_results
                     
                     if siblings:
-                        self.children = self.childrfen + siblings
+                        self.children = self.children + siblings
             else:
                 results = results + self.step.run(input, callback=callback)
                 # print("# RUN # ", self.step, self.step.resume_configuration())
