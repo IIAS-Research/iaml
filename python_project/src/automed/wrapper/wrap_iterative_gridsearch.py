@@ -15,11 +15,11 @@ class WrapIterativeGridSearch(StepWrapper):
             },
             'max_iterations': {
                 'description': 'Maximum number of iterations',
-                'default': 20
+                'default': 10
             },
             'patience': {
                 'description': 'Stop iterations after N tries without improvements',
-                'default': 3
+                'default': 2
             }
         }]
         self.step = step

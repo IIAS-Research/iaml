@@ -60,7 +60,7 @@ job:build:pythonEnv:
 
 job:perfs:compute:
   stage: perfs
-  timeout: 4h
+  timeout: 8h
   tags:
     - unix
   script:
