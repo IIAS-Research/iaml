@@ -4,6 +4,9 @@ Performance are computed for each new version of the package.
 
 ![Perf_graph](../perf_fig.png)
 
+# Execution time
+
+![Perf_graph](../time_fig.png)
 
 ## AutoSKLearn
 

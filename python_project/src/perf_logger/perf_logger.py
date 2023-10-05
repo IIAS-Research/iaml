@@ -20,39 +20,50 @@ results = None
 if not exists(history_path):
     if not exists(current_path+"/tests_data/"):
         os.mkdir(current_path+"/tests_data/")
-    results = pd.DataFrame(columns=['commit_id', 'date', 'dataset_name','perf'])
+    results = pd.DataFrame(columns=['commit_id', 'date', 'dataset_name','perf', 'compute_time'])
 else:
     results = pd.read_csv(history_path)
 
 # files = [files[2]]
-for file in files:
-    filename = file.split('/')[-1]
-    print('FILE :', filename)
-    df = pd.read_csv(file, sep=";")
-    if len(df.columns) < 2:
-        df = pd.read_csv(file, sep=",")
+# for file in files:
+#     start_file = datetime.now()
+#     filename = file.split('/')[-1]
+#     print('FILE :', filename)
+#     df = pd.read_csv(file, sep=";")
+#     if len(df.columns) < 2:
+#         df = pd.read_csv(file, sep=",")
         
-    auto = AutoMed(Dataset(df))
-    auto.dataset.set_label('label') 
-    auto.debug_load()
-    auto.run()
+#     auto = AutoMed(Dataset(df))
+#     auto.dataset.set_label('label') 
+#     auto.debug_load()
+#     auto.run()
     
-    # Find best result
-    max_result = 0
-    for output in auto.output:
-        tmp = output.metric.compute(output)
-        if tmp > max_result:
-            max_result = tmp
+#     end_file = datetime.now()
+#     compute_time = (end_file - start_file).seconds
     
-    new_record = pd.DataFrame([[commit_id, str(time), filename, max_result]], columns=results.columns)
-    results = pd.concat([new_record, results], ignore_index=True)
+#     # Find best result
+#     max_result = 0
+#     for output in auto.output:
+#         tmp = output.metric.compute(output)
+#         if tmp > max_result:
+#             max_result = tmp
     
-results.to_csv(history_path, index=False)
+#     new_record = pd.DataFrame([[commit_id, str(time), filename, max_result, compute_time]], columns=results.columns)
+#     results = pd.concat([new_record, results], ignore_index=True)
     
-# Create graph
+# results.to_csv(history_path, index=False)
+    
+# # Create graph
 df_plot = results.iloc[::-1]
 plot = sns.lineplot(data=df_plot, x="commit_id", y="perf", hue="dataset_name")
 sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
 plot.set(ylim = (.5,1))
 fig = plot.get_figure()
 fig.savefig(current_path+"/../../../docs/perf_fig.png",dpi=300, bbox_inches = "tight") 
+
+# Create time graph
+plt.clf()
+plot = sns.lineplot(data=df_plot, x="commit_id", y="compute_time", hue="dataset_name")
+sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
+fig = plot.get_figure()
+fig.savefig(current_path+"/../../../docs/time_fig.png",dpi=300, bbox_inches = "tight") 
