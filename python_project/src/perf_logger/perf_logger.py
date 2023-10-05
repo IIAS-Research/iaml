@@ -24,7 +24,7 @@ if not exists(history_path):
 else:
     results = pd.read_csv(history_path)
 
-files = [files[2]]
+# files = [files[2]]
 for file in files:
     start_file = datetime.now()
     filename = file.split('/')[-1]
