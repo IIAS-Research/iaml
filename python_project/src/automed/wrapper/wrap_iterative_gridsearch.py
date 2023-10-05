@@ -164,24 +164,36 @@ class GridIteration:
         
         
     def __generate_siblings(self):
+        print('$ Trigger generate sibling')
         if not self.can_generate_sibling:
             return []
         
+        print('$ Can generate !')
+        
+        
         mini, maxi = self.__get_best_range()
+        
+        print('$ range', mini, maxi)
+        
         
         if maxi == None or maxi == None:
             return []
         
         range = [mini, maxi]
-        middle = mini+(mini-maxi)/2
+        middle = mini+(maxi-mini)/2
         
-        print(mini, maxi, middle)
+        print("$", mini, maxi, middle)
         
-        if self.minimal_range_diff <= (mini-maxi):
+        print("$ minimal_range_diff", self.minimal_range_diff)
+        print("$ range_diff", maxi-mini)
+        
+        if self.minimal_range_diff >= (maxi-mini):
             return []
         
+        
+        
         if type(maxi) == int:
-            if (mini-maxi) <= 1:
+            if (maxi-mini) <= 1:
                 return []
             
             middle = round(middle)
