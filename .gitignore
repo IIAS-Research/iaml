@@ -12,6 +12,7 @@ src/scripts/VVe__CoagIA__training_with_choices/data
 src/scripts/VVe__CoagIA__training_with_choices/saved_results
 notebooks/temp-plot.html
 */perf_fig.png
+*/time_fig.png
 
 # Python
 __pycache__
