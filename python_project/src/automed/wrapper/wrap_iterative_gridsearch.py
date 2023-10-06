@@ -55,6 +55,7 @@ class WrapIterativeGridSearch(StepWrapper):
             output, _ = gi.run(input, callback=callback)
             results = results + ([output] if type(output) == Output else output)
         
+        self.step.reset_cache()
         return results
     
     
