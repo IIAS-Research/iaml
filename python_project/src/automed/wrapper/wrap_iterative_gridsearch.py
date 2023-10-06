@@ -3,7 +3,7 @@ from ..output import *
 
 from copy import deepcopy
 
-
+# Wrapper : Implementation of an interative GridSearch
 @isStep('wrapper')
 class WrapIterativeGridSearch(StepWrapper):
     name = "Wrap : Iterative GridSearch"
@@ -19,7 +19,7 @@ class WrapIterativeGridSearch(StepWrapper):
             },
             'patience': {
                 'description': 'Stop iterations after N tries without improvements',
-                'default': 2
+                'default': 3
             }
         }]
         self.step = step
@@ -62,7 +62,7 @@ class WrapIterativeGridSearch(StepWrapper):
 # TODO -> Comment faire pour gérer les sibling de la premiere GridIteration  
     
 class GridIteration:
-    def __init__(self, step, modificator_rate, value_range=None, patience=5, copy_config=None, key=None, value=None, max_iterations=10, number_of_results=10, minimal_range_diff=None):
+    def __init__(self, step, modificator_rate, value_range=None, patience=5, copy_config=None, key=None, value=None, max_iterations=10, number_of_results=10, minimal_range_diff=None, best_result=-1):
         self.step = step
         self.modificator_rate = modificator_rate
         self.patience = patience
@@ -102,6 +102,7 @@ class GridIteration:
                 else:
                     self.modificator = self.value * self.modificator_rate
                     
+                # TODO -> When go down, you have only one iteration at 0,5. Find better
                 for way_ind, way in enumerate([1, -1]):
                     way_values = [self.value+(self.modificator*ind*way) for ind in range(way_ind, self.max_iterations)]
                     if type(self.value) == int:
@@ -129,6 +130,10 @@ class GridIteration:
             self.results = []
             self.number_of_results = number_of_results
             self.n_bests = [-1]*number_of_results
+            
+            if best_result:
+                self.n_bests.pop()
+                self.n_bests.append(best_result)
         
         
         
@@ -148,6 +153,7 @@ class GridIteration:
             patience=self.patience,
             copy_config=child_config))
         
+    # Get the best range using previous results. The best range will be the higher results + his highest neighbour.
     def __get_best_range(self):
         if len(self.results) < 2:
             return None, None
@@ -165,7 +171,8 @@ class GridIteration:
         return around[-2]['value'], around[-1]['value']
         
         
-        
+    # Generate siblings
+    # Siblings will be next iterator at the same level (same key, same step). They only explore the best range. 
     def __generate_siblings(self):
         if not self.can_generate_sibling:
             return []
@@ -188,16 +195,6 @@ class GridIteration:
             
             middle = round(middle)
         
-        # TODO parameters
-        prev = self.__class__(
-            self.step,
-            self.modificator_rate,
-            value=middle,
-            value_range=range,
-            patience=self.patience,
-            copy_config=self.config,
-            key=self.key)
-        
         next = self.__class__(
             self.step,
             self.modificator_rate,
@@ -205,25 +202,30 @@ class GridIteration:
             value_range=range,
             patience=self.patience,
             copy_config=self.config,
+            best_result = self.n_bests[-1],
             key=self.key)
         
-        return [prev, next]
+        return [next]
     
+    # Go to the next direction. 
+    # Iterator values will go up and then go down. 
     def __next_way(self):
         if any(self.ways):
             self.values = self.ways.pop(0)
             self.count_iterations = 0
             self.iterations_without_improvement = 0
         
+    # Go to the next iteration or the next way if current one is finished
     def next_iteration(self):
         self.count_iterations = self.count_iterations + 1
         if self.done():
             self.__next_way()
     
+    # Get current value
     def current_value(self):
         return self.values[self.count_iterations]
     
-    # TODO
+    # Stack, compute and save results
     def __stack_results(self, results):
         if not any(results):
             return None
@@ -237,8 +239,6 @@ class GridIteration:
                 best_val = current_val
         
         self.results.append({'value': self.current_value(), 'result': best_val})
-        # print("Result", best_val)
-        
         
         if best_val <= self.n_bests[-1]:
             self.iterations_without_improvement = self.iterations_without_improvement + 1
@@ -260,7 +260,7 @@ class GridIteration:
         self.outputs = self.outputs[-self.number_of_results:-1]
         
         
-        
+    
     def run(self, input, callback=None):
         # Run and Stack results
         if not self.key:
