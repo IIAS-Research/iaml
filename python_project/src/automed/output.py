@@ -19,6 +19,12 @@ class Output:
             metric or self.metric,
             model or self.model)
         
+    def to_input(self, dataset:Dataset=None, metric=None, model=None):
+        return Input(
+            (dataset or self.dataset or Dataset()),
+            metric or self.metric,
+            model or self.model)
+        
     def __str__(self):
         str_out = ""
         if self.metric:
@@ -33,3 +39,8 @@ class Output:
     
     def save(self):
         pass
+    
+    
+# Alias for Output
+class Input(Output):
+    pass

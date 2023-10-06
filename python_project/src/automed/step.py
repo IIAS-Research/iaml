@@ -1,4 +1,4 @@
-from .output import Output
+from .output import Output, Input
 from .dataset import Dataset
 
 from copy import deepcopy
@@ -13,7 +13,8 @@ class Step:
     
     input:Output = Output(None, None, None)
     
-    def __init__(self, input:Output = Output(None, None, None)):
+    def __init__(self, input:Output = Output(None, None, None), use_cache=True):
+        self.__use_cache = use_cache
         self.caches = []
         self.default_configurations()
         if input:
@@ -94,6 +95,9 @@ class Step:
     #####################
     # TODO -> Visiblement cela filtre un peu trop (baisse de résultats)
     def from_cache(self, input):
+        if not self.use_cache:
+            return False
+        
         for cache in self.caches:
             if same_types(self.resume_configuration(), cache['config']) and input == cache['input']:
                 # print("CACHE USAGE !")
@@ -104,12 +108,30 @@ class Step:
         return False
     
     def add_cache(self, input, output):
+        if not self.use_cache:
+            return False
+        
         # print("CACHING !", self, self.current_configuration)
         return self.caches.append({
             'input': input,
             'config': deepcopy(self.resume_configuration()),
             'output': output
         })
+        
+    def reset_cache(self):
+        self.caches = []
+        
+    @property
+    def use_cache(self):
+        return self.__use_cache
+    
+    @use_cache.setter
+    def use_cache(self, value):
+        if type(value) == bool:
+            self.__use_cache = value
+            return self.__use_cache
+        else:
+            raise Exception('Value must be a boolean')
     
     
     ############
@@ -185,7 +207,7 @@ def assessable(cls): # Évaluable
 def runner(func):
     def runner_wrapper(self, inputs, callback=None, *args, **kw):
         
-        if inputs.__class__ == Output:
+        if inputs.__class__ in [Output, Input]:
             inputs = [inputs]
         
         result:list[Output] = []
