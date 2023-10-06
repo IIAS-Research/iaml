@@ -12,6 +12,25 @@ class Output:
         self.dataset = dataset
         self.metric = metric
         self.model = model
+        self.computed = None
+        
+    def __gt__(self, other):
+        if self.computed and other.computed:
+            self.computed > other.computed
+        else:
+            id(self) > id(other)
+            
+    def __lt__(self, other):
+        if self.computed and other.computed:
+            self.computed < other.computed
+        else:
+            id(self) < id(other)
+            
+    def __eq__(self, other):
+        if self.computed and other.computed:
+            self.computed == other.computed
+        else:
+            id(self) == id(other)
         
     def to_output(self, dataset:Dataset=None, metric=None, model=None):
         return Output(
@@ -33,6 +52,10 @@ class Output:
             str_out = str_out + str(self.model) + " "
             
         return str_out
+    
+    def compute(self):
+        self.computed = self.metric.compute(self)
+        return self.computed
         
     def log(self, test):
         pass

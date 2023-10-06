@@ -182,7 +182,6 @@ class GridIteration:
             return []
         
         
-        
         if type(maxi) == int:
             if (maxi-mini) <= 1:
                 return []
@@ -232,7 +231,7 @@ class GridIteration:
         
         best_val, best_index = (0, 0)
         for index, result in enumerate(results):
-            current_val = result.metric.compute(result)
+            current_val = result.compute()
             if current_val > best_val:
                 best_index = index
                 best_val = current_val
@@ -255,6 +254,10 @@ class GridIteration:
             self.n_bests.sort()
         
         self.outputs = self.outputs + [results[best_index]]
+        
+        # Keep only n best
+        self.outputs.sort()
+        self.outputs = self.outputs[-self.number_of_results:-1]
         
         
         
