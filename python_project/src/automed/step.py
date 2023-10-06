@@ -93,7 +93,6 @@ class Step:
     #####################
     ## CACHING RESULTS ##
     #####################
-    # TODO -> Visiblement cela filtre un peu trop (baisse de résultats)
     def from_cache(self, input):
         if not self.use_cache:
             return False
