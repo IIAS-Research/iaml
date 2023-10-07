@@ -83,7 +83,7 @@ class GridIteration:
         self.children = []
         self.ways = []
         self.values = []
-        print('R', value_range)
+        # print('R', value_range)
         
         if self.key:
             self.value = (value or self.config[self.key]['value'])
@@ -144,11 +144,11 @@ class GridIteration:
         child_config = deepcopy(self.config)
         del child_config[self.key]
         
-        # TODO Send best value
         self.children.append(self.__class__(
             self.step,
             self.modificator_rate,
             patience=self.patience,
+            best_result = self.best_result,
             copy_config=child_config))
         
     # Get the best range using previous results. The best range will be the higher results + his highest neighbour.
@@ -249,8 +249,9 @@ class GridIteration:
         self.outputs = self.outputs + [results[best_index]]
         
         # Keep only n best
-        self.outputs.sort()
-        self.outputs = self.outputs[max(-self.number_of_results, len(self.outputs)):]
+        self.outputs.sort(reverse=True)
+        self.outputs = self.outputs[:self.number_of_results]
+        
         
         
     

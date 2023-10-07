@@ -1,7 +1,7 @@
 from .step import Step, isStep, runner
 from .metastep import MetaStep
 
-import threading
+from threading import Thread
 
 @isStep('meta')
 class MetaExplorerStep(MetaStep):
@@ -21,7 +21,7 @@ class MetaExplorerStep(MetaStep):
         
         # Create one thread by Step
         for step in self.steps:
-            threads.append(threading.Thread(target=self.single_run, args=(step, input, callback)))
+            threads.append(ThreadWithReturnValue(target=step.run, args=(input, callback)))
             
         # Run all threads
         for thread in threads:
@@ -29,7 +29,24 @@ class MetaExplorerStep(MetaStep):
             
         # Wait end of all threads
         for thread in threads:
-            thread.join()
+            output = self.output + thread.join()
+            
+        # print("=>>", list(map(lambda x: x.computed, output)))
         
         return output
             
+            
+            
+class ThreadWithReturnValue(Thread):
+    
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
+        Thread.__init__(self, group, target, name, args, kwargs)
+        self._return = None
+
+    def run(self):
+        if self._target is not None:
+            self._return = self._target(*self._args,
+                                                **self._kwargs)
+    def join(self, *args):
+        Thread.join(self, *args)
+        return self._return
