@@ -63,6 +63,7 @@ class WrapIterativeGridSearch(StepWrapper):
     
 class GridIteration:
     def __init__(self, step, modificator_rate, value_range=None, patience=5, copy_config=None, key=None, value=None, max_iterations=10, number_of_results=10, minimal_range_diff=None, best_result=-1):
+        # TODO -> Deep_patiance concept ? A big patiance but that continue incrementing through children
         self.step = step
         self.modificator_rate = modificator_rate
         self.patience = patience
@@ -129,11 +130,7 @@ class GridIteration:
             self.outputs = []
             self.results = []
             self.number_of_results = number_of_results
-            self.n_bests = [-1]*number_of_results
-            
-            if best_result:
-                self.n_bests.pop()
-                self.n_bests.append(best_result)
+            self.best_result = best_result
         
         
         
@@ -147,6 +144,7 @@ class GridIteration:
         child_config = deepcopy(self.config)
         del child_config[self.key]
         
+        # TODO Send best value
         self.children.append(self.__class__(
             self.step,
             self.modificator_rate,
@@ -202,7 +200,7 @@ class GridIteration:
             value_range=range,
             patience=self.patience,
             copy_config=self.config,
-            best_result = self.n_bests[-1],
+            best_result = self.best_result,
             key=self.key)
         
         return [next]
@@ -240,24 +238,19 @@ class GridIteration:
         
         self.results.append({'value': self.current_value(), 'result': best_val})
         
-        if best_val <= self.n_bests[-1]:
+        if best_val <= self.best_result:
             self.iterations_without_improvement = self.iterations_without_improvement + 1
             print('Iteration without improvement', self.iterations_without_improvement, best_val)
         else:
-            print('IMPROVED !', best_val, ' > ', self.n_bests[-1], best_val > self.n_bests[-1] )
+            print('IMPROVED !', best_val, ' > ', self.best_result, best_val > self.best_result )
+            self.best_result = best_val
             self.iterations_without_improvement = 0
-        
-        if best_val > self.n_bests[0]:
-            # To keep X best (to finish)
-            self.n_bests.pop(0)
-            self.n_bests.append(best_val)
-            self.n_bests.sort()
         
         self.outputs = self.outputs + [results[best_index]]
         
         # Keep only n best
         self.outputs.sort()
-        self.outputs = self.outputs[-self.number_of_results:-1]
+        self.outputs = self.outputs[max(-self.number_of_results, len(self.outputs)):]
         
         
     

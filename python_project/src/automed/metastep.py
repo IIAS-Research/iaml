@@ -3,7 +3,7 @@ from .step_wrapper import *
 
 @isStep('meta')
 class MetaStep(Step):
-    def __init__(self, tag=None, wrap=None):
+    def __init__(self, tag=None, wrap=None, *args, **kw):
         self.steps = []
         if tag:
             self.add_step_by_tag(tag, wrap=wrap) 

@@ -16,15 +16,25 @@ class Output:
         
     def __gt__(self, other):
         if self.computed and other.computed:
-            self.computed > other.computed
+            return self.computed > other.computed
         else:
-            id(self) > id(other)
+            if self.computed:
+                return True
+            if other.computed:
+                return False
+            
+            return id(self) > id(other)
             
     def __lt__(self, other):
         if self.computed and other.computed:
-            self.computed < other.computed
+            return self.computed < other.computed
         else:
-            id(self) < id(other)
+            if self.computed:
+                return False
+            if other.computed:
+                return True
+            
+            return id(self) < id(other)
             
     def __eq__(self, other):
         if self.computed and other.computed:

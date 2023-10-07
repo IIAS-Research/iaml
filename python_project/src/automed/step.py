@@ -13,7 +13,7 @@ class Step:
     
     input:Output = Output(None, None, None)
     
-    def __init__(self, input:Output = Output(None, None, None), use_cache=True):
+    def __init__(self, input:Output = Output(None, None, None), use_cache=True,  *args, **kw):
         self.__use_cache = use_cache
         self.caches = []
         self.default_configurations()
@@ -172,12 +172,16 @@ class Step:
 def isStep(*tags):
     def stepWrapper(cls):
         Step.available_steps[cls] = tags
+        __class__ = cls
+        
         
         initial_init = cls.__init__
         def __init__(self, *args, **kw):
+            if cls != Step:
+                super().__init__(*args, **kw)
+                
             initial_init(self, *args, **kw)
-            Step.__init__(self)
-            # self.default_configurations()
+            self.default_configurations()
             
         cls.__init__ = __init__
             
