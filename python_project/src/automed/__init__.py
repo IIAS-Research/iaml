@@ -14,3 +14,6 @@ from .actionables import *
 
 # Wrappers
 from .wrapper import *
+
+# Tools
+from .thread_with_return_value import *
