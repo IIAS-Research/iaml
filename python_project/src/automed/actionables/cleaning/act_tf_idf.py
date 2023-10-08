@@ -19,7 +19,6 @@ class ActTfIdf(Actionable):
         
         def transform(x, y, vectorizer, column):
             transformed = vectorizer.transform(x[column])
-            print(transformed)
             ohe_df = pd.DataFrame(transformed.todense(), columns=vectorizer.get_feature_names_out())
             x = pd.concat([x, ohe_df], axis=1).drop([column], axis=1)
             return x, y
