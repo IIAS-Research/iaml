@@ -25,6 +25,15 @@ class MetaStep(Step):
         
         for step in steps_to_add:
             self.add_step(step);
+            
+    
+    def all_configurations(self):
+        to_return = Step.all_configurations(self)
+        
+        for step in self.steps:
+            to_return = to_return + step.all_configurations()
+            
+        return to_return
     
     
     # Run steps self ordered by "priorize" function

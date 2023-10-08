@@ -10,6 +10,13 @@ class StepWrapper(Step):
             self.step = step
         else:
             raise Exception("step must be an occurence of step (or inherited classes)")
+        
+    
+    def all_configurations(self):
+        to_return = Step.all_configurations(self)
+        to_return = to_return + self.step.all_configurations()
+        
+        return to_return
 
     @runner
     def run(self, input, callback=None):

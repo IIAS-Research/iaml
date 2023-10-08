@@ -99,7 +99,7 @@ class AutoMed:
     
     # Return a dict with configurations of all steps. 
     def all_configurations(self):
-        pass # TODO
+        return self.first_step.all_configurations()
     
     # Configure one to many steps with a dict configurations 
     def configure_all(self, configs):

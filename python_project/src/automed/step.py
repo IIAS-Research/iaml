@@ -89,6 +89,12 @@ class Step:
     def keep_only_first_config(self):
         self.configurations = [self.configurations[0]]
         
+    def all_configurations(self):
+        return [{
+            'step_id': id(self),
+            'configuration': self.configurations
+        }]
+        
         
     #####################
     ## CACHING RESULTS ##
