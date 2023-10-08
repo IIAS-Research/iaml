@@ -101,6 +101,7 @@ job:deploy:docs:
   tags:
     - unix
     - test
+    - documentation
   script: 
     - 'if [ -d "/var/www/docs/$CI_PROJECT_NAME/$CI_COMMIT_BRANCH" ]; then rm -r /var/www/docs/$CI_PROJECT_NAME/$CI_COMMIT_BRANCH; fi'
     - 'mkdir -p /var/www/docs/$CI_PROJECT_NAME'
