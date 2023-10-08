@@ -29,9 +29,7 @@ class MetaExplorerStep(MetaStep):
             
         # Wait end of all threads
         for thread in threads:
-            output = self.output + thread.join()
-            
-        # print("=>>", list(map(lambda x: x.computed, output)))
+            output = output + thread.join()
         
         return output
             

@@ -24,7 +24,7 @@ if not exists(history_path):
 else:
     results = pd.read_csv(history_path)
 
-# files = [files[2]]
+# files = [files[3]]
 for file in files:
     start_file = datetime.now()
     filename = file.split('/')[-1]
@@ -44,7 +44,7 @@ for file in files:
     # Find best result
     max_result = 0
     for output in auto.output:
-        tmp = output.metric.compute(output)
+        tmp = output.compute()
         if tmp > max_result:
             max_result = tmp
     

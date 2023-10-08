@@ -53,7 +53,7 @@ class WrapIterativeGridSearch(StepWrapper):
                     
             gi = GridIteration(self.step, self.get_config('modificator'), copy_config=config, patience=self.get_config('patience'))
             output, _ = gi.run(input, callback=callback)
-            results = results + ([output] if type(output) == Output else output)
+            results = results + ([output] if type(output) in [Output, Input] else output)
         
         self.step.reset_cache()
         return results
