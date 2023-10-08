@@ -49,7 +49,7 @@ if not exists(history_path):
 else:
     results = pd.read_csv(history_path)
 
-files = [files[3]]
+# files = [files[3]]
 
 threads = []
         
