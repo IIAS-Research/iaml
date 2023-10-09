@@ -47,7 +47,8 @@ class ActStringToDate(Actionable):
                     date_columns.append(column)
                     input.dataset.apply(transform, column=column, values=date_col)
         
-        input.dataset.apply(remove_null_row, columns=date_columns)
+        if any(date_columns):
+            input.dataset.apply(remove_null_row, columns=date_columns)
         
         return input.to_output(input.dataset, None, None)
     
