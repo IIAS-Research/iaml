@@ -31,11 +31,8 @@ class ActStringToDate(Actionable):
             for column in columns[1:]:
                 notnull = np.logical_and(notnull, x[column].notnull())
                 
-            print("<<>>", column)
-            print(">", x.shape, y.shape)
             x = x[notnull]
             y = y[notnull]
-            print("<", x.shape, y.shape)
             
             return x, y
             
