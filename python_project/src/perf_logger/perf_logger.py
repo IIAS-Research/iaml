@@ -39,6 +39,9 @@ commit_id = sys.argv[1]
 time = int(datetime.now().timestamp())
 
 files = glob.glob(current_path+"/tests_data/*.csv")
+dont_push_csv = glob.glob(current_path+"/tests_data/dont_push/*.csv")
+
+files = files + dont_push_csv
 
 history_path = current_path+"/tests_data/history.log"
 results = None
@@ -50,7 +53,6 @@ else:
     results = pd.read_csv(history_path)
 
 # files = [files[3]]
-
 threads = []
         
 # Create one thread by File

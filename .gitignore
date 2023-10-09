@@ -6,6 +6,7 @@ credentials.yml
 
 # Data & log
 */data/*
+*/dont_push/*
 *.log
 !autosklearn_perf.log
 src/scripts/VVe__CoagIA__training_with_choices/data
