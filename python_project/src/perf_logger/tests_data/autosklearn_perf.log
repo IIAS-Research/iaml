@@ -1,4 +1,14 @@
 time,dataset_name,perf
+60.0,fetal_health.csv,0.9436619718309859
+60.0,explict_health.csv,0.9259259259259259
+60.0,dermatology_database.csv,0.972972972972973
+60.0,easily_diabetes_data.csv,0.9326923076923077
+60.0,HepatitisCdata.csv,0.7804878048780488
+60.0,titanic.csv,0.7988826815642458
+60.0,body_signal_of_smoking.csv,0.6308465750965078
+60.0,fertility.csv,0.85
+60.0,healthcare-dataset-stroke-data.csv,0.9393346379647749
+60.0,Drug_Classification.csv,1.0
 20.0,fetal_health.csv,0.9553990610328639
 20.0,explict_health.csv,0.9365079365079365
 20.0,dermatology_database.csv,0.9864864864864865
