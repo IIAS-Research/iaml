@@ -13,13 +13,8 @@ class ActDropDate(Actionable):
         def transform(x, y, column):
             x = x.drop(columns=[column])
             return x, y
-
-        print("DDDRRRRROOOOPPPPPPPP¨")            
-        print("DDDRRRRROOOOPPPPPPPP¨")            
-        print("DDDRRRRROOOOPPPPPPPP¨")            
-        print("DDDRRRRROOOOPPPPPPPP¨")            
+        
         for column, values in input.dataset.train_data.items():
-            print(column, is_datetime(values))
             if is_datetime(values):
                 input.dataset.apply(transform, column=column)
         
