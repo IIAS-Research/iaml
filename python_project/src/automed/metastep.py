@@ -1,4 +1,4 @@
-from .step import Step, isStep, runner
+from .step import Step, isStep, runner, Output, Input
 from .step_wrapper import *
 
 @isStep('meta')
@@ -39,21 +39,26 @@ class MetaStep(Step):
     # Run steps self ordered by "priorize" function
     @runner
     def run(self, input, callback=None):
+        results = []
         steps_to_run = self.steps.copy()
         
-        current_input = input
+        return self.__recursive_run(steps_to_run, [input], callback=callback)
         
-        while steps_to_run:
-            max_eval = steps_to_run[0].priorize(current_input)
-            max_index = 0
-            for index, step in enumerate(steps_to_run[1:]):
-                current_eval = step.priorize(current_input)
-                if current_eval > max_eval:
-                    max_eval = current_eval 
-                    max_index = index+1
-            
-            current_input = steps_to_run[max_index].run(current_input, callback=callback)
-            del steps_to_run[max_index]
-        
-        return current_input
-            
+    
+    def __recursive_run(self, remain_steps, inputs, callback=None):
+        if remain_steps:
+            for input in inputs:
+                max_eval = remain_steps[0].priorize(input)
+                max_index = 0
+                for index, step in enumerate(remain_steps[1:]):
+                    current_eval = step.priorize(input)
+                    if current_eval > max_eval:
+                        max_eval = current_eval 
+                        max_index = index+1
+                        
+            results = remain_steps[max_index].run(input, callback=callback)
+            futures_steps = remain_steps.copy()
+            futures_steps.pop(max_index)
+            return self.__recursive_run(futures_steps, results, callback=callback)
+        else:
+            return inputs
