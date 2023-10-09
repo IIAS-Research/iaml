@@ -3,6 +3,7 @@ from ...automed import Output
 from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
 import pandas as pd
+import numpy as np
 
 @isStep('cleaning')
 class ActStringToDate(Actionable):
@@ -17,19 +18,36 @@ class ActStringToDate(Actionable):
     
     @runner
     def run(self, input, callback=None) -> Output:
+        date_columns = []
         
         def transform(x, y, column, values):
             x[column] = values
-            # x[column] = pd.to_datetime(values, errors='coerce')
+            
+            return x, y
+        
+        def remove_null_row(x, y, columns):
+            # Delete row with null value. TODO Find a better method
+            notnull = x[columns[0]].notnull()
+            for column in columns[1:]:
+                notnull = np.logical_and(notnull, x[column].notnull())
+                
+            print("<<>>", column)
+            print(">", x.shape, y.shape)
+            x = x[notnull]
+            y = y[notnull]
+            print("<", x.shape, y.shape)
+            
             return x, y
             
         for column, values in input.dataset.train_data.items():
             if values.dtype == object:
-                print("====================>")
-                print(column)
                 date_col = self.__values_to_date(values)
-                if type(date_col) != None:
+                print(date_col, type(date_col), None)
+                if date_col is not None:
+                    date_columns.append(column)
                     input.dataset.apply(transform, column=column, values=date_col)
+        
+        input.dataset.apply(remove_null_row, columns=date_columns)
         
         return input.to_output(input.dataset, None, None)
     
@@ -42,9 +60,7 @@ class ActStringToDate(Actionable):
             try:
                 # transformed = pd.to_datetime(values, errors='coerce')
                 transformed = values.apply(pd.to_datetime, errors='coerce')
-                print("trans", transformed.notnull().sum())
-                print("base", values.notnull().sum())
-                if (transformed.notnull().sum() / values.notnull().sum()) >= self.get_config('threshold_ratio'):
+                if (transformed.notnull().sum() / len(values)) >= self.get_config('threshold_ratio'):
                     return transformed
                 else:
                     return None
