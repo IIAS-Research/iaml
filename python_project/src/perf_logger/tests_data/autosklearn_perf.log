@@ -1,4 +1,14 @@
 time,dataset_name,perf
+60.0,concilIA_clean.csv,0.7699228791773779
+20.0,concilIA_clean.csv,0.7686375321336761
+5.0,concilIA_clean.csv,0.7712082262210797
+1.0,concilIA_clean.csv,0.7724935732647815
+0.5,concilIA_clean.csv,0.7707797772065125
+60.0,concilIA_merged.csv,0.7874892887746359
+20.0,concilIA_merged.csv,0.7849185946872322
+5.0,concilIA_merged.csv,0.786203941730934
+1.0,concilIA_merged.csv,0.7754927163667523
+0.5,concilIA_merged.csv,0.7754927163667523
 60.0,fetal_health.csv,0.9436619718309859
 60.0,explict_health.csv,0.9259259259259259
 60.0,dermatology_database.csv,0.972972972972973
