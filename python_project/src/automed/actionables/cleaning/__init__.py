@@ -4,3 +4,5 @@ from .act_drop_numerical_column import ActDropNumericalColumn
 from .act_drop_textual_column import ActDropTextualColumn
 from .act_onehot import ActOnehot
 from .act_tf_idf import ActTfIdf
+from .act_string_to_date import ActStringToDate
+from .act_drop_date import ActDropDate
