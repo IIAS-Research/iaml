@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from .dataset import Dataset
+from copy import copy
 
 @dataclass
 class Output:
@@ -13,7 +14,7 @@ class Output:
         self.metric = metric
         self.model = model
         self.computed = None
-        self.stacked_path = stack_list
+        self.stacked_path = copy(stack_list)
         
     def add_stack(self, stack):
         self.stacked_path.append(stack)

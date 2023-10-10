@@ -11,9 +11,13 @@ class MetaStep(Step):
     
     def add_step(self, step):
         if Step in step.__class__.__mro__:
-            self.steps.append(self.__configure_child(step))
+            self.steps.append(self.configure_child(step))
         else:
             raise Exception("step must be an occurence of step (or inherited classes)")
+        
+    def add_steps(self, steps_list):
+        for step in steps_list:
+            self.add_step(step)
         
     def add_step_by_tag(self, tag, wrap=None):
         steps_to_add = set(filter(lambda key: tag in Step.available_steps[key], Step.available_steps.keys()))

@@ -286,4 +286,4 @@ class GridIteration:
         siblings = self.__generate_siblings()
                 
         return self.outputs, siblings
-        
+
