@@ -16,10 +16,12 @@ class Destroyer():
     
         
     def destroyed(self, step):
+        parents = self.__parents_ids(step)
         if self.soft_destroy:
-            child_id = id(step)
+            child_id = parents[-1]
         else:
-            child_id = self.__find_first_child_id(step)
+            child_id = parents[0]
+            
         if child_id in self.destroyed_child: # Already destroyed
             return True
         elif child_id in self.children_results.keys(): # Cannot be destroy unknown step
@@ -34,10 +36,11 @@ class Destroyer():
             
     
     def track_output(self, step, output):
+        parents = self.__parents_ids(step)
         if self.soft_destroy:
-            child_id = id(step)
+            child_id = parents[-1]
         else:
-            child_id = self.__find_first_child_id(step)
+            child_id = parents[0]
             
         if child_id not in self.children_results.keys():
             self.children_results[child_id] = []
@@ -53,10 +56,16 @@ class Destroyer():
                 self.best_result = output.computed
             
     
-    def __find_first_child_id(self, step):
+    # def __find_first_child_id(self, step):
+    #     id_list = step.parents_steps + [id(step)]
+    #     root_index = id_list.index(self.root_id)
+    #     return id_list[root_index+1]
+    
+    
+    def __parents_ids(self, step):
         id_list = step.parents_steps + [id(step)]
         root_index = id_list.index(self.root_id)
-        return id_list[root_index+1]
+        return id_list[root_index+1:]
         
         
         

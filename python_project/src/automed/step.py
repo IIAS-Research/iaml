@@ -41,7 +41,7 @@ class Step:
         return self.input.model
     
     def configure_child(self, step, *args, **kw):
-        child = step(*args, **kw)
+        child = step
         if any(self.destroyers):
             child.destroyers = self.destroyers
             
@@ -188,15 +188,17 @@ class Step:
             self.name,
             self.description,
             self.citations,
-            self.current_configuration
+            self.current_configuration,
+            id(self)
         )
         
     def track_output(self, output):
-        if type(output) in [Output, Input]:
-            output.add_stack(self.to_stack())
-        else:
-            for one_ouput in output:
-                one_ouput.add_stack(self.to_stack())
+        if type(self) != Step:
+            if type(output) in [Output, Input]:
+                output.add_stack(self.to_stack())
+            else:
+                for one_ouput in output:
+                    one_ouput.add_stack(self.to_stack())
         
         for destroyer in self.destroyers:
             destroyer.track_output(self, output)
@@ -274,7 +276,7 @@ def runner(func):
                     
                 result = result + ([output] if type(output) == Output else output)
                 
-        print("->", result)
+        # print("->", result)
                     
 
         self.output = result        

@@ -4,6 +4,7 @@ from .actionable import Actionable
 from .output import Output, Input
 from .dataset import Dataset
 from .metric import Metric
+from .destroyer import Destroyer
 
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
@@ -50,7 +51,7 @@ class AutoMed:
         self.first_step.add_step(ActTPLOT()) 
     
     # DEBUG -> Testing purpose. To replace when load_pipe is working
-    def debug_load(self, only=None):
+    def debug_load(self, only=None, use_destroyer=False):
         if only:
             self.first_step = MetaOrderedStep()
             self.first_step.add_step(RandomSplit())
@@ -63,7 +64,11 @@ class AutoMed:
             self.first_step.add_step(MetaStep(tag='cleaning'))
             self.first_step.add_step(MetaStep(tag='features_selection'))
             self.first_step.add_step(MetaStep(tag='normalize'))
-            self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapIterativeGridSearch))
+            if use_destroyer:
+                self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
+            else:
+                self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch))
+                
             # self.first_step.add_step(MetaExplorerStep(tag='boosting'))
     
     
