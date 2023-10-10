@@ -51,3 +51,31 @@ for index, dataset in enumerate(datasets):
     
 
 fig.savefig(current_path+"/../../../docs/compare_perf_fig.png", dpi=300, bbox_inches = "tight") 
+
+tplot_results = pd.read_csv(current_path+"/tests_data/tplot_perf.log")
+
+datasets = list(automed_result['dataset_name'].unique())
+sns.set()
+fig, axes = plt.subplots(len(datasets), 1, figsize=(8, len(datasets)*5))
+plt.subplots_adjust(hspace = 0.8)
+for index, dataset in enumerate(datasets):
+    plot = sns.lineplot(data=automed_result[automed_result['dataset_name'] == dataset], x="commit_id", y="perf", hue="dataset_name", ax=axes[index]) 
+    plot.set(title=dataset)
+    plot.set(ylim = (.5,1.1))
+    plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
+    
+    labels = ['AutoMed']
+
+    for ind, value in tplot_results[tplot_results['dataset_name'] == dataset].iterrows():
+        plot.axhline(y=value['perf'], linestyle='dashed', label="TPLOT "+str(value['time']), color=pick_color())
+        labels.append("TPLOT "+str(value['time']))
+        
+    handles, _ = axes[index].get_legend_handles_labels()
+    # Slice list to remove first handle
+    plot.legend(handles = handles, labels = labels)
+        
+    sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
+    
+    
+
+fig.savefig(current_path+"/../../../docs/compare_perf_tplot_fig.png", dpi=300, bbox_inches = "tight") 
