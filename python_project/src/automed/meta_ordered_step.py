@@ -1,6 +1,10 @@
 from .step import Step, isStep, runner
 from .metastep import MetaStep
 
+
+#
+# Inherit from MetaStep but will execute all steps without priorize() method. 
+#
 @isStep('meta')
 class MetaOrderedStep(MetaStep):
     # Run steps self ordered by "priorize" function

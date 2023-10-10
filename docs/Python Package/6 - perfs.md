@@ -26,7 +26,7 @@ Plots to compare AutoSkLearn performances with AutoMed
 
 Here is the performance of TPLOT on the same datasets.
 
-![Perf_graph_tplo](../tplot_perf_fig.png)
+![Perf_graph_tplot](../tplot_perf_fig.png)
 
 
 ## Compare performances with TPLOT

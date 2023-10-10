@@ -2,6 +2,10 @@ from .step import Step, isStep, runner
 from .metastep import MetaStep
 from .thread_with_return_value import *
 
+#
+# Inherit from MetaStep but will execute all steps at the same time. 
+# The goal here is to explore many answer to a question. For example -> Try all Learning models
+#
 @isStep('meta')
 class MetaExplorerStep(MetaStep):
     def __init__(self, destroyer=None, *args, **kw):
@@ -11,6 +15,7 @@ class MetaExplorerStep(MetaStep):
             destroyer.set_root(self)
             self.destroyers.append(destroyer)
         
+    # Run a single Step
     # Will be executed by Theads
     def single_run(self, step, input, callback=None):
         self.output = self.output + (step.run(input, callback=callback))

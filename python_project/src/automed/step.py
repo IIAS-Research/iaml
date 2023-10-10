@@ -4,24 +4,42 @@ from .stack import Stack
 
 from copy import deepcopy
 
+# Step class is a brick used to create pipelines. This Step class is not really use in Pipeline, run function doesn't do anything. 
+# This class is use to create new kinds of steps by inheritance and give all needed attributes and methods to children classes. 
+# 
+# There is also decorator needed to create a Step. See it under Step class.
+#
 class Step:
-    # Available steps
+    # Available steps. This will be filled be all the new Step loaded in Python environements
+    # It will be a reference of all available Steps to create pipeline
     available_steps = {}
+    
+    # Last output run of the Step
     output = None
+    
+    # Configuration of the Step. Each Step can of configuration and will save it here. Step give many method to help user to configure Steps
     configurations = [{}]
-    current_configuration = []
-    name = "Step"
+    current_configuration = [] # Current configuration (because a Step can have several)
+    
+    # Name and description of the Step. Useful to explain pipeline to users
+    name = "Step" 
     description = "Step description..."
+    
+    # Will contain paper citations used to create this Step
     citations = [] # TODO
     
+    # Last input of this Step. # TODO Still used ?
     input:Output = Output(None, None, None)
     
     def __init__(self, input:Output = Output(None, None, None), use_cache=True,  *args, **kw):
-        self.__use_cache = use_cache
-        self.caches = []
-        self.destroyers = []
-        self.parents_steps = []
-        self.default_configurations()
+        self.__use_cache = use_cache # Activate or not the cache of results.
+        self.caches = [] # Cached results
+        
+        self.destroyers = [] # List of destroyer. Destroyers are object with a global vision of the pipeline and are able to stop a pipeline branch if the results is badder then others branches
+        self.parents_steps = [] # List all the previous steps before this one
+        
+        self.default_configurations() # Load default configuration 
+        
         if input:
             self.input = input
         
@@ -40,6 +58,7 @@ class Step:
     def model(self):
         return self.input.model
     
+    # When a Step contain others ones, this will help to setup everything (Transmit destroyers, increment parents steps)
     def configure_child(self, step, *args, **kw):
         child = step
         if any(self.destroyers):
@@ -58,12 +77,17 @@ class Step:
     #  
     # Each parameters have a name, a description and a default value. Default value can be fixed or computed based on dataset
     
+    # Configure one parameter 
+    # config_id -> Index of the configuration
+    # key -> Name of the parameter
+    # value -> Value of the parameter 
     def configure_one(self, config_id, key, value):
         if key in self.configurations[config_id].keys():
             self.configurations[config_id][key]['value'] = value
         else:
             raise Exception(f"Configurable Key '{key}' does not exist.")
         
+    # Configure all parameters with a ne dictionary
     def configure(self, dict, config_id=None):
         if config_id:
             for key, value in dict.items():
@@ -71,35 +95,41 @@ class Step:
         else:
             self.add_config(self, dict)
             
+    # Add a fully new configuration
     def add_config(self, dict):
         pass
         # TODO
     
+    # Resume a configuration -> No meta data, only "key: value"
+    # config_id -> index of the configuration to resume, if None either the current_configuration or the first one will be choose
     def resume_configuration(self, config_id=None):
         if config_id:
             return {k: self._get_value(v) for k, v in self.configurations[config_id].items()}
         else:
             return {k: self._get_value(v) for k, v in (self.current_configuration or self.configurations[0]).items()}
     
+    # Resume all configurations
     def resume_configurations(self):
         return {k: self._get_value(v) for k, v in self.configurations.items()}
+    
     
     def _get_value(self, elem):
         return elem['value'] if 'value' in elem.keys() else elem['default']
     
+    # Get value of a configuration key. Very useful to easily get configuration in inherit Step methods
     def get_config(self, key):
         return self.resume_configuration()[key]
             
-    
+    # Defaults values of configuration
     def default_values(self, input=None):
         return {k: v['default'] for k, v in self.configurations.items()}
-    
     
     def default_configurations(self):
         for index, current in enumerate(self.configurations):
             for key, elem in current.items():
                 self.configurations[index][key]['value'] = self.configurations[index][key]['default']
                 
+    # Remove all configurations except the first one. Useful when you want a better control of step execution
     def keep_only_first_config(self):
         self.configurations = [self.configurations[0]]
         
@@ -113,30 +143,31 @@ class Step:
     #####################
     ## CACHING RESULTS ##
     #####################
+    # Results of run() can by stored in cache to avoid compute it several time
+    
+    # If a previous run with same input & configuration was cached, return it
+    # Else return False
     def from_cache(self, input):
         if not self.use_cache:
             return False
         
         for cache in self.caches:
             if same_types(self.resume_configuration(), cache['config']) and input == cache['input']:
-                # print("CACHE USAGE !")
-                # print("current ", self.resume_configuration())
-                # print("cache ", cache['config'])
-                # print("step", self)
                 return cache['output']
         return False
     
+    # Add an output to cache
     def add_cache(self, input, output):
         if not self.use_cache:
             return False
         
-        # print("CACHING !", self, self.current_configuration)
         return self.caches.append({
             'input': input,
             'config': deepcopy(self.resume_configuration()),
             'output': output
         })
-        
+    
+    # Remove all cached data
     def reset_cache(self):
         self.caches = []
         
@@ -182,7 +213,10 @@ class Step:
     ###########
     ## STACK ##
     ###########
+    # Stack all to have a better understanding of pipeline execution. 
+    # Each Step will store data in the stack. So we'll be able to unstack it and explain every data transformation in the pipeline
     
+    # Transform a Step into Stack element 
     def to_stack(self):
         return Stack(
             self.name,
@@ -192,6 +226,8 @@ class Step:
             id(self)
         )
         
+    # Track output 
+    # Automatically add Stack & call destroyers methods
     def track_output(self, output):
         if type(self) != Step:
             if type(output) in [Output, Input]:
@@ -212,26 +248,30 @@ class Step:
 # Class decorators
 #
 
+# isStep is needed to declare new Step. With the Step inheritance, it will setup everything to make it work smoothly
+# Tags -> Your Step will be attached to these tags. 
+# tags are use to easily include Step into Pipeline
 def isStep(*tags):
     def stepWrapper(cls):
-        Step.available_steps[cls] = tags
-        __class__ = cls
+        Step.available_steps[cls] = tags # Declare your Step to AutoMed
+        __class__ = cls # Help Python to find parent class
         
         
-        initial_init = cls.__init__
+        initial_init = cls.__init__ # Keep the __init__ you have created
         def __init__(self, *args, **kw):
             if cls != Step:
-                super().__init__(*args, **kw)
+                super().__init__(*args, **kw) # All parent constructor 
                 
-            initial_init(self, *args, **kw)
-            self.default_configurations()
+            initial_init(self, *args, **kw) # Run your __init__
+            self.default_configurations() # Setup default configuration
             
-        cls.__init__ = __init__
+        cls.__init__ = __init__ # Replace your init
             
         return cls
         
     return stepWrapper
 
+# Will help AutoMed to know which Step is assessable (Learning step for example)
 def assessable(cls): # Évaluable
     cls.metric = lambda output: 0 # Arbitrary metic
     cls.assessable = True
@@ -250,6 +290,15 @@ def assessable(cls): # Évaluable
 #
 # Method decorator
 #
+
+# runner MUST decorate your run() method. It you manage every boring things for you.
+# - Run configurations one by one
+# - Store results in cache
+# - Send information to Destroyers
+# - Put results in good shape
+# - Increment Stack data
+# - Call callback method
+# - And maybe more
 def runner(func):
     def runner_wrapper(self, inputs, callback=None, *args, **kw):
         
@@ -287,7 +336,7 @@ def runner(func):
     return runner_wrapper
 
 
-## Other methodes
+## Other methods
 def same_types(a, b):
     if len(a.keys()) != len(b.keys()):
         return False
