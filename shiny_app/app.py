@@ -51,6 +51,8 @@ app_ui = ui.page_fluid(
                 ui.output_data_frame("show_output"),
                 ui.h2("Testing set"),
                 ui.output_data_frame("show_output_test"),
+                ui.h2("Stacked path"),
+                ui.output_ui("show_stacked_path"),
                 
             )
         )
@@ -96,6 +98,16 @@ def server(input, output, session):
             return render.DataTable(current_result.get().dataset.check_X_test)
         else:
             return "Choose an output"
+        
+    
+    @output
+    @render.ui
+    def show_stacked_path():
+        html = "<br/><br /><ul>"
+        for stack in current_result.get().stacked:
+            html += f"<li>✅ {stack}</li>"
+        html = html + "<ul>"
+        return ui.HTML(html)
     
     @output
     @render.ui
