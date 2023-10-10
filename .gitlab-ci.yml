@@ -60,7 +60,7 @@ job:build:pythonEnv:
 
 job:perfs:compute:
   stage: perfs
-  timeout: 8h
+  timeout: 24h
   tags:
     - unix
     - calcul
