@@ -104,9 +104,13 @@ class Step:
     # config_id -> index of the configuration to resume, if None either the current_configuration or the first one will be choose
     def resume_configuration(self, config_id=None):
         if config_id:
-            return {k: self._get_value(v) for k, v in self.configurations[config_id].items()}
+            return Step.resume_a_configuration(self.configurations[config_id])
         else:
-            return {k: self._get_value(v) for k, v in (self.current_configuration or self.configurations[0]).items()}
+            return Step.resume_a_configuration(self.current_configuration or self.configurations[0])
+    
+    @classmethod
+    def resume_a_configuration(cls, config):
+        return {k: Step.__get_a_value(v) for k, v in config.items()}
     
     # Resume all configurations
     def resume_configurations(self):
@@ -114,6 +118,10 @@ class Step:
     
     
     def _get_value(self, elem):
+        return Step.__get_a_value(elem)
+    
+    @classmethod
+    def __get_a_value(cls, elem):
         return elem['value'] if 'value' in elem.keys() else elem['default']
     
     # Get value of a configuration key. Very useful to easily get configuration in inherit Step methods
@@ -219,12 +227,20 @@ class Step:
     # Transform a Step into Stack element 
     def to_stack(self):
         return Stack(
-            self.name,
-            self.description,
-            self.citations,
+            self.__class__,
             self.current_configuration,
             id(self)
         )
+        
+    # Explain 
+    @classmethod
+    def explain(cls, config):
+        return f"""
+            # {cls.name}
+            {cls.description}
+            {cls.resume_a_configuration(config)}
+            
+        """
         
     # Track output 
     # Automatically add Stack & call destroyers methods

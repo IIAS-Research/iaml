@@ -81,6 +81,9 @@ class Output:
     def save(self):
         pass
     
+    def explain(self):
+        return list(map(lambda stack: stack.explain(), self.stacked_path))
+    
     
 # Alias for Output
 class Input(Output):
