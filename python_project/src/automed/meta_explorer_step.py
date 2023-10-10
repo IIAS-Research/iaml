@@ -4,8 +4,12 @@ from .thread_with_return_value import *
 
 @isStep('meta')
 class MetaExplorerStep(MetaStep):
-    def __init__(self, *args, **kw):
+    def __init__(self, destroyer=None, *args, **kw):
         self.output = []
+        
+        if destroyer:
+            destroyer.set_root(self)
+            self.destroyers.append(destroyer)
         
     # Will be executed by Theads
     def single_run(self, step, input, callback=None):

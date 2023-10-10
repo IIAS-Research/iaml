@@ -4,6 +4,7 @@ import autosklearn.classification
 
 
 # @isStep('learning', 'tabular')
+@isStep('to_compare')
 @assessable
 class ActAutoSKLearn(Actionable):
     name="Learn : AutoSkLearn"

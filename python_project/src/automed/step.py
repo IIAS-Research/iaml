@@ -1,5 +1,6 @@
 from .output import Output, Input
 from .dataset import Dataset
+from .stack import Stack
 
 from copy import deepcopy
 
@@ -10,12 +11,16 @@ class Step:
     configurations = [{}]
     current_configuration = []
     name = "Step"
+    description = "Step description..."
+    citations = [] # TODO
     
     input:Output = Output(None, None, None)
     
     def __init__(self, input:Output = Output(None, None, None), use_cache=True,  *args, **kw):
         self.__use_cache = use_cache
         self.caches = []
+        self.destroyers = []
+        self.parents_steps = []
         self.default_configurations()
         if input:
             self.input = input
@@ -34,6 +39,15 @@ class Step:
     @property
     def model(self):
         return self.input.model
+    
+    def configure_child(self, step, *args, **kw):
+        child = step(*args, **kw)
+        if any(self.destroyers):
+            child.destroyers = self.destroyers
+            
+        child.parents_steps = self.parents_steps + [id(self)]
+        
+        return child
     
     ################
     # Configurable #
@@ -165,6 +179,27 @@ class Step:
         self.output_dataset = dataset
         return self.get_result()
     
+    ###########
+    ## STACK ##
+    ###########
+    
+    def to_stack(self):
+        return Stack(
+            self.name,
+            self.description,
+            self.citations,
+            self.current_configuration
+        )
+        
+    def track_output(self, output):
+        if type(output) in [Output, Input]:
+            output.add_stack(self.to_stack())
+        else:
+            for one_ouput in output:
+                one_ouput.add_stack(self.to_stack())
+        
+        for destroyer in self.destroyers:
+            destroyer.track_output(self, output)
     
     
 #############   
@@ -224,10 +259,18 @@ def runner(func):
             self.current_configuration = current
             print("# RUN #", self, self.resume_configuration())
             for input in inputs:
+                
+                # Destroyer will stop Step run if results are not good enough
+                for destroyer in self.destroyers:
+                    if destroyer.destroyed(self):
+                        return result
+            
                 output = self.from_cache(input)
                 if not output:
                     output = func(self, input, callback=callback, *args, **kw)
                     self.add_cache(input, output)
+                    
+                self.track_output(output)
                     
                 result = result + ([output] if type(output) == Output else output)
                 

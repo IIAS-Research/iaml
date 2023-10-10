@@ -11,7 +11,7 @@ class MetaStep(Step):
     
     def add_step(self, step):
         if Step in step.__class__.__mro__:
-            self.steps.append(step)
+            self.steps.append(self.__configure_child(step))
         else:
             raise Exception("step must be an occurence of step (or inherited classes)")
         
@@ -40,7 +40,7 @@ class MetaStep(Step):
     @runner
     def run(self, input, callback=None):
         results = []
-        steps_to_run = self.steps.copy()
+        steps_to_run = self.steps.copy() # TODO copy is usefull ?
         
         return self.__recursive_run(steps_to_run, [input], callback=callback)
         

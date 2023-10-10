@@ -38,6 +38,16 @@ class AutoMed:
         sklearn.configure_one(0, 'running_time', time)
         
         self.first_step.add_step(sklearn) 
+        
+    # DEBUG -> Testing purpose
+    def tplot_load(self):
+        
+        self.first_step = MetaOrderedStep()
+        self.first_step.add_step(RandomSplit())
+        self.first_step.add_step(MetaStep(tag='cleaning'))
+        self.first_step.add_step(MetaStep(tag='features_selection'))
+        self.first_step.add_step(MetaStep(tag='normalize'))
+        self.first_step.add_step(ActTPLOT()) 
     
     # DEBUG -> Testing purpose. To replace when load_pipe is working
     def debug_load(self, only=None):
