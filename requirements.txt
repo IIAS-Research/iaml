@@ -17,4 +17,4 @@ seaborn
 six
 threadpoolctl
 tzdata
-tplot
+tplot==0.3.4
