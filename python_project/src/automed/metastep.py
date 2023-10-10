@@ -54,6 +54,10 @@ class MetaStep(Step):
         return to_return
     
     
+    # Recursive function to get all steps in a pipeline
+    def all_step(self):
+        return self.steps
+    
     # Run steps self ordered by "priorize" function
     @runner
     def run(self, input, callback=None):

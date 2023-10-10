@@ -118,6 +118,24 @@ class AutoMed:
     
     # Configure one to many steps with a dict configurations 
     def configure_all(self, configs):
-        pass # TODO
+        all_steps = self.__all_steps()
+        
+        for step_id, config in configs.items():
+            current_step = self.__find_step_by_id(all_steps, step_id)
+            if current_step:
+                for key, value in config:
+                    current_step.configure_one(0, key, value)
+    
+    def __all_steps(self):
+        return self.first_step + self.first_step.all_steps()
+    
+    def __find_step_by_id(self, step_list, step_id):
+        for step in step_list:
+            if id(step) == step_id:
+                return step
+        return False
+        
+    
+    
     
     

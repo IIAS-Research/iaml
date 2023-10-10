@@ -141,11 +141,17 @@ class Step:
     def keep_only_first_config(self):
         self.configurations = [self.configurations[0]]
         
+        
+    # Recursive function (last one here) to get all configurations in a pipeline
     def all_configurations(self):
         return [{
             'step_id': id(self),
             'configuration': self.configurations
         }]
+        
+    # Recursive function (last one here) to get all steps in a pipeline
+    def all_step(self):
+        return []
         
         
     #####################

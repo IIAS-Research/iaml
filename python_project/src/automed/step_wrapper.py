@@ -17,6 +17,12 @@ class StepWrapper(Step):
         to_return = to_return + self.step.all_configurations()
         
         return to_return
+    
+    
+    # Recursive function to get all steps in a pipeline
+    def all_step(self):
+        return [self.step]
+        
 
     @runner
     def run(self, input, callback=None):
