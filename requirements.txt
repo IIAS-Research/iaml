@@ -17,3 +17,4 @@ seaborn
 six
 threadpoolctl
 tzdata
+tplot
