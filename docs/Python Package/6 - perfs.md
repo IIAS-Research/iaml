@@ -20,3 +20,17 @@ Here is the performance of AutoSKLearn on the same datasets. Running for 30s, 1m
 Plots to compare AutoSkLearn performances with AutoMed
 
 ![Perf_graph_compare](../compare_perf_fig.png)
+
+
+## TPLOT
+
+Here is the performance of TPLOT on the same datasets.
+
+![Perf_graph_tplo](../tplot_perf_fig.png)
+
+
+## Compare performances with TPLOT
+
+Plots to compare TPLOT performances with AutoMed
+
+![Perf_graph_compare_tplot](../compare_perf_tplot_fig.png)
