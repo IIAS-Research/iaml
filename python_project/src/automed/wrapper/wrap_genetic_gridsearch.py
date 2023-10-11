@@ -25,12 +25,12 @@ class WrapGeneticGridSearch(StepWrapper):
             },
             'nb_generations': {
                 'description': 'Number of generations to create, train and test',
-                'default': 10, #10
+                'default': 5, #10
                 'range': [5, float('inf')]
             },
             'nb_estimators': {
                 'description': 'Number of Steps by generations',
-                'default': 20,
+                'default': 10,
                 'range': [5, float('inf')]
             },
             'mutation_power': {
