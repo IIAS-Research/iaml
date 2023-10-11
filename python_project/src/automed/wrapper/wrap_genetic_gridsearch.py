@@ -16,7 +16,7 @@ import random
 class WrapGeneticGridSearch(StepWrapper):
     name = "Wrap : Genetic GridSearch"
     def __init__(self, step):
-        self.ignored_configs = set('random_state') # Set of configuration key to ignore. For example, random_state is not a parameter to optimize
+        self.ignored_configs = set(['random_state']) # Set of configuration key to ignore. For example, random_state is not a parameter to optimize
         
         self.configurations = [{
             'initial_modificator': {
@@ -203,4 +203,5 @@ class WrapGeneticGridSearch(StepWrapper):
     
     # Get configurable keys (without ignored keys)    
     def __config_keys(self):
+        print("HERE !", set(self.step.current_configuration.keys()) - self.ignored_configs)
         return set(self.step.current_configuration.keys()) - self.ignored_configs
