@@ -11,7 +11,7 @@ sys.path.insert(0, current_path+"/../")
 from automed import *
 
 
-files = glob.glob(current_path+"/tests_data/dont_push/*.csv")
+files = glob.glob(current_path+"/tests_data/dont_push/*.csv") + glob.glob(current_path+"/tests_data/*.csv")
 
 history_path = current_path+"/tests_data/tplot_perf.log"
 results = None
@@ -22,7 +22,7 @@ if not exists(history_path):
 else:
     results = pd.read_csv(history_path)
 
-files = []
+# files = []
 for time in [60]: #[30, 60, 60*5, 60*20]:
     for file in files:
         filename = file.split('/')[-1]
@@ -56,6 +56,6 @@ for time in [60]: #[30, 60, 60*5, 60*20]:
 df_plot = results.sort_values(by=['time']).astype({'time': str})
 plot = sns.lineplot(data=df_plot, x="time", y="perf", hue="dataset_name")
 sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
-plot.set(ylim = (.5,1))
+# plot.set(ylim = (.5,1))
 fig = plot.get_figure()
 fig.savefig(current_path+"/../../../docs/tplot_perf_fig.png", dpi=300, bbox_inches = "tight") 

@@ -203,5 +203,5 @@ class WrapGeneticGridSearch(StepWrapper):
     
     # Get configurable keys (without ignored keys)    
     def __config_keys(self):
-        print("HERE !", set(self.step.current_configuration.keys()) - self.ignored_configs)
+        # print("HERE !", set(self.step.current_configuration.keys()) - self.ignored_configs)
         return set(self.step.current_configuration.keys()) - self.ignored_configs

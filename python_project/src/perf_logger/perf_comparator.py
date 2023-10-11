@@ -33,7 +33,7 @@ plt.subplots_adjust(hspace = 0.8)
 for index, dataset in enumerate(datasets):
     plot = sns.lineplot(data=automed_result[automed_result['dataset_name'] == dataset], x="commit_id", y="perf", hue="dataset_name", ax=axes[index]) 
     plot.set(title=dataset)
-    plot.set(ylim = (.5,1.1))
+    # plot.set(ylim = (.5,1.1))
     plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
     
     labels = ['AutoMed']
@@ -61,7 +61,7 @@ plt.subplots_adjust(hspace = 0.8)
 for index, dataset in enumerate(datasets):
     plot = sns.lineplot(data=automed_result[automed_result['dataset_name'] == dataset], x="commit_id", y="perf", hue="dataset_name", ax=axes[index]) 
     plot.set(title=dataset)
-    plot.set(ylim = (.5,1.1))
+    # plot.set(ylim = (.5,1.1))
     plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
     
     labels = ['AutoMed']

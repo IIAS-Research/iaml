@@ -78,7 +78,7 @@ results.to_csv(history_path, index=False)
 df_plot = results.iloc[::-1]
 plot = sns.lineplot(data=df_plot, x="commit_id", y="perf", hue="dataset_name")
 sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
-plot.set(ylim = (.5,1))
+# plot.set(ylim = (.5,1))
 plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
 fig = plot.get_figure()
 fig.savefig(current_path+"/../../../docs/perf_fig.png",dpi=300, bbox_inches = "tight") 
