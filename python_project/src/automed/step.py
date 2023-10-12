@@ -166,7 +166,7 @@ class Step:
             return False
         
         for cache in self.caches:
-            if same_types(self.resume_configuration(), cache['config']) and id(input) == id(cache['input']):
+            if same_types(self.resume_configuration(), cache['config']) and id(input) == cache['input_id']:
                 return cache['output']
         return False
     
@@ -176,7 +176,7 @@ class Step:
             return False
         
         return self.caches.append({
-            'input': input,
+            'input_id': id(input),
             'config': deepcopy(self.resume_configuration()),
             'output': output
         })
