@@ -166,7 +166,7 @@ class Step:
             return False
         
         for cache in self.caches:
-            if same_types(self.resume_configuration(), cache['config']) and input == cache['input']:
+            if same_types(self.resume_configuration(), cache['config']) and id(input) == id(cache['input']):
                 return cache['output']
         return False
     
