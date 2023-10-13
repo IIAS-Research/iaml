@@ -62,9 +62,10 @@ class Dataset:
         y_pred = model.predict(self.__X_test)
         return metric(self.__y_test, y_pred)
 
-    def apply(self, method, *args, **kw):
+    def apply(self, method, only_train=False, *args, **kw):
         self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
-        self.__X_test, self.y_test__X_test = method(self.__X_test, self.__y_test, *args, **kw)
+        if not only_train:
+            self.__X_test, self.y_test__X_test = method(self.__X_test, self.__y_test, *args, **kw)
         # TODO find and document changes
         
     def __find_differencies(self, old_dataset):
