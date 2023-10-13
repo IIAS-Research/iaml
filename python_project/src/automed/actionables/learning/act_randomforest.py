@@ -8,11 +8,15 @@ from sklearn.datasets import make_classification
 class ActRandomForest(Actionable):
     name = "Learn : Random Forest" 
     def __init__(self):
-        # TODO Pas de nombre d'arbres ?!
         self.configurations = [{
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
+                'range': [1, float('inf')]
+            },
+            'n_estimators': {
+                'description': 'Number of threes',
+                'default': 100,
                 'range': [1, float('inf')]
             },
             'random_state': {
@@ -25,7 +29,7 @@ class ActRandomForest(Actionable):
     def run(self, input:Output, callback=None):
         metric = input.metric or Metric()
         
-        model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'))
+        model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'), n_estimators=self.get_config('n_estimators'))
         model.fit(input.dataset.X_train, input.dataset.y_train)
         
         return input.to_output(None, metric, model)
