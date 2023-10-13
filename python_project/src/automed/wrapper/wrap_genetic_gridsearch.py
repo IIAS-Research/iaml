@@ -25,12 +25,12 @@ class WrapGeneticGridSearch(StepWrapper):
             },
             'nb_generations': {
                 'description': 'Number of generations to create, train and test',
-                'default': 10, #10
+                'default': 5, #10
                 'range': [5, float('inf')]
             },
             'nb_estimators': {
                 'description': 'Number of Steps by generations',
-                'default': 30,
+                'default': 10,
                 'range': [5, float('inf')]
             },
             'mutation_power': {
@@ -78,24 +78,38 @@ class WrapGeneticGridSearch(StepWrapper):
             if i_gen+1 < self.get_config('nb_generations'):
                 print("GENERATE NEW !", self.step.name)
                 # Generate next generation
-                nb_to_get = int(len(generation)/4)
+                nb_to_get = int(self.get_config('nb_estimators')/4)
                 outputs.sort()
                 ordered_ids = self.__get_unique_ordered(list(map(lambda x: x.stacked_path[-2].step_id, outputs)))
                 
                 # Keep the 1/4 better Steps
-                new_generation = []
-                for i in range(0, nb_to_get):
-                    new_generation.append(self.__find_step(generation, ordered_ids[i]))
+                steps_to_keep = []
+                for i in range(0, min(nb_to_get, len(generation))):
+                    steps_to_keep.append(self.__find_step(generation, ordered_ids[i]))
                 
                 # Add 2/4 with mutated Steps (from the better steps of previous generation)
                 new_mutations = []
                 for i in range(0, nb_to_get*2):
-                    new_mutations.append(self.random_mutation(random.choice(new_generation)))
-                    
+                    new_mutations.append(self.random_mutation(random.choice(steps_to_keep)))
+                
                 # And add the last 1/4 with fully random Steps
-                new_generation = new_generation + new_mutations
-                while len(new_generation) < self.get_config('nb_estimators'):
-                    new_generation.append(self.random_generation())
+                tmp_new_generation = (steps_to_keep + new_mutations)
+                while len(tmp_new_generation) < self.get_config('nb_estimators'):
+                    tmp_new_generation.append(self.random_generation())
+                    
+                # DROP Duplicated Steps
+                new_generation = []
+                for step in tmp_new_generation:
+                    to_add = True
+                    for to_filter in new_generation:
+                        if self.__same_config(step.current_configuration, to_filter.current_configuration):
+                            to_add = False
+                            break
+                        
+                    if to_add:
+                        new_generation.append(step)
+                        
+                        
                     
                 generation = new_generation # Let's go for the next generation
             else:
@@ -177,6 +191,16 @@ class WrapGeneticGridSearch(StepWrapper):
             
         new_step.configure_one(0, random_key, new_value) # Apply configuration
         return new_step
+    
+    def __same_config(self, a, b):
+        if len(a.keys()) != len(b.keys()):
+            return False
+        for key, value in a.items():
+            if isinstance(value, dict):
+                return self.__same_config(value, b[key])
+            elif key not in b or value != b[key]:
+                return False
+        return True
     
     # Return a new list with unique values in the same order. Useful because others methods with set can disorder values
     def __get_unique_ordered(self, old_list):
