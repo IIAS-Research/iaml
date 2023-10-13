@@ -28,7 +28,7 @@ class ActTfIdf(Actionable):
             
         for column, values in input.dataset.X_train.items():
             if is_string_dtype(values.fillna('')):
-                print("column tf-idf", column)
+                # print("column tf-idf", column)
                 values = values.fillna('')
                 vectorizer = TfidfVectorizer()
                 X = vectorizer.fit(values)

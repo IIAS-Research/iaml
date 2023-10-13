@@ -39,7 +39,7 @@ class ActStringToDate(Actionable):
         for column, values in input.dataset.train_data.items():
             if values.dtype == object:
                 date_col = self.__values_to_date(values)
-                print(date_col, type(date_col), None)
+                # print(date_col, type(date_col), None)
                 if date_col is not None:
                     date_columns.append(column)
                     input.dataset.apply(transform, column=column, values=date_col)
