@@ -71,8 +71,9 @@ class Output:
             
         return str_out
     
-    def compute(self):
-        self.computed = self.metric.compute(self)
+    def compute(self, force=False):
+        if force or not(self.computed):
+            self.computed = self.metric.compute(self)
         return self.computed
         
     def log(self, test):
