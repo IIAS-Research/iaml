@@ -8,6 +8,7 @@ from .thread_with_return_value import *
 #
 @isStep('meta')
 class MetaExplorerStep(MetaStep):
+    name = "MetaExplorerStep"
     def __init__(self, destroyer=None, *args, **kw):
         self.output = []
         
@@ -19,6 +20,11 @@ class MetaExplorerStep(MetaStep):
     # Will be executed by Theads
     def single_run(self, step, input, callback=None):
         self.output = self.output + (step.run(input, callback=callback))
+        
+    def json_pipeline(self):
+        json = Step.json_pipeline(self)
+        json['children'] = list(map(lambda step: step.json_pipeline(), self.steps))
+        return json
         
     
     # Explore all steps

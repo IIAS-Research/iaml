@@ -198,6 +198,18 @@ class Step:
             raise Exception('Value must be a boolean')
     
     
+    
+    def json_pipeline(self):
+        return {
+            'value': {
+                'id': id(self),
+                'name': self.name,
+                'description': self.description,
+                'configuration': self.configurations[0]
+            },
+            'children': []
+        }
+    
     ############
     # Priorize #
     ############

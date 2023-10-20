@@ -112,6 +112,9 @@ class AutoMed:
     #### CONFIGURATIONS ####
     ########################
     
+    def json_pipeline(self):
+        return self.first_step.json_pipeline()
+    
     # Return a dict with configurations of all steps. 
     def all_configurations(self):
         return self.first_step.all_configurations()

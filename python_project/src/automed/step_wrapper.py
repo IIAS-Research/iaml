@@ -19,6 +19,18 @@ class StepWrapper(Step):
         return to_return
     
     
+    def json_pipeline(self):
+        return {
+            'value': {
+                'id': id(self),
+                'name': self.name,
+                'description': self.description,
+                'configuration': self.configurations[0]
+            },
+            'children': [self.step.json_pipeline()]
+        }
+    
+    
     # Recursive function to get all steps in a pipeline
     def all_step(self):
         return [self.step]

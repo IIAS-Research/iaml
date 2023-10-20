@@ -10,6 +10,7 @@ from .step_wrapper import *
 #
 @isStep('meta')
 class MetaStep(Step):
+    name = "MetaStep"
     def __init__(self, tag=None, wrap=None, *args, **kw):
         self.steps = [] # Initialize steps to empty
         
@@ -52,6 +53,37 @@ class MetaStep(Step):
             to_return = to_return + step.all_configurations()
             
         return to_return
+    
+    
+    def json_pipeline(self):
+        
+        json = Step.json_pipeline(self)
+        if any(self.steps):
+            child = self.steps[-1].json_pipeline()
+            for step in self.steps[-2::-1]:
+                print("New", self, id(self), json)
+                prev_child = child
+                child = step.json_pipeline()
+                
+                child = self.__add_children_pipeline(child, [prev_child])
+            
+            json['children'] = [child]
+        
+        return json
+    
+    def __add_children_pipeline(self, pipeline, children):
+        print("__ADD", pipeline, children)
+        if ('children' in pipeline.keys()) and any(pipeline['children']):
+            print('loop')
+            for index, child in enumerate(pipeline['children']):
+                pipeline['children'][index] = self.__add_children_pipeline(child, children)
+                print('just added', pipeline['children'][index])
+        else:
+            pipeline['children'] = children
+        
+        print('return', pipeline)    
+        return pipeline
+                
     
     
     # Recursive function to get all steps in a pipeline
