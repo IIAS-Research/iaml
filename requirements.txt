@@ -1,6 +1,7 @@
 contourpy
 cycler
 fonttools
+imbalanced-learn
 joblib
 kiwisolver
 matplotlib
