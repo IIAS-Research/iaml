@@ -1,0 +1,23 @@
+[tool.setuptools]
+package-dir = { "" = "python_project/src" }
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[project]
+name = "automed"
+version = "0.0.1"
+authors = [
+  { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+"Homepage" = "http://docs.example.invalid/automl/main/"
+"Bug Tracker" = "https://gitlab.example.invalid/"
