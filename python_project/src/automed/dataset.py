@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class Dataset:
     
@@ -114,7 +115,7 @@ class Dataset:
         return self.__data['train']['features'].columns
     
     @property      
-    def train_data(self):
+    def train_data(self): 
         return self.__data['train']['features'].copy(deep=True)
     
     @property
@@ -167,3 +168,41 @@ class Dataset:
     def __y_test(self, value):
         self.__data['test']['labels'] = value
         
+    
+    # Détection des types de données
+    def détecter_types_de_données(self, colonne):
+        # Cette condition vérifie 2 choses: 
+        # Si le rapport entre le nombre de valeurs uniques dans la colonnnne et le nombre total de valeurs dans cette colonne est inférieur à 5%.
+        # Le nombre total  de valeurs uniques dans cette colon,ne est inférieur à 7.
+        if len(colonne.unique()) / len(colonne) < 0.05 or len(colonne.unique()) < 7:
+            return 'catégoriel'
+        elif np.issubdtype(colonne.dtype, np.number):
+            return 'Numérique'
+        elif np.issubdtype(colonne.dtype, np.datetime64):
+            return 'Date'
+        elif colonne.astype(str).apply(len).max() <= 85:
+            return 'Chaine de caractères'
+        else:
+            return 'Texte libre'
+    
+    def types_de_données(self, data):
+        # Dictionnaire vide pour stoker le nom de chaque colonne ainsi que son type de données
+        types = {}
+        for col in data.columns:
+            resultat = self.détecter_types_de_données(data[col])
+            types[col] = resultat
+        return types  
+
+
+    # La fonction disable_column affiche des valeurs NaN dans le __data['train' ou 'test']['disabled'], la fonction dc affiche la colonne desactivée ainsi que toutes ses valeurs
+    def dc(self, column):
+        for dset in ['train', 'test']:
+            if column in self.__data[dset]['features'].columns:
+                dis_col = self.__data[dset]['features'].pop(column)
+                self.__data[dset]['disabled'][column] = dis_col
+            else:
+                raise Exception(f"La colonne '{column}' n'existe pas ! ")
+            
+    def dcs(self, columns):
+        for column in columns:
+            self.dc(column)
