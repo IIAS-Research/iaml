@@ -8,12 +8,12 @@ class Dataset:
             'train': {
                 'features': pd.DataFrame(),
                 'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
+                'labels': pd.Series()
                 },
             'test': {
                 'features': pd.DataFrame(),
                 'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
+                'labels': pd.Series()
             }
         }
         self.label_column = None
@@ -24,7 +24,7 @@ class Dataset:
             self.__data['test']['features'] = test_data
         else:
             self.__data['test']['features'] = pd.DataFrame(columns=train_data.columns)
-            
+        
         if label_name:
             self.set_label(label_name)
             
@@ -81,10 +81,11 @@ class Dataset:
             if label_name not in self.__data[dset]['features'].columns:
                 raise Exception("Column must exist")
             else:
-                self.reset_label(env=[dset])
-                    
+                self.res_label(env=[dset])
                 self.__data[dset]['labels'] = self.__data[dset]['features'][label_name]
+                
                 self.__data[dset]['features'].drop(columns=[label_name], inplace=True)
+                
             
         
     def disable_column(self, column):
@@ -169,16 +170,17 @@ class Dataset:
         self.__data['test']['labels'] = value
         
     
+    # TODO Traduire en anglais (commentaire, nom de variable/fonction, etc)
     # Détection des types de données
-    def détecter_types_de_données(self, colonne):
+    def detecter_types_de_donnees(self, colonne):
         # Cette condition vérifie 2 choses: 
         # Si le rapport entre le nombre de valeurs uniques dans la colonnnne et le nombre total de valeurs dans cette colonne est inférieur à 5%.
         # Le nombre total  de valeurs uniques dans cette colon,ne est inférieur à 7.
         if len(colonne.unique()) / len(colonne) < 0.05 or len(colonne.unique()) < 7:
-            return 'catégoriel'
+            return 'catégoriel' # TODO Remplacer par un enum ou quelque chose comme ça
         elif np.issubdtype(colonne.dtype, np.number):
             return 'Numérique'
-        elif np.issubdtype(colonne.dtype, np.datetime64):
+        elif np.issubdtype(colonne.dtype, np.datetime64): # TODO Vérifier aussi dans les string si ce n'est pas une date
             return 'Date'
         elif colonne.astype(str).apply(len).max() <= 85:
             return 'Chaine de caractères'
@@ -188,15 +190,15 @@ class Dataset:
     def types_de_données(self, data):
         # Dictionnaire vide pour stoker le nom de chaque colonne ainsi que son type de données
         types = {}
-        for col in data.columns:
-            resultat = self.détecter_types_de_données(data[col])
-            types[col] = resultat
+        for column in data.columns:
+            resultat = self.detecter_types_de_donnees(data[column])
+            types[column] = resultat
         return types  
 
 
     # La fonction disable_column affiche des valeurs NaN dans le __data['train' ou 'test']['disabled'], la fonction dc affiche la colonne desactivée ainsi que toutes ses valeurs
     # Désactiver une colonne
-    def dc(self, column):
+    def dc(self, column): 
         for dset in ['train', 'test']:
             if column in self.__data[dset]['features'].columns:
                 dis_col = self.__data[dset]['features'].pop(column)
@@ -218,7 +220,7 @@ class Dataset:
             else:
                 raise Exception(f"La colonne '{column}' n'existe pas ! ")
             
-    # Activert plusieurs colonnes  
+    # Activer plusieurs colonnes  
     def ecs(self, columns):
         for column in columns:
             self.ec(column)
@@ -227,12 +229,17 @@ class Dataset:
     # Reset_label             
     def res_label(self, env=['train', 'test']):
         for dset in env:
-            if not self.__data[dset]['labels'].empty:
+            if self.__data[dset]['labels'].name:
                 # Récpeation du nom de la colonne
                 column = self.__data[dset]['labels'].name
                 # Insertion de la colonne label dans le ['train' ou 'test']['features']
                 self.__data[dset]['features'][column] = self.__data[dset]['labels']
                 # Réinitialiser le ['train' ou 'test']['labels']
-                self.__data[dset]['labels'] = pd.DataFrame()
+                self.__data[dset]['labels'] = pd.Series()
+    
+    def show_labels(self):
+        print("LABELS")
+        print("TRAIN",  self.__data['train']['features'].columns,  self.__data['train']['labels'])
+        print("TEST",  self.__data['test']['features'].columns,  self.__data['test']['labels'])
                     
                 

@@ -4,8 +4,9 @@ import inspect
 import os, sys
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from automed import Dataset
+
 # Lecture Base de données
-df = pd.read_csv('automl/python_project/src/perf_logger/tests_data/titanic.csv', sep=';')
+df = pd.read_csv('./python_project/src/perf_logger/tests_data/titanic.csv', sep=';')
 print(df.shape)
 
 # Instance de la classe Dataset
@@ -126,5 +127,9 @@ print(dataset._Dataset__data['train']['labels'])
 print("La fonction reset_labels :")
 dataset.res_label()
 print("Le dataset apres la fonction rl :")
+print(dataset._Dataset__data['train']['features'])
+print(dataset._Dataset__data['train']['labels'])
+dataset.set_label('label')
+print("Le dataset apres nouvel ajout du label :")
 print(dataset._Dataset__data['train']['features'])
 print(dataset._Dataset__data['train']['labels'])
