@@ -50,7 +50,7 @@ class Dataset:
                 self.__data[dset]['labels'] = pd.DataFrame()
                     
         
-    
+
     def copy(self, deep=True):
         return Dataset.from_splited_data(
             self.X_train.copy(deep=deep),
@@ -195,6 +195,7 @@ class Dataset:
 
 
     # La fonction disable_column affiche des valeurs NaN dans le __data['train' ou 'test']['disabled'], la fonction dc affiche la colonne desactivée ainsi que toutes ses valeurs
+    # Désactiver une colonne
     def dc(self, column):
         for dset in ['train', 'test']:
             if column in self.__data[dset]['features'].columns:
@@ -202,7 +203,36 @@ class Dataset:
                 self.__data[dset]['disabled'][column] = dis_col
             else:
                 raise Exception(f"La colonne '{column}' n'existe pas ! ")
-            
+    
+    # Désactiver plusieurs colonnes      
     def dcs(self, columns):
         for column in columns:
             self.dc(column)
+            
+    # Activer une colonne 
+    def ec(self, column):
+        for dset in ['train', 'test']:
+            if column in self.__data[dset]['disabled']:
+                act_col = self.__data[dset]['disabled'].pop(column)
+                self.__data[dset]['features'][column] = act_col
+            else:
+                raise Exception(f"La colonne '{column}' n'existe pas ! ")
+            
+    # Activert plusieurs colonnes  
+    def ecs(self, columns):
+        for column in columns:
+            self.ec(column)
+            
+            
+    # Reset_label             
+    def res_label(self, env=['train', 'test']):
+        for dset in env:
+            if not self.__data[dset]['labels'].empty:
+                # Récpeation du nom de la colonne
+                column = self.__data[dset]['labels'].name
+                # Insertion de la colonne label dans le ['train' ou 'test']['features']
+                self.__data[dset]['features'][column] = self.__data[dset]['labels']
+                # Réinitialiser le ['train' ou 'test']['labels']
+                self.__data[dset]['labels'] = pd.DataFrame()
+                    
+                
