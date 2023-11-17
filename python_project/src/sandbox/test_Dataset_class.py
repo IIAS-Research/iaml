@@ -6,11 +6,13 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from automed import Dataset
 
 # Lecture Base de données
-df = pd.read_csv('./python_project/src/perf_logger/tests_data/titanic.csv', sep=';')
+df = pd.read_csv('automl/python_project/src/perf_logger/tests_data/test.csv', sep=';')
 print(df.shape)
 
 # Instance de la classe Dataset
-dataset = Dataset(df, label_name = 'label')
+#dataset = Dataset(df, label_name = 'label')
+dataset = Dataset(df)
+
 #print(f"Nom de la classe : {dataset.__class__.__name__}")
 
 membres = dir(dataset)
@@ -60,7 +62,7 @@ print(dataset._Dataset__find_differencies(df))
 
 
 print('Le type de données dans chaque colonne de la dataset chatgée:')
-print(dataset.types_de_données(dataset._Dataset__data['train']['features']))
+print(dataset.data_types(dataset._Dataset__data['train']['features']))
 
 #print('Datatset.copy():')
 #new_dataset = dataset.copy()
@@ -73,25 +75,25 @@ print('Suppression des colonnes Name, Sex, Age et Ticket :')
 #dataset.disable_column('Sex')
 #dataset.disable_column('Age')
 #dataset.disable_column('Ticket')
-dataset.dc('Name')
-dataset.dc('Sex')
-dataset.dc('Age')
-dataset.dc('Ticket')
-print(dataset._Dataset__data['train']['features'])
-print(dataset.types_de_données(dataset._Dataset__data['train']['features']))
-#
-print('Les colonnes désactivées:')
-print(dataset._Dataset__data['train']['disabled'])
-#
-print('activation des colonnes disactivées :')
-#dataset.enable_column('Name')
-#dataset.enable_column('Sex')
-#dataset.enable_column('Age')
-#dataset.enable_column('Ticket')
-dataset.ec('Name')
-dataset.ec('Sex')
-dataset.ec('Age')
-dataset.ec('Ticket')
+##dataset.dc('Name')
+##dataset.dc('Sex')
+##dataset.dc('Age')
+##dataset.dc('Ticket')
+##print(dataset._Dataset__data['train']['features'])
+##print(dataset.types_de_données(dataset._Dataset__data['train']['features']))
+###
+##print('Les colonnes désactivées:')
+##print(dataset._Dataset__data['train']['disabled'])
+###
+##print('activation des colonnes disactivées :')
+###dataset.enable_column('Name')
+###dataset.enable_column('Sex')
+###dataset.enable_column('Age')
+###dataset.enable_column('Ticket')
+##dataset.ec('Name')
+##dataset.ec('Sex')
+##dataset.ec('Age')
+##dataset.ec('Ticket')
 ##### Petit problème dans l'affichage--------------------------------------------------------------
 print(dataset._Dataset__data['train']['features'])
 ###----------------------------------------------------------------------------------------------------
@@ -133,3 +135,7 @@ dataset.set_label('label')
 print("Le dataset apres nouvel ajout du label :")
 print(dataset._Dataset__data['train']['features'])
 print(dataset._Dataset__data['train']['labels'])
+
+# -------------------------------------------------------------------------------------------
+
+

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 class Dataset:
     
@@ -172,26 +173,26 @@ class Dataset:
     
     # TODO Traduire en anglais (commentaire, nom de variable/fonction, etc)
     # Détection des types de données
-    def detecter_types_de_donnees(self, colonne):
+    def detect_data_types(self, column):
         # Cette condition vérifie 2 choses: 
         # Si le rapport entre le nombre de valeurs uniques dans la colonnnne et le nombre total de valeurs dans cette colonne est inférieur à 5%.
         # Le nombre total  de valeurs uniques dans cette colon,ne est inférieur à 7.
-        if len(colonne.unique()) / len(colonne) < 0.05 or len(colonne.unique()) < 7:
-            return 'catégoriel' # TODO Remplacer par un enum ou quelque chose comme ça
-        elif np.issubdtype(colonne.dtype, np.number):
-            return 'Numérique'
-        elif np.issubdtype(colonne.dtype, np.datetime64): # TODO Vérifier aussi dans les string si ce n'est pas une date
+        if len(column.unique()) / len(column) < 0.05 or (len(column.unique()) < 7):
+            return 'Categorical' # TODO Remplacer par un enum ou quelque chose comme ça
+        elif np.issubdtype(column.dtype, np.number):
+            return 'Numeric'
+        elif np.issubdtype(column.dtype, np.datetime64): # TODO Vérifier aussi dans les string si ce n'est pas une date
             return 'Date'
-        elif colonne.astype(str).apply(len).max() <= 85:
-            return 'Chaine de caractères'
+        elif column.astype(str).apply(len).max() <= 85:
+            return 'String'
         else:
-            return 'Texte libre'
+            return 'long_text'
     
-    def types_de_données(self, data):
+    def data_types(self, data):
         # Dictionnaire vide pour stoker le nom de chaque colonne ainsi que son type de données
         types = {}
         for column in data.columns:
-            resultat = self.detecter_types_de_donnees(data[column])
+            resultat = self.detect_data_types(data[column])
             types[column] = resultat
         return types  
 
@@ -241,5 +242,21 @@ class Dataset:
         print("LABELS")
         print("TRAIN",  self.__data['train']['features'].columns,  self.__data['train']['labels'])
         print("TEST",  self.__data['test']['features'].columns,  self.__data['test']['labels'])
-                    
-                
+
+
+    #from enum import Enum
+    #def detect_data_types(self, colonne):
+    #    datatype = self.Enum('Datatype', ['Categorical', 'Numeric', 'Date', 'String', 'long_text'])
+    #    # Cette condition vérifie 2 choses: 
+    #    # Si le rapport entre le nombre de valeurs uniques dans la colonnnne et le nombre total de valeurs dans cette colonne est inférieur à 5%.
+    #    # Le nombre total  de valeurs uniques dans cette colon,ne est inférieur à 7.
+    #    if len(colonne.unique()) / len(colonne) < 0.05 or len(colonne.unique()) < 7:
+    #        return datatype.Categorical # TODO Remplacer par un enum ou quelque chose comme ça
+    #    elif np.issubdtype(colonne.dtype, np.number):
+    #        return datatype.Numeric
+    #    elif np.issubdtype(colonne.dtype, np.datetime64): # TODO Vérifier aussi dans les string si ce n'est pas une date
+    #        return datatype.Date
+    #    elif colonne.astype(str).apply(len).max() <= 85:
+    #        return datatype.String
+    #    else:
+    #        return datatype.long_text
