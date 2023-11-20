@@ -76,7 +76,14 @@ class Dataset:
             
         return list(dict(filter(
             lambda pair: pair[1] in types,
-            self.columns_types.items())).keys())
+            self.usable_columns_types.items())).keys())
+        
+    @property
+    def usable_columns_types(self):
+        return dict(filter(
+            lambda pair: pair[0] in self.X_train.columns,
+            self.columns_types.keys()))
+        
     
     
     def set_label(self, label_name):

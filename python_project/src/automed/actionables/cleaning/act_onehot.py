@@ -15,9 +15,6 @@ class ActOnehot(Actionable):
     
     @runner
     def run(self, input, callback=None) -> Output:
-        dataset = copy.deepcopy(input.dataset)
-        nb_rows = len(input.dataset.X_train)
-        
         def transform(x, y, encoder, column):
             transformed = encoder.transform(x[column].to_numpy().reshape(-1, 1))
             ohe_df = pd.DataFrame(transformed, columns=encoder.get_feature_names_out([column]))
@@ -26,8 +23,8 @@ class ActOnehot(Actionable):
             
         for column in input.dataset.get_columns_names_by_type(DataType.CATEGORICAL):
             values = input.dataset.X_train[column]
-            jobs_encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
-            jobs_encoder.fit(values.to_numpy().reshape(-1, 1))
+            jobs_encoder = OneHotEncoder(handle_unknown='ignore', sparse=False).fit(values.to_numpy().reshape(-1, 1))
+            
             input.dataset.apply(transform, encoder=jobs_encoder, column=column)
         
         return input.to_output(input.dataset, None, None)
