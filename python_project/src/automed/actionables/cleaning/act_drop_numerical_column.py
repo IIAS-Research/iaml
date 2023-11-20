@@ -1,4 +1,5 @@
 from ...actionable import *
+from ...data_type import DataType
 from ...automed import Output
 
 @isStep('cleaning')
@@ -20,7 +21,8 @@ class ActDropNumericalColumn(Actionable):
             x = x.drop(columns=[column])
             return x, y
         
-        for column, values in input.dataset.train_data.items():
+        for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = input.dataset.X_train[column]
             if values.isnull().sum()/len(values) >= self.get_config('empty_threshold'):
                 input.dataset.apply(transform, column=column)
         

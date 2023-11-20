@@ -1,16 +1,6 @@
 import pandas as pd
 import numpy as np
-from enum import Enum
-from pandas.api.types import is_string_dtype
-
-
-
-class DataType(Enum):
-    CATEGORICAL = 0
-    TEXT = 1
-    SHORT_TEXT = 2
-    NUMERIC = 3
-    DATE = 4
+from .data_type import DataType
     
 class Dataset:
     def __init__(self, train_data, test_data=None, label_name=None):
@@ -80,9 +70,12 @@ class Dataset:
     def _merge_df(self, main_df, add_df):
         return main_df.join(add_df)
     
-    def get_columns_names_by_type(self, type):
+    def get_columns_names_by_type(self, types):
+        if type(types) != list:
+            types = [types]
+            
         return list(dict(filter(
-            lambda pair: pair[1] == type,
+            lambda pair: pair[1] in types,
             self.columns_types.items())).keys())
     
     
@@ -91,7 +84,7 @@ class Dataset:
             if label_name not in self.__data[dset]['features'].columns:
                 raise Exception("Column must exist")
             else:
-                self.res_label(env=[dset])
+                self.reset_label(env=[dset])
                 self.__data[dset]['labels'] = self.__data[dset]['features'][label_name]
                 
                 self.__data[dset]['features'].drop(columns=[label_name], inplace=True)
@@ -229,7 +222,7 @@ class Dataset:
             
         if sum([new_columns[data_env].count() for data_env in env]) >= threshold_count:
             for data_env in env:
-                self.__data[data_env]['features'][column_name] = new_columns[data_env]
+                self.__data[data_env]['features'][column_name] = new_columns[data_env].replace(pd.NaT, None)
             return True
         else:
             return False

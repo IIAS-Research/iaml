@@ -3,7 +3,8 @@ from .step import *
 from .metastep import MetaStep
 from .actionable import Actionable
 from .output import Output
-from .dataset import Dataset, DataType
+from .dataset import Dataset
+from .data_type import DataType
 from .metric import Metric
 
 from .meta_ordered_step import MetaOrderedStep
