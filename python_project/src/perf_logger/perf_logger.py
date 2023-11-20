@@ -58,6 +58,7 @@ threads = []
 # Create one thread by File
 print("==", files)
 
+files = [files[0]]
 for file in files:
     print("->>>", file)
     threads.append(ThreadWithReturnValue(target=each_file, args=(file,)))

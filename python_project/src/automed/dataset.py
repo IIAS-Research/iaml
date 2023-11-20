@@ -82,7 +82,7 @@ class Dataset:
     def usable_columns_types(self):
         return dict(filter(
             lambda pair: pair[0] in self.X_train.columns,
-            self.columns_types.keys()))
+            self.columns_types.items()))
         
     
     
