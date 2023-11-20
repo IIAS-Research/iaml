@@ -1,4 +1,5 @@
 from ...actionable import *
+from ...data_type import DataType
 from ...automed import Output
 from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
@@ -14,9 +15,8 @@ class ActDropDateColumn(Actionable):
             x = x.drop(columns=[column])
             return x, y
         
-        for column, values in input.dataset.train_data.items():
-            if is_datetime(values):
-                input.dataset.apply(transform, column=column)
+        for column in input.dataset.get_columns_names_by_type(DataType.DATE):
+            input.dataset.apply(transform, column=column)
         
         return input.to_output(input.dataset, None, None)
         

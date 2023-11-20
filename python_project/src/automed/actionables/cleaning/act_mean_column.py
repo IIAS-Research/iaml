@@ -1,6 +1,6 @@
 from ...actionable import *
 from ...automed import Output
-from pandas.api.types import is_numeric_dtype
+from ...data_type import DataType
 
 @isStep('cleaning')
 class ActMeanColumn(Actionable):
@@ -21,8 +21,9 @@ class ActMeanColumn(Actionable):
             x[column].fillna(values.mean(), inplace=True)
             return x, y
             
-        for column, values in input.dataset.train_data.items():
-            if is_numeric_dtype(values) and values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
+        for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = input.dataset.train_data[column]
+            if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
                 input.dataset.apply(transform, column=column)
         
         return input.to_output(input.dataset, None, None)

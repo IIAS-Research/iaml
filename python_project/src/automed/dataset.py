@@ -1,18 +1,19 @@
 import pandas as pd
-
-class Dataset:
+import numpy as np
+from .data_type import DataType
     
+class Dataset:
     def __init__(self, train_data, test_data=None, label_name=None):
         self.__data = {
             'train': {
                 'features': pd.DataFrame(),
                 'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
+                'labels': pd.Series()
                 },
             'test': {
                 'features': pd.DataFrame(),
                 'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
+                'labels': pd.Series()
             }
         }
         self.label_column = None
@@ -24,6 +25,8 @@ class Dataset:
         else:
             self.__data['test']['features'] = pd.DataFrame(columns=train_data.columns)
             
+        self.columns_types = self.__detect_columns_types() 
+        
         if label_name:
             self.set_label(label_name)
             
@@ -42,14 +45,7 @@ class Dataset:
         self.__X_test = X_test
         self.__y_test = y_test
     
-    def reset_label(self, env=['train', 'test']):
-        for dset in env:
-            if not self.__data[dset]['labels'].empty:
-                self.__data[dset]['features'] = self._merge_df(self.__data[dset]['features'], self.__data[dset]['labels'])
-                self.__data[dset]['labels'] = pd.DataFrame()
-                    
-        
-    
+
     def copy(self, deep=True):
         return Dataset.from_splited_data(
             self.X_train.copy(deep=deep),
@@ -74,6 +70,14 @@ class Dataset:
     def _merge_df(self, main_df, add_df):
         return main_df.join(add_df)
     
+    def get_columns_names_by_type(self, types):
+        if type(types) != list:
+            types = [types]
+            
+        return list(dict(filter(
+            lambda pair: pair[1] in types,
+            self.columns_types.items())).keys())
+    
     
     def set_label(self, label_name):
         for dset in ['train', 'test']:
@@ -81,40 +85,15 @@ class Dataset:
                 raise Exception("Column must exist")
             else:
                 self.reset_label(env=[dset])
-                    
                 self.__data[dset]['labels'] = self.__data[dset]['features'][label_name]
+                
                 self.__data[dset]['features'].drop(columns=[label_name], inplace=True)
-            
-        
-    def disable_column(self, column):
-        for dset in ['train', 'test']:
-            if column in self.__data[dset]['features'].columns:
-                self.__data[dset]['disabled'] = self._merge_df(self.__data[dset]['disabled'], self.__data[dset]['features'][column])
-                self.__data[dset]['features'].drop(columns=[column], inplace=True)
-            else:
-                raise Exception(f"Column '{column}' does not exist")
-        
-    def disable_columns(self, columns):
-        for column in columns:
-            self.disable_column(column)
-            
-    def enable_column(self, column):
-        for dset in ['train', 'test']:
-            if column in self.__data[dset]['disabled'].columns:
-                self.__data[dset]['features'] = self._merge_df(self.__data[dset]['features'], self.__data[dset]['disabled'][column])
-                self.__data[dset]['disabled'].drop(columns=[column], inplace=True)
-            else:
-                raise Exception(f"Column '{column}' does not exist")
-        
-    def enable_columns(self, columns):
-        for column in columns:
-            self.enable_column(column)
             
     def active_columns(self):
         return self.__data['train']['features'].columns
     
     @property      
-    def train_data(self):
+    def train_data(self): 
         return self.__data['train']['features'].copy(deep=True)
     
     @property
@@ -167,3 +146,96 @@ class Dataset:
     def __y_test(self, value):
         self.__data['test']['labels'] = value
         
+    
+    # Detect data types
+    def detect_data_type(self, column_name):
+        column_value = self.X_train[column_name]
+        if column_value.dtype == object:
+            if self.__string_column_to_date(column_name):
+                return DataType.DATE
+            else:
+                if (len(column_value.unique()) / len(column_value) < 0.05 or len(column_value.unique()) < 7):
+                    return DataType.CATEGORICAL
+                elif column_value.astype(str).apply(len).max() <= 85:
+                    return DataType.SHORT_TEXT
+                else:
+                    return DataType.TEXT
+        elif np.issubdtype(column_value.dtype, np.number):
+            return DataType.NUMERIC
+        elif np.issubdtype(column_value.dtype, np.datetime64):
+            return DataType.DATE
+    
+    # Return a dict of with column name as key and value as type of data
+    def __detect_columns_types(self):
+        types = {}
+        for column in self.X_train.columns:
+            types[column] = self.detect_data_type(column)
+            
+        return types  
+
+
+    # Disable a column with delete it
+    def disable_column(self, column): 
+        for data_env in ['train', 'test']:
+            if column in self.__data[data_env]['features'].columns:
+                self.__data[data_env]['disabled'][column] = self.__data[data_env]['features'].pop(column)
+            else:
+                raise Exception(f"Column '{column}' doesn't exist ! ")
+    
+    # Disable several columns
+    def disable_columns(self, columns):
+        for column in columns:
+            self.disable_column(column)
+            
+    # Enable column from disabled dataset
+    def enable_column(self, column):
+        for data_env in ['train', 'test']:
+            if column in self.__data[data_env]['disabled']:
+                self.__data[data_env]['features'][column] = self.__data[data_env]['disabled'].pop(column)
+            else:
+                raise Exception(f"Column '{column}' doesn't exist ! ")
+            
+    # Enable several columns
+    def enable_columns(self, columns):
+        for column in columns:
+            self.enable_column(column)
+            
+            
+    # Reset selected label           
+    def reset_label(self, env=['train', 'test']):
+        for data_env in env:
+            if self.__data[data_env]['labels'].name:
+                column = self.__data[data_env]['labels'].name # Get column name
+                self.__data[data_env]['features'][column] = self.__data[data_env]['labels'] # Add label to dataset
+                self.__data[data_env]['labels'] = pd.Series() # Set label empty
+    
+    def __string_column_to_date(self, column_name, env=['train', 'test']):
+        threshold_count = sum([self.__data[data_env]['features'][column_name].count() for data_env in env]) * 0.95
+        
+        new_columns = {
+            'train': None,
+            'test': None
+            }
+        
+        for data_env in env:
+            new_columns[data_env] = self.__data[data_env]['features'][column_name].apply(self.__string_value_to_date)
+            
+        if sum([new_columns[data_env].count() for data_env in env]) >= threshold_count:
+            for data_env in env:
+                self.__data[data_env]['features'][column_name] = new_columns[data_env].replace(pd.NaT, None)
+            return True
+        else:
+            return False
+                
+                
+            
+    def __string_value_to_date(self, value, date_formats = ['%Y-%M-%d', '%d-%M-%Y', '%Y/%M/%d', '%d/%M/%Y', None]):
+        if type(date_formats) != list:
+            date_formats = list(date_formats)
+        
+        for date_format in date_formats:
+            try:
+                return pd.to_datetime(value, format=date_format)
+            except ValueError:
+                pass
+        return pd.NaT

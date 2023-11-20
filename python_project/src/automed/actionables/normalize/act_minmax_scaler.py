@@ -1,5 +1,6 @@
 from ...actionable import *
 from ...automed import Output
+from ...data_type import DataType
 from pandas.api.types import is_numeric_dtype
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -19,13 +20,13 @@ class ActMinMaxScaler(Actionable):
             x[column] = scaler.transform(np.array(x[column]).reshape(-1, 1))
             return x, y
         
-        for column, values in input.dataset.X_train.items():
-            if is_numeric_dtype(values):
-                scaler = MinMaxScaler()
-                scaler.fit(np.array(values).reshape(-1, 1))
-        
-                # Transform column
-                input.dataset.apply(transform, scaler=scaler, column=column)
+        for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = input.dataset.X_train[column]
+            scaler = MinMaxScaler()
+            scaler.fit(np.array(values).reshape(-1, 1))
+    
+            # Transform column
+            input.dataset.apply(transform, scaler=scaler, column=column)
         
         return input.to_output(input.dataset, None, None)
     

@@ -1,7 +1,8 @@
 from ...actionable import *
+from ...data_type import DataType
 from ...automed import Output
-from pandas.api.types import is_datetime64_any_dtype as is_datetime
 import pandas as pd
+import numpy as np
 
 @isStep('cleaning')
 class ActSplitDate(Actionable):
@@ -16,21 +17,20 @@ class ActSplitDate(Actionable):
             # Split !
             
             # Day
-            x[column + '_weekday'] = x[column].dt.dayofweek
-            x[column + '_month'] = x[column].dt.month
-            x[column + '_year'] = x[column].dt.year
+            x[column + '_weekday'] = x[column].dt.dayofweek.replace(np.NaN, -1)
+            x[column + '_month'] = x[column].dt.month.replace(np.NaN, -1)
+            x[column + '_year'] = x[column].dt.year.replace(np.NaN, -1)
             
             
             # Hour
-            x[column + '_hour'] = x[column].dt.hour
-            x[column + '_minute'] = x[column].dt.minute
-            x[column + '_second'] = x[column].dt.second
+            x[column + '_hour'] = x[column].dt.hour.replace(np.NaN, -1)
+            x[column + '_minute'] = x[column].dt.minute.replace(np.NaN, -1)
+            x[column + '_second'] = x[column].dt.second.replace(np.NaN, -1)
             
             return x, y
             
-        for column, values in input.dataset.train_data.items():
-            if is_datetime(values):
-                input.dataset.apply(transform, column=column)
+        for column in input.dataset.get_columns_names_by_type(DataType.DATE):
+            input.dataset.apply(transform, column=column)
         
         return input.to_output(input.dataset, None, None)
     
