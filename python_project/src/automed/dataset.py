@@ -1,9 +1,18 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from enum import Enum
+from pandas.api.types import is_string_dtype
 
-class Dataset:
+
+
+class DataType(Enum):
+    CATEGORICAL = 0
+    TEXT = 1
+    SHORT_TEXT = 2
+    NUMERIC = 3
+    DATE = 4
     
+class Dataset:
     def __init__(self, train_data, test_data=None, label_name=None):
         self.__data = {
             'train': {
@@ -25,6 +34,8 @@ class Dataset:
             self.__data['test']['features'] = test_data
         else:
             self.__data['test']['features'] = pd.DataFrame(columns=train_data.columns)
+            
+        self.columns_types = self.__detect_columns_types() 
         
         if label_name:
             self.set_label(label_name)
@@ -44,13 +55,6 @@ class Dataset:
         self.__X_test = X_test
         self.__y_test = y_test
     
-    def reset_label(self, env=['train', 'test']):
-        for dset in env:
-            if not self.__data[dset]['labels'].empty:
-                self.__data[dset]['features'] = self._merge_df(self.__data[dset]['features'], self.__data[dset]['labels'])
-                self.__data[dset]['labels'] = pd.DataFrame()
-                    
-        
 
     def copy(self, deep=True):
         return Dataset.from_splited_data(
@@ -76,6 +80,11 @@ class Dataset:
     def _merge_df(self, main_df, add_df):
         return main_df.join(add_df)
     
+    def get_columns_names_by_type(self, type):
+        return list(dict(filter(
+            lambda pair: pair[1] == type,
+            self.columns_types.items())).keys())
+    
     
     def set_label(self, label_name):
         for dset in ['train', 'test']:
@@ -86,32 +95,6 @@ class Dataset:
                 self.__data[dset]['labels'] = self.__data[dset]['features'][label_name]
                 
                 self.__data[dset]['features'].drop(columns=[label_name], inplace=True)
-                
-            
-        
-    def disable_column(self, column):
-        for dset in ['train', 'test']:
-            if column in self.__data[dset]['features'].columns:
-                self.__data[dset]['disabled'] = self._merge_df(self.__data[dset]['disabled'], self.__data[dset]['features'][column])
-                self.__data[dset]['features'].drop(columns=[column], inplace=True)
-            else:
-                raise Exception(f"Column '{column}' does not exist")
-        
-    def disable_columns(self, columns):
-        for column in columns:
-            self.disable_column(column)
-            
-    def enable_column(self, column):
-        for dset in ['train', 'test']:
-            if column in self.__data[dset]['disabled'].columns:
-                self.__data[dset]['features'] = self._merge_df(self.__data[dset]['features'], self.__data[dset]['disabled'][column])
-                self.__data[dset]['disabled'].drop(columns=[column], inplace=True)
-            else:
-                raise Exception(f"Column '{column}' does not exist")
-        
-    def enable_columns(self, columns):
-        for column in columns:
-            self.enable_column(column)
             
     def active_columns(self):
         return self.__data['train']['features'].columns
@@ -171,92 +154,95 @@ class Dataset:
         self.__data['test']['labels'] = value
         
     
-    # TODO Traduire en anglais (commentaire, nom de variable/fonction, etc)
-    # Détection des types de données
-    def detect_data_types(self, column):
-        # Cette condition vérifie 2 choses: 
-        # Si le rapport entre le nombre de valeurs uniques dans la colonnnne et le nombre total de valeurs dans cette colonne est inférieur à 5%.
-        # Le nombre total  de valeurs uniques dans cette colon,ne est inférieur à 7.
-        if len(column.unique()) / len(column) < 0.05 or (len(column.unique()) < 7):
-            return 'Categorical' # TODO Remplacer par un enum ou quelque chose comme ça
-        elif np.issubdtype(column.dtype, np.number):
-            return 'Numeric'
-        elif np.issubdtype(column.dtype, np.datetime64): # TODO Vérifier aussi dans les string si ce n'est pas une date
-            return 'Date'
-        elif column.astype(str).apply(len).max() <= 85:
-            return 'String'
-        else:
-            return 'long_text'
+    # Detect data types
+    def detect_data_type(self, column_name):
+        column_value = self.X_train[column_name]
+        if column_value.dtype == object:
+            if self.__string_column_to_date(column_name):
+                return DataType.DATE
+            else:
+                if (len(column_value.unique()) / len(column_value) < 0.05 or len(column_value.unique()) < 7):
+                    return DataType.CATEGORICAL
+                elif column_value.astype(str).apply(len).max() <= 85:
+                    return DataType.SHORT_TEXT
+                else:
+                    return DataType.TEXT
+        elif np.issubdtype(column_value.dtype, np.number):
+            return DataType.NUMERIC
+        elif np.issubdtype(column_value.dtype, np.datetime64):
+            return DataType.DATE
     
-    def data_types(self, data):
-        # Dictionnaire vide pour stoker le nom de chaque colonne ainsi que son type de données
+    # Return a dict of with column name as key and value as type of data
+    def __detect_columns_types(self):
         types = {}
-        for column in data.columns:
-            resultat = self.detect_data_types(data[column])
-            types[column] = resultat
+        for column in self.X_train.columns:
+            types[column] = self.detect_data_type(column)
+            
         return types  
 
 
-    # La fonction disable_column affiche des valeurs NaN dans le __data['train' ou 'test']['disabled'], la fonction dc affiche la colonne desactivée ainsi que toutes ses valeurs
-    # Désactiver une colonne
-    def dc(self, column): 
-        for dset in ['train', 'test']:
-            if column in self.__data[dset]['features'].columns:
-                dis_col = self.__data[dset]['features'].pop(column)
-                self.__data[dset]['disabled'][column] = dis_col
+    # Disable a column with delete it
+    def disable_column(self, column): 
+        for data_env in ['train', 'test']:
+            if column in self.__data[data_env]['features'].columns:
+                self.__data[data_env]['disabled'][column] = self.__data[data_env]['features'].pop(column)
             else:
-                raise Exception(f"La colonne '{column}' n'existe pas ! ")
+                raise Exception(f"Column '{column}' doesn't exist ! ")
     
-    # Désactiver plusieurs colonnes      
-    def dcs(self, columns):
+    # Disable several columns
+    def disable_columns(self, columns):
         for column in columns:
-            self.dc(column)
+            self.disable_column(column)
             
-    # Activer une colonne 
-    def ec(self, column):
-        for dset in ['train', 'test']:
-            if column in self.__data[dset]['disabled']:
-                act_col = self.__data[dset]['disabled'].pop(column)
-                self.__data[dset]['features'][column] = act_col
+    # Enable column from disabled dataset
+    def enable_column(self, column):
+        for data_env in ['train', 'test']:
+            if column in self.__data[data_env]['disabled']:
+                self.__data[data_env]['features'][column] = self.__data[data_env]['disabled'].pop(column)
             else:
-                raise Exception(f"La colonne '{column}' n'existe pas ! ")
+                raise Exception(f"Column '{column}' doesn't exist ! ")
             
-    # Activer plusieurs colonnes  
-    def ecs(self, columns):
+    # Enable several columns
+    def enable_columns(self, columns):
         for column in columns:
-            self.ec(column)
+            self.enable_column(column)
             
             
-    # Reset_label             
-    def res_label(self, env=['train', 'test']):
-        for dset in env:
-            if self.__data[dset]['labels'].name:
-                # Récpeation du nom de la colonne
-                column = self.__data[dset]['labels'].name
-                # Insertion de la colonne label dans le ['train' ou 'test']['features']
-                self.__data[dset]['features'][column] = self.__data[dset]['labels']
-                # Réinitialiser le ['train' ou 'test']['labels']
-                self.__data[dset]['labels'] = pd.Series()
+    # Reset selected label           
+    def reset_label(self, env=['train', 'test']):
+        for data_env in env:
+            if self.__data[data_env]['labels'].name:
+                column = self.__data[data_env]['labels'].name # Get column name
+                self.__data[data_env]['features'][column] = self.__data[data_env]['labels'] # Add label to dataset
+                self.__data[data_env]['labels'] = pd.Series() # Set label empty
     
-    def show_labels(self):
-        print("LABELS")
-        print("TRAIN",  self.__data['train']['features'].columns,  self.__data['train']['labels'])
-        print("TEST",  self.__data['test']['features'].columns,  self.__data['test']['labels'])
-
-
-    #from enum import Enum
-    #def detect_data_types(self, colonne):
-    #    datatype = self.Enum('Datatype', ['Categorical', 'Numeric', 'Date', 'String', 'long_text'])
-    #    # Cette condition vérifie 2 choses: 
-    #    # Si le rapport entre le nombre de valeurs uniques dans la colonnnne et le nombre total de valeurs dans cette colonne est inférieur à 5%.
-    #    # Le nombre total  de valeurs uniques dans cette colon,ne est inférieur à 7.
-    #    if len(colonne.unique()) / len(colonne) < 0.05 or len(colonne.unique()) < 7:
-    #        return datatype.Categorical # TODO Remplacer par un enum ou quelque chose comme ça
-    #    elif np.issubdtype(colonne.dtype, np.number):
-    #        return datatype.Numeric
-    #    elif np.issubdtype(colonne.dtype, np.datetime64): # TODO Vérifier aussi dans les string si ce n'est pas une date
-    #        return datatype.Date
-    #    elif colonne.astype(str).apply(len).max() <= 85:
-    #        return datatype.String
-    #    else:
-    #        return datatype.long_text
+    def __string_column_to_date(self, column_name, env=['train', 'test']):
+        threshold_count = sum([self.__data[data_env]['features'][column_name].count() for data_env in env]) * 0.95
+        
+        new_columns = {
+            'train': None,
+            'test': None
+            }
+        
+        for data_env in env:
+            new_columns[data_env] = self.__data[data_env]['features'][column_name].apply(self.__string_value_to_date)
+            
+        if sum([new_columns[data_env].count() for data_env in env]) >= threshold_count:
+            for data_env in env:
+                self.__data[data_env]['features'][column_name] = new_columns[data_env]
+            return True
+        else:
+            return False
+                
+                
+            
+    def __string_value_to_date(self, value, date_formats = ['%Y-%M-%d', '%d-%M-%Y', '%Y/%M/%d', '%d/%M/%Y', None]):
+        if type(date_formats) != list:
+            date_formats = list(date_formats)
+        
+        for date_format in date_formats:
+            try:
+                return pd.to_datetime(value, format=date_format)
+            except ValueError:
+                pass
+        return pd.NaT
