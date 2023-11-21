@@ -12,6 +12,7 @@ job:build:pythonEnv:
   tags:
     - unix
     - test
+    - calcul
   script:
     - '/usr/bin/python3 -m venv /home/gitlab-runner/.automl_venv'
     - 'source /home/gitlab-runner/.automl_venv/bin/activate'
