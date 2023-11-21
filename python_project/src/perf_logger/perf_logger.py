@@ -19,7 +19,9 @@ def each_file(file):
         df = pd.read_csv(file, sep=",")
         
     auto = AutoMed(Dataset(df))
-    auto.dataset.set_label('label') 
+    
+    labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
+    auto.dataset.set_label(labels) 
     auto.debug_load()
     auto.run()
     

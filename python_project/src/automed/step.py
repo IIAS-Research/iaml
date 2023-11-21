@@ -46,6 +46,9 @@ class Step:
     def __str__(self):
         return self.name
     
+    def suitable(self, input):
+        return True
+    
     @property
     def dataset(self):
         return self.input.dataset
@@ -350,12 +353,16 @@ def runner(func):
                     if destroyer.destroyed(self):
                         return result
             
-                output = self.from_cache(input)
-                if not output:
-                    output = func(self, input, callback=callback, *args, **kw)
-                    self.add_cache(input, output)
-                    
-                self.track_output(output)
+                if self.suitable(input):
+                    output = self.from_cache(input)
+                    if not output:
+                        output = func(self, input, callback=callback, *args, **kw)
+                        self.add_cache(input, output)
+                        
+                    self.track_output(output)
+                else:
+                    output = input    
+                
                     
                 result = result + ([output] if type(output) == Output else output)
                 

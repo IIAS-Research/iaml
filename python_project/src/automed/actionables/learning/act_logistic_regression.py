@@ -1,6 +1,7 @@
 from ...actionable import *
 from ...automed import Output, Metric
 from sklearn.linear_model import LogisticRegression
+from skmultilearn.problem_transform import BinaryRelevance
 
 @isStep('learning', 'tabular')
 @assessable
@@ -28,6 +29,9 @@ class ActLogisticRegression(Actionable):
             n_jobs = -1,
             random_state = self.get_config('random_state')
             )
+        
+        if input.dataset.is_multilabel:
+            model = BinaryRelevance(classifier=model, require_dense=[False, True])
         
         model.fit(input.dataset.X_train, input.dataset.y_train)
         

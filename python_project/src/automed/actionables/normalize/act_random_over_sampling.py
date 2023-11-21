@@ -23,7 +23,8 @@ class ActRandomOverSampling(Actionable):
         
         return input.to_output(input.dataset, None, None)
     
-        
-    
     def priorize(self, input=None):
         return 1
+    
+    def suitable(self, input):
+        return len(input.dataset.labels_columns) == 1

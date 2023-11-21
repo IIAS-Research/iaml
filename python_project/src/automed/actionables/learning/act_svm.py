@@ -1,6 +1,7 @@
 from ...actionable import *
 from ...automed import Output, Metric
 from sklearn import svm
+from skmultilearn.problem_transform import BinaryRelevance
 
 @isStep('learning', 'tabular')
 @assessable
@@ -38,6 +39,10 @@ class ActSVM(Actionable):
             random_state = self.get_config('random_state'),
             probability = self.get_config('probability')
             )
+        
+        
+        if input.dataset.is_multilabel:
+            model = BinaryRelevance(classifier=model, require_dense=[False, True])
         
         model.fit(input.dataset.X_train, input.dataset.y_train)
         

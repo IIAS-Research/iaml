@@ -1,6 +1,8 @@
 from ...actionable import *
 from ...automed import Output, Metric
 from sklearn.ensemble import GradientBoostingClassifier
+from skmultilearn.problem_transform import BinaryRelevance
+
 
 @isStep('learning', 'tabular')
 @assessable
@@ -39,6 +41,12 @@ class ActXGBoost(Actionable):
                                         max_depth=self.get_config('max_depth'),
                                         random_state=self.get_config('random_state')
                                         )
+        
+        
+        if input.dataset.is_multilabel:
+            model = BinaryRelevance(classifier=model, require_dense=[False, True])
+            
+            
         model.fit(input.dataset.X_train, input.dataset.y_train)
         
         return input.to_output(None, metric, model)
