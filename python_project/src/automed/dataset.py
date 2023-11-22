@@ -8,15 +8,14 @@ class Dataset:
             'train': {
                 'features': pd.DataFrame(),
                 'disabled': pd.DataFrame(),
-                'labels': pd.Series()
+                'labels': pd.DataFrame()
                 },
             'test': {
                 'features': pd.DataFrame(),
                 'disabled': pd.DataFrame(),
-                'labels': pd.Series()
+                'labels': pd.DataFrame()
             }
         }
-        self.label_column = None
         
         self.__data['train']['features'] = train_data
         
@@ -61,8 +60,9 @@ class Dataset:
     def apply(self, method, only_train=False, *args, **kw):
         self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
         if not only_train:
-            self.__X_test, self.y_test__X_test = method(self.__X_test, self.__y_test, *args, **kw)
+            self.__X_test, self.__y_test = method(self.__X_test, self.__y_test, *args, **kw)
         # TODO find and document changes
+        # TODO With change compute again columns types 
         
     def __find_differencies(self, old_dataset):
         return ['No diff']
@@ -86,19 +86,28 @@ class Dataset:
         
     
     
-    def set_label(self, label_name):
-        for dset in ['train', 'test']:
-            if label_name not in self.__data[dset]['features'].columns:
-                raise Exception("Column must exist")
-            else:
-                self.reset_label(env=[dset])
-                self.__data[dset]['labels'] = self.__data[dset]['features'][label_name]
-                
-                self.__data[dset]['features'].drop(columns=[label_name], inplace=True)
+    def set_label(self, labels_names):
+        if type(labels_names) != list:
+            labels_names = [labels_names]
             
+        for data_env in ['train', 'test']:
+            if set(labels_names).issubset(set(self.__data[data_env]['features'].columns) | set(self.__data[data_env]['labels'].columns)):
+                self.reset_label(env=[data_env])
+                for column in labels_names:
+                    self.__data[data_env]['labels'][column] = self.__data[data_env]['features'].pop(column)
+            else:
+                raise Exception("Columns must exist")
+                
     def active_columns(self):
         return self.__data['train']['features'].columns
     
+    @property
+    def is_multilabel(self):
+        return len(self.labels_columns) > 1
+    
+    @property
+    def labels_columns(self):
+        return self.__data['train']['labels'].columns
     @property      
     def train_data(self): 
         return self.__data['train']['features'].copy(deep=True)
@@ -130,11 +139,14 @@ class Dataset:
     
     @property      
     def y_train(self):
-        return self.train_labels
+        if self.is_multilabel:
+            return self.train_labels
+        else:
+            return self.train_labels[self.train_labels.columns[0]]
     
     @y_train.setter
     def y_train(self, value):
-        self.__data['train']['labels'] = value
+        self.__data['train']['labels'] = pd.DataFrame(value)
     
     @property     
     def __test_labels(self):
@@ -142,16 +154,24 @@ class Dataset:
     
     @property      
     def __y_test(self):
-        return self.__test_labels
+        if self.is_multilabel:
+            return self.__test_labels
+        else:
+            return self.__test_labels[self.__test_labels.columns[0]]
     
     # TODO DEBUG purpose -> to remove
     @property
     def check_X_test(self):
         return self.__test_data
     
+    # TODO DEBUG purpose -> to remove
+    @property
+    def check_y_test(self):
+        return self.__y_test
+    
     @__y_test.setter
     def __y_test(self, value):
-        self.__data['test']['labels'] = value
+        self.__data['test']['labels'] = pd.DataFrame(value)
         
     
     # Detect data types
@@ -211,10 +231,11 @@ class Dataset:
     # Reset selected label           
     def reset_label(self, env=['train', 'test']):
         for data_env in env:
-            if self.__data[data_env]['labels'].name:
-                column = self.__data[data_env]['labels'].name # Get column name
-                self.__data[data_env]['features'][column] = self.__data[data_env]['labels'] # Add label to dataset
-                self.__data[data_env]['labels'] = pd.Series() # Set label empty
+            if any(self.__data[data_env]['labels']):
+                for column in self.__data[data_env]['labels']:
+                    column_name = self.__data[data_env]['labels'].name # Get column name
+                    self.__data[data_env]['features'][column_name] = self.__data[data_env]['labels'].pop(column) # Add label to dataset
+            self.__data[data_env]['labels'] = pd.DataFrame() # Set label empty
     
     def __string_column_to_date(self, column_name, env=['train', 'test']):
         threshold_count = sum([self.__data[data_env]['features'][column_name].count() for data_env in env]) * 0.95

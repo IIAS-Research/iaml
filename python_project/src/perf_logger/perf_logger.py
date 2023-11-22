@@ -14,12 +14,18 @@ def each_file(file):
     start_file = datetime.now()
     filename = file.split('/')[-1]
     print('FILE :', filename)
-    df = pd.read_csv(file, sep=";")
+    try:
+        df = pd.read_csv(file, sep=";")
+    except:
+        df = pd.DataFrame()
+        
     if len(df.columns) < 2:
         df = pd.read_csv(file, sep=",")
         
     auto = AutoMed(Dataset(df))
-    auto.dataset.set_label('label') 
+    
+    labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
+    auto.dataset.set_label(labels) 
     auto.debug_load()
     auto.run()
     
@@ -52,11 +58,11 @@ if not exists(history_path):
 else:
     results = pd.read_csv(history_path)
 
-# files = [files[3]]
 threads = []
         
 # Create one thread by File
 print("==", files)
+# files = [files[4]]
 
 for file in files:
     print("->>>", file)
