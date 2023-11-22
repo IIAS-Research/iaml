@@ -14,7 +14,11 @@ def each_file(file):
     start_file = datetime.now()
     filename = file.split('/')[-1]
     print('FILE :', filename)
-    df = pd.read_csv(file, sep=";")
+    try:
+        df = pd.read_csv(file, sep=";")
+    except:
+        df = pd.DataFrame()
+        
     if len(df.columns) < 2:
         df = pd.read_csv(file, sep=",")
         
@@ -58,6 +62,7 @@ threads = []
         
 # Create one thread by File
 print("==", files)
+# files = [files[4]]
 
 for file in files:
     print("->>>", file)

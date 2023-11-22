@@ -60,7 +60,7 @@ class Dataset:
     def apply(self, method, only_train=False, *args, **kw):
         self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
         if not only_train:
-            self.__X_test, self.y_test__X_test = method(self.__X_test, self.__y_test, *args, **kw)
+            self.__X_test, self.__y_test = method(self.__X_test, self.__y_test, *args, **kw)
         # TODO find and document changes
         # TODO With change compute again columns types 
         
@@ -107,7 +107,7 @@ class Dataset:
     
     @property
     def labels_columns(self):
-        return self.y_train.columns
+        return self.__data['train']['labels'].columns
     @property      
     def train_data(self): 
         return self.__data['train']['features'].copy(deep=True)
@@ -139,11 +139,14 @@ class Dataset:
     
     @property      
     def y_train(self):
-        return self.train_labels
+        if self.is_multilabel:
+            return self.train_labels
+        else:
+            return self.train_labels[self.train_labels.columns[0]]
     
     @y_train.setter
     def y_train(self, value):
-        self.__data['train']['labels'] = value
+        self.__data['train']['labels'] = pd.DataFrame(value)
     
     @property     
     def __test_labels(self):
@@ -151,7 +154,10 @@ class Dataset:
     
     @property      
     def __y_test(self):
-        return self.__test_labels
+        if self.is_multilabel:
+            return self.__test_labels
+        else:
+            return self.__test_labels[self.__test_labels.columns[0]]
     
     # TODO DEBUG purpose -> to remove
     @property
@@ -165,7 +171,7 @@ class Dataset:
     
     @__y_test.setter
     def __y_test(self, value):
-        self.__data['test']['labels'] = value
+        self.__data['test']['labels'] = pd.DataFrame(value)
         
     
     # Detect data types
@@ -229,7 +235,7 @@ class Dataset:
                 for column in self.__data[data_env]['labels']:
                     column_name = self.__data[data_env]['labels'].name # Get column name
                     self.__data[data_env]['features'][column_name] = self.__data[data_env]['labels'].pop(column) # Add label to dataset
-                    self.__data[data_env]['labels'] = pd.DataFrame() # Set label empty
+            self.__data[data_env]['labels'] = pd.DataFrame() # Set label empty
     
     def __string_column_to_date(self, column_name, env=['train', 'test']):
         threshold_count = sum([self.__data[data_env]['features'][column_name].count() for data_env in env]) * 0.95
