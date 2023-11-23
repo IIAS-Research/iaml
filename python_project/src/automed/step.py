@@ -202,7 +202,7 @@ class Step:
     def json_pipeline(self):
         return {
             'value': {
-                'id': id(self),
+                'step': self.__class__.__name__,
                 'name': self.name,
                 'description': self.description,
                 'configuration': self.configurations[0]

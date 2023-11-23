@@ -26,50 +26,124 @@ class AutoMed:
         self.input = Input(dataset, None, None) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
     
-    # Load any king of pipe
-    def load_pipe(self, pipe):
-        pass # TODO
+    def parse_pipeline_step(self, step_conf: dict) -> Step:
+        if 'step' not in step_conf:
+            raise TypeError(f'invalid pipeline: missing step attribute')
+
+        # filter registered steps and see if given step exists
+        steps = list(filter(lambda step: step.__name__ == step_conf['step'], Step.available_steps.keys()))
+        if len(steps) == 0:
+            raise TypeError(f'invalid step ({step_conf["step"]})')
+
+        step = None
+        if MetaStep in steps[0].__mro__:
+            # step is a MetaStep
+            tag = None
+            if 'tag' in step_conf:
+                tag = step_conf['tag']
+
+            wrap = None
+            if 'wrap' in step_conf:
+                # filter step wrappers, then filter registered steps and see if given step exists
+                wrap_steps = list(filter(lambda step: StepWrapper in step.__mro__ and step.__name__ == step_conf['wrap'], Step.available_steps.keys()))
+
+                if len(wrap_steps) == 0:
+                    raise TypeError(f'invalid wrap step ({step_conf["wrap"]})')
+
+                if len(wrap_steps) > 0:
+                    wrap = wrap_steps[0]
+
+            destroyer = None
+            if 'use_destroyer' in step_conf and step_conf['use_destroyer']:
+                destroyer = Destroyer()
+
+            step = steps[0](tag=tag, wrap=wrap, destroyer=destroyer)
+        else:
+            # step is not a MetaStep
+            step = steps[0]()
+        
+        # load each specified configuration value for each of the given steps
+        if 'configuration' in step_conf:
+            conf = step_conf['configuration']
+            for name, c in conf.items():
+                step.configure_one(0, name, c['value'])
+
+        return step
+    
+    # Load any kind of pipeline
+    def load_pipeline(self, pipeline: dict, first_step: bool = True) -> None:
+        if 'value' in pipeline:
+            step = self.parse_pipeline_step(pipeline['value'])
+
+            if first_step:
+                self.first_step = step
+            else:
+                self.first_step.add_step(step)
+        
+            if 'children' in pipeline:
+                if MetaExplorerStep in step.__class__.__mro__:
+                    # if step is MetaExplorerStep, add the children to the same step
+                    for child in pipeline['children']:
+                        if 'value' in child:
+                            child_step = self.parse_pipeline_step(child['value'])
+                            step.add_step(child_step)
+                elif len(pipeline['children']) > 0:
+                    # if step is not a MetaExplorer, add the child if any
+                    self.load_pipeline(pipeline['children'][0], first_step=False)
     
     # DEBUG -> Testing purpose
-    def autosklearn_load(self, time=30):
-        self.first_step = MetaOrderedStep()   
-        self.first_step.add_step(RandomSplit()) 
+    def autosklearn_pipeline(self, time=30):
+        step = MetaOrderedStep()   
+        step.add_step(RandomSplit()) 
         
         sklearn = ActAutoSKLearn()
         sklearn.configure_one(0, 'running_time', time)
         
-        self.first_step.add_step(sklearn) 
+        step.add_step(sklearn)
+
+        return step 
         
     # DEBUG -> Testing purpose
-    def tplot_load(self):
-        
-        self.first_step = MetaOrderedStep()
-        self.first_step.add_step(RandomSplit())
-        self.first_step.add_step(MetaStep(tag='cleaning'))
-        self.first_step.add_step(MetaStep(tag='features_selection'))
-        self.first_step.add_step(MetaStep(tag='normalize'))
-        self.first_step.add_step(ActTPLOT()) 
+    def tplot_pipeline(self):
+        step = MetaOrderedStep()
+        step.add_step(RandomSplit())
+        step.add_step(MetaStep(tag='cleaning'))
+        step.add_step(MetaStep(tag='features_selection'))
+        step.add_step(MetaStep(tag='normalize'))
+        step.add_step(ActTPLOT())
+
+        return step
     
-    # DEBUG -> Testing purpose. To replace when load_pipe is working
-    def debug_load(self, only=None, use_destroyer=False):
+    # DEBUG -> Testing purpose.
+    def debug_pipeline(self, only=None, use_destroyer=False):
+        step = MetaOrderedStep()
+        step.add_step(RandomSplit())
+
         if only:
-            self.first_step = MetaOrderedStep()
-            self.first_step.add_step(RandomSplit())
-            self.first_step.add_step(MetaStep(tag=only))
-            self.first_step.add_step(MetaStep(tag='features_selection'))
+            step.add_step(MetaStep(tag=only))
+            step.add_step(MetaStep(tag='features_selection'))
             
         else: 
-            self.first_step = MetaOrderedStep()
-            self.first_step.add_step(RandomSplit())
-            self.first_step.add_step(MetaStep(tag='cleaning'))
-            self.first_step.add_step(MetaStep(tag='features_selection'))
-            self.first_step.add_step(MetaStep(tag='normalize'))
+            step.add_step(MetaStep(tag='cleaning'))
+            step.add_step(MetaStep(tag='features_selection'))
+            step.add_step(MetaStep(tag='normalize'))
             if use_destroyer:
-                self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
+                step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
             else:
-                self.first_step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch))
+                step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch))
                 
             # self.first_step.add_step(MetaExplorerStep(tag='boosting'))
+        
+        return step
+
+    def autosklearn_load(self, time=None):
+        self.first_step = self.autosklearn_pipeline(time)
+
+    def tplot_load(self):
+        self.first_step = self.tplot_pipeline()
+
+    def debug_load(self, only=None, use_destroyer=False):
+        self.first_step = self.debug_pipeline(only, use_destroyer)
     
     
     ##################
