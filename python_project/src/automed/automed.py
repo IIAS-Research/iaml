@@ -26,7 +26,12 @@ class AutoMed:
         self.input = Input(dataset, None, None) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
     
-    def parse_pipeline_step(self, step_conf: dict) -> Step:
+    def parse_pipeline_step(self, pipeline_step: dict) -> Step:
+        if 'value' not in pipeline_step:
+            return None
+
+        step_conf = pipeline_step['value']
+
         if 'step' not in step_conf:
             raise TypeError(f'invalid pipeline: missing step attribute')
 
@@ -58,6 +63,13 @@ class AutoMed:
                 destroyer = Destroyer()
 
             step = steps[0](tag=tag, wrap=wrap, destroyer=destroyer)
+        elif StepWrapper in steps[0].__mro__:
+            # step is a StepWrapper, so its child is the wrapped step
+            if 'children' not in pipeline_step or len(pipeline_step['children']) == 0:
+                raise TypeError(f'invalid pipeline: missing child for step wrapper ({step_conf["step"]})')
+
+            child = self.parse_pipeline_step(pipeline_step['children'][0])
+            step = steps[0](child)
         else:
             # step is not a MetaStep
             step = steps[0]()
@@ -72,20 +84,19 @@ class AutoMed:
     
     # Load any kind of pipeline
     def load_pipeline(self, pipeline: dict, first_step: bool = True) -> None:
-        if 'value' in pipeline:
-            step = self.parse_pipeline_step(pipeline['value'])
-
+        step = self.parse_pipeline_step(pipeline)
+        if step is not None:
             if first_step:
                 self.first_step = step
             else:
                 self.first_step.add_step(step)
         
-            if 'children' in pipeline:
+            if 'children' in pipeline and StepWrapper not in step.__class__.__mro__:
                 if MetaExplorerStep in step.__class__.__mro__:
                     # if step is MetaExplorerStep, add the children to the same step
                     for child in pipeline['children']:
                         if 'value' in child:
-                            child_step = self.parse_pipeline_step(child['value'])
+                            child_step = self.parse_pipeline_step(child)
                             step.add_step(child_step)
                 elif len(pipeline['children']) > 0:
                     # if step is not a MetaExplorer, add the child if any
