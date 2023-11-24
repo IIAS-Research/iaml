@@ -44,10 +44,6 @@ class Step:
         if input:
             self.input = input
             
-    @classmethod
-    def test(cls):
-        print(cls)
-    
     # Load any kind of Step (Step, MetaStep, Wrapper, etc) from json pipeline
     @classmethod
     def from_pipeline(cls, pipeline: dict):
