@@ -3,6 +3,7 @@ from .dataset import Dataset
 from .stack import Stack
 
 from copy import deepcopy
+import sys
 
 # Step class is a brick used to create pipelines. This Step class is not really use in Pipeline, run function doesn't do anything. 
 # This class is use to create new kinds of steps by inheritance and give all needed attributes and methods to children classes. 
@@ -42,6 +43,26 @@ class Step:
         
         if input:
             self.input = input
+            
+    # Load any kind of Step (Step, MetaStep, Wrapper, etc) from json pipeline
+    @classmethod
+    def from_pipeline(cls, pipeline: dict):
+        # TODO -> Destroyer after rework
+        step = None
+        if 'step' not in pipeline:
+            raise TypeError(f'invalid pipeline: missing step attribute')
+        
+        step_class = getattr(sys.modules['automed'], pipeline['step']) # Get class from string
+        if Step in step_class.__mro__:
+            step = cls() if step_class == cls else step_class.from_pipeline(pipeline)
+            
+            if 'configuration' in pipeline:
+                for name, value in pipeline['configuration'].items():
+                    step.configure_one(0, name, value['value'])
+        else: 
+            raise TypeError(f'invalid pipeline: step does not exist')
+        
+        return step
         
     def __str__(self):
         return self.name
@@ -204,12 +225,10 @@ class Step:
     
     def json_pipeline(self):
         return {
-            'value': {
-                'id': id(self),
-                'name': self.name,
-                'description': self.description,
-                'configuration': self.configurations[0]
-            },
+            'step': self.__class__.__name__,
+            'name': self.name,
+            'description': self.description,
+            'configuration': self.configurations[0],
             'children': []
         }
     

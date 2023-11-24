@@ -17,6 +17,23 @@ class MetaStep(Step):
         # If there is a tag -> add all Steps with this tag
         if tag:
             self.add_step_by_tag(tag, wrap=wrap) 
+        
+    # Load any MetaStep from json pipeline
+    @classmethod
+    def from_pipeline(cls, pipeline:dict):
+        step = super().from_pipeline(pipeline)
+        
+        if 'children' in pipeline:
+            for child in pipeline['children']:
+                step.add_step(Step.from_pipeline(child))
+                
+        if 'tag' in pipeline:
+            step.add_step_by_tag(pipeline['tag'])
+            
+        if not step.steps:
+            raise TypeError(f'invalid pipeline: MetaStep must have at least one child')
+        
+        return step
     
     # Add one step to the MetaStep. 
     # step must be a Step inherited class
@@ -61,7 +78,6 @@ class MetaStep(Step):
         if any(self.steps):
             child = self.steps[-1].json_pipeline()
             for step in self.steps[-2::-1]:
-                print("New", self, id(self), json)
                 prev_child = child
                 child = step.json_pipeline()
                 
@@ -72,16 +88,12 @@ class MetaStep(Step):
         return json
     
     def __add_children_pipeline(self, pipeline, children):
-        print("__ADD", pipeline, children)
         if ('children' in pipeline.keys()) and any(pipeline['children']):
-            print('loop')
             for index, child in enumerate(pipeline['children']):
                 pipeline['children'][index] = self.__add_children_pipeline(child, children)
-                print('just added', pipeline['children'][index])
         else:
             pipeline['children'] = children
         
-        print('return', pipeline)    
         return pipeline
                 
     

@@ -5,6 +5,17 @@ class StepWrapper(Step):
     def __init__(self, step):
         self.step = step
         
+    # Load any kind of StepWrapper
+    @classmethod
+    def from_pipeline(cls, pipeline:dict):
+        if 'children' not in pipeline or len(pipeline['children']) != 1:
+            raise TypeError(f'invalid pipeline: StepWrapper must have exactly one child')
+        
+        step = super().from_pipeline(pipeline)
+        step.wrap(Step.from_pipeline(pipeline['children'][0]))
+        
+        return step
+        
     def wrap(self, step):
         if Step in step.__class__.__mro__:
             self.step = step
@@ -21,12 +32,10 @@ class StepWrapper(Step):
     
     def json_pipeline(self):
         return {
-            'value': {
-                'id': id(self),
-                'name': self.name,
-                'description': self.description,
-                'configuration': self.configurations[0]
-            },
+            'step': self.__class__.__name__,
+            'name': self.name,
+            'description': self.description,
+            'configuration': self.configurations[0],
             'children': [self.step.json_pipeline()]
         }
     
