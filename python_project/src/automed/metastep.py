@@ -1,3 +1,4 @@
+from .logger import logger
 from .step import Step, isStep, runner, Output, Input
 from .step_wrapper import *
 
@@ -61,7 +62,7 @@ class MetaStep(Step):
         if any(self.steps):
             child = self.steps[-1].json_pipeline()
             for step in self.steps[-2::-1]:
-                print("New", self, id(self), json)
+                logger.log("New", self, id(self), json)
                 prev_child = child
                 child = step.json_pipeline()
                 
@@ -72,16 +73,16 @@ class MetaStep(Step):
         return json
     
     def __add_children_pipeline(self, pipeline, children):
-        print("__ADD", pipeline, children)
+        logger.log("__ADD", pipeline, children)
         if ('children' in pipeline.keys()) and any(pipeline['children']):
-            print('loop')
+            logger.log('loop')
             for index, child in enumerate(pipeline['children']):
                 pipeline['children'][index] = self.__add_children_pipeline(child, children)
-                print('just added', pipeline['children'][index])
+                logger.log('just added', pipeline['children'][index])
         else:
             pipeline['children'] = children
         
-        print('return', pipeline)    
+        logger.log('return', pipeline)    
         return pipeline
                 
     
@@ -117,3 +118,10 @@ class MetaStep(Step):
             return self.__recursive_run(futures_steps, results, callback=callback)
         else:
             return inputs
+
+
+    def conf_to_rich_str_list(self):
+        conf = super().conf_to_rich_str_list()
+        conf.append(f'steps={",".join(set([ step.__class__.__name__ for step in self.steps ]))}')
+
+        return conf

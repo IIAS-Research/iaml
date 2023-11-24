@@ -1,6 +1,7 @@
 from ..step_wrapper import *
 from ..output import *
 from ..meta_explorer_step import MetaExplorerStep
+from ..logger import logger
 
 from copy import deepcopy
 import random
@@ -68,7 +69,7 @@ class WrapGeneticGridSearch(StepWrapper):
             
         # Loop one time by wanted generation
         for i_gen in range(0, self.get_config('nb_generations')):
-            print("--- NEW GENERATION ---", i_gen, self.step.name)
+            logger.log(f"created new generation: [b]{self.step.__class__.__name__}[/] (generation={i_gen})")
             
             meta = MetaExplorerStep() # Use MetaExplorer to run all our generation easily
             meta.add_steps(generation) # Give all steps to MetaExplorer
@@ -76,7 +77,6 @@ class WrapGeneticGridSearch(StepWrapper):
             
             # If this is not the last generation, let's create a new one
             if i_gen+1 < self.get_config('nb_generations'):
-                print("GENERATE NEW !", self.step.name)
                 # Generate next generation
                 nb_to_get = int(self.get_config('nb_estimators')/4)
                 outputs.sort()
@@ -113,7 +113,7 @@ class WrapGeneticGridSearch(StepWrapper):
                     
                 generation = new_generation # Let's go for the next generation
             else:
-                print("FINISH ALL GENERATIONS", self.step.name)
+                logger.log(f"finished all generations: [b]{self.step.__class__.__name__}[/]")
         
         return outputs
             
@@ -121,7 +121,7 @@ class WrapGeneticGridSearch(StepWrapper):
             
     # Return Step with random configuration
     def random_generation(self):
-        new_step = deepcopy(self.step) # Deepcopy to avoid editing other Steps of the same generation
+        new_step: Step = deepcopy(self.step) # Deepcopy to avoid editing other Steps of the same generation
         
         for key in self.__config_keys(): # For each configuration key, we'll choose a random value
             config = new_step.current_configuration[key]
@@ -159,7 +159,7 @@ class WrapGeneticGridSearch(StepWrapper):
     
     # Randomly mutate Step
     def random_mutation(self, step):
-        new_step = deepcopy(step) # Deepcopy to avoid editing another Step
+        new_step: Step = deepcopy(step) # Deepcopy to avoid editing another Step
         
         random_key = random.choice(list(self.__config_keys())) # Choose a random key to mutate
         random_item = new_step.current_configuration[random_key] # Get value of the random key
@@ -191,6 +191,21 @@ class WrapGeneticGridSearch(StepWrapper):
             
         new_step.configure_one(0, random_key, new_value) # Apply configuration
         return new_step
+    
+
+    def conf_to_rich_str_list(self):
+        l = [f'step={self.step.__class__.__name__}']
+        l.extend(super().conf_to_rich_str_list())
+
+        return l
+    
+
+    def count_steps(self):
+        estimators  = self.get_config('nb_estimators')
+        generations = self.get_config('nb_generations')
+        
+        return self.step.count_steps() * sum([ estimators * (0.75 ** i) for i in range(generations) ]) # math
+
     
     def __same_config(self, a, b):
         if len(a.keys()) != len(b.keys()):
