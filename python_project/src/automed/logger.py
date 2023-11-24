@@ -4,7 +4,7 @@ import rich.progress
 
 class Logger:
     def __init__(self, quiet=False) -> None:
-        self.console = rich.console.Console()
+        self.console = rich.console.Console(log_path=False)
         self.progress = rich.progress.Progress(console=self.console)
         self.quiet = quiet
 
