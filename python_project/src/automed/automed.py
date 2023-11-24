@@ -100,8 +100,20 @@ class AutoMed:
     def run(self, callback=None):
         copied_input = self.input.to_input() # Avoid input to be edited by futures steps
         
-        # RUN !
-        self.output = self.first_step.run(copied_input, callback=callback)
+        with logger.progress as progress:
+            step_count = self.first_step.count_steps()
+            task = progress.add_task('running steps...', total=step_count)
+
+            def progress_callback(step: Step):
+                progress.update(task, advance=1)
+
+                if callback is not None:
+                    return callback(step)
+
+            # RUN!
+            self.output = self.first_step.run(copied_input, callback=progress_callback)
+            
+            progress.update(task, completed=step_count)
         
         # Order ouputs according results
         self.output.sort(key=lambda output: output.metric.compute(output), reverse=True)
