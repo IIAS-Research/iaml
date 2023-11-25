@@ -1,7 +1,7 @@
 from ..step_wrapper import *
 from ..output import *
 from ..meta_explorer_step import MetaExplorerStep
-from ..logger import logger
+from ..logger import Logger
 
 from copy import deepcopy
 import random
@@ -69,7 +69,7 @@ class WrapGeneticGridSearch(StepWrapper):
             
         # Loop one time by wanted generation
         for i_gen in range(0, self.get_config('nb_generations')):
-            logger.log(f"created new generation: [b]{self.step.__class__.__name__}[/] (generation={i_gen})")
+            Logger().log(f"created new generation: [b]{self.step.__class__.__name__}[/] (generation={i_gen})")
             
             meta = MetaExplorerStep() # Use MetaExplorer to run all our generation easily
             meta.add_steps(generation) # Give all steps to MetaExplorer
@@ -113,7 +113,7 @@ class WrapGeneticGridSearch(StepWrapper):
                     
                 generation = new_generation # Let's go for the next generation
             else:
-                logger.log(f"finished all generations: [b]{self.step.__class__.__name__}[/]")
+                Logger().log(f"finished all generations: [b]{self.step.__class__.__name__}[/]")
         
         return outputs
             

@@ -1,6 +1,6 @@
 from ..step_wrapper import *
 from ..output import *
-from ..logger import logger
+from ..logger import Logger
 
 from copy import deepcopy
 
@@ -241,9 +241,9 @@ class GridIteration:
         
         if best_val <= self.best_result:
             self.iterations_without_improvement = self.iterations_without_improvement + 1
-            logger.log('Iteration without improvement', self.iterations_without_improvement, best_val)
+            Logger().log('Iteration without improvement', self.iterations_without_improvement, best_val)
         else:
-            logger.log('IMPROVED !', best_val, ' > ', self.best_result, best_val > self.best_result )
+            Logger().log('IMPROVED !', best_val, ' > ', self.best_result, best_val > self.best_result )
             self.best_result = best_val
             self.iterations_without_improvement = 0
         

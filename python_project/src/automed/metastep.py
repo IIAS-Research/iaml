@@ -1,4 +1,4 @@
-from .logger import logger
+from .logger import Logger
 from .step import Step, isStep, runner, Output, Input
 from .step_wrapper import *
 

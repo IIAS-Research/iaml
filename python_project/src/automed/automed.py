@@ -114,7 +114,7 @@ class AutoMed:
     def run(self, callback=None):
         copied_input = self.input.to_input() # Avoid input to be edited by futures steps
         
-        with logger.progress as progress:
+        with Logger().progress as progress:
             step_count = self.first_step.count_steps()
             task = progress.add_task('running steps...', total=step_count)
 

@@ -1,7 +1,7 @@
 from .output import Output, Input
 from .dataset import Dataset
 from .stack import Stack
-from .logger import logger
+from .logger import Logger
 
 from copy import deepcopy
 import sys
@@ -392,7 +392,7 @@ def runner(func):
 
             # only print "parent" steps to reduce logs
             if hasattr(self, 'step') or hasattr(self, 'steps'):
-                logger.log(f'running step: {self.to_rich_str()}')
+                Logger().log(f'running step: {self.to_rich_str()}')
             
             for input in inputs:
                 
