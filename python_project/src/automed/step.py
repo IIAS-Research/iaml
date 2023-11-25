@@ -1,6 +1,7 @@
 from .output import Output, Input
 from .dataset import Dataset
 from .stack import Stack
+from .logger import Logger
 
 from copy import deepcopy
 import sys
@@ -232,6 +233,30 @@ class Step:
             'children': []
         }
     
+
+    def conf_to_rich_str_list(self):
+        conf = [ f'{name}={conf["value"]}' for name, conf in self.configurations[0].items() ]
+        
+        return conf
+
+
+    def to_rich_str(self):
+        conf = self.conf_to_rich_str_list()
+
+        if len(conf) > 0:
+            name = f'[b]{self.__class__.__name__}[/] ({", ".join(conf)})'
+        else:
+            name = f'[b]{self.__class__.__name__}[/]'
+        
+        return name
+    
+    def count_steps(self):
+        """
+        Returns a rough estimation of the total count of steps for a given
+        pipeline.
+        """
+        return 1
+    
     ############
     # Priorize #
     ############
@@ -364,7 +389,11 @@ def runner(func):
         result:list[Output] = []
         for current in self.configurations:
             self.current_configuration = current
-            print("# RUN #", self, self.resume_configuration())
+
+            # only print "parent" steps to reduce logs
+            if hasattr(self, 'step') or hasattr(self, 'steps'):
+                Logger().log(f'running step: {self.to_rich_str()}')
+            
             for input in inputs:
                 
                 # Destroyer will stop Step run if results are not good enough

@@ -1,3 +1,4 @@
+from .logger import Logger
 from .step import Step, isStep, runner, Output, Input
 from .step_wrapper import *
 
@@ -129,3 +130,17 @@ class MetaStep(Step):
             return self.__recursive_run(futures_steps, results, callback=callback)
         else:
             return inputs
+
+
+    def conf_to_rich_str_list(self):
+        conf = super().conf_to_rich_str_list()
+        conf.append(f'steps={",".join(set([ step.__class__.__name__ for step in self.steps ]))}')
+
+        return conf
+    
+    def count_steps(self):
+        """
+        Returns a rough estimation of the total count of steps for a given
+        pipeline.
+        """
+        return 1 + sum(map(lambda child: child.count_steps(), self.steps))

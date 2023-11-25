@@ -49,4 +49,11 @@ class StepWrapper(Step):
     def run(self, input, callback=None):
         # This wrapper is useless. Only run the step
         return self.step.run(input, callback=callback) 
+    
+    def count_steps(self):
+        """
+        Returns a rough estimation of the total count of steps for a given
+        pipeline.
+        """
+        return 1 + self.step.count_steps()
             
