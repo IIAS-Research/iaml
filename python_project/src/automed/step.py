@@ -255,14 +255,7 @@ class Step:
         Returns a rough estimation of the total count of steps for a given
         pipeline.
         """
-        count = 1
-        if hasattr(self, 'step'):
-            count += self.step.count_steps()
-        elif hasattr(self, 'steps'):
-            for s in self.steps:
-                count += s.count_steps()
-        
-        return count
+        return 1
     
     ############
     # Priorize #

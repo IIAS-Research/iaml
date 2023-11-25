@@ -137,3 +137,10 @@ class MetaStep(Step):
         conf.append(f'steps={",".join(set([ step.__class__.__name__ for step in self.steps ]))}')
 
         return conf
+    
+    def count_steps(self):
+        """
+        Returns a rough estimation of the total count of steps for a given
+        pipeline.
+        """
+        return 1 + sum(map(lambda child: child.count_steps(), self.steps))
