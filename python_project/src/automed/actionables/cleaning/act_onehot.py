@@ -23,7 +23,7 @@ class ActOnehot(Actionable):
             
         for column in input.dataset.get_columns_names_by_type(DataType.CATEGORICAL):
             values = input.dataset.X_train[column]
-            jobs_encoder = OneHotEncoder(handle_unknown='ignore', sparse=False).fit(values.to_numpy().reshape(-1, 1))
+            jobs_encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False).fit(values.to_numpy().reshape(-1, 1))
             
             input.dataset.apply(transform, encoder=jobs_encoder, column=column)
         
