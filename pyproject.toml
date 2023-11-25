@@ -1,5 +1,5 @@
 [tool.setuptools]
-package-dir = { "" = "python_project/src" }
+package-dir = { "" = "src" }
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

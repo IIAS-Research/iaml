@@ -18,8 +18,7 @@ Pour installer ce projet, suivez les étapes suivantes
 ***
 ## 🚀 2 - Lancement
 
-Le seul objectif de ce projet est de mettre à disposition la documentation des bonnes pratiques. Seule une régénération locale du site web statique peut être lancée :
-- Lancer à la racine du projet `python3 -m mkdocs build -d public`
+TODO
 
 ***
 ## 💡 3 - Informations générales
