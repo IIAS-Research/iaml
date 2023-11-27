@@ -11,8 +11,8 @@ class StepWrapper(Step):
         if 'children' not in pipeline or len(pipeline['children']) != 1:
             raise TypeError(f'invalid pipeline: StepWrapper must have exactly one child')
         
-        step = super().from_pipeline(pipeline)
-        step.wrap(Step.from_pipeline(pipeline['children'][0]))
+        child = Step.from_pipeline(pipeline['children'][0])
+        step = cls(child)
         
         return step
         
