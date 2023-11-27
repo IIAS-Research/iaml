@@ -48,7 +48,7 @@ class AutoMed:
         step = MetaOrderedStep()
         step.add_step(RandomSplit())
         step.add_step(MetaStep(tag='cleaning'))
-        step.add_step(MetaStep(tag='features_selection'))
+        # step.add_step(MetaStep(tag='features_selection'))
         step.add_step(MetaStep(tag='normalize'))
         step.add_step(ActTPLOT())
 
@@ -61,11 +61,11 @@ class AutoMed:
 
         if only:
             step.add_step(MetaStep(tag=only))
-            step.add_step(MetaStep(tag='features_selection'))
+            # step.add_step(MetaStep(tag='features_selection'))
             
         else: 
             step.add_step(MetaStep(tag='cleaning'))
-            step.add_step(MetaStep(tag='features_selection'))
+            # step.add_step(MetaStep(tag='features_selection'))
             step.add_step(MetaStep(tag='normalize'))
             if use_destroyer:
                 step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
