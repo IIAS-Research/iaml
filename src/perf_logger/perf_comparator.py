@@ -50,7 +50,7 @@ for index, dataset in enumerate(datasets):
     
     
 
-fig.savefig(current_path+"/../../../docs/compare_perf_fig.png", dpi=300, bbox_inches = "tight") 
+fig.savefig(current_path+"/../../docs/compare_perf_fig.png", dpi=300, bbox_inches = "tight") 
 
 tplot_results = pd.read_csv(current_path+"/tests_data/tplot_perf.log")
 
@@ -78,4 +78,4 @@ for index, dataset in enumerate(datasets):
     
     
 
-fig.savefig(current_path+"/../../../docs/compare_perf_tplot_fig.png", dpi=300, bbox_inches = "tight") 
+fig.savefig(current_path+"/../../docs/compare_perf_tplot_fig.png", dpi=300, bbox_inches = "tight") 
