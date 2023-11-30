@@ -8,7 +8,3 @@ class PredictionDataset:
 
     def apply(self, method, *args, **kw):
         self.pred_data, _ = method(self.pred_data, [], *args, **kw)
-
-    
-    def map(self, method: callable, *args, **kw):
-        return method(self.pred_data, [], *args, **kw)
