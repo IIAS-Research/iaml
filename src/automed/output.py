@@ -48,11 +48,15 @@ class Output:
         else:
             id(self) == id(other)
         
-    def to_output(self, dataset:Dataset=None, metric=None, model=None):
+    def to_output(self, dataset:Dataset=None, metric=None, function:callable=None, *args, **kw):
+        if self.model is not None and function is not None:
+            # self.model will be None when doing prediction
+            self.model.add_to_stack(function, *args, **kw)
+
         return Output(
             (dataset or self.dataset or Dataset()),
             metric or self.metric,
-            model or self.model,
+            self.model,
             stack_list=self.stacked_path)
         
     def to_input(self, dataset:Dataset=None, metric=None, model=None):

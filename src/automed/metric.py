@@ -7,6 +7,6 @@ class Metric:
     
     def compute(self, input):
         if input.dataset.is_multilabel:
-            return input.dataset.compute(input.model, accuracy_score)
+            return input.dataset.compute(input.model.sklearn_model, accuracy_score)
         else:
-            return input.dataset.compute(input.model, balanced_accuracy_score)
+            return input.dataset.compute(input.model.sklearn_model, balanced_accuracy_score)

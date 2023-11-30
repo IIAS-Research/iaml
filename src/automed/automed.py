@@ -4,6 +4,7 @@ from .actionable import Actionable
 from .output import Output, Input
 from .dataset import Dataset
 from .metric import Metric
+from .model import Model
 from .destroyer import Destroyer
 
 from .meta_ordered_step import MetaOrderedStep
@@ -23,7 +24,7 @@ class AutoMed:
     
     def __init__(self, dataset:Dataset=None):
         self.output = None
-        self.input = Input(dataset, None, None) # Gerenate Input object from Dataset
+        self.input = Input(dataset, None, Model()) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
     
     
