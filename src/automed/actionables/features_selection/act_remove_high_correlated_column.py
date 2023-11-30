@@ -3,7 +3,7 @@ from ...automed import Output
 from pandas.api.types import is_numeric_dtype
 import numpy as np
 
-# @isStep('features_selection')
+@isStep('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
     name = "Remove High Correlated Column"
     def __init__(self):
@@ -30,7 +30,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         to_drop = [column for column in upper.columns if any(upper[column] >= self.get_config('threshold'))]
         
         # Remove these highly correlated features
-        input.dataset.apply(transform, to_drop=to_drop)
+        input.dataset.apply(transform, columns=to_drop)
         
         return input.to_output(input.dataset, None, None)
     
