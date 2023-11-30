@@ -2,6 +2,20 @@ from ...actionable import *
 from ...automed import Output
 from ...data_type import DataType
 
+
+def transform(input: Input, columns: tuple[str, float]) -> Output:
+    def t(x, y, name: str, mean: float):
+        x[name].fillna(mean, inplace=True)
+
+        return x, y
+
+
+    for name, mean in columns:
+        input.dataset.apply(t, name=name, mean=mean)
+    
+    return input.to_output()
+
+
 @isStep('cleaning')
 class ActMeanColumn(Actionable):
     name = "Fill missing values with mean"
@@ -14,20 +28,16 @@ class ActMeanColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:
-        
-        
-        def transform(x, y, column):
-            x[column].fillna(values.mean(), inplace=True)
-            return x, y
-            
+    def run(self, input, callback=None) -> Output:        
+        columns = []
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input.dataset.train_data[column]
             if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
-                input.dataset.apply(transform, column=column)
+                columns.append((column, values.mean()))
         
-        return input.to_output(input.dataset, None, None)
-    
+        transform(input, columns)
+        
+        return input.to_output(input.dataset, None, transform, columns)
         
     
     def priorize(self, input=None):

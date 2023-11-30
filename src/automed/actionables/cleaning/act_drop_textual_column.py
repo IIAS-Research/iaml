@@ -1,7 +1,12 @@
 from ...actionable import *
 from ...data_type import DataType
 from ...automed import Output
-from pandas.api.types import is_string_dtype
+
+
+def transform(input: Input, columns: list) -> Output:
+    input.dataset.apply(lambda x, y: (x.drop(columns, axis=1), y))
+
+    return input.to_output()
 
 
 @isStep('cleaning')
@@ -10,15 +15,11 @@ class ActDropTextualColumn(Actionable):
     
     @runner
     def run(self, input, callback=None) -> Output:
+        columns_to_drop = input.dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT])
+        # print(columns_to_drop, input.dataset.X_train.columns)
+        transform(input, columns_to_drop)
         
-        def transform(x, y, column):
-            x = x.drop(columns=[column])
-            return x, y
-            
-        for column in input.dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]):
-            input.dataset.apply(transform, column=column)
-        
-        return input.to_output(input.dataset, None, None)
+        return input.to_output(None, None, transform, columns_to_drop)
         
     
     def priorize(self, input=None):
