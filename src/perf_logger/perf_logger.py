@@ -87,7 +87,7 @@ sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
 # plot.set(ylim = (.5,1))
 plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
 fig = plot.get_figure()
-fig.savefig(current_path+"/../../../docs/perf_fig.png",dpi=300, bbox_inches = "tight") 
+fig.savefig(current_path+"/../../docs/perf_fig.png",dpi=300, bbox_inches = "tight") 
 
 # Create time graph
 plt.clf()
@@ -95,4 +95,4 @@ plot = sns.lineplot(data=df_plot, x="commit_id", y="compute_time", hue="dataset_
 sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))
 plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
 fig = plot.get_figure()
-fig.savefig(current_path+"/../../../docs/time_fig.png",dpi=300, bbox_inches = "tight") 
+fig.savefig(current_path+"/../../docs/time_fig.png",dpi=300, bbox_inches = "tight") 
