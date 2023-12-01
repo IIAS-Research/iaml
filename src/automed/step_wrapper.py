@@ -12,7 +12,7 @@ class StepWrapper(Step):
             raise TypeError(f'invalid pipeline: StepWrapper must have exactly one child')
         
         child = Step.from_pipeline(pipeline['children'][0])
-        step = cls(child)
+        step = super().from_pipeline(pipeline, child)
         
         return step
         

@@ -47,7 +47,7 @@ class Step:
             
     # Load any kind of Step (Step, MetaStep, Wrapper, etc) from json pipeline
     @classmethod
-    def from_pipeline(cls, pipeline: dict):
+    def from_pipeline(cls, pipeline: dict, *args):
         # TODO -> Destroyer after rework
         step = None
         if 'step' not in pipeline:
@@ -55,11 +55,14 @@ class Step:
         
         step_class = getattr(sys.modules['automed'], pipeline['step']) # Get class from string
         if Step in step_class.__mro__:
-            step = cls() if step_class == cls else step_class.from_pipeline(pipeline)
+            if step_class == cls:
+                step = cls(*args)  
             
-            if 'configuration' in pipeline:
-                for name, value in pipeline['configuration'].items():
-                    step.configure_one(0, name, value['value'])
+                if 'configuration' in pipeline:
+                    for name, value in pipeline['configuration'].items():
+                        step.configure_one(0, name, value['value'])
+            else: 
+                step = step_class.from_pipeline(pipeline)
         else: 
             raise TypeError(f'invalid pipeline: step does not exist')
         
