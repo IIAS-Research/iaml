@@ -3,10 +3,8 @@ from ...data_type import DataType
 from ...automed import Output
 
 
-def transform(input: Input, columns: list) -> Output:
-    input.dataset.apply(lambda x, y: (x.drop(columns, axis=1), y))
-
-    return input.to_output()
+def transform(x, y, columns: list) -> Output:
+    return x.drop(columns, axis=1), y
 
 
 @isStep('cleaning')
@@ -16,9 +14,8 @@ class ActDropDateColumn(Actionable):
     @runner
     def run(self, input: Input, callback=None) -> Output:        
         columns_to_drop = input.dataset.get_columns_names_by_type(DataType.DATE)
-        transform(input, columns_to_drop)
-        
-        return input.to_output(None, None, transform, columns_to_drop)
+
+        return input.transform_dataset(transform, columns_to_drop)
         
     
     def priorize(self, input=None):

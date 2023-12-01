@@ -4,8 +4,8 @@ from ...automed import Output
 import numpy as np
 
 
-def transform(input: Input, columns: list[str]) -> Output:
-    def t(x, y, column):
+def transform(x, y, columns: list[str]) -> Output:
+    for column in columns:
         # Split !
 
         # Day
@@ -18,13 +18,7 @@ def transform(input: Input, columns: list[str]) -> Output:
         x[column + '_minute'] = x[column].dt.minute.replace(np.NaN, -1)
         x[column + '_second'] = x[column].dt.second.replace(np.NaN, -1)
         
-        return x, y
-    
-
-    for column in columns:
-        input.dataset.apply(t, column=column)
-    
-    return input.to_output()
+    return x, y
 
 
 @isStep('cleaning')
@@ -34,11 +28,10 @@ class ActSplitDate(Actionable):
         self.configurations = [{}]
     
     @runner
-    def run(self, input, callback=None) -> Output:
+    def run(self, input: Input, callback=None) -> Output:
         columns = input.dataset.get_columns_names_by_type(DataType.DATE)
-        transform(input, columns)
-        
-        return input.to_output(input.dataset, None, transform, columns)
+
+        return input.transform_dataset(transform, columns)
     
         
     def priorize(self, input=None):

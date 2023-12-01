@@ -3,17 +3,11 @@ from ...automed import Output
 from ...data_type import DataType
 
 
-def transform(input: Input, columns: tuple[str, float]) -> Output:
-    def t(x, y, name: str, mean: float):
+def transform(x, y, columns: tuple[str, float]) -> Output:
+    for name, mean in columns:
         x[name].fillna(mean, inplace=True)
 
-        return x, y
-
-
-    for name, mean in columns:
-        input.dataset.apply(t, name=name, mean=mean)
-    
-    return input.to_output()
+    return x, y
 
 
 @isStep('cleaning')
@@ -28,16 +22,14 @@ class ActMeanColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:        
+    def run(self, input: Input, callback=None) -> Output:        
         columns = []
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input.dataset.train_data[column]
             if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
                 columns.append((column, values.mean()))
         
-        transform(input, columns)
-        
-        return input.to_output(input.dataset, None, transform, columns)
+        return input.transform_dataset(transform, columns)
         
     
     def priorize(self, input=None):

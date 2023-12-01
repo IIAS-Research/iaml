@@ -3,10 +3,8 @@ from ...data_type import DataType
 from ...automed import Output
 
 
-def transform(input: Input, columns: list) -> Output:
-    input.dataset.apply(lambda x, y: (x.drop(columns, axis=1), y))
-
-    return input.to_output()
+def transform(x, y, columns: list) -> Output:
+    return x.drop(columns, axis=1), y
 
 
 @isStep('cleaning')
@@ -22,16 +20,14 @@ class ActDropNumericalColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:   
+    def run(self, input: Input, callback=None) -> Output:   
         columns_to_drop = []     
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input.dataset.X_train[column]
             if values.isnull().sum()/len(values) >= self.get_config('empty_threshold'):
                 columns_to_drop.append(column)
-        
-        transform(input, columns_to_drop)
-        
-        return input.to_output(input.dataset, None, transform, columns_to_drop)
+
+        return input.transform_dataset(transform, columns_to_drop)
         
     
     def priorize(self, input=None):

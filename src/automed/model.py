@@ -23,16 +23,17 @@ class Model:
         return self.__stack.copy()
     
 
-    def add_to_stack(self, model_or_function, *args, **kw) -> None:
-        if hasattr(model_or_function, 'predict') and callable(model_or_function.predict):
-            # model_or_function is probably a sklearn model
-            self.sklearn_model = model_or_function
-            self.__stack.append((sklearn_predict, (model_or_function,), {}))
-        elif hasattr(model_or_function, 'transform') and callable(model_or_function.predict):
-            self.__stack.append((sklearn_transform, (model_or_function,), {}))
-        else:
-            # model_or_function is a function
-            self.__stack.append((model_or_function, args, kw))
+    def add_to_stack(self, model_or_function, tag, *args, **kw) -> None:
+        if tag == 'predict':
+            if hasattr(model_or_function, 'predict') and callable(model_or_function.predict):
+                # model_or_function is probably a sklearn model
+                self.sklearn_model = model_or_function
+        elif tag == 'transform':
+            if hasattr(model_or_function, 'transform') and callable(model_or_function.predict):
+                self.__stack.append((sklearn_transform, (model_or_function,), {}))
+            else:
+                # model_or_function is a function
+                self.__stack.append((model_or_function, args, kw))
     
 
     def copy(self) -> 'Model':
@@ -43,9 +44,9 @@ class Model:
         return pickle.dumps(self)
     
 
-    def run(self, input: Input) -> Output:
-        last_output = input
+    def run(self, dataset: pd.DataFrame) -> Output:
+        last_output = dataset
         for (function, args, kw) in self.__stack:
-            last_output = function(last_output, *args, **kw)
+            last_output = function(last_output, [], *args, **kw)
         
         return last_output

@@ -4,7 +4,6 @@ from .metastep import MetaStep
 from .actionable import Actionable
 from .output import Output
 from .dataset import Dataset
-from .prediction_dataset import PredictionDataset
 from .data_type import DataType
 from .metric import Metric
 

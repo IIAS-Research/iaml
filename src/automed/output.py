@@ -48,15 +48,11 @@ class Output:
         else:
             id(self) == id(other)
         
-    def to_output(self, dataset:Dataset=None, metric=None, function:callable=None, *args, **kw):
-        if self.model is not None and function is not None:
-            # self.model will be None when doing prediction
-            self.model.add_to_stack(function, *args, **kw)
-
+    def to_output(self, dataset:Dataset=None, metric=None, model=None):
         return Output(
             (dataset or self.dataset or Dataset()),
             metric or self.metric,
-            self.model,
+            model or self.model,
             stack_list=self.stacked_path)
         
     def to_input(self, dataset:Dataset=None, metric=None, model=None):
@@ -65,6 +61,14 @@ class Output:
             metric or self.metric,
             model or self.model,
             stack_list=self.stacked_path)
+
+    def transform_dataset(self, function: callable = None, *args, **kw):
+        only_train = kw['only_train'] if 'only_train' in kw else False
+        self.dataset.apply(function, only_train, *args, **kw)
+        if self.model is not None and function is not None and callable(function):
+            self.model.add_to_stack(function, 'transform', *args, **kw)
+        
+        return self.to_output()
         
     def __str__(self):
         str_out = ""

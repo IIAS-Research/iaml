@@ -1,10 +1,11 @@
 from ...actionable import *
 from ...automed import Output
-from pandas.api.types import is_numeric_dtype
-import numpy as np
 from imblearn.over_sampling import RandomOverSampler
 
-import numpy as np
+
+def transform(x, y):
+    return RandomOverSampler(sampling_strategy='minority').fit_resample(x, y)
+
 
 @isStep('normalize')
 class ActRandomOverSampling(Actionable):
@@ -13,15 +14,9 @@ class ActRandomOverSampling(Actionable):
         self.configurations = [{}]
     
     @runner
-    def run(self, input, callback=None) -> Output:
-        
-        def transform(x, y):
-            oversampler = RandomOverSampler(sampling_strategy='minority')
-            return oversampler.fit_resample(x, y)
-        
-        input.dataset.apply(transform, only_train=True)
-        
-        return input.to_output(input.dataset, None, None)
+    def run(self, input: Input, callback=None) -> Output:
+        return input.transform_dataset(transform, only_train=True)
+
     
     def priorize(self, input=None):
         return 1
