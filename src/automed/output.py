@@ -73,7 +73,7 @@ class Output:
             
         self.dataset.apply(function, only_train, *args, **kw)
         if self.model is not None and function is not None and callable(function):
-            self.model.add_to_stack(function, 'transform', *args, **kw)
+            self.model.add_to_stack(function, *args, **kw)
         
         return self.to_output()
     
