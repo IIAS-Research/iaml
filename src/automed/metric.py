@@ -5,8 +5,9 @@ class Metric:
     def explain(self):
         return "Here is an explaination of how this metrics work"
     
-    def compute(self, input):
-        if input.dataset.is_multilabel:
-            return input.dataset.compute(input.model.sklearn_model, accuracy_score)
+    # TODO Remove multilabel parameters and split into two metrics. One Metric = Only behavior
+    def compute(self, y, y_pred, multilabel=False):
+        if multilabel:
+            return accuracy_score(y, y_pred)
         else:
-            return input.dataset.compute(input.model.sklearn_model, balanced_accuracy_score)
+            return balanced_accuracy_score(y, y_pred)

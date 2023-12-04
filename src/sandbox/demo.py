@@ -23,4 +23,4 @@ print('----------')
 
 out = automed.output[0]
 print('model : ', out.model)
-print('accuracy : ', out.compute())
+print('accuracy : ', out.evaluate())

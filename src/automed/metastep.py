@@ -74,30 +74,11 @@ class MetaStep(Step):
     
     
     def json_pipeline(self):
-        
-        json = Step.json_pipeline(self)
-        if any(self.steps):
-            child = self.steps[-1].json_pipeline()
-            for step in self.steps[-2::-1]:
-                prev_child = child
-                child = step.json_pipeline()
-                
-                child = self.__add_children_pipeline(child, [prev_child])
-            
-            json['children'] = [child]
-        
-        return json
-    
-    def __add_children_pipeline(self, pipeline, children):
-        if ('children' in pipeline.keys()) and any(pipeline['children']):
-            for index, child in enumerate(pipeline['children']):
-                pipeline['children'][index] = self.__add_children_pipeline(child, children)
-        else:
-            pipeline['children'] = children
-        
-        return pipeline
-                
-    
+        return {
+            **Step.json_pipeline(self),
+            'children': [ step.json_pipeline() for step in self.steps ]
+        }
+
     
     # Recursive function to get all steps in a pipeline
     def all_step(self):

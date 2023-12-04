@@ -61,7 +61,8 @@ class ActTPLOT(Actionable):
         model.fit(dataset.X_train, dataset.y_train)
 
         # print("PERFECT FINISH")
-        return input.to_output(None, metric, model)
+        return input.set_model(model, lambda model, X: model.predict(X))
+
 
         
     

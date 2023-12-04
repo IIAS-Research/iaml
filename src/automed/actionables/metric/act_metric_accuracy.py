@@ -1,5 +1,5 @@
 from ...actionable import *
-from ...automed import Output
+from ...automed import Output, Metric
 from pandas.api.types import is_numeric_dtype
 
 @isStep('metric')
@@ -9,7 +9,7 @@ class ActMetricAccuracy(Actionable):
     
     @runner
     def run(self, input, callback=None) -> Output:
-        return input.to_output(input.dataset, None, None)
+        return input.add_metric(Metric())
         
     
     def priorize(self, input=None):

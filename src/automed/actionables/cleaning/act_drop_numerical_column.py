@@ -3,10 +3,6 @@ from ...data_type import DataType
 from ...automed import Output
 
 
-def transform(x, y, columns: list) -> Output:
-    return x.drop(columns, axis=1), y
-
-
 @isStep('cleaning')
 class ActDropNumericalColumn(Actionable):
     name = "Drop Numerical Column"
@@ -20,7 +16,10 @@ class ActDropNumericalColumn(Actionable):
         }]
     
     @runner
-    def run(self, input: Input, callback=None) -> Output:   
+    def run(self, input: Input, callback=None) -> Output:          
+        def transform(x, y, columns: list) -> Output:
+            return x.drop(columns, axis=1), y
+        
         columns_to_drop = []     
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input.dataset.X_train[column]

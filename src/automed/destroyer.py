@@ -49,11 +49,11 @@ class Destroyer():
             self.children_outputs_id[child_id] = []
         
         if id(output) not in self.children_outputs_id[child_id]:
-            self.children_results[child_id].append(output.computed)
+            self.children_results[child_id].append(output.computed_metrics)
             self.children_outputs_id[child_id].append(id(output))
         
-            if output.computed > self.best_result:
-                self.best_result = output.computed
+            if output.computed_metrics > self.best_result:
+                self.best_result = output.computed_metrics
             
     
     # def __find_first_child_id(self, step):

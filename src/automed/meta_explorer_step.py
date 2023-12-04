@@ -36,7 +36,7 @@ class MetaExplorerStep(MetaStep):
         
         # Create one thread by Step
         for step in self.steps:
-            threads.append(ThreadWithReturnValue(target=step.run, args=(input.to_input(model=input.model.copy()), callback)))
+            threads.append(ThreadWithReturnValue(target=step.run, args=(input.to_input(), callback)))
             
         # Run all threads
         for thread in threads:
@@ -45,6 +45,10 @@ class MetaExplorerStep(MetaStep):
         # Wait end of all threads
         for thread in threads:
             output = output + thread.join()
+        
+        # # Without Thread
+        # for step in self.steps:
+        #     output = output + step.run(input.to_input(), callback)
         
         return output
             

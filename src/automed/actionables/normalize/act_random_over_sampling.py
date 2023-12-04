@@ -3,10 +3,6 @@ from ...automed import Output
 from imblearn.over_sampling import RandomOverSampler
 
 
-def transform(x, y):
-    return RandomOverSampler(sampling_strategy='minority').fit_resample(x, y)
-
-
 @isStep('normalize')
 class ActRandomOverSampling(Actionable):
     name = "Random Over Sampling"
@@ -15,6 +11,9 @@ class ActRandomOverSampling(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
+        def transform(x, y):
+            return RandomOverSampler(sampling_strategy='minority').fit_resample(x, y)
+
         return input.transform_dataset(transform, only_train=True)
 
     

@@ -53,9 +53,9 @@ class Dataset:
             self.__y_test.copy(deep=deep)
         )
         
-    def compute(self, model, metric):
-        y_pred = model.predict(self.__X_test)
-        return metric(self.__y_test, y_pred)
+    def compute_metric(self, model, metric):
+        y_pred = model.predict(self.__X_test, model_only=True)
+        return metric.compute(self.__y_test, y_pred, multilabel=self.is_multilabel)
 
     def apply(self, method, only_train=False, *args, **kw):
         self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
@@ -109,7 +109,7 @@ class Dataset:
     def labels_columns(self):
         return self.__data['train']['labels'].columns
     @property      
-    def train_data(self): 
+    def train_data(self):
         return self.__data['train']['features'].copy(deep=True)
     
     @property
