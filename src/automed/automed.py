@@ -49,7 +49,7 @@ class AutoMed:
         step = MetaOrderedStep()
         step.add_step(RandomSplit())
         step.add_step(MetaStep(tag='cleaning'))
-        step.add_step(MetaStep(tag='features_selection'))
+        # step.add_step(MetaStep(tag='features_selection'))
         step.add_step(MetaStep(tag='normalize'))
         step.add_step(MetaStep(tag='metric'))
         step.add_step(ActTPLOT())
