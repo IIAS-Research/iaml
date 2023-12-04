@@ -14,20 +14,21 @@ class ActMeanColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:
+    def run(self, input: Input, callback=None) -> Output:  
         
-        
-        def transform(x, y, column):
-            x[column].fillna(values.mean(), inplace=True)
+        def transform(x, y, columns: tuple[str, float]) -> Output:
+            for name, mean in columns:
+                x[name].fillna(mean, inplace=True)
+
             return x, y
-            
+        
+        columns = []
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input.dataset.train_data[column]
             if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
-                input.dataset.apply(transform, column=column)
+                columns.append((column, values.mean()))
         
-        return input.to_output(input.dataset, None, None)
-    
+        return input.transform_dataset(transform, columns)
         
     
     def priorize(self, input=None):

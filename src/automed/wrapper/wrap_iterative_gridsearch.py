@@ -225,14 +225,14 @@ class GridIteration:
         return self.values[self.count_iterations]
     
     # Stack, compute and save results
-    def __stack_results(self, results):
+    def __stack_results(self, results:list[Output]):
         if not any(results):
             return None
         
         
         best_val, best_index = (0, 0)
         for index, result in enumerate(results):
-            current_val = result.compute()
+            current_val = result.evaluate()
             if current_val > best_val:
                 best_index = index
                 best_val = current_val

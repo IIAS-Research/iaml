@@ -35,7 +35,8 @@ class ActLogisticRegression(Actionable):
         
         model.fit(input.dataset.X_train, input.dataset.y_train)
         
-        return input.to_output(None, metric, model)
+        return input.set_model(model, lambda model, X: model.predict(X))
+
 
         
     

@@ -1,7 +1,7 @@
 from ...actionable import *
 from ...automed import Output
-from pandas.api.types import is_numeric_dtype
 import numpy as np
+
 
 @isStep('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
@@ -15,12 +15,9 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:
-        
-        
-        def transform(x, y, columns):
-            x.drop(to_drop, axis=1, inplace=True)
-            return x, y
+    def run(self, input, callback=None) -> Output:  
+        def transform(x, y, columns: list[str]):
+            return x.drop(columns, axis=1), y
         
         # Compute correlation matrix 
         corr_matrix = input.dataset.train_data.corr().abs()
@@ -29,10 +26,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         # Find features with above-threshold correlation
         to_drop = [column for column in upper.columns if any(upper[column] >= self.get_config('threshold'))]
         
-        # Remove these highly correlated features
-        input.dataset.apply(transform, columns=to_drop)
-        
-        return input.to_output(input.dataset, None, None)
+        return input.transform_dataset(transform, to_drop)
     
         
     

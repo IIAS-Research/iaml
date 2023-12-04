@@ -4,6 +4,7 @@ from .actionable import Actionable
 from .output import Output, Input
 from .dataset import Dataset
 from .metric import Metric
+from .model import Model
 from .destroyer import Destroyer
 
 from .meta_ordered_step import MetaOrderedStep
@@ -23,7 +24,7 @@ class AutoMed:
     
     def __init__(self, dataset:Dataset=None):
         self.output = None
-        self.input = Input(dataset, None, None) # Gerenate Input object from Dataset
+        self.input = Input(dataset) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
     
     
@@ -50,6 +51,7 @@ class AutoMed:
         step.add_step(MetaStep(tag='cleaning'))
         # step.add_step(MetaStep(tag='features_selection'))
         step.add_step(MetaStep(tag='normalize'))
+        step.add_step(MetaStep(tag='metric'))
         step.add_step(ActTPLOT())
 
         return step
@@ -65,6 +67,7 @@ class AutoMed:
             step.add_step(MetaStep(tag='cleaning'))
             step.add_step(MetaStep(tag='features_selection'))
             step.add_step(MetaStep(tag='normalize'))
+            step.add_step(MetaStep(tag='metric'))
             if use_destroyer:
                 step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
             else:
@@ -127,7 +130,7 @@ class AutoMed:
             progress.update(task, completed=step_count)
         
         # Order ouputs according results
-        self.output.sort(key=lambda output: output.metric.compute(output), reverse=True)
+        self.output.sort(key=lambda output: output.evaluate(), reverse=True)
         
         return self.output
     
