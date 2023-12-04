@@ -39,7 +39,7 @@ for time in [60]: #[30, 60, 60*5, 60*20]:
         # Find best result
         max_result = 0
         for output in auto.output:
-            tmp = output.metric.compute(output)
+            tmp = output.evaluate()
             if tmp > max_result:
                 max_result = tmp
         
