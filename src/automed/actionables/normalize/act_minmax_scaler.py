@@ -3,6 +3,11 @@ from ...automed import Output
 from ...data_type import DataType
 from sklearn.preprocessing import MinMaxScaler
 
+        
+def transform(x, y, scaler, columns):
+    x[columns] = scaler.transform(x[columns])
+    return x, y
+
 
 @isStep('normalize')
 class ActMinMaxScaler(Actionable):
@@ -12,11 +17,6 @@ class ActMinMaxScaler(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
-        
-        def transform(x, y, scaler, columns):
-            x[columns] = scaler.transform(x[columns])
-            return x, y
-
         columns = input.dataset.get_columns_names_by_type(DataType.NUMERIC)
         values = input.dataset.X_train[columns]
         scaler = MinMaxScaler()

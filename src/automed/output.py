@@ -65,6 +65,13 @@ class Output:
             stack_list=self.stacked_path)
 
     def transform_dataset(self, function: callable = None, *args, **kw):
+        """
+        Transforms the dataset using the provided function, and adds it to the
+        stack of functions to be applied before prediction.
+        Note: The function must be pickable and therefore must be named (not be
+        a lambda) and be declared at the top level of a module.
+        See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
+        """
         if 'only_train' in kw:
             only_train = kw['only_train']
             del kw['only_train']
@@ -79,6 +86,12 @@ class Output:
     
     
     def set_model(self, model, function: callable = None, *args, **kw):
+        """
+        Sets the resulting model of the pipeline to this output.
+        Note: The function must be pickable and therefore must be named (not be
+        a lambda) and be declared at the top level of a module.
+        See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
+        """
         return self.to_output(model=self.model.set_model(model, function, *args, **kw))
     
     def add_metric(self, metric):
