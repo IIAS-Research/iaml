@@ -12,7 +12,9 @@ Pour installer ce projet, suivez les étapes suivantes
 
 1. Installer Python 3 ([télécharger](https://www.python.org/downloads/))
 2. Exécuter `source ./.venv/bin/python3`
-3. Exécuter `pip install -r requirements.txt`
+3. Installer les dépendances
+    - Avec support pour notebooks Jupyter et mkDocs, exécuter `pip install -r requirements.dev.txt`
+    - Autrement, exécuter `pip install -r requirements.dev.txt`
 
 
 ***
@@ -36,7 +38,7 @@ Structures des fichiers :
 ***
 ## 📌 4 - Outils et packages utilisés
 
-- MKDOCS version 1.4.2
+- MKDOCS version 1.5.3
 
 ***
 ## 💪 5 -  Crédits
