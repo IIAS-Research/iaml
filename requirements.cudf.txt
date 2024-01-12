@@ -1,0 +1,19 @@
+--extra-index-url https://pypi.nvidia.com
+cachetools==5.3.2
+cubinlinker-cu11==0.3.0.post1
+cuda-python==11.8.3
+cudf-cu11==23.12.1
+cupy-cuda11x==12.3.0
+fastrlock==0.8.2
+fsspec==2023.12.2
+llvmlite==0.40.1
+markdown-it-py==3.0.0
+mdurl==0.1.2
+numba==0.57.1
+nvtx==0.2.8
+packaging==23.2
+protobuf==4.25.2
+ptxcompiler-cu11==0.7.0.post1
+pyarrow==14.0.2
+rmm-cu11==23.12.0
+typing_extensions==4.9.0
