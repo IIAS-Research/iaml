@@ -41,7 +41,7 @@ class WrapGeneticGridSearch(StepWrapper):
             }
         }]
         
-        self.step = step
+        super().__init__(step)
         self.step.keep_only_first_config() # Avoid run several config for each run
         self.step.current_configuration = self.step.configurations[0] # Will be defined when the step ".run()" but as we'll need it before, let's defined it now.
         
@@ -85,7 +85,9 @@ class WrapGeneticGridSearch(StepWrapper):
                 # Keep the 1/4 better Steps
                 steps_to_keep = []
                 for i in range(0, min(nb_to_get, len(generation))):
-                    steps_to_keep.append(self.__find_step(generation, ordered_ids[i]))
+                    step = deepcopy(self.__find_step(generation, ordered_ids[i]))
+                    del step.parents_steps[-1] # this step is going to switch parents
+                    steps_to_keep.append(step)
                 
                 # Add 2/4 with mutated Steps (from the better steps of previous generation)
                 new_mutations = []
@@ -226,7 +228,7 @@ class WrapGeneticGridSearch(StepWrapper):
         return new_list
     
     # Find a step in a generation by id
-    def __find_step(self, generation, step_id):
+    def __find_step(self, generation, step_id) -> Step | None:
         for step in generation:
             if id(step) == step_id:
                 return step

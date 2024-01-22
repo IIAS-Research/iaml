@@ -2,7 +2,7 @@ from .step import Step, isStep, runner
 
 @isStep('wrapper')
 class StepWrapper(Step):
-    def __init__(self, step):
+    def __init__(self, step: Step):
         self.step = step
         
     # Load any kind of StepWrapper
@@ -15,7 +15,14 @@ class StepWrapper(Step):
         step = super().from_pipeline(pipeline, child)
         
         return step
+
+    
+    def configure_parents(self, *parents):
+        self.step.configure_parents(*parents)
         
+        super().configure_parents(*parents)
+        
+
     def wrap(self, step):
         if Step in step.__class__.__mro__:
             self.step = step
