@@ -1,7 +1,7 @@
 from .metastep import MetaStep
 from .output import Input
 from .step import Step, isStep, runner
-from .thread_with_return_value import *
+from .worker_manager import WorkerFuture, WorkerManager
 
 #
 # Inherit from MetaStep but will execute all steps at the same time. 
@@ -32,25 +32,14 @@ class MetaExplorerStep(MetaStep):
     @runner
     def run(self, input: Input, callback=None):
         output = []
-        threads = []
-        
-        # Create one thread by Step
+        workers: list[WorkerFuture] = []
+
         for step in self.steps:
-            threads.append(ThreadWithReturnValue(target=step.run, args=(input.to_input(), callback)))
-            
-        # Run all threads
-        for thread in threads:
-            thread.start()
+            future = WorkerManager().submit(step, step.run, input.to_input(), callback)
+            workers.append(future)
             
         # Wait end of all threads
-        for thread in threads:
-            output = output + thread.join()
-        
-        # # Without Thread
-        # for step in self.steps:
-        #     output = output + step.run(input.to_input(), callback)
+        for worker in workers:
+            output = output + worker.result()
         
         return output
-            
-            
-        
