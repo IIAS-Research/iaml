@@ -1,3 +1,4 @@
+import math
 import os
 
 from concurrent.futures import ThreadPoolExecutor, Future
@@ -33,10 +34,10 @@ class WorkerManager(metaclass=MetaSingleton):
 
     Reference: https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor.
     """
-    def __init__(self, max_workers: int = os.cpu_count()) -> None:
+    def __init__(self, max_workers: int = None) -> None:
         self.active_workers_count = 0
-        self.executor = ThreadPoolExecutor()
-        self.max_workers = max_workers
+        self.executor = ThreadPoolExecutor(max_workers=math.inf)
+        self.max_workers = max_workers or os.cpu_count()
         self.running_futures: list[WorkerFuture] = []
         self.running_parents: list[list[int]] = []
         self.queue: list[WorkerFuture] = []
