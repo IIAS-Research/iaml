@@ -49,7 +49,7 @@ class WorkerManager(metaclass=MetaSingleton):
         self.active_workers_count -= 1
         self.running_futures.remove(worker_future)
 
-        self.run_sibling(worker_future.step)
+        self.run_next(worker_future.step)
     
 
     def is_sibling_running(self, step: Step) -> bool:
@@ -70,25 +70,30 @@ class WorkerManager(metaclass=MetaSingleton):
             self.running_parents.append(future.step.parents_steps)
 
         self.active_workers_count += 1
-        self.running_futures.append(future)        
+        self.running_futures.append(future)
 
         f = self.executor.submit(future.run)
         f.add_done_callback(lambda _f: self.__done_callback(_f, future))
     
 
-    def run_sibling(self, current_step: Step) -> None:
+    def run_next(self, current_step: Step) -> None:
         """
         Finds a sibling of `current_step`, and starts it. This should be used
-        when a future is done running.
+        when a future is done running. If there is no sibling, start whatever
+        is next in the queue.
         """
         next_sibling_in_queue = next(( f for f in self.queue if current_step.parents_steps == f.step.parents_steps ), None)
 
         if next_sibling_in_queue is not None:
             self.queue.remove(next_sibling_in_queue)
             self.run(next_sibling_in_queue)
-        elif current_step.parents_steps in self.running_parents:
-            # all the children have completed: "unrelease" a worker
-            self.running_parents.remove(current_step.parents_steps)
+        else:
+            if current_step.parents_steps in self.running_parents:
+                # all the children have completed: "unrelease" a worker
+                self.running_parents.remove(current_step.parents_steps)
+
+            if (self.active_workers_count - len(self.running_parents) + 1) < self.max_workers and len(self.queue) > 0:
+                self.run(self.queue.pop())
     
 
     def submit(self, step: Step, task: callable, *args, **kwargs) -> WorkerFuture:
