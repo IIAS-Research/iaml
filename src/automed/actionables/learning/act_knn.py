@@ -3,6 +3,11 @@ from ...automed import Output, Metric
 from sklearn.neighbors import KNeighborsClassifier
 from skmultilearn.problem_transform import BinaryRelevance
 
+
+def learn(model, X):
+    return model.predict(X)
+
+
 @isStep('learning', 'tabular')
 @assessable
 class ActKNN(Actionable):
@@ -35,7 +40,7 @@ class ActKNN(Actionable):
         
         model.fit(input.dataset.X_train, input.dataset.y_train)
         
-        return input.set_model(model, lambda model, X: model.predict(X))
+        return input.set_model(model, learn)
     
 
         

@@ -3,6 +3,10 @@ from ...automed import Output
 import numpy as np
 
 
+def transform(x, y, columns: list[str]):
+    return x.drop(columns, axis=1), y
+
+
 @isStep('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
     name = "Remove High Correlated Column"
@@ -15,10 +19,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:  
-        def transform(x, y, columns: list[str]):
-            return x.drop(columns, axis=1), y
-        
+    def run(self, input, callback=None) -> Output:
         # Compute correlation matrix 
         corr_matrix = input.dataset.train_data.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))

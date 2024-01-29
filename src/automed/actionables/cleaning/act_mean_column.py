@@ -2,6 +2,14 @@ from ...actionable import *
 from ...automed import Output
 from ...data_type import DataType
 
+        
+def transform(x, y, columns: tuple[str, float]) -> Output:
+    for name, mean in columns:
+        x[name].fillna(mean, inplace=True)
+
+    return x, y
+
+
 @isStep('cleaning')
 class ActMeanColumn(Actionable):
     name = "Fill missing values with mean"
@@ -15,13 +23,6 @@ class ActMeanColumn(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:  
-        
-        def transform(x, y, columns: tuple[str, float]) -> Output:
-            for name, mean in columns:
-                x[name].fillna(mean, inplace=True)
-
-            return x, y
-        
         columns = []
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input.dataset.train_data[column]

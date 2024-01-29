@@ -3,6 +3,10 @@ from ...automed import Output, Metric
 import autosklearn.classification
 
 
+def learn(model, X):
+    return model.predict(X)
+
+
 # @isStep('learning', 'tabular')
 @isStep('to_compare')
 @assessable
@@ -27,7 +31,7 @@ class ActAutoSKLearn(Actionable):
         
         model.fit(dataset.X_train, dataset.y_train)
         
-        return input.set_model(model, lambda model, X: model.predict(X))
+        return input.set_model(model, learn)
 
         
     

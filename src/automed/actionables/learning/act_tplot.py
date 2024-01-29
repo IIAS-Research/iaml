@@ -4,6 +4,10 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from tpot import TPOTClassifier
 
 
+def learn(model, X):
+    return model.predict(X)
+
+
 # @isStep('learning', 'tabular')
 @isStep('to_compare')
 @assessable
@@ -61,7 +65,7 @@ class ActTPLOT(Actionable):
         model.fit(dataset.X_train, dataset.y_train)
 
         # print("PERFECT FINISH")
-        return input.set_model(model, lambda model, X: model.predict(X))
+        return input.set_model(model, learn)
 
 
         

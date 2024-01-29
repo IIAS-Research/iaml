@@ -4,6 +4,18 @@ from ...data_type import DataType
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+        
+def transform(x, y, columns: list[tuple[str, TfidfVectorizer]]) -> Output:
+    for name, vectorizer in columns:
+        transformed = vectorizer.transform(x[name].fillna(''))
+
+        features_names = list(map(lambda x: "_".join([name, x]), vectorizer.get_feature_names_out()))
+        ohe_df = pd.DataFrame(transformed.todense(), columns=features_names)
+
+        x = pd.concat([x, ohe_df], axis=1).drop([name], axis=1)
+    
+    return x, y
+
 
 @isStep('cleaning')
 class ActTfIdf(Actionable):
@@ -13,18 +25,6 @@ class ActTfIdf(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
-        
-        def transform(x, y, columns: list[tuple[str, TfidfVectorizer]]) -> Output:
-            for name, vectorizer in columns:
-                transformed = vectorizer.transform(x[name].fillna(''))
-
-                features_names = list(map(lambda x: "_".join([name, x]), vectorizer.get_feature_names_out()))
-                ohe_df = pd.DataFrame(transformed.todense(), columns=features_names)
-
-                x = pd.concat([x, ohe_df], axis=1).drop([name], axis=1)
-            
-            return x, y
-        
         columns = []
         for column in input.dataset.get_columns_names_by_type([DataType.SHORT_TEXT, DataType.TEXT]):
             values = input.dataset.X_train[column].fillna('')
