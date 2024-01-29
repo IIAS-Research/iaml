@@ -87,14 +87,19 @@ class Step:
         return self.input.model
     
     # When a Step contain others ones, this will help to setup everything (Transmit destroyers, increment parents steps)
-    def configure_child(self, step, *args, **kw):
-        child = step
+    def configure_child(self, child, *args, **kw):
         if any(self.destroyers):
             child.destroyers = self.destroyers
-            
-        child.parents_steps = self.parents_steps + [id(self)]
+
+        child.configure_parents(self)
         
         return child
+
+    def configure_parents(self, *parents):
+        """
+        Backpropagates the parents to the children.
+        """
+        self.parents_steps.extend(map(id, parents))
     
     ################
     # Configurable #

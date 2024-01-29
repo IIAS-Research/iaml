@@ -6,6 +6,7 @@ from .dataset import Dataset
 from .metric import Metric
 from .model import Model
 from .destroyer import Destroyer
+from .worker_manager import WorkerManager
 
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
@@ -22,10 +23,12 @@ class AutoMed:
     output:list = None # Outputs of the pipeline after run
     input:Input = None # Input Data
     
-    def __init__(self, dataset:Dataset=None):
+    def __init__(self, dataset:Dataset=None, max_workers:int=None):
         self.output = None
         self.input = Input(dataset) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
+
+        WorkerManager(max_workers=max_workers)
     
     
     # Load any kind of pipeline

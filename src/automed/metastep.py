@@ -36,6 +36,12 @@ class MetaStep(Step):
         
         return step
     
+    def configure_parents(self, *parents):
+        for step in self.steps:
+            step.configure_parents(*parents)
+        
+        super().configure_parents(*parents)
+    
     # Add one step to the MetaStep. 
     # step must be a Step inherited class
     def add_step(self, step):
