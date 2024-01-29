@@ -3,6 +3,7 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
+optional-dependencies.cudf = { file = ["requirements.cudf.txt"] }
 
 [project]
 name = "automed"
@@ -16,7 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-dynamic = ["dependencies"]
+dynamic = ["dependencies", "optional-dependencies"]
 
 [project.urls]
 "Homepage" = "http://docs.example.invalid/automl/main/"

@@ -17,6 +17,14 @@ from .actionables import *
 # Default Wrappers
 from .wrapper import *
 
+# cuDF pandas acceleration
+try:
+    import cudf.pandas
+    cudf.pandas.install()
+    Logger().log('cuDF is installed: using cuDF pandas accelerator mode.')
+except Exception as e:
+    Logger().log('cuDF not found: falling back to standalone pandas.')
+
 # Main class of the package
 # Usefull to create & run pipeline
 class AutoMed:
