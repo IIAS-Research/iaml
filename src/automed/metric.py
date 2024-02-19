@@ -6,8 +6,14 @@ class Metric:
         return "Here is an explaination of how this metrics work"
     
     # TODO Remove multilabel parameters and split into two metrics. One Metric = Only behavior
-    def compute(self, y, y_pred, multilabel=False):
-        if multilabel:
-            return accuracy_score(y, y_pred)
-        else:
-            return balanced_accuracy_score(y, y_pred)
+    #def compute(self, y, y_pred, multilabel=False):
+    #    if multilabel:
+    #        return accuracy_score(y, y_pred)
+    #    else:
+    #        return balanced_accuracy_score(y, y_pred)    
+    
+    def compute(self, y, y_pred):
+        raise NotImplementedError('Subclass must implement abstract method')
+    
+    def suitable(self, y):
+        return False

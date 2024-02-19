@@ -122,27 +122,49 @@ class AutoMed:
     
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 
+    #def run(self, callback=None):
+    #    copied_input = self.input.to_input() # Avoid input to be edited by futures steps
+    #    
+    #    with Logger().progress as progress:
+    #        step_count = self.first_step.count_steps()
+    #        task = progress.add_task('running steps...', total=step_count)
+#
+    #        def progress_callback(step: Step):
+    #            progress.update(task, advance=1)
+#
+    #            if callback is not None:
+    #                return callback(step)
+#
+    #        # RUN!
+    #        self.output = self.first_step.run(copied_input, callback=progress_callback)
+    #        
+    #        progress.update(task, completed=step_count)
+    #    
+    #    # Order ouputs according results
+    #    self.output.sort(key=lambda output: output.evaluate(), reverse=True)
+    #    
+    #    return self.output
+    
     def run(self, callback=None):
         copied_input = self.input.to_input() # Avoid input to be edited by futures steps
-        
         with Logger().progress as progress:
             step_count = self.first_step.count_steps()
             task = progress.add_task('running steps...', total=step_count)
-
             def progress_callback(step: Step):
                 progress.update(task, advance=1)
-
                 if callback is not None:
                     return callback(step)
-
             # RUN!
             self.output = self.first_step.run(copied_input, callback=progress_callback)
-            
             progress.update(task, completed=step_count)
-        
-        # Order ouputs according results
-        self.output.sort(key=lambda output: output.evaluate(), reverse=True)
-        
+    
+        # Order ouputs according precision metric
+        self.output.sort(key=lambda output: output.evaluate().get('precision', 0), reverse=True)
+        #print('-------------------------ordred models according precision metric------------------------------------------')
+        #for output in self.output:
+        #    model_info = output.model
+        #    result = output.evaluate().get('precision', 0)
+        #    print(model_info, ':', result)
         return self.output
     
     ########################

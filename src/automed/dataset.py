@@ -53,9 +53,17 @@ class Dataset:
             self.__y_test.copy(deep=deep)
         )
         
+    #def compute_metric(self, model, metric):
+    #    y_pred = model.predict(self.__X_test, model_only=True)
+    #    return metric.compute(self.__y_test, y_pred, multilabel=self.is_multilabel)
+    
     def compute_metric(self, model, metric):
-        y_pred = model.predict(self.__X_test, model_only=True)
-        return metric.compute(self.__y_test, y_pred, multilabel=self.is_multilabel)
+        # To avoid warninggs ( UserWarning: X has feature names, but GaussianNB was fitted without feature names)
+        y_pred = model.predict(self.__X_test, model_only = True)
+        if not isinstance(y_pred, np.ndarray):
+            y_pred = y_pred.toarray()
+        else:
+            return metric.compute(self.__y_test, y_pred)
 
     def apply(self, method, only_train=False, *args, **kw):
         self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)

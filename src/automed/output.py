@@ -15,7 +15,8 @@ class Output:
         self.dataset = dataset
         self.metric = metric
         self.model = model or Model()
-        self.computed_metrics = None
+        #self.computed_metrics = None
+        self.computed_metrics = {}
         self.stacked_path = copy(stack_list)
         
     def add_stack(self, stack):
@@ -106,15 +107,22 @@ class Output:
             
         return str_out
     
+    
     def evaluate(self, force=False):
         if not(self.model.have_model):
             return -1
-        
+
         if force or not(self.computed_metrics):
-            self.computed_metrics = self.dataset.compute_metric(self.model, self.metric)
-            
+            print(self.model)
+            for metric in self.metric:
+                #self.computed_metrics = self.dataset.compute_metric(self.model, metric)
+                result = self.dataset.compute_metric(self.model, metric)
+                self.computed_metrics[metric.__str__()] = result
+            print('Results:')
+            print(self.computed_metrics)
+            print('--------------------------------------------------------------------------------------------------')
         return self.computed_metrics
-        
+    
     def log(self, test):
         pass
     
