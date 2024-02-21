@@ -37,6 +37,10 @@ class Dataset:
         dataset.__y_test = y_test
         
         return dataset
+
+    @classmethod
+    def from_XY(cls: type['Dataset'], X: pd.DataFrame, Y: pd.DataFrame) -> 'Dataset':
+        return cls(train_data=pd.concat((X, Y), axis=1), label_name=Y.columns.to_list())
     
     def split(self, X_train, y_train, X_test, y_test):
         self.X_train = X_train

@@ -31,9 +31,8 @@ class AutoMed:
     output:list = None # Outputs of the pipeline after run
     input:Input = None # Input Data
     
-    def __init__(self, dataset:Dataset=None, max_workers:int=None):
+    def __init__(self, max_workers: int = None):
         self.output = None
-        self.input = Input(dataset) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
 
         WorkerManager(max_workers=max_workers)
@@ -106,25 +105,19 @@ class AutoMed:
     def dataset(self):
         return self.input.dataset
     
-    # Metric from input data
-    @property
-    def metric(self):
-        return self.input.metric
-    
-    # Model from input data
-    @property
-    def model(self):
-        return self.input.model
-    
     ###########
     ### RUN ###
     ###########
+        
+    def fit(self, X, Y, *args, **kwargs):
+        dataset = Dataset.from_XY(X, Y)
+        input = Input(dataset)
+
+        return self.run(input, *args, **kwargs)
     
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 
-    def run(self, callback=None):
-        copied_input = self.input.to_input() # Avoid input to be edited by futures steps
-        
+    def run(self, input: Input, callback=None):
         with Logger().progress as progress:
             step_count = self.first_step.count_steps()
             task = progress.add_task('running steps...', total=step_count)
@@ -136,7 +129,7 @@ class AutoMed:
                     return callback(step)
 
             # RUN!
-            self.output = self.first_step.run(copied_input, callback=progress_callback)
+            self.output = self.first_step.run(input, callback=progress_callback)
             
             progress.update(task, completed=step_count)
         
@@ -174,8 +167,3 @@ class AutoMed:
             if id(step) == step_id:
                 return step
         return False
-        
-    
-    
-    
-    
