@@ -135,8 +135,8 @@ class AutoMed:
             self.output = self.first_step.run(copied_input, callback=progress_callback)
             progress.update(task, completed=step_count)
     
-        # Order ouputs according precision metric
-        self.output.sort(key=lambda output: output.evaluate().get('precision', 0), reverse=True)
+        # Order ouputs according the first metric
+        self.output.sort(key=lambda output: list(output.evaluate().values())[0], reverse=True)
         return self.output
     
     ########################

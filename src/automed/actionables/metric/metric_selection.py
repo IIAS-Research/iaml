@@ -19,7 +19,6 @@ class MetricSelection(Actionable):
             metric = metric_sub_class()
             # Verify if a subclass is suitable or not
             if metric.suitable(y):
-                print(metric, 'is suitable')
                 input.add_metric(metric)
                 
         return input.to_output()
