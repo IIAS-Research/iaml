@@ -61,14 +61,11 @@ class ActTPLOT(Actionable):
             )
         
         dataset = input.dataset
-        metric = input.metric or Metric()
+        metric = input.metrics or Metric()
         model.fit(dataset.X_train, dataset.y_train)
 
         # print("PERFECT FINISH")
         return input.set_model(model, learn)
 
-
-        
-    
     def priorize(self, input=None):
         return 0.5 # neutral
