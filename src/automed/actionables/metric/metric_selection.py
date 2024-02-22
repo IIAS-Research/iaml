@@ -1,5 +1,6 @@
 from ...actionable import *
 from ...automed import Output, Metric
+from ...metrics import *
 from pandas.api.types import is_numeric_dtype
 from collections import Counter
 import pandas as pd
@@ -7,31 +8,21 @@ import pandas as pd
 class MetricSelection(Actionable):
     
     # configurations = [{}]
-          
+    
     @runner
     def run(self, input, callback = None) -> Output:
+        # Get target variable from dataset object
         y = input.dataset.y_train
-        pertinent_metrics = []
-        #if isinstance(y, pd.DataFrame) and y.shape[1] == 1:
-        #    y = y.iloc[:,0]
-        
+        # Iterate through all subclasses that inherit from Metric
         for metric_sub_class in Metric.__subclasses__():
+            # Instantiate a subclass
             metric = metric_sub_class()
+            # Verify if a subclass is suitable or not
             if metric.suitable(y):
-                #print(f"{metric_sub_class.__name__} is pertinent for this task and data")  
-                pertinent_metrics.append(metric)   
-            #else:
-            #    print(f"{metric_sub_class.__name__} not pertinent for this task and data")               
-    
-        print('Pertinent metrics are:', pertinent_metrics)
-        
-        return input.add_metric(pertinent_metrics)
+                print(metric, 'is suitable')
+                input.add_metric(metric)
+                
+        return input.to_output()
             
     def priorize(self,  input = None):
-        return 0
-    
-   
-                
-            
-   
-                
+        return 1

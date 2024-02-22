@@ -36,7 +36,7 @@ class ActSVM(Actionable):
         
     @runner
     def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
+        metric = input.metrics or Metric()
         
         model = svm.SVC(
             kernel = self.get_config('kernel'),
@@ -52,9 +52,6 @@ class ActSVM(Actionable):
         model.fit(input.dataset.X_train, input.dataset.y_train)
         
         return input.set_model(model, learn)
-        
-
-        
-    
+          
     def priorize(self, input=None):
         return 0.5 # neutral

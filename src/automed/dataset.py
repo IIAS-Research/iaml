@@ -52,11 +52,8 @@ class Dataset:
             self.__X_test.copy(deep=deep),
             self.__y_test.copy(deep=deep)
         )
-        
-    #def compute_metric(self, model, metric):
-    #    y_pred = model.predict(self.__X_test, model_only=True)
-    #    return metric.compute(self.__y_test, y_pred, multilabel=self.is_multilabel)
     
+    # Compute metrics
     def compute_metric(self, model, metric):
         # To avoid warninggs ( UserWarning: X has feature names, but GaussianNB was fitted without feature names)
         y_pred = model.predict(self.__X_test, model_only = True)
@@ -92,8 +89,6 @@ class Dataset:
             lambda pair: pair[0] in self.X_train.columns,
             self.columns_types.items()))
         
-    
-    
     def set_label(self, labels_names):
         if type(labels_names) != list:
             labels_names = [labels_names]
@@ -181,7 +176,6 @@ class Dataset:
     def __y_test(self, value):
         self.__data['test']['labels'] = pd.DataFrame(value)
         
-    
     # Detect data types
     def detect_data_type(self, column_name):
         column_value = self.X_train[column_name]
@@ -208,7 +202,6 @@ class Dataset:
             
         return types  
 
-
     # Disable a column with delete it
     def disable_column(self, column): 
         for data_env in ['train', 'test']:
@@ -234,8 +227,7 @@ class Dataset:
     def enable_columns(self, columns):
         for column in columns:
             self.enable_column(column)
-            
-            
+                   
     # Reset selected label           
     def reset_label(self, env=['train', 'test']):
         for data_env in env:
@@ -261,9 +253,7 @@ class Dataset:
                 self.__data[data_env]['features'][column_name] = new_columns[data_env].replace(pd.NaT, None)
             return True
         else:
-            return False
-                
-                
+            return False    
             
     def __string_value_to_date(self, value, date_formats = ['%Y-%M-%d', '%d-%M-%Y', '%Y/%M/%d', '%d/%M/%Y', None]):
         if type(date_formats) != list:
