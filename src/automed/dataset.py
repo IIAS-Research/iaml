@@ -1,186 +1,81 @@
-import pandas as pd
+import copy
 import numpy as np
-from .data_type import DataType
-    
-class Dataset:
-    def __init__(self, train_data, test_data=None, label_name=None):
-        self.__data = {
-            'train': {
-                'features': pd.DataFrame(),
-                'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
-                },
-            'test': {
-                'features': pd.DataFrame(),
-                'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
-            }
-        }
-        
-        self.__data['train']['features'] = train_data
-        
-        if type(test_data) != type(None):
-            self.__data['test']['features'] = test_data
-        else:
-            self.__data['test']['features'] = pd.DataFrame(columns=train_data.columns)
-            
-        self.columns_types = self.__detect_columns_types() 
-        
-        if label_name:
-            self.set_label(label_name)
-            
-    @classmethod
-    def from_splited_data(cls, X_train, y_train, X_test, y_test):
-        dataset = cls(train_data=X_train)
-        dataset.y_train = y_train
-        dataset.__X_test = X_test
-        dataset.__y_test = y_test
-        
-        return dataset
+import pandas as pd
 
-    @classmethod
-    def from_XY(cls: type['Dataset'], X: pd.DataFrame, Y: pd.DataFrame) -> 'Dataset':
-        return cls(train_data=pd.concat((X, Y), axis=1), label_name=Y.columns.to_list())
+from .data_type import DataType
+
+
+class Dataset:
+    def __init__(self, X: pd.DataFrame, Y: pd.DataFrame):
+        self.__features = pd.concat((X, Y), axis=1)
+        self.__labels = Y.columns.to_list()
+        self.__disabled_columns = []
+
+        self.columns_types = self.__detect_columns_types()
     
-    def split(self, X_train, y_train, X_test, y_test):
-        self.X_train = X_train
-        self.y_train = y_train
-        self.__X_test = X_test
-        self.__y_test = y_test
+    @property
+    def features(self) -> pd.DataFrame:
+        return self.__features.drop(self.__disabled_columns, axis=1)
+
+    @property
+    def labels(self) -> list:
+        return self.__labels
     
+    @property
+    def X(self) -> pd.DataFrame:
+        return self.features.drop(self.__labels, axis=1)
+    
+    @X.setter
+    def X(self, X: pd.DataFrame) -> None:
+        for column in X.columns:
+            if column in self.__disabled_columns:
+                raise TypeError(f"Column '{column}' is supposed to be disabled, but is defined in new X.")
+            
+        self.__features[self.X.columns] = X
+
+    @property
+    def Y(self) -> pd.DataFrame:
+        return self.features[self.__labels]
+
+    @Y.setter
+    def Y(self, Y: pd.DataFrame) -> None:
+        for column in Y.columns:
+            if column in self.__disabled_columns:
+                raise TypeError(f"Column '{column}' is supposed to be disabled, but is defined in new Y.")
+
+        self.__features[self.__labels] = Y
+    
+    @property
+    def is_multilabel(self):
+        return len(self.__labels) > 1
 
     def copy(self, deep=True):
-        return Dataset.from_splited_data(
-            self.X_train.copy(deep=deep),
-            self.y_train.copy(deep=deep),
-            self.__X_test.copy(deep=deep),
-            self.__y_test.copy(deep=deep)
-        )
-        
-    def compute_metric(self, model, metric):
-        y_pred = model.predict(self.__X_test, model_only=True)
-        return metric.compute(self.__y_test, y_pred, multilabel=self.is_multilabel)
+        if deep:
+            return copy.deepcopy(self)
 
-    def apply(self, method, only_train=False, *args, **kw):
-        self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
-        if not only_train:
-            self.__X_test, self.__y_test = method(self.__X_test, self.__y_test, *args, **kw)
+        return copy.copy(self)
+
+    def apply(self, method, *args, **kw):
+        self.__features = pd.concat(method(self.X, self.Y, *args, **kw), axis=1)
+        self.columns_types = self.__detect_columns_types()
         # TODO find and document changes
-        # TODO With change compute again columns types 
-        
-    def __find_differencies(self, old_dataset):
-        return ['No diff']
-        
-    def _merge_df(self, main_df, add_df):
-        return main_df.join(add_df)
     
     def get_columns_names_by_type(self, types):
         if type(types) != list:
             types = [types]
-            
-        return list(dict(filter(
-            lambda pair: pair[1] in types,
-            self.usable_columns_types.items())).keys())
-        
-    @property
-    def usable_columns_types(self):
-        return dict(filter(
-            lambda pair: pair[0] in self.X_train.columns,
-            self.columns_types.items()))
-        
-    
-    
-    def set_label(self, labels_names):
-        if type(labels_names) != list:
-            labels_names = [labels_names]
-            
-        for data_env in ['train', 'test']:
-            if set(labels_names).issubset(set(self.__data[data_env]['features'].columns) | set(self.__data[data_env]['labels'].columns)):
-                self.reset_label(env=[data_env])
-                for column in labels_names:
-                    self.__data[data_env]['labels'][column] = self.__data[data_env]['features'].pop(column)
-            else:
-                raise Exception("Columns must exist")
+
+        return [
+            column
+            for column, type in self.columns_types.items()
+            if type in types and column not in self.__disabled_columns and column not in self.labels
+        ]
                 
     def active_columns(self):
-        return self.__data['train']['features'].columns
-    
-    @property
-    def is_multilabel(self):
-        return len(self.labels_columns) > 1
-    
-    @property
-    def labels_columns(self):
-        return self.__data['train']['labels'].columns
-    @property      
-    def train_data(self):
-        return self.__data['train']['features'].copy(deep=True)
-    
-    @property
-    def X_train(self):
-        return self.train_data
-    
-    @X_train.setter
-    def X_train(self, value):
-        self.__data['train']['features'] = value
-    
-    @property      
-    def __test_data(self):
-        return self.__data['test']['features']
-    
-    
-    @property
-    def __X_test(self):
-        return self.__test_data
-    
-    @__X_test.setter
-    def __X_test(self, value):
-        self.__data['test']['features'] = value
-    
-    @property      
-    def train_labels(self):
-        return self.__data['train']['labels'].copy(deep=True)
-    
-    @property      
-    def y_train(self):
-        if self.is_multilabel:
-            return self.train_labels
-        else:
-            return self.train_labels[self.train_labels.columns[0]]
-    
-    @y_train.setter
-    def y_train(self, value):
-        self.__data['train']['labels'] = pd.DataFrame(value)
-    
-    @property     
-    def __test_labels(self):
-        return self.__data['test']['labels']
-    
-    @property      
-    def __y_test(self):
-        if self.is_multilabel:
-            return self.__test_labels
-        else:
-            return self.__test_labels[self.__test_labels.columns[0]]
-    
-    # TODO DEBUG purpose -> to remove
-    @property
-    def check_X_test(self):
-        return self.__test_data
-    
-    # TODO DEBUG purpose -> to remove
-    @property
-    def check_y_test(self):
-        return self.__y_test
-    
-    @__y_test.setter
-    def __y_test(self, value):
-        self.__data['test']['labels'] = pd.DataFrame(value)
-        
-    
+        return [ c for c in self.__features.columns if c not in self.__disabled_columns ]
+
     # Detect data types
     def detect_data_type(self, column_name):
-        column_value = self.X_train[column_name]
+        column_value = self.__features[column_name]
         if column_value.dtype == object:
             if self.__string_column_to_date(column_name):
                 return DataType.DATE
@@ -199,19 +94,17 @@ class Dataset:
     # Return a dict of with column name as key and value as type of data
     def __detect_columns_types(self):
         types = {}
-        for column in self.X_train.columns:
+        for column in self.__features.columns:
             types[column] = self.detect_data_type(column)
             
-        return types  
-
+        return types
 
     # Disable a column with delete it
-    def disable_column(self, column): 
-        for data_env in ['train', 'test']:
-            if column in self.__data[data_env]['features'].columns:
-                self.__data[data_env]['disabled'][column] = self.__data[data_env]['features'].pop(column)
-            else:
-                raise Exception(f"Column '{column}' doesn't exist ! ")
+    def disable_column(self, column):
+        if column not in self.__disabled_columns:
+            self.__disabled_columns.append(column)
+        else:
+            raise Exception(f"Column '{column}' is already disabled!")
     
     # Disable several columns
     def disable_columns(self, columns):
@@ -220,46 +113,26 @@ class Dataset:
             
     # Enable column from disabled dataset
     def enable_column(self, column):
-        for data_env in ['train', 'test']:
-            if column in self.__data[data_env]['disabled']:
-                self.__data[data_env]['features'][column] = self.__data[data_env]['disabled'].pop(column)
-            else:
-                raise Exception(f"Column '{column}' doesn't exist ! ")
+        if column in self.__disabled_columns:
+            self.__disabled_columns.pop(column)
+        else:
+            raise Exception(f"Column '{column}' is already enabled!")
             
     # Enable several columns
     def enable_columns(self, columns):
         for column in columns:
             self.enable_column(column)
-            
-            
-    # Reset selected label           
-    def reset_label(self, env=['train', 'test']):
-        for data_env in env:
-            if any(self.__data[data_env]['labels']):
-                for column in self.__data[data_env]['labels']:
-                    column_name = self.__data[data_env]['labels'].name # Get column name
-                    self.__data[data_env]['features'][column_name] = self.__data[data_env]['labels'].pop(column) # Add label to dataset
-            self.__data[data_env]['labels'] = pd.DataFrame() # Set label empty
     
-    def __string_column_to_date(self, column_name, env=['train', 'test']):
-        threshold_count = sum([self.__data[data_env]['features'][column_name].count() for data_env in env]) * 0.95
-        
-        new_columns = {
-            'train': None,
-            'test': None
-            }
-        
-        for data_env in env:
-            new_columns[data_env] = self.__data[data_env]['features'][column_name].apply(self.__string_value_to_date)
+    def __string_column_to_date(self, column_name: str):
+        threshold_count = self.__features[column_name].count() * 0.95
+        new_columns = self.__features[column_name].apply(self.__string_value_to_date)
             
-        if sum([new_columns[data_env].count() for data_env in env]) >= threshold_count:
-            for data_env in env:
-                self.__data[data_env]['features'][column_name] = new_columns[data_env].replace(pd.NaT, None)
+        if new_columns.count() >= threshold_count:
+            self.__features[column_name] = new_columns.replace(pd.NaT, None)
+
             return True
-        else:
-            return False
-                
-                
+
+        return False
             
     def __string_value_to_date(self, value, date_formats = ['%Y-%M-%d', '%d-%M-%Y', '%Y/%M/%d', '%d/%M/%Y', None]):
         if type(date_formats) != list:
@@ -270,4 +143,49 @@ class Dataset:
                 return pd.to_datetime(value, format=date_format)
             except ValueError:
                 pass
+
         return pd.NaT
+
+    def __getitem__(self, key) -> pd.DataFrame | pd.Series:
+        return self.__features.drop(self.__disabled_columns, axis=1)[key]
+
+
+class TrainingDataset():
+
+    def __init__(self, X_train, X_test, Y_train, Y_test):
+        self.__X_train = X_train
+        self.__X_test = X_test
+        self.__Y_train = Y_train
+        self.__Y_test = Y_test
+
+    @property
+    def X_train(self):
+        return self.__X_train
+
+    @property
+    def X_test(self):
+        return self.__X_test
+    
+    @property
+    def Y_train(self):
+        if self.is_multilabel:
+            return self.__Y_train
+        else:
+            return self.__Y_train.squeeze(axis=0).values.ravel()
+    
+    @property
+    def Y_test(self):
+        if self.is_multilabel:
+            return self.__Y_test
+        else:
+            return self.__Y_test.squeeze(axis=0).values.ravel()
+    
+    @property
+    def is_multilabel(self):
+        return len(self.__Y_train.columns) > 1
+        
+    def compute_metric(self, model, metric):
+        Y_pred = model.predict(self.__X_test, model_only=True)
+        Y_true = self.__Y_test.copy()
+
+        return metric.compute(Y_true, Y_pred, multilabel=self.is_multilabel)
