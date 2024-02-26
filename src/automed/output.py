@@ -9,21 +9,27 @@ class Output:
     # model = None
     # stacked_log = []
     
-    def __init__(self, dataset:Dataset=None, metrics=[], model=None, stack_list=[]):
+    # TODO -> main_metric -> Remove hardcoded one and add selection mechanisms 
+    def __init__(self, dataset:Dataset=None, metrics=[], main_metric='balanced_accuracy', model=None, stack_list=[]):
         from .model import Model # Here to avoid circular import. TODO -> Something better to do ?
         
         self.dataset = dataset
         self.metrics = metrics
+        self.main_metric = main_metric
         self.model = model or Model()
         self.computed_metrics = {}
         self.stacked_path = copy(stack_list)
         
     def add_stack(self, stack):
         self.stacked_path.append(stack)
-          
+        
+    @property
+    def main_metric_value(self):
+        self.computed_metrics[self.main_metric]
+    
     def __gt__(self, other):
         if self.computed_metrics and other.computed:
-            return self.computed_metrics > other.computed_metrics
+            return self.main_metric_value > other.main_metric_value
         else:
             if self.computed_metrics:
                 return True
@@ -34,7 +40,7 @@ class Output:
             
     def __lt__(self, other):
         if self.computed_metrics and other.computed_metrics:
-            return self.computed_metrics < other.computed_metrics
+            return self.main_metric_value < other.main_metric_value
         else:
             if self.computed_metrics:
                 return False
@@ -45,21 +51,21 @@ class Output:
             
     def __eq__(self, other):
         if self.computed_metrics and other.computed_metrics:
-            self.computed_metrics == other.computed_metrics
+            self.main_metric_value == other.main_metric_value
         else:
             id(self) == id(other)
         
-    def to_output(self, dataset:Dataset=None, metric=None, model=None):
+    def to_output(self, dataset:Dataset=None, metrics=None, model=None):
         return Output(
             (dataset or self.dataset or Dataset()),
-            metric or self.metrics,
+            metrics or self.metrics,
             model or self.model.copy(),
             stack_list=self.stacked_path)
         
-    def to_input(self, dataset:Dataset=None, metric=None, model=None):
+    def to_input(self, dataset:Dataset=None, metrics=None, model=None):
         return Input(
             (dataset or self.dataset or Dataset()),
-            metric or self.metrics,
+            metrics or self.metrics,
             model or self.model.copy(),
             stack_list=self.stacked_path)
 
@@ -107,11 +113,12 @@ class Output:
     def evaluate(self, force=False):
         if not(self.model.have_model):
             return -1
-
+        
         if force or not(self.computed_metrics):
             for metric in self.metrics:
                 result = self.dataset.compute_metric(self.model, metric)
                 self.computed_metrics[metric.__str__()] = result
+                
         return self.computed_metrics
     
     def log(self, test):

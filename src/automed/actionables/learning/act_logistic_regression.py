@@ -17,7 +17,7 @@ class ActLogisticRegression(Actionable):
             'max_iterations': {
                 'description': 'Maximum number of iterations',
                 'default': 1000,
-                'range': [20, float('inf')]
+                'range': [50, float('inf')]
             },
             'random_state': {
                 'description': 'random_state',

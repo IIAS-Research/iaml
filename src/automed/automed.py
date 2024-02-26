@@ -125,6 +125,8 @@ class AutoMed:
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 
     def run(self, callback=None):
+        self.input.dataset.debug_force_monolabel() # TODO REMOVE Quand le monolabel sera obligatoire 
+        
         copied_input = self.input.to_input() # Avoid input to be edited by futures steps
         with Logger().progress as progress:
             step_count = self.first_step.count_steps()
@@ -136,9 +138,10 @@ class AutoMed:
             # RUN!
             self.output = self.first_step.run(copied_input, callback=progress_callback)
             progress.update(task, completed=step_count)
-    
-        # Order ouputs according the first metric
-        self.output.sort(key=lambda output: list(output.evaluate().values())[0], reverse=True)
+            
+        print(self.output[0].metrics)
+        # Order ouputs according the main metric
+        self.output.sort(reverse=True)
         return self.output
     
     ########################

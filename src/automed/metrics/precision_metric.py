@@ -1,10 +1,10 @@
 from ..step import *
 from ..metric import Metric
-from sklearn.utils.multiclass import type_of_target
 from collections import Counter
 import pandas as pd
 from sklearn.metrics import *
- 
+from sklearn.utils.multiclass import type_of_target
+
 class precisionMetric(Metric):
     
     def __str__(self):
@@ -12,13 +12,9 @@ class precisionMetric(Metric):
     
     def explain(self):
         return 'Compute the precision: The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false positives.'
-        
-    def suitable(self, y):
-        target_type = type_of_target(y)
-        if target_type in ['binary', 'multiclass',  'multilabel-indicator']:
-            return True
-        else:
-            return False
+    
+    def suitable(self, dataset) -> bool:
+        return dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
         
     def compute(self, y, y_pred):
         if type_of_target(y) == 'binary':

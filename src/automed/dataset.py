@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from .data_type import DataType
+from sklearn.utils.multiclass import type_of_target
+
     
 class Dataset:
     def __init__(self, train_data, test_data=None, label_name=None):
@@ -26,6 +28,8 @@ class Dataset:
             
         self.columns_types = self.__detect_columns_types() 
         
+        self.type_of_target = None # Will be an array with type of target (multiclass, binary, etc)
+        
         if label_name:
             self.set_label(label_name)
             
@@ -33,39 +37,39 @@ class Dataset:
     def from_splited_data(cls, X_train, y_train, X_test, y_test):
         dataset = cls(train_data=X_train)
         dataset.y_train = y_train
-        dataset.__X_test = X_test
-        dataset.__y_test = y_test
+        dataset.X_test = X_test
+        dataset.y_test = y_test
         
         return dataset
     
     def split(self, X_train, y_train, X_test, y_test):
         self.X_train = X_train
         self.y_train = y_train
-        self.__X_test = X_test
-        self.__y_test = y_test
+        self.X_test = X_test
+        self.y_test = y_test
     
 
     def copy(self, deep=True):
         return Dataset.from_splited_data(
             self.X_train.copy(deep=deep),
             self.y_train.copy(deep=deep),
-            self.__X_test.copy(deep=deep),
-            self.__y_test.copy(deep=deep)
+            self.X_test.copy(deep=deep),
+            self.y_test.copy(deep=deep)
         )
     
     # Compute metrics
     def compute_metric(self, model, metric):
         # To avoid warninggs ( UserWarning: X has feature names, but GaussianNB was fitted without feature names)
-        y_pred = model.predict(self.__X_test, model_only = True)
+        y_pred = model.predict(self.X_test, model_only = True)
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.toarray()
         else:
-            return metric.compute(self.__y_test, y_pred)
+            return metric.compute(self.y_test, y_pred)
 
     def apply(self, method, only_train=False, *args, **kw):
         self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
         if not only_train:
-            self.__X_test, self.__y_test = method(self.__X_test, self.__y_test, *args, **kw)
+            self.X_test, self.y_test = method(self.X_test, self.y_test, *args, **kw)
         # TODO find and document changes
         # TODO With change compute again columns types 
         
@@ -89,17 +93,30 @@ class Dataset:
             lambda pair: pair[0] in self.X_train.columns,
             self.columns_types.items()))
         
-    def set_label(self, labels_names):
-        if type(labels_names) != list:
-            labels_names = [labels_names]
-            
+    def set_label(self, label_name):
         for data_env in ['train', 'test']:
-            if set(labels_names).issubset(set(self.__data[data_env]['features'].columns) | set(self.__data[data_env]['labels'].columns)):
+            if set(label_name).issubset(set(self.__data[data_env]['features'].columns) | set(self.__data[data_env]['labels'].columns)):
                 self.reset_label(env=[data_env])
-                for column in labels_names:
+                for column in label_name:
                     self.__data[data_env]['labels'][column] = self.__data[data_env]['features'].pop(column)
             else:
                 raise Exception("Columns must exist")
+        
+        self.compute_type_of_target()
+        
+    # TODO 
+    # DEBUG
+    # Permet de forcer le mono label -> fix temporaire a supprimer quand toute la class dataset forcera le monolabel
+    # Utiliser temporairement pour finaliser les metrics
+    # TODO supprimer aussi toutes les lignes avec # TODO DEBUG TMP FIX MONOLABEL
+    def debug_force_monolabel(self):
+        col = self.labels_columns[0]
+        self.__data['train']['labels'] = pd.DataFrame(self.__data['train']['labels'][col])
+        self.__data['test']['labels'] = pd.DataFrame(self.__data['test']['labels'][col])
+        self.compute_type_of_target()
+        
+    def compute_type_of_target(self) -> None: 
+        self.type_of_target = type_of_target(self.y_train)
                 
     def active_columns(self):
         return self.__data['train']['features'].columns
@@ -170,7 +187,7 @@ class Dataset:
     # TODO DEBUG purpose -> to remove
     @property
     def check_y_test(self):
-        return self.__y_test
+        return self.y_test
     
     @__y_test.setter
     def __y_test(self, value):
