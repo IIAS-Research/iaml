@@ -22,7 +22,7 @@ def each_file(file):
     if len(df.columns) < 2:
         df = pd.read_csv(file, sep=",")
         
-    auto = AutoMed(Dataset(df))
+    auto = AutoMed(Dataset(df), quiet=True)
     
     labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
     auto.dataset.set_label(labels) 
@@ -35,7 +35,7 @@ def each_file(file):
     # Find best result
     max_result = 0
     for output in auto.output:
-        tmp = output.evaluate()
+        tmp = output.evaluate()['balanced_accuracy']
         if tmp > max_result:
             max_result = tmp
     
@@ -61,8 +61,7 @@ else:
 threads = []
         
 # Create one thread by File
-print("==", files)
-# files = [files[4]]
+files = [files[5]]
 
 for file in files:
     print("->>>", file)
