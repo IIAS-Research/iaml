@@ -58,7 +58,7 @@ class MetaStep(Step):
     # Add all Step with this tag to the MetaStep
     # Wrap -> It exist Will Wrap Steps with it. Check WrapperStep to know more 
     def add_step_by_tag(self, tag, wrap=None):
-        steps_to_add = set(filter(lambda key: tag in Step.available_steps[key], Step.available_steps.keys()))
+        steps_to_add = Step.find_steps_by_tag(tag)
         
         if wrap != None:
             steps_to_add = list(map(lambda step: wrap(step()), steps_to_add))

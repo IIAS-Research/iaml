@@ -328,6 +328,10 @@ class Step:
         for destroyer in self.destroyers:
             destroyer.track_output(self, output)
     
+    @classmethod
+    def find_steps_by_tag(cls, tag: str):
+        return set(filter(lambda key: tag in cls.available_steps[key], cls.available_steps.keys()))
+    
     
 #############   
 # Decorator #
