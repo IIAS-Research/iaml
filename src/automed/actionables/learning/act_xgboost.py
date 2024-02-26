@@ -1,5 +1,6 @@
 from ...actionable import *
-from ...automed import Output, Metric
+from ...output import TrainingInput
+
 from sklearn.ensemble import GradientBoostingClassifier
 from skmultilearn.problem_transform import BinaryRelevance
 
@@ -36,9 +37,7 @@ class ActXGBoost(Actionable):
         }]
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
+    def run(self, input: TrainingInput, callback=None):
         model = GradientBoostingClassifier(
                                         n_estimators=self.get_config('n_estimators'),
                                         learning_rate=self.get_config('learning_rate'),
@@ -51,7 +50,7 @@ class ActXGBoost(Actionable):
             model = BinaryRelevance(classifier=model, require_dense=[False, True])
             
             
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
     

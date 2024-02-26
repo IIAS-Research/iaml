@@ -1,6 +1,5 @@
 from ...actionable import *
-from ...automed import Output, Metric
-
+from ...output import TrainingInput
 
 from sklearn.naive_bayes import GaussianNB
 from skmultilearn.problem_transform import BinaryRelevance
@@ -18,15 +17,13 @@ class ActGaussianNb(Actionable):
         self.configurations = [{}]
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
+    def run(self, input: TrainingInput, callback=None):
         model = GaussianNB()
         
         if input.dataset.is_multilabel:
             model = BinaryRelevance(classifier=model, require_dense=[True, True])
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
     

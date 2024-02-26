@@ -1,7 +1,7 @@
 from ...actionable import *
-from ...automed import Output, Metric
+from ...output import TrainingInput
+
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.datasets import make_classification
 from skmultilearn.problem_transform import BinaryRelevance
 
 
@@ -32,15 +32,13 @@ class ActRandomForest(Actionable):
         }]
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
+    def run(self, input: TrainingInput, callback=None):
         model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'), n_estimators=self.get_config('n_estimators'))
         
         if input.dataset.is_multilabel:
             model = BinaryRelevance(classifier=model, require_dense=[False, True])
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
 

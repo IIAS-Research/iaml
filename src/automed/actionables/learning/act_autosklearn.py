@@ -1,6 +1,7 @@
-from ...actionable import *
-from ...automed import Output, Metric
 import autosklearn.classification
+
+from ...actionable import *
+from ...output import TrainingInput
 
 
 def learn(model, X):
@@ -21,15 +22,13 @@ class ActAutoSKLearn(Actionable):
         }]
     
     @runner
-    def run(self, input:Output, callback=None):
-        dataset = input.dataset
-        metric = input.metric or Metric()
+    def run(self, input: TrainingInput, callback=None):
         model = autosklearn.classification.AutoSklearnClassifier(
             time_left_for_this_task=self.get_config('running_time'),
             max_models_on_disc=5,
             memory_limit = 102400)
         
-        model.fit(dataset.X_train, dataset.y_train)
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
 

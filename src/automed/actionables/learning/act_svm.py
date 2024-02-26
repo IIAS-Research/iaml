@@ -1,5 +1,6 @@
 from ...actionable import *
-from ...automed import Output, Metric
+from ...output import TrainingInput
+
 from sklearn import svm
 from skmultilearn.problem_transform import BinaryRelevance
 
@@ -35,9 +36,7 @@ class ActSVM(Actionable):
         }]
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
+    def run(self, input: TrainingInput, callback=None):
         model = svm.SVC(
             kernel = self.get_config('kernel'),
             class_weight = self.get_config('class_weight'),
@@ -49,7 +48,7 @@ class ActSVM(Actionable):
         if input.dataset.is_multilabel:
             model = BinaryRelevance(classifier=model, require_dense=[False, True])
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
         

@@ -1,5 +1,6 @@
 from ...actionable import *
-from ...automed import Output, Metric
+from ...output import TrainingInput
+
 from sklearn.neighbors import KNeighborsClassifier
 from skmultilearn.problem_transform import BinaryRelevance
 
@@ -27,9 +28,7 @@ class ActKNN(Actionable):
         }]
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
+    def run(self, input: TrainingInput, callback=None):
         model = KNeighborsClassifier(
             n_neighbors = self.get_config('n_neighbors'),
             metric = self.get_config('metric')
@@ -38,7 +37,7 @@ class ActKNN(Actionable):
         if input.dataset.is_multilabel:
             model = BinaryRelevance(classifier=model, require_dense=[False, True])
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
     
