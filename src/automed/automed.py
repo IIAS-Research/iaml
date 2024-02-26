@@ -7,6 +7,7 @@ from .metric import Metric
 from .model import Model
 from .destroyer import Destroyer
 from .worker_manager import WorkerManager
+from .wrapper.dataset import KFold
 
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
@@ -45,19 +46,17 @@ class AutoMed:
     # DEBUG -> Testing purpose
     def autosklearn_pipeline(self, time=30):
         step = MetaOrderedStep()   
-        step.add_step(RandomSplit()) 
         
         sklearn = ActAutoSKLearn()
         sklearn.configure_one(0, 'running_time', time)
         
-        step.add_step(sklearn)
+        step.add_step(KFold(sklearn))
 
         return step 
         
     # DEBUG -> Testing purpose
     def tplot_pipeline(self):
         step = MetaOrderedStep()
-        step.add_step(RandomSplit())
         step.add_step(MetaStep(tag='cleaning'))
         # step.add_step(MetaStep(tag='features_selection'))
         step.add_step(MetaStep(tag='normalize'))
@@ -69,7 +68,6 @@ class AutoMed:
     # DEBUG -> Testing purpose.
     def debug_pipeline(self, only=None, use_destroyer=False):
         step = MetaOrderedStep()
-        step.add_step(RandomSplit())
 
         if only:
             step.add_step(MetaStep(tag=only))
@@ -78,11 +76,12 @@ class AutoMed:
             step.add_step(MetaStep(tag='features_selection'))
             step.add_step(MetaStep(tag='normalize'))
             step.add_step(MetaStep(tag='metric'))
+
+            wrap = lambda s: WrapGeneticGridSearch(KFold(s))
             if use_destroyer:
-                step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
+                step.add_step(MetaExplorerStep(tag='learning', wrap=wrap, destroyer=Destroyer()))
             else:
-                step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch))
-                
+                step.add_step(MetaExplorerStep(tag='learning', wrap=wrap))
         
         return step
 
@@ -110,7 +109,7 @@ class AutoMed:
     ###########
         
     def fit(self, X, Y, *args, **kwargs):
-        dataset = Dataset.from_XY(X, Y)
+        dataset = Dataset(X, Y)
         input = Input(dataset)
 
         return self.run(input, *args, **kwargs)

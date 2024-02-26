@@ -55,8 +55,8 @@ class Model:
         return self.predict_function(self.ml_model, X)
 
     def run(self, dataset: pd.DataFrame) -> Output:
-        last_output = dataset
+        last_output = dataset, []
         for (function, args, kw) in self.__stack:
-            last_output = function(last_output, [], *args, **kw)
+            last_output = function(*last_output, *args, **kw)
             
-        return last_output
+        return last_output[0]
