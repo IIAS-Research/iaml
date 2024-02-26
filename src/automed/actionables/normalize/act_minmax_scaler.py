@@ -18,7 +18,7 @@ class ActMinMaxScaler(Actionable):
     @runner
     def run(self, input: Input, callback=None) -> Output:
         columns = input.dataset.get_columns_names_by_type(DataType.NUMERIC)
-        values = input.dataset.X_train[columns]
+        values = input.dataset[columns]
         scaler = MinMaxScaler()
         scaler.fit(values)
 

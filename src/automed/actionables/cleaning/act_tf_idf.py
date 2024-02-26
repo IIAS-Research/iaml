@@ -27,7 +27,7 @@ class ActTfIdf(Actionable):
     def run(self, input: Input, callback=None) -> Output:
         columns = []
         for column in input.dataset.get_columns_names_by_type([DataType.SHORT_TEXT, DataType.TEXT]):
-            values = input.dataset.X_train[column].fillna('')
+            values = input.dataset[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             columns.append((column, vectorizer))
         

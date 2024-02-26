@@ -23,7 +23,7 @@ class ActDropNumericalColumn(Actionable):
     def run(self, input: Input, callback=None) -> Output:
         columns_to_drop = []     
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
-            values = input.dataset.X_train[column]
+            values = input.dataset[column]
             if values.isnull().sum()/len(values) >= self.get_config('empty_threshold'):
                 columns_to_drop.append(column)
 

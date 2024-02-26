@@ -26,7 +26,7 @@ class ActOnehot(Actionable):
     @runner
     def run(self, input: Input, callback=None) -> Output:
         columns = input.dataset.get_columns_names_by_type(DataType.CATEGORICAL)
-        values = input.dataset.X_train[columns]
+        values = input.dataset[columns]
         encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False).fit(values)
 
         return input.transform_dataset(transform, encoder, columns)
