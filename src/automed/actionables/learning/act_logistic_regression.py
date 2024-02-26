@@ -8,7 +8,7 @@ def learn(model, X):
     return model.predict(X)
 
 
-@isStep('learning', 'tabular')
+@isStep('learning', 'tabular', 'fast_learning')
 @assessable
 class ActLogisticRegression(Actionable):
     name = "Learn : Logistic regression"

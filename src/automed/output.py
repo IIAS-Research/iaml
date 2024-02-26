@@ -9,27 +9,29 @@ class Output:
     # model = None
     # stacked_log = []
     
-    # TODO -> main_metric -> Remove hardcoded one and add selection mechanisms 
-    def __init__(self, dataset:Dataset=None, metrics=[], main_metric='balanced_accuracy', model=None, stack_list=[]):
+    def __init__(self, dataset:Dataset=None, metrics=[], model=None, stack_list=[], main_metric='balanced_accuracy'):
         from .model import Model # Here to avoid circular import. TODO -> Something better to do ?
         
         self.dataset = dataset
         self.metrics = metrics
-        self.main_metric = main_metric
         self.model = model or Model()
+        self.main_metric = main_metric
         self.computed_metrics = {}
         self.stacked_path = copy(stack_list)
         
     def add_stack(self, stack):
         self.stacked_path.append(stack)
         
-    @property
-    def main_metric_value(self):
-        self.computed_metrics[self.main_metric]
+    def get_main_metric_value(self):
+        print(self.computed_metrics.keys())
+        if self.main_metric in self.computed_metrics:
+            return self.computed_metrics[self.main_metric]
+        else:
+            return -1
     
     def __gt__(self, other):
-        if self.computed_metrics and other.computed:
-            return self.main_metric_value > other.main_metric_value
+        if self.computed_metrics and other.computed_metrics:
+            return self.get_main_metric_value() > other.get_main_metric_value()
         else:
             if self.computed_metrics:
                 return True
@@ -40,7 +42,7 @@ class Output:
             
     def __lt__(self, other):
         if self.computed_metrics and other.computed_metrics:
-            return self.main_metric_value < other.main_metric_value
+            return self.get_main_metric_value() < other.get_main_metric_value()
         else:
             if self.computed_metrics:
                 return False
@@ -51,7 +53,7 @@ class Output:
             
     def __eq__(self, other):
         if self.computed_metrics and other.computed_metrics:
-            self.main_metric_value == other.main_metric_value
+            self.get_main_metric_value() == other.get_main_metric_value()
         else:
             id(self) == id(other)
         
