@@ -61,7 +61,7 @@ else:
 threads = []
         
 # Create one thread by File
-files = [files[5]]
+# files = [files[5]]
 
 for file in files:
     print("->>>", file)
