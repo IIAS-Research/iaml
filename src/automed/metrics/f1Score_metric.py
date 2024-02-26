@@ -1,9 +1,9 @@
 from ..step import *
 from ..metric import Metric
-from sklearn.utils.multiclass import type_of_target
 from collections import Counter
 import pandas as pd
 from sklearn.metrics import *
+from sklearn.utils.multiclass import type_of_target
 
 class F1ScoreMetric(Metric):
     
@@ -14,12 +14,8 @@ class F1ScoreMetric(Metric):
         return 'Compute the F1 score, also known as balanced F-score or F-measure. The F1 score can be interpreted as a harmonic mean of the precision and recall'
     
             
-    def suitable(self, y):
-        target_type = type_of_target(y)
-        if target_type in ['binary', 'multiclass',  'multilabel-indicator']:
-            return True
-        else:
-            return False
+    def suitable(self, dataset) -> bool:
+        return dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
     def compute(self, y, y_pred):
         if type_of_target(y) == 'binary':

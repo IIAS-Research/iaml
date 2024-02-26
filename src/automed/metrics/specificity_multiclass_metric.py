@@ -1,6 +1,5 @@
 from ..step import *
 from ..metric import Metric
-from sklearn.utils.multiclass import type_of_target
 from collections import Counter
 import pandas as pd
 from sklearn.metrics import confusion_matrix
@@ -14,12 +13,9 @@ class SpecificityMulticlassMetric(Metric):
     def explain(self):
         return 'Calculate specificity in a multiclass conext, where each instance belongs to just one of several classes'
     
-    def suitable(self, y):
-        target_type = type_of_target(y)
-        if target_type in ['multiclass']:
-            return True
-        else:
-            return False
+    def suitable(self, dataset) -> bool:
+        return dataset.type_of_target in ['multiclass']
+    
     
     # Specificity is calculated by summing the true negartives and false positives for each class, then using these totals to obtain an overall specificity"
     def compute(self, y, y_pred):

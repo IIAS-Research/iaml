@@ -11,14 +11,12 @@ class MetricSelection(Actionable):
     
     @runner
     def run(self, input, callback = None) -> Output:
-        # Get target variable from dataset object
-        y = input.dataset.y_train
         # Iterate through all subclasses that inherit from Metric
         for metric_sub_class in Metric.__subclasses__():
             # Instantiate a subclass
             metric = metric_sub_class()
             # Verify if a subclass is suitable or not
-            if metric.suitable(y):
+            if metric.suitable(input.dataset):
                 input.add_metric(metric)
                 
         return input.to_output()

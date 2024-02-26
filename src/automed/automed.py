@@ -70,7 +70,7 @@ class AutoMed:
         return step
     
     # DEBUG -> Testing purpose.
-    def debug_pipeline(self, only=None, use_destroyer=False):
+    def debug_pipeline(self, only=None, use_destroyer=False, fast=False):
         step = MetaOrderedStep()
         step.add_step(RandomSplit())
 
@@ -81,10 +81,12 @@ class AutoMed:
             step.add_step(MetaStep(tag='features_selection'))
             step.add_step(MetaStep(tag='normalize'))
             step.add_step(MetaStep(tag='metric'))
+            
+            learning_tag = 'fast_learning' if fast else 'learning'
             if use_destroyer:
-                step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
+                step.add_step(MetaExplorerStep(tag=learning_tag, wrap=WrapGeneticGridSearch, destroyer=Destroyer()))
             else:
-                step.add_step(MetaExplorerStep(tag='learning', wrap=WrapGeneticGridSearch))
+                step.add_step(MetaExplorerStep(tag=learning_tag, wrap=WrapGeneticGridSearch))
                 
         
         return step
@@ -95,8 +97,8 @@ class AutoMed:
     def tplot_load(self):
         self.first_step = self.tplot_pipeline()
 
-    def debug_load(self, only=None, use_destroyer=False):
-        self.first_step = self.debug_pipeline(only, use_destroyer)
+    def debug_load(self, only=None, use_destroyer=False, fast=False):
+        self.first_step = self.debug_pipeline(only, use_destroyer, fast)
     
     
     ##################
@@ -125,6 +127,8 @@ class AutoMed:
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 
     def run(self, callback=None):
+        self.input.dataset.debug_force_monolabel() # TODO REMOVE Quand le monolabel sera obligatoire 
+        
         copied_input = self.input.to_input() # Avoid input to be edited by futures steps
         with Logger().progress as progress:
             step_count = self.first_step.count_steps()
@@ -136,9 +140,10 @@ class AutoMed:
             # RUN!
             self.output = self.first_step.run(copied_input, callback=progress_callback)
             progress.update(task, completed=step_count)
-    
+            
+        
         # Order ouputs according the first metric
-        self.output.sort(key=lambda output: list(output.evaluate().values())[0], reverse=True)
+        self.output.sort(reverse=True)
         return self.output
     
     ########################
