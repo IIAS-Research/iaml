@@ -1,6 +1,9 @@
-from dataclasses import dataclass
-from .dataset import Dataset
 from copy import copy
+from dataclasses import dataclass
+from typing import Iterator
+
+from .dataset import Dataset, TrainingDataset
+
 
 @dataclass
 class Output:
@@ -12,6 +15,8 @@ class Output:
     def __init__(self, dataset:Dataset=None, metric=None, model=None, stack_list=[]):
         from .model import Model # Here to avoid circular import. TODO -> Something better to do ?
         
+        self.__train_dataset_transform_stack = []
+
         self.dataset = dataset
         self.metric = metric
         self.model = model or Model()
@@ -64,26 +69,48 @@ class Output:
             model or self.model.copy(),
             stack_list=self.stacked_path)
 
-    def transform_dataset(self, function: callable = None, *args, **kw):
+    def to_training_inputs(self, splitter: callable, *args, **kw) -> Iterator['TrainingInput']: # cast to TrainingInput
+        for indexes in splitter(*args, **kw):
+            if len(indexes) == 2:
+                i_train, i_test = indexes
+
+                X_train = self.dataset.X.iloc[i_train].copy()
+                X_test = self.dataset.X.iloc[i_test].copy()
+                Y_train = self.dataset.Y.iloc[i_train].copy()
+                Y_test = self.dataset.Y.iloc[i_test].copy()
+            else:
+                iX_train, iX_test, iY_train, iY_test = indexes
+
+                X_train = self.dataset.X.iloc[iX_train].copy()
+                X_test = self.dataset.X.iloc[iX_test].copy()
+                Y_train = self.dataset.Y.iloc[iY_train].copy()
+                Y_test = self.dataset.Y.iloc[iY_test].copy()
+
+            for (transformation, args, kw) in self.__train_dataset_transform_stack:
+                X_train, Y_train = transformation(*args, **kw)
+
+            yield self.to_input(TrainingDataset(X_train, X_test, Y_train, Y_test))
+
+    def transform_dataset(self, function: callable = None, *args, only_train: bool = False, **kw):
         """
         Transforms the dataset using the provided function, and adds it to the
         stack of functions to be applied before prediction.
         Note: The function must be pickable and therefore must be named (not be
         a lambda) and be declared at the top level of a module.
         See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
+
+        If `only_train` is set to `True`, the function will be applied to the
+        dataset just before training, after splitting into train and test.
         """
-        if 'only_train' in kw:
-            only_train = kw['only_train']
-            del kw['only_train']
+        if only_train:
+            self.__train_dataset_transform_stack.append((function, args, kw))
         else:
-            only_train = False
+            self.dataset.apply(function, *args, **kw)
             
-        self.dataset.apply(function, only_train, *args, **kw)
         if self.model is not None and function is not None and callable(function):
             self.model.add_to_stack(function, *args, **kw)
         
         return self.to_output()
-    
     
     def set_model(self, model, function: callable = None, *args, **kw):
         """
@@ -128,3 +155,7 @@ class Output:
 # Alias for Output
 class Input(Output):
     pass
+
+
+class TrainingInput(Input):
+    dataset: TrainingDataset
