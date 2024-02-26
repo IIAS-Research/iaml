@@ -31,10 +31,12 @@ class AutoMed:
     output:list = None # Outputs of the pipeline after run
     input:Input = None # Input Data
     
-    def __init__(self, dataset:Dataset=None, max_workers:int=None):
+    def __init__(self, dataset:Dataset=None, max_workers:int=None, quiet=False):
         self.output = None
         self.input = Input(dataset) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
+        
+        Logger().set_quiet(quiet)
 
         WorkerManager(max_workers=max_workers)
     
