@@ -1,3 +1,5 @@
+import numpy as np
+
 from sklearn.model_selection import KFold as SKKFold, StratifiedKFold
 
 from ...logger import Logger
@@ -10,7 +12,7 @@ from .dataset_wrapper import DatasetWrapper
 class KFold(DatasetWrapper):
     name = "Split date to train and test set"
     def __init__(self, step: Step):
-        self.configurations = [self.configurations[0] | {
+        self.configurations = [{
             'folds': {
                 'description': 'Split ratio',
                 'default': 5,
@@ -21,6 +23,7 @@ class KFold(DatasetWrapper):
                 'default': True,
                 'no_gridsearch': True,
             },
+            **self.configurations[0],
         }]
 
         super().__init__(step)
@@ -34,12 +37,20 @@ class KFold(DatasetWrapper):
             kfold = SKKFold(self.get_config('folds'))
             inputs = input.to_training_inputs(kfold.split, input.dataset.X)
 
-        outputs = []
+        outputs: list[Output] = []
+        metrics = []
         for i, training_input in enumerate(inputs):
             Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] (fold={i})")
-            outputs.extend(self.step.run(training_input))
 
-        return sorted(outputs, key=lambda o: o.evaluate())[-1]
+            output: Output = self.step.run(training_input)[0]
+            
+            outputs.append(output)
+            metrics.append(output.evaluate())
+        
+        output = sorted(outputs)[-1]
+        output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) for k in outputs[0].computed_metrics.keys() }
+
+        return output
     
     def priorize(self, input=None):
         return 1
