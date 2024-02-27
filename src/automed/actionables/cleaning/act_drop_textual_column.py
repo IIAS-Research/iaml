@@ -16,8 +16,8 @@ class ActDropTextualColumn(Actionable):
     
     
 
-    def transform(self, x, y):
-        return x.drop(self.columns_to_drop, axis=1), y
+    def transform(self, x):
+        return x.drop(self.columns_to_drop, axis=1)
         
     
     def priorize(self, input=None):

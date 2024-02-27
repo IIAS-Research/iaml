@@ -22,11 +22,9 @@ class ActOnehot(Actionable):
         return input.transform_dataset(self)
     
     
-    def transform(self, x, y) -> Output:
+    def transform(self, x) -> Output:
         # Without Reset index, the join with OHE will create NAN (index mismatch)
         x = x.reset_index(drop=True)
-        if isinstance(y, pd.Series):
-            y = y.reset_index(drop=True)
         
         transformed = self.encoder.transform(x[self.columns])
         ohe_df = pd.DataFrame(transformed, columns=self.encoder.get_feature_names_out(self.columns))
@@ -34,7 +32,7 @@ class ActOnehot(Actionable):
         x = x.drop(self.columns, axis=1)
         df = x.join(ohe_df)
 
-        return df, y
+        return df
         
     
     def priorize(self, input=None):

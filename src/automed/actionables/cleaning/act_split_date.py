@@ -15,7 +15,7 @@ class ActSplitDate(Actionable):
 
         return input.transform_dataset(self)
             
-    def transform(self, x, y) -> Output:
+    def transform(self, x) -> Output:
         for column in self.columns:
             # Day
             x[column + '_weekday'] = x[column].dt.dayofweek.replace(np.NaN, -1)
@@ -27,7 +27,7 @@ class ActSplitDate(Actionable):
             x[column + '_minute'] = x[column].dt.minute.replace(np.NaN, -1)
             x[column + '_second'] = x[column].dt.second.replace(np.NaN, -1) 
             
-        return x, y
+        return x
 
     
         

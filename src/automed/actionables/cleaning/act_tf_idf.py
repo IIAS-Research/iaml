@@ -21,11 +21,9 @@ class ActTfIdf(Actionable):
         return input.transform_dataset(self)
     
     
-    def transform(self, x, y):
+    def transform(self, x):
         # Without Reset index, the join with vector_df will create NAN (index mismatch)
         x = x.reset_index(drop=True)
-        if isinstance(y, pd.Series):
-            y = y.reset_index(drop=True)
             
         for name, vectorizer in self.columns:
             transformed = vectorizer.transform(x[name].fillna(''))
@@ -35,7 +33,7 @@ class ActTfIdf(Actionable):
 
             x = pd.concat([x, vector_df], axis=1).drop([name], axis=1)
         
-        return x, y
+        return x
         
     
     def priorize(self, input=None):

@@ -24,11 +24,11 @@ class ActMeanColumn(Actionable):
         
         return input.transform_dataset(self)
     
-    def transform(self, x, y):
+    def transform(self, x):
         for name, mean in self.columns:
             x[name].fillna(mean, inplace=True)
 
-        return x, y
+        return x
         
     
     def priorize(self, input=None):

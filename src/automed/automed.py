@@ -4,7 +4,7 @@ from .actionable import Actionable
 from .output import Output, Input
 from .dataset import Dataset
 from .metric import Metric
-from .model import Model
+from .auto_pipeline import AutoPipeline
 from .destroyer import Destroyer
 from .worker_manager import WorkerManager
 
@@ -115,10 +115,10 @@ class AutoMed:
     def metric(self):
         return self.input.metric
     
-    # Model from input data
+    # AutoPipeline from input data
     @property
-    def model(self):
-        return self.input.model
+    def pipeline(self):
+        return self.input.auto_pipeline
     
     ###########
     ### RUN ###

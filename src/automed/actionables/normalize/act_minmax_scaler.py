@@ -19,9 +19,9 @@ class ActMinMaxScaler(Actionable):
 
         return input.transform_dataset(self)
         
-    def transform(self, x, y):
+    def transform(self, x):
         x[self.columns] = self.scaler.transform(x[self.columns])
-        return x, y
+        return x
 
     
     def priorize(self, input=None):

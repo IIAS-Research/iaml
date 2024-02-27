@@ -25,8 +25,8 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         return input.transform_dataset(self)
     
     
-    def transform(self, x, y):
-        return x.drop(self.to_drop, axis=1), y
+    def transform(self, x):
+        return x.drop(self.to_drop, axis=1)
 
         
     
