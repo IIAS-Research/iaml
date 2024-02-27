@@ -186,9 +186,11 @@ class TrainingDataset():
     @property
     def is_multilabel(self):
         return len(self.__Y_train.columns) > 1
-        
-    def compute_metric(self, model, metric):
-        Y_pred = model.predict(self.__X_test, model_only=True)
-        Y_true = self.__Y_test.copy()
 
-        return metric.compute(Y_true, Y_pred, multilabel=self.is_multilabel)
+    def compute_metric(self, model, metric):
+        # To avoid warnings ( UserWarning: X has feature names, but GaussianNB was fitted without feature names)
+        y_pred = model.predict(self.X_test, model_only = True)
+        if not isinstance(y_pred, np.ndarray):
+            y_pred = y_pred.toarray()
+        else:
+            return metric.compute(self.Y_test, y_pred)

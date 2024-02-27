@@ -20,8 +20,8 @@ class AccuracyMetric(Metric):
         threshold = 0.20 * ideal_count
         return not(any(abs(count - ideal_count) > threshold for count in class_count.values()))
     
-    def suitable(self, dataset) -> bool:
-        y = dataset.y_train
+    def suitable(self, dataset: Dataset) -> bool:
+        y = dataset.Y
         return dataset.type_of_target in ['binary', 'multiclass'] and not(self.__is_balanced(y))
         
     def compute(self, y, y_pred):

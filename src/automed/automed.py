@@ -120,9 +120,7 @@ class AutoMed:
     
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 
-    def run(self, callback=None):
-        self.input.dataset.debug_force_monolabel() # TODO REMOVE Quand le monolabel sera obligatoire 
-
+    def run(self, input: Input, callback=None):
         with Logger().progress as progress:
             step_count = self.first_step.count_steps()
             task = progress.add_task('running steps...', total=step_count)

@@ -1,7 +1,8 @@
 from ...actionable import *
-from ...automed import Output, Metric
+from ...automed import Metric
+from ...output import TrainingInput
+
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import RandomForestClassifier
 
 # TODO Adapt it two try all the compatible learning models
 
@@ -22,7 +23,7 @@ class ActAdaBoost(Actionable):
         }]
         
     @runner
-    def run(self, input:Output, callback=None):
+    def run(self, input: TrainingInput, callback=None):
         metric = input.metric or Metric()
         
         model = AdaBoostClassifier(
@@ -31,7 +32,7 @@ class ActAdaBoost(Actionable):
             random_state= self.get_config('random_state')
             )
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.to_output(None, metric, model)
 

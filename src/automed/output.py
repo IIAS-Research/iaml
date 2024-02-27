@@ -28,7 +28,6 @@ class Output:
         self.stacked_path.append(stack)
         
     def get_main_metric_value(self):
-        print(self.computed_metrics.keys())
         if self.main_metric in self.computed_metrics:
             return self.computed_metrics[self.main_metric]
         else:
