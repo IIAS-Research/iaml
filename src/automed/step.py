@@ -420,7 +420,7 @@ def runner(func):
                     output = input    
                 
                     
-                result = result + ([output] if type(output) == Output else output)
+                result = result + ([output] if type(output) in [Output, Input] else output)
                 
         # print("->", result)
                     
