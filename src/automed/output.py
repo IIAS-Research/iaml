@@ -70,21 +70,11 @@ class Output:
             stack_list=self.stacked_path)
 
     def to_training_inputs(self, splitter: callable, *args, **kw) -> Iterator['TrainingInput']: # cast to TrainingInput
-        for indexes in splitter(*args, **kw):
-            if len(indexes) == 2:
-                i_train, i_test = indexes
-
-                X_train = self.dataset.X.iloc[i_train].copy()
-                X_test = self.dataset.X.iloc[i_test].copy()
-                Y_train = self.dataset.Y.iloc[i_train].copy()
-                Y_test = self.dataset.Y.iloc[i_test].copy()
-            else:
-                iX_train, iX_test, iY_train, iY_test = indexes
-
-                X_train = self.dataset.X.iloc[iX_train].copy()
-                X_test = self.dataset.X.iloc[iX_test].copy()
-                Y_train = self.dataset.Y.iloc[iY_train].copy()
-                Y_test = self.dataset.Y.iloc[iY_test].copy()
+        for i_train, i_test in splitter(*args, **kw):
+            X_train = self.dataset.X.iloc[i_train].copy()
+            X_test = self.dataset.X.iloc[i_test].copy()
+            Y_train = self.dataset.Y.iloc[i_train].copy()
+            Y_test = self.dataset.Y.iloc[i_test].copy()
 
             for (transformation, args, kw) in self.__train_dataset_transform_stack:
                 X_train, Y_train = transformation(*args, **kw)
