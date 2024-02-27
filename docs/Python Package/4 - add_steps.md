@@ -21,6 +21,13 @@ There is four easy things to do :
 Here is an basic example of Actionable Step :
 
 ```python
+def transform(x, y, columns):
+    for name, mean in columns:
+        x[name].fillna(mean, inplace=True)
+
+    return x, y
+
+
 @isStep('cleaning')
 class ActMeanColumn(Actionable):
     def __init__(self):
@@ -33,21 +40,23 @@ class ActMeanColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:
-        def transform(x, y, column):
-            x[column].fillna(values.mean(), inplace=True)
-            return x, y
-            
-        for column, values in input.dataset.train_data.items():
-            if is_numeric_dtype(values) and values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
-                input.dataset.apply(transform, column=column)
+    def run(self, input: Input, callback=None) -> Output:  
+        columns = []
+        for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = input.dataset[column]
+            if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
+                columns.append((column, values.mean()))
         
-        return input.to_output(input.dataset, None, None)
+        return input.transform_dataset(transform, columns)
 ```
 
 Another example ? Yes ! With a ML model this time :
 
 ```python
+def learn(model, X):
+    return model.predict(X)
+
+
 @isStep('learning', 'tabular')
 @assessable
 class ActRandomForest(Actionable):
@@ -66,13 +75,15 @@ class ActRandomForest(Actionable):
         }]
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
+    def run(self, input: TrainingInput, callback=None):
         model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'))
-        model.fit(input.dataset.X_train, input.dataset.y_train)
         
-        return input.to_output(None, metric, model)
+        if input.dataset.is_multilabel:
+            model = BinaryRelevance(classifier=model, require_dense=[False, True])
+        
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
+        
+        return input.set_model(model, learn)
 ```
 
 These two Steps was already automatically added to all the pipeline using tags. Easy, isn't it ?
