@@ -13,7 +13,10 @@ class MeanSquaredLogErrorMetric(Metric):
         return 'Mean squared logarithmic error regression loss.'
     
     def suitable(self, dataset) -> bool:
-        return dataset.type_of_target == 'continuous'
+        return dataset.type_of_target == 'continuous' and not((dataset.y_train < 0).any())
     
     def compute(self, y, y_pred):
-        return mean_squared_log_error(y, y_pred)
+        try:
+            return mean_squared_log_error(y, y_pred)
+        except:
+            return None

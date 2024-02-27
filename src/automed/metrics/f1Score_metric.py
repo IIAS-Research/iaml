@@ -19,7 +19,7 @@ class F1ScoreMetric(Metric):
     
     def compute(self, y, y_pred):
         if type_of_target(y) == 'binary':
-            return f1_score(y, y_pred)
+            return f1_score(y, y_pred, pos_label=y.unique()[0]) # TODO Find something less arbitrary (about pos_label)
         elif type_of_target(y) == 'multiclass':
             return f1_score(y, y_pred, average ='weighted')
         elif type_of_target(y) == 'multilabel-indicator':
