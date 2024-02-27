@@ -9,15 +9,17 @@ from .dataset_wrapper import DatasetWrapper
 class RandomSplit(DatasetWrapper):
     name = "Split date to train and test set"
     def __init__(self, step: Step):
-        self.configurations = [{
+        self.configurations = [self.configurations[0] | {
             'ratio': {
                 'description': 'Split ratio',
-                'default': 0.2
+                'default': 0.2,
+                'no_gridsearch': True,
             },
             'random_state': {
                 'description': 'Random state',
-                'default': 42
-            }
+                'default': 42,
+                'no_gridsearch': True,
+            },
         }]
 
         super().__init__(step)
