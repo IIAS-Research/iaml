@@ -35,7 +35,7 @@ def each_file(file):
     # Find best result
     max_result = 0
     for output in auto.output:
-        tmp = output.evaluate()['balanced_accuracy']
+        tmp = output.get_main_metric_value()
         if tmp > max_result:
             max_result = tmp
     

@@ -1,21 +1,20 @@
-from dataclasses import dataclass
 from .dataset import Dataset
 from copy import copy
 
-@dataclass
 class Output:
-    # dataset:Dataset = None
-    # metric = None
-    # model = None
-    # stacked_log = []
     
-    def __init__(self, dataset:Dataset=None, metrics=[], model=None, stack_list=[], main_metric='balanced_accuracy'):
+    def __init__(self, dataset:Dataset=None, metrics:list=[], model=None, stack_list=[], main_metric=None):
         from .model import Model # Here to avoid circular import. TODO -> Something better to do ?
         
         self.dataset = dataset
-        self.metrics = metrics
+        self.metrics = copy(metrics)
         self.model = model or Model()
-        self.main_metric = main_metric
+        
+        if main_metric == None and dataset and dataset.type_of_target:
+            self.main_metric = 'r2_score' if 'continuous' in dataset.type_of_target else 'balanced_accuracy'
+        else:
+            self.main_metric = main_metric
+            
         self.computed_metrics = {}
         self.stacked_path = copy(stack_list)
         
@@ -23,51 +22,50 @@ class Output:
         self.stacked_path.append(stack)
         
     def get_main_metric_value(self):
-        print(self.computed_metrics.keys())
-        if self.main_metric in self.computed_metrics:
+        if self.main_metric in self.evaluate():
             return self.computed_metrics[self.main_metric]
         else:
             return -1
     
     def __gt__(self, other):
-        if self.computed_metrics and other.computed_metrics:
+        if self.evaluate() and other.evaluate():
             return self.get_main_metric_value() > other.get_main_metric_value()
         else:
-            if self.computed_metrics:
+            if self.evaluate():
                 return True
-            if other.computed_metrics:
+            if other.evaluate():
                 return False
             
             return id(self) > id(other)
             
     def __lt__(self, other):
-        if self.computed_metrics and other.computed_metrics:
+        if self.evaluate() and other.evaluate():
             return self.get_main_metric_value() < other.get_main_metric_value()
         else:
-            if self.computed_metrics:
+            if self.evaluate():
                 return False
-            if other.computed_metrics:
+            if other.evaluate():
                 return True
             
             return id(self) < id(other)
             
     def __eq__(self, other):
-        if self.computed_metrics and other.computed_metrics:
-            self.get_main_metric_value() == other.get_main_metric_value()
+        if self.evaluate() and other.evaluate():
+            return self.get_main_metric_value() == other.get_main_metric_value()
         else:
-            id(self) == id(other)
+            return id(self) == id(other)
         
     def to_output(self, dataset:Dataset=None, metrics=None, model=None):
         return Output(
             (dataset or self.dataset or Dataset()),
-            metrics or self.metrics,
+            metrics or copy(self.metrics),
             model or self.model.copy(),
             stack_list=self.stacked_path)
         
     def to_input(self, dataset:Dataset=None, metrics=None, model=None):
         return Input(
             (dataset or self.dataset or Dataset()),
-            metrics or self.metrics,
+            metrics or copy(self.metrics),
             model or self.model.copy(),
             stack_list=self.stacked_path)
 
@@ -100,8 +98,8 @@ class Output:
         """
         return self.to_output(model=self.model.set_model(model, function, *args, **kw))
     
-    def add_metric(self, metric):
-        return self.metrics.append(metric)
+    def add_metric(self, metric) -> None:
+        self.metrics.append(metric)
         
     def __str__(self):
         str_out = ""
@@ -114,7 +112,7 @@ class Output:
     
     def evaluate(self, force=False):
         if not(self.model.have_model):
-            return -1
+            return None
         
         if force or not(self.computed_metrics):
             for metric in self.metrics:
