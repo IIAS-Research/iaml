@@ -8,7 +8,7 @@ class Output:
         
         self.dataset = dataset
         self.metrics = copy(metrics)
-        self.model = model or Model()
+        self.model = model or Model() # Pipeline
         
         if main_metric == None and dataset and dataset.type_of_target:
             self.main_metric = 'r2_score' if 'continuous' in dataset.type_of_target else 'balanced_accuracy'
@@ -69,7 +69,7 @@ class Output:
             model or self.model.copy(),
             stack_list=self.stacked_path)
 
-    def transform_dataset(self, function: callable = None, *args, **kw):
+    def transform_dataset(self, instance, only_train=False):
         """
         Transforms the dataset using the provided function, and adds it to the
         stack of functions to be applied before prediction.
@@ -77,26 +77,22 @@ class Output:
         a lambda) and be declared at the top level of a module.
         See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
         """
-        if 'only_train' in kw:
-            only_train = kw['only_train']
-            del kw['only_train']
-        else:
-            only_train = False
+        # TODO -> Check if still pickable after refacto
             
-        self.dataset.apply(function, only_train, *args, **kw)
-        if self.model is not None and function is not None and callable(function):
-            self.model.add_to_stack(function, *args, **kw)
+        self.dataset.apply(instance.transform, only_train)
+        if self.model is not None and instance.transform is not None and callable(instance.transform):
+            self.model.add_to_stack(instance)
         
         return self.to_output()
     
-    def set_model(self, model, function: callable = None, *args, **kw):
+    def set_model(self, instance):
         """
         Sets the resulting model of the pipeline to this output.
         Note: The function must be pickable and therefore must be named (not be
         a lambda) and be declared at the top level of a module.
         See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
         """
-        return self.to_output(model=self.model.set_model(model, function, *args, **kw))
+        return self.to_output(model=self.model.set_model(instance))
     
     def add_metric(self, metric) -> None:
         self.metrics.append(metric)

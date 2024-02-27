@@ -66,10 +66,10 @@ class Dataset:
         else:
             return metric.compute(self.y_test, y_pred)
 
-    def apply(self, method, only_train=False, *args, **kw):
-        self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
+    def apply(self, method, only_train=False):
+        self.X_train, self.y_train = method(self.X_train, self.y_train)
         if not only_train:
-            self.X_test, self.y_test = method(self.X_test, self.y_test, *args, **kw)
+            self.X_test, self.y_test = method(self.X_test, self.y_test)
         # TODO find and document changes
         # TODO With change compute again columns types 
         

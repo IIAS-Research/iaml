@@ -2,11 +2,6 @@ from ...actionable import *
 from ...automed import Output
 import numpy as np
 
-
-def transform(x, y, columns: list[str]):
-    return x.drop(columns, axis=1), y
-
-
 @isStep('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
     name = "Remove High Correlated Column"
@@ -25,10 +20,14 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
         
         # Find features with above-threshold correlation
-        to_drop = [column for column in upper.columns if any(upper[column] >= self.get_config('threshold'))]
+        self.to_drop = [column for column in upper.columns if any(upper[column] >= self.get_config('threshold'))]
         
-        return input.transform_dataset(transform, to_drop)
+        return input.transform_dataset(self)
     
+    
+    def transform(self, x, y):
+        return x.drop(self.to_drop, axis=1), y
+
         
     
     def priorize(self, input=None):

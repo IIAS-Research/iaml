@@ -2,13 +2,13 @@ import pandas as pd
 import pickle
 
 from .output import Input, Output
+from sklearn.pipeline import Pipeline
 
 
 class Model:
-    def __init__(self, stack: list[callable] = [], ml_model = None, predict_function=None) -> None:
+    def __init__(self, stack: list[callable] = [], ml_model = None) -> None:
         self.__stack = stack.copy()
         self.ml_model = ml_model
-        self.predict_function = predict_function
     
 
     @property
@@ -22,18 +22,17 @@ class Model:
             return "Unknown model"
     
 
-    def add_to_stack(self, function, *args, **kw) -> None:
-        self.__stack.append((function, args, kw))
+    def add_to_stack(self, instance) -> None:
+        self.__stack.append(instance)
                 
-    def set_model(self, model, function, *args, **kw) -> 'Model':
+    def set_model(self, instance) -> 'Model':
         new_model = self.copy()
-        new_model.ml_model = model
-        new_model.predict_function = function
+        new_model.ml_model = instance
         
         return new_model
 
     def copy(self) -> 'Model':
-        return Model(self.__stack, self.ml_model, self.predict_function)
+        return Model(self.__stack, self.ml_model)
     
 
     def pickle(self) -> bytes:
@@ -41,7 +40,7 @@ class Model:
     
     @property
     def have_model(self):
-        if self.ml_model and self.predict_function and callable(self.predict_function):
+        if self.ml_model and callable(self.ml_model.predict):
             return True
         return False
     
@@ -52,12 +51,12 @@ class Model:
         if not(model_only):
             X = self.run(X)
         
-        return self.predict_function(self.ml_model, X)
+        return self.ml_model.predict(X)
 
     def run(self, dataset: pd.DataFrame) -> Output:
         last_output = dataset
-        for (function, args, kw) in self.__stack:
-            last_output, _ = function(last_output, [], *args, **kw)
+        for instance in self.__stack:
+            last_output, _ = instance.transform(last_output, [])
             
             
         return last_output
