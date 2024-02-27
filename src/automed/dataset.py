@@ -123,6 +123,7 @@ class Dataset:
     
     @property
     def is_multilabel(self):
+        return False # TODO DEBUG -> remove after refacto multiclass
         return len(self.labels_columns) > 1
     
     @property

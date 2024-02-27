@@ -21,5 +21,6 @@ class ActRandomOverSampling(Actionable):
     def priorize(self, input=None):
         return 1
     
-    def suitable(self, input):
-        return len(input.dataset.labels_columns) == 1
+    def suitable(self, input) -> bool:
+        return input.dataset.type_of_target in ['binary', 'multiclass']
+

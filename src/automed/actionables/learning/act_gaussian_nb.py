@@ -30,8 +30,8 @@ class ActGaussianNb(Actionable):
         
         return input.set_model(model, learn)
     
-
-        
+    def suitable(self, input) -> bool:
+        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, input=None):
         return 0.5 # neutral

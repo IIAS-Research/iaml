@@ -32,7 +32,7 @@ class AutoMed:
     input:Input = None # Input Data
     
     def __init__(self, dataset:Dataset=None, max_workers:int=None, quiet=False):
-        self.output = None
+        self.output = []
         self.input = Input(dataset) # Gerenate Input object from Dataset
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
         

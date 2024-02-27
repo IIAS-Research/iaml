@@ -18,7 +18,6 @@ class MetricSelection(Actionable):
             # Verify if a subclass is suitable or not
             if metric.suitable(input.dataset):
                 input.add_metric(metric)
-                
         return input.to_output()
             
     def priorize(self,  input = None):

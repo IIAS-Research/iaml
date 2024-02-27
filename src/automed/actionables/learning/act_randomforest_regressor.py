@@ -1,7 +1,7 @@
 from ...actionable import *
 from ...automed import Output, Metric
-from sklearn.neighbors import KNeighborsClassifier
 from skmultilearn.problem_transform import BinaryRelevance
+from sklearn.ensemble import RandomForestRegressor
 
 
 def learn(model, X):
@@ -10,19 +10,23 @@ def learn(model, X):
 
 @isStep('learning', 'tabular')
 @assessable
-class ActKNN(Actionable):
-    name = "Learn : KNN"
+class ActRandomForestRegressor(Actionable):
+    name = "Learn : Random Forest Regressor" 
     def __init__(self):
         self.configurations = [{
-            'metric': {
-                'description': 'Can be minkowski or manhattan',
-                'default': 'minkowski',
-                'categorical': ['minkowski', 'manhattan']
-            },
-            'n_neighbors': {
-                'description': 'Number of neighbors',
-                'default': 5,
+            'max_depth': {
+                'description': 'Max depth of each tree',
+                'default': 15,
                 'range': [1, float('inf')]
+            },
+            'n_estimators': {
+                'description': 'Number of threes',
+                'default': 100,
+                'range': [1, float('inf')]
+            },
+            'random_state': {
+                'description': 'random_state',
+                'default': 42
             }
         }]
         
@@ -30,9 +34,10 @@ class ActKNN(Actionable):
     def run(self, input:Output, callback=None):
         metric = input.metrics or Metric()
         
-        model = KNeighborsClassifier(
-            n_neighbors = self.get_config('n_neighbors'),
-            metric = self.get_config('metric')
+        model = RandomForestRegressor(
+            max_depth=self.get_config('max_depth'),
+            random_state=self.get_config('random_state'),
+            n_estimators=self.get_config('n_estimators')
             )
         
         if input.dataset.is_multilabel:
@@ -42,8 +47,9 @@ class ActKNN(Actionable):
         
         return input.set_model(model, learn)
     
+    
     def suitable(self, input) -> bool:
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
+        return input.dataset.type_of_target in ['continuous']
 
     def priorize(self, input=None):
         return 0.5 # neutral

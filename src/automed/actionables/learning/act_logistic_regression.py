@@ -11,7 +11,7 @@ def learn(model, X):
 @isStep('learning', 'tabular', 'fast_learning')
 @assessable
 class ActLogisticRegression(Actionable):
-    name = "Learn : Logistic regression"
+    name = "Learn : Logistic Regression Classifier"
     def __init__(self):
         self.configurations = [{
             'max_iterations': {
@@ -41,6 +41,10 @@ class ActLogisticRegression(Actionable):
         model.fit(input.dataset.X_train, input.dataset.y_train)
         
         return input.set_model(model, learn)
+    
+    
+    def suitable(self, input) -> bool:
+        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, input=None):
         return 0.5 # neutral
