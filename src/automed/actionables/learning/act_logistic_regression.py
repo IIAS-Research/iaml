@@ -9,7 +9,7 @@ def learn(model, X):
     return model.predict(X)
 
 
-@isStep('learning', 'tabular')
+@isStep('learning', 'tabular', 'fast_learning')
 @assessable
 class ActLogisticRegression(Actionable):
     name = "Learn : Logistic regression"
@@ -18,7 +18,7 @@ class ActLogisticRegression(Actionable):
             'max_iterations': {
                 'description': 'Maximum number of iterations',
                 'default': 1000,
-                'range': [1, float('inf')]
+                'range': [50, float('inf')]
             },
             'random_state': {
                 'description': 'random_state',
@@ -40,9 +40,6 @@ class ActLogisticRegression(Actionable):
         model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
-
-
-        
     
     def priorize(self, input=None):
         return 0.5 # neutral

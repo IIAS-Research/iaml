@@ -51,9 +51,6 @@ class ActSVM(Actionable):
         model.fit(input.dataset.X_train, input.dataset.Y_train)
         
         return input.set_model(model, learn)
-        
-
-        
-    
+          
     def priorize(self, input=None):
         return 0.5 # neutral

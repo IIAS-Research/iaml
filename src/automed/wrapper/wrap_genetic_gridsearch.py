@@ -79,7 +79,7 @@ class WrapGeneticGridSearch(StepWrapper):
             if i_gen+1 < self.get_config('nb_generations'):
                 # Generate next generation
                 nb_to_get = int(self.get_config('nb_estimators')/4)
-                outputs.sort()
+                outputs.sort(reverse=True)
                 ordered_ids = self.__get_unique_ordered(list(map(lambda x: x.stacked_path[-2].step_id, outputs)))
                 
                 # Keep the 1/4 better Steps

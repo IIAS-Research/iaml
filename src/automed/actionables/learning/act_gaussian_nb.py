@@ -32,4 +32,3 @@ class ActGaussianNb(Actionable):
     
     def priorize(self, input=None):
         return 0.5 # neutral
-    

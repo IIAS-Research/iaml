@@ -2,6 +2,8 @@ import copy
 import numpy as np
 import pandas as pd
 
+from sklearn.utils.multiclass import type_of_target
+
 from .data_type import DataType
 
 
@@ -12,6 +14,7 @@ class Dataset:
         self.__disabled_columns = []
 
         self.columns_types = self.__detect_columns_types()
+        self.type_of_target = type_of_target(self.Y) # an array with type of target (multiclass, binary, etc)
     
     @property
     def features(self) -> pd.DataFrame:

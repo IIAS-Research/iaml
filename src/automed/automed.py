@@ -32,9 +32,11 @@ class AutoMed:
     output:list = None # Outputs of the pipeline after run
     input:Input = None # Input Data
     
-    def __init__(self, max_workers: int = None):
+    def __init__(self, max_workers:int=None, quiet=False):
         self.output = None
         self.first_step = None # Will be the first Step of the pipeline (probably a MetaStep)
+        
+        Logger().set_quiet(quiet)
 
         WorkerManager(max_workers=max_workers)
     
@@ -66,7 +68,7 @@ class AutoMed:
         return step
     
     # DEBUG -> Testing purpose.
-    def debug_pipeline(self, only=None, use_destroyer=False):
+    def debug_pipeline(self, only=None, use_destroyer=False, fast=False):
         step = MetaOrderedStep()
 
         if only:
@@ -77,11 +79,13 @@ class AutoMed:
             step.add_step(MetaStep(tag='normalize'))
             step.add_step(MetaStep(tag='metric'))
 
+            learning_tag = 'fast_learning' if fast else 'learning'
             wrap = lambda s: WrapGeneticGridSearch(KFold(s))
             if use_destroyer:
-                step.add_step(MetaExplorerStep(tag='learning', wrap=wrap, destroyer=Destroyer()))
+                step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap, destroyer=Destroyer()))
             else:
-                step.add_step(MetaExplorerStep(tag='learning', wrap=wrap))
+                step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap))
+                
         
         return step
 
@@ -91,8 +95,8 @@ class AutoMed:
     def tplot_load(self):
         self.first_step = self.tplot_pipeline()
 
-    def debug_load(self, only=None, use_destroyer=False):
-        self.first_step = self.debug_pipeline(only, use_destroyer)
+    def debug_load(self, only=None, use_destroyer=False, fast=False):
+        self.first_step = self.debug_pipeline(only, use_destroyer, fast)
     
     
     ##################
@@ -116,25 +120,24 @@ class AutoMed:
     
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 
-    def run(self, input: Input, callback=None):
+    def run(self, callback=None):
+        self.input.dataset.debug_force_monolabel() # TODO REMOVE Quand le monolabel sera obligatoire 
+
         with Logger().progress as progress:
             step_count = self.first_step.count_steps()
             task = progress.add_task('running steps...', total=step_count)
-
             def progress_callback(step: Step):
                 progress.update(task, advance=1)
-
                 if callback is not None:
                     return callback(step)
-
             # RUN!
             self.output = self.first_step.run(input, callback=progress_callback)
             
             progress.update(task, completed=step_count)
+            
         
-        # Order ouputs according results
-        self.output.sort(key=lambda output: output.evaluate(), reverse=True)
-        
+        # Order ouputs according the first metric
+        self.output.sort(reverse=True)
         return self.output
     
     ########################
@@ -165,4 +168,5 @@ class AutoMed:
         for step in step_list:
             if id(step) == step_id:
                 return step
+
         return False

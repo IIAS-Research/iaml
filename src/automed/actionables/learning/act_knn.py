@@ -41,8 +41,5 @@ class ActKNN(Actionable):
         
         return input.set_model(model, learn)
     
-
-        
-    
     def priorize(self, input=None):
         return 0.5 # neutral

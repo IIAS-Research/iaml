@@ -12,24 +12,31 @@ class Output:
     # model = None
     # stacked_log = []
     
-    def __init__(self, dataset:Dataset=None, metric=None, model=None, stack_list=[]):
+    def __init__(self, dataset:Dataset=None, metrics=[], model=None, stack_list=[], main_metric='balanced_accuracy'):
         from .model import Model # Here to avoid circular import. TODO -> Something better to do ?
         
         self.__train_dataset_transform_stack = []
 
         self.dataset = dataset
-        self.metric = metric
+        self.metrics = metrics
         self.model = model or Model()
-        self.computed_metrics = None
+        self.main_metric = main_metric
+        self.computed_metrics = {}
         self.stacked_path = copy(stack_list)
         
     def add_stack(self, stack):
         self.stacked_path.append(stack)
         
-        
+    def get_main_metric_value(self):
+        print(self.computed_metrics.keys())
+        if self.main_metric in self.computed_metrics:
+            return self.computed_metrics[self.main_metric]
+        else:
+            return -1
+    
     def __gt__(self, other):
-        if self.computed_metrics and other.computed:
-            return self.computed_metrics > other.computed_metrics
+        if self.computed_metrics and other.computed_metrics:
+            return self.get_main_metric_value() > other.get_main_metric_value()
         else:
             if self.computed_metrics:
                 return True
@@ -40,7 +47,7 @@ class Output:
             
     def __lt__(self, other):
         if self.computed_metrics and other.computed_metrics:
-            return self.computed_metrics < other.computed_metrics
+            return self.get_main_metric_value() < other.get_main_metric_value()
         else:
             if self.computed_metrics:
                 return False
@@ -51,21 +58,21 @@ class Output:
             
     def __eq__(self, other):
         if self.computed_metrics and other.computed_metrics:
-            self.computed_metrics == other.computed_metrics
+            self.get_main_metric_value() == other.get_main_metric_value()
         else:
             id(self) == id(other)
         
-    def to_output(self, dataset:Dataset=None, metric=None, model=None):
+    def to_output(self, dataset:Dataset=None, metrics=None, model=None):
         return Output(
             (dataset or self.dataset or Dataset()),
-            metric or self.metric,
+            metrics or self.metrics,
             model or self.model.copy(),
             stack_list=self.stacked_path)
         
-    def to_input(self, dataset:Dataset=None, metric=None, model=None):
+    def to_input(self, dataset:Dataset=None, metrics=None, model=None):
         return Input(
             (dataset or self.dataset or Dataset()),
-            metric or self.metric,
+            metrics or self.metrics,
             model or self.model.copy(),
             stack_list=self.stacked_path)
 
@@ -112,12 +119,12 @@ class Output:
         return self.to_output(model=self.model.set_model(model, function, *args, **kw))
     
     def add_metric(self, metric):
-        return self.to_output(metric=metric)
+        return self.metrics.append(metric)
         
     def __str__(self):
         str_out = ""
-        if self.metric:
-            str_out = str_out + str(self.metric) + " "
+        if self.metrics:
+            str_out = str_out + str(self.metrics) + " "
         if self.model:
             str_out = str_out + str(self.model) + " "
             
@@ -128,10 +135,12 @@ class Output:
             return -1
         
         if force or not(self.computed_metrics):
-            self.computed_metrics = self.dataset.compute_metric(self.model, self.metric)
-            
+            for metric in self.metrics:
+                result = self.dataset.compute_metric(self.model, metric)
+                self.computed_metrics[metric.__str__()] = result
+                
         return self.computed_metrics
-        
+    
     def log(self, test):
         pass
     
