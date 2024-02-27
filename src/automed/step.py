@@ -67,6 +67,9 @@ class Step:
             raise TypeError(f'invalid pipeline: step does not exist')
         
         return step
+    
+    def fit(self, x,y) -> None:
+        raise Exception("AutoMed Step can't be fit this way. You have to use AutoMed.run()")
         
     def __str__(self):
         return self.name
@@ -82,9 +85,9 @@ class Step:
     def metric(self):
         return self.input.metric
     
-    @property
-    def model(self):
-        return self.input.model
+    # @property
+    # def model(self):
+    #     return self.input.model
     
     # When a Step contain others ones, this will help to setup everything (Transmit destroyers, increment parents steps)
     def configure_child(self, child, *args, **kw):

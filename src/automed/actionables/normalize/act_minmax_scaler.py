@@ -3,11 +3,6 @@ from ...automed import Output
 from ...data_type import DataType
 from sklearn.preprocessing import MinMaxScaler
 
-        
-def transform(x, y, scaler, columns):
-    x[columns] = scaler.transform(x[columns])
-    return x, y
-
 
 @isStep('normalize')
 class ActMinMaxScaler(Actionable):
@@ -17,13 +12,17 @@ class ActMinMaxScaler(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
-        columns = input.dataset.get_columns_names_by_type(DataType.NUMERIC)
-        values = input.dataset.X_train[columns]
-        scaler = MinMaxScaler()
-        scaler.fit(values)
+        self.columns = input.dataset.get_columns_names_by_type(DataType.NUMERIC)
+        values = input.dataset.X_train[self.columns]
+        self.scaler = MinMaxScaler()
+        self.scaler.fit(values)
 
-        return input.transform_dataset(transform, scaler, columns)
+        return input.transform_dataset(self)
         
+    def transform(self, x):
+        x[self.columns] = self.scaler.transform(x[self.columns])
+        return x
+
     
     def priorize(self, input=None):
         return 0.5 # TODO -> Do something better. This function have no sense for now. Only an example.

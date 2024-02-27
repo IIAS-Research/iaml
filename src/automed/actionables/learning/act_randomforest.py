@@ -4,10 +4,6 @@ from sklearn.ensemble import RandomForestClassifier
 from skmultilearn.problem_transform import BinaryRelevance
 
 
-def learn(model, X):
-    return model.predict(X)
-
-
 @isStep('learning', 'tabular')
 @assessable
 class ActRandomForest(Actionable):
@@ -34,14 +30,19 @@ class ActRandomForest(Actionable):
     def run(self, input:Output, callback=None):
         metric = input.metrics or Metric()
         
-        model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'), n_estimators=self.get_config('n_estimators'))
+        self.model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'), n_estimators=self.get_config('n_estimators'))
         
         if input.dataset.is_multilabel:
-            model = BinaryRelevance(classifier=model, require_dense=[False, True])
+            self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        self.model.fit(input.dataset.X_train, input.dataset.y_train)
         
-        return input.set_model(model, learn)
+        return input.set_model(self)
+    
+    
+
+    def predict(self, X):
+        return self.model.predict(X)
     
     
     def suitable(self, input) -> bool:

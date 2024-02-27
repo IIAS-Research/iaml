@@ -3,12 +3,12 @@ from copy import copy
 
 class Output:
     
-    def __init__(self, dataset:Dataset=None, metrics:list=[], model=None, stack_list=[], main_metric=None):
-        from .model import Model # Here to avoid circular import. TODO -> Something better to do ?
+    def __init__(self, dataset:Dataset=None, metrics:list=[], auto_pipeline=None, stack_list=[], main_metric=None):
+        from .auto_pipeline import AutoPipeline # Here to avoid circular import. TODO -> Something better to do ?
         
         self.dataset = dataset
         self.metrics = copy(metrics)
-        self.model = model or Model()
+        self.pipeline = auto_pipeline or AutoPipeline() # Pipeline
         
         if main_metric == None and dataset and dataset.type_of_target:
             self.main_metric = 'r2_score' if 'continuous' in dataset.type_of_target else 'balanced_accuracy'
@@ -55,21 +55,21 @@ class Output:
         else:
             return id(self) == id(other)
         
-    def to_output(self, dataset:Dataset=None, metrics=None, model=None):
+    def to_output(self, dataset:Dataset=None, metrics=None, auto_pipeline=None):
         return Output(
             (dataset or self.dataset or Dataset()),
             metrics or copy(self.metrics),
-            model or self.model.copy(),
+            auto_pipeline or self.pipeline.copy(),
             stack_list=self.stacked_path)
         
-    def to_input(self, dataset:Dataset=None, metrics=None, model=None):
+    def to_input(self, dataset:Dataset=None, metrics=None, auto_pipeline=None):
         return Input(
             (dataset or self.dataset or Dataset()),
             metrics or copy(self.metrics),
-            model or self.model.copy(),
+            auto_pipeline or self.pipeline.copy(),
             stack_list=self.stacked_path)
 
-    def transform_dataset(self, function: callable = None, *args, **kw):
+    def transform_dataset(self, instance, only_train=False):
         """
         Transforms the dataset using the provided function, and adds it to the
         stack of functions to be applied before prediction.
@@ -77,26 +77,22 @@ class Output:
         a lambda) and be declared at the top level of a module.
         See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
         """
-        if 'only_train' in kw:
-            only_train = kw['only_train']
-            del kw['only_train']
-        else:
-            only_train = False
+        # TODO -> Check if still pickable after refacto
             
-        self.dataset.apply(function, only_train, *args, **kw)
-        if self.model is not None and function is not None and callable(function):
-            self.model.add_to_stack(function, *args, **kw)
+        self.dataset.apply(instance.transform, only_train)
+        if self.pipeline is not None and instance.transform is not None and callable(instance.transform):
+            self.pipeline.add_to_stack(instance)
         
         return self.to_output()
     
-    def set_model(self, model, function: callable = None, *args, **kw):
+    def set_model(self, instance):
         """
         Sets the resulting model of the pipeline to this output.
         Note: The function must be pickable and therefore must be named (not be
         a lambda) and be declared at the top level of a module.
         See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
         """
-        return self.to_output(model=self.model.set_model(model, function, *args, **kw))
+        return self.to_output(auto_pipeline=self.pipeline.set_model(instance))
     
     def add_metric(self, metric) -> None:
         self.metrics.append(metric)
@@ -105,18 +101,18 @@ class Output:
         str_out = ""
         if self.metrics:
             str_out = str_out + str(self.metrics) + " "
-        if self.model:
-            str_out = str_out + str(self.model) + " "
+        if self.pipeline:
+            str_out = str_out + str(self.pipeline) + " "
             
         return str_out
     
     def evaluate(self, force=False):
-        if not(self.model.have_model):
+        if not(self.pipeline.have_model):
             return None
         
         if force or not(self.computed_metrics):
             for metric in self.metrics:
-                result = self.dataset.compute_metric(self.model, metric)
+                result = self.dataset.compute_metric(self.pipeline, metric)
                 self.computed_metrics[metric.__str__()] = result
                 
         return self.computed_metrics

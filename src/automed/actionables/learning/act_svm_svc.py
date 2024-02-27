@@ -4,9 +4,6 @@ from sklearn import svm
 from skmultilearn.problem_transform import BinaryRelevance
 
 
-def learn(model, X):
-    return model.predict(X)
-
 
 @isStep('learning', 'tabular')
 @assessable
@@ -36,23 +33,23 @@ class ActSVMSVC(Actionable):
         
     @runner
     def run(self, input:Output, callback=None):
-        metric = input.metrics or Metric()
-        
-        model = svm.SVC(
+        self.model = svm.SVC(
             kernel = self.get_config('kernel'),
             class_weight = self.get_config('class_weight'),
             random_state = self.get_config('random_state'),
             probability = self.get_config('probability')
             )
         
-        
         if input.dataset.is_multilabel:
-            model = BinaryRelevance(classifier=model, require_dense=[False, True])
+            self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        self.model.fit(input.dataset.X_train, input.dataset.y_train)
         
-        return input.set_model(model, learn)
-    
+        return input.set_model(self)
+        
+    def predict(self, X):
+        return self.model.predict(X)
+        
     
     def suitable(self, input) -> bool:
         return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']

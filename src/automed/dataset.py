@@ -58,18 +58,20 @@ class Dataset:
         )
     
     # Compute metrics
-    def compute_metric(self, model, metric):
+    def compute_metric(self, auto_pipeline, metric):
         # To avoid warninggs ( UserWarning: X has feature names, but GaussianNB was fitted without feature names)
-        y_pred = model.predict(self.X_test, model_only = True)
+        y_pred = auto_pipeline.predict(self.X_test, model_only = True)
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.toarray()
         else:
             return metric.compute(self.y_test, y_pred)
 
-    def apply(self, method, only_train=False, *args, **kw):
-        self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
-        if not only_train:
-            self.X_test, self.y_test = method(self.X_test, self.y_test, *args, **kw)
+    def apply(self, method, only_train=False):
+        if only_train:
+            self.X_train, self.y_train = method(self.X_train, self.y_train)
+        else:
+            self.X_train = method(self.X_train)
+            self.X_test = method(self.X_test)
         # TODO find and document changes
         # TODO With change compute again columns types 
         

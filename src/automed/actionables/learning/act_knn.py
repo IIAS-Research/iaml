@@ -4,10 +4,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from skmultilearn.problem_transform import BinaryRelevance
 
 
-def learn(model, X):
-    return model.predict(X)
-
-
 @isStep('learning', 'tabular')
 @assessable
 class ActKNN(Actionable):
@@ -30,17 +26,21 @@ class ActKNN(Actionable):
     def run(self, input:Output, callback=None):
         metric = input.metrics or Metric()
         
-        model = KNeighborsClassifier(
+        self.model = KNeighborsClassifier(
             n_neighbors = self.get_config('n_neighbors'),
             metric = self.get_config('metric')
             )
         
         if input.dataset.is_multilabel:
-            model = BinaryRelevance(classifier=model, require_dense=[False, True])
+            self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        self.model.fit(input.dataset.X_train, input.dataset.y_train)
         
-        return input.set_model(model, learn)
+        return input.set_model(self)
+    
+    def predict(self, X):
+        return self.model.predict(X)
+    
     
     def suitable(self, input) -> bool:
         return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
