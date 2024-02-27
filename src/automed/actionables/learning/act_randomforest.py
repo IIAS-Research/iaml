@@ -1,7 +1,6 @@
 from ...actionable import *
 from ...automed import Output, Metric
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.datasets import make_classification
 from skmultilearn.problem_transform import BinaryRelevance
 
 
@@ -43,6 +42,10 @@ class ActRandomForest(Actionable):
         model.fit(input.dataset.X_train, input.dataset.y_train)
         
         return input.set_model(model, learn)
+    
+    
+    def suitable(self, input) -> bool:
+        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
 
     def priorize(self, input=None):
         return 0.5 # neutral
