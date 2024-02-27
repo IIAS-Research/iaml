@@ -7,11 +7,17 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 def transform(x, y, encoder: OneHotEncoder, columns: list[str]) -> Output:
+    
+    # Without Reset index, the join with OHE will create NAN (index mismatch)
+    x = x.reset_index(drop=True)
+    if isinstance(y, pd.Series):
+        y = y.reset_index(drop=True)
+    
     transformed = encoder.transform(x[columns])
     ohe_df = pd.DataFrame(transformed, columns=encoder.get_feature_names_out(columns))
-
+    
     x = x.drop(columns, axis=1)
-    df = pd.concat([x, ohe_df], axis=1)
+    df = x.join(ohe_df)
 
     return df, y
 

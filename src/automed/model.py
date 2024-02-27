@@ -57,6 +57,7 @@ class Model:
     def run(self, dataset: pd.DataFrame) -> Output:
         last_output = dataset
         for (function, args, kw) in self.__stack:
-            last_output = function(last_output, [], *args, **kw)
+            last_output, _ = function(last_output, [], *args, **kw)
+            
             
         return last_output
