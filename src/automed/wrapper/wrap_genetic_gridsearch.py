@@ -16,8 +16,9 @@ import random
 @isStep('wrapper')
 class WrapGeneticGridSearch(StepWrapper):
     name = "Wrap : Genetic GridSearch"
-    def __init__(self, step):
-        self.ignored_configs = set(['random_state']) # Set of configuration key to ignore. For example, random_state is not a parameter to optimize
+    def __init__(self, step: Step):
+        step_ignored_configs = [ k for k, v in step.configurations[0].items() if 'no_gridsearch' in v and v['no_gridsearch'] ]
+        self.ignored_configs = set(['_random_state', *step_ignored_configs]) # Set of configuration key to ignore. For example, random_state is not a parameter to optimize
         
         self.configurations = [{
             'initial_modificator': {
@@ -58,9 +59,8 @@ class WrapGeneticGridSearch(StepWrapper):
                 # Generate totally new steps
                 
         # If no configuration, let's run the step once. Nothing to optimize here
-        if not(any(self.step.current_configuration.keys())):
+        if not(any(self.__config_keys())):
             return self.step.run(input, callback=callback)
-                
                 
         # Create the first generation of Steps. This first generation is full of random Steps configurations
         generation = []
