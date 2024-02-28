@@ -14,18 +14,13 @@ class ActSVMSVR(Actionable):
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
                 'categorical': ['linear', 'poly', 'rbf', 'sigmoid']
-            },
-            'random_state': {
-                'description': 'random_state',
-                'default': 42
             }
         }]
         
     @runner
     def run(self, input:Output, callback=None):
-        self.model = svm.SVC(
-            kernel = self.get_config('kernel'),
-            random_state = self.get_config('random_state')
+        self.model = svm.SVR(
+            kernel = self.get_config('kernel')
             )
         
         if input.dataset.is_multilabel:
