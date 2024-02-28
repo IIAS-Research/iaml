@@ -1,6 +1,6 @@
 from ...actionable import *
 from ...automed import Output, Metric
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingRegressor
 from skmultilearn.problem_transform import BinaryRelevance
 
 
@@ -33,7 +33,7 @@ class ActXGBoost(Actionable):
         
     @runner
     def run(self, input:Output, callback=None):
-        self.model = GradientBoostingClassifier(
+        self.model = GradientBoostingRegressor(
                                         n_estimators=self.get_config('n_estimators'),
                                         learning_rate=self.get_config('learning_rate'),
                                         max_depth=self.get_config('max_depth'),
@@ -41,10 +41,6 @@ class ActXGBoost(Actionable):
                                         )
         
         
-        if input.dataset.is_multilabel:
-            self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
-            
-            
         self.model.fit(input.dataset.X_train, input.dataset.y_train)
         
         return input.set_model(self)
@@ -55,7 +51,7 @@ class ActXGBoost(Actionable):
     
     
     def suitable(self, input) -> bool:
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+        return input.dataset.type_of_target in ['continuous']
 
     def priorize(self, input=None):
         return 0.5 # neutral
