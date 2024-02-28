@@ -74,6 +74,10 @@ class Output:
             metrics or self.metrics,
             model or self.model.copy(),
             stack_list=self.stacked_path)
+    
+    def __apply_transformations_before_train(self, X_train, Y_train) -> None:
+        for (transformation, args, kw) in self.__train_dataset_transform_stack:
+            X_train, Y_train = transformation(X_train, Y_train, *args, **kw)
 
     def to_training_inputs(self, splitter: callable, *args, **kw) -> Iterator['TrainingInput']: # cast to TrainingInput
         for i_train, i_test in splitter(*args, **kw):
@@ -82,12 +86,18 @@ class Output:
             Y_train = self.dataset.Y.iloc[i_train].copy()
             Y_test = self.dataset.Y.iloc[i_test].copy()
 
-            for (transformation, args, kw) in self.__train_dataset_transform_stack:
-                X_train, Y_train = transformation(*args, **kw)
+            self.__apply_transformations_before_train(X_train, Y_train)
 
             yield self.to_input(TrainingDataset(X_train, X_test, Y_train, Y_test))
 
-    def transform_dataset(self, function: callable = None, *args, only_train: bool = False, **kw):
+        X_train = self.dataset.X.copy()
+        Y_train = self.dataset.Y.copy()
+
+        self.__apply_transformations_before_train(X_train, Y_train)
+        
+        yield self.to_input(TrainingDataset(X_train, None, Y_train, None))
+
+    def transform_dataset(self, function: callable = None, *args, before_train: bool = False, **kw):
         """
         Transforms the dataset using the provided function, and adds it to the
         stack of functions to be applied before prediction.
@@ -95,10 +105,10 @@ class Output:
         a lambda) and be declared at the top level of a module.
         See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
 
-        If `only_train` is set to `True`, the function will be applied to the
+        If `before_train` is set to `True`, the function will be applied to the
         dataset just before training, after splitting into train and test.
         """
-        if only_train:
+        if before_train:
             self.__train_dataset_transform_stack.append((function, args, kw))
         else:
             self.dataset.apply(function, *args, **kw)
