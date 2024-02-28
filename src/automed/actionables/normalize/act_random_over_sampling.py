@@ -15,7 +15,7 @@ class ActRandomOverSampling(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
-        return input.transform_dataset(transform, only_train=True)
+        return input.transform_dataset(transform, before_train=True)
 
     
     def priorize(self, input=None):
