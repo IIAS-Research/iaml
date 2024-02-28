@@ -7,7 +7,7 @@ from .metric import Metric
 from .model import Model
 from .destroyer import Destroyer
 from .worker_manager import WorkerManager
-from .wrapper.dataset import KFold
+from .wrapper.dataset import WrapKFold
 
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
@@ -52,7 +52,7 @@ class AutoMed:
         sklearn = ActAutoSKLearn()
         sklearn.configure_one(0, 'running_time', time)
         
-        step.add_step(KFold(sklearn))
+        step.add_step(WrapKFold(sklearn))
 
         return step 
         
@@ -80,7 +80,7 @@ class AutoMed:
             step.add_step(MetaStep(tag='metric'))
 
             learning_tag = 'fast_learning' if fast else 'learning'
-            wrap = lambda s: WrapGeneticGridSearch(KFold(s))
+            wrap = lambda s: WrapGeneticGridSearch(WrapKFold(s))
             if use_destroyer:
                 step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap, destroyer=Destroyer()))
             else:
