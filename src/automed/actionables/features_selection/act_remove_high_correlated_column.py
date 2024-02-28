@@ -21,7 +21,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     @runner
     def run(self, input: Input, callback=None) -> Output:
         # Compute correlation matrix 
-        corr_matrix = input.dataset.features.corr().abs()
+        corr_matrix = input.dataset.X.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
         
         # Find features with above-threshold correlation
