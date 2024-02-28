@@ -1,8 +1,10 @@
 import math
 import os
+import traceback
 
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Any
+from .logger import Logger
 from .meta_singleton import MetaSingleton
 from .step import Step
 
@@ -18,7 +20,13 @@ class WorkerFuture(Future):
     
 
     def run(self) -> Any:
-        return self.task(*self.args, **self.kwargs)
+        try:
+            return self.task(*self.args, **self.kwargs)
+        except:
+            Logger().log(f'[red]A worker for [b]{self.step.__class__.__name__}[/b] has crashed.[/red]')
+            Logger().log(traceback.format_exc())
+
+            return []
 
 
 class WorkerManager(metaclass=MetaSingleton):
