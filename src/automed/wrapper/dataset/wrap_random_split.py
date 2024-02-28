@@ -2,11 +2,11 @@ from sklearn.model_selection import ShuffleSplit
 
 from ...output import Input, Output
 from ...step import isStep, runner, Step
-from .dataset_wrapper import DatasetWrapper
+from .wrap_dataset_wrapper import WrapDatasetWrapper
 
 
 @isStep('wrapper')
-class RandomSplit(DatasetWrapper):
+class WrapRandomSplit(WrapDatasetWrapper):
     name = "Split date to train and test set"
     def __init__(self, step: Step):
         self.configurations = [{
@@ -20,7 +20,6 @@ class RandomSplit(DatasetWrapper):
                 'default': 42,
                 'no_gridsearch': True,
             },
-            **self.configurations[0],
         }]
 
         super().__init__(step)

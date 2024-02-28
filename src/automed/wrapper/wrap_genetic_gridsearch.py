@@ -1,4 +1,5 @@
 from ..step_wrapper import *
+from .dataset import WrapDatasetWrapper
 from ..output import *
 from ..meta_explorer_step import MetaExplorerStep
 from ..logger import Logger
@@ -16,9 +17,9 @@ import random
 @isStep('wrapper')
 class WrapGeneticGridSearch(StepWrapper):
     name = "Wrap : Genetic GridSearch"
-    def __init__(self, step: Step):
-        step_ignored_configs = [ k for k, v in step.configurations[0].items() if 'no_gridsearch' in v and v['no_gridsearch'] ]
-        self.ignored_configs = set(['_random_state', *step_ignored_configs]) # Set of configuration key to ignore. For example, random_state is not a parameter to optimize
+    def __init__(self, step: WrapDatasetWrapper):
+        step_ignored_configs = [ k for k, v in step.learning_configuration.items() if 'no_gridsearch' in v and v['no_gridsearch'] ]
+        self.ignored_configs = set(['random_state', *step_ignored_configs]) # Set of configuration key to ignore. For example, random_state is not a parameter to optimize
         
         self.configurations = [{
             'initial_modificator': {
@@ -104,7 +105,7 @@ class WrapGeneticGridSearch(StepWrapper):
                 for step in tmp_new_generation:
                     to_add = True
                     for to_filter in new_generation:
-                        if self.__same_config(step.current_configuration, to_filter.current_configuration):
+                        if self.__same_config(step.learning_configuration, to_filter.learning_configuration):
                             to_add = False
                             break
                         
@@ -126,7 +127,7 @@ class WrapGeneticGridSearch(StepWrapper):
         new_step: Step = deepcopy(self.step) # Deepcopy to avoid editing other Steps of the same generation
         
         for key in self.__config_keys(): # For each configuration key, we'll choose a random value
-            config = new_step.current_configuration[key]
+            config = new_step.learning_configuration[key]
             
             if type(config['value']) in [int, float]: # Numeric value ? Let's apply multiplier
                 is_int = type(config['value']) == int
@@ -164,7 +165,7 @@ class WrapGeneticGridSearch(StepWrapper):
         new_step: Step = deepcopy(step) # Deepcopy to avoid editing another Step
         
         random_key = random.choice(list(self.__config_keys())) # Choose a random key to mutate
-        random_item = new_step.current_configuration[random_key] # Get value of the random key
+        random_item = new_step.learning_configuration[random_key] # Get value of the random key
         new_value = None
         
         if type(random_item['value']) in [int, float]: # Numeric value ? Apply multiplier
@@ -209,7 +210,7 @@ class WrapGeneticGridSearch(StepWrapper):
         return self.step.count_steps() * sum([ estimators * (0.75 ** i) for i in range(generations) ]) # math
 
     
-    def __same_config(self, a, b):
+    def __same_config(self, a: dict, b: dict):
         if len(a.keys()) != len(b.keys()):
             return False
         for key, value in a.items():
@@ -244,5 +245,5 @@ class WrapGeneticGridSearch(StepWrapper):
     
     # Get configurable keys (without ignored keys)    
     def __config_keys(self):
-        # print("HERE !", set(self.step.current_configuration.keys()) - self.ignored_configs)
-        return set(self.step.current_configuration.keys()) - self.ignored_configs
+        # print("HERE !", set(self.step.learning_configuration.keys()) - self.ignored_configs)
+        return set(self.step.learning_configuration.keys()) - self.ignored_configs

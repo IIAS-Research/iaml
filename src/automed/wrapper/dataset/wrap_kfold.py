@@ -5,11 +5,11 @@ from sklearn.model_selection import KFold as SKKFold, StratifiedKFold
 from ...logger import Logger
 from ...output import Input, Output
 from ...step import isStep, runner, Step
-from .dataset_wrapper import DatasetWrapper
+from .wrap_dataset_wrapper import WrapDatasetWrapper
 
 
 @isStep('wrapper')
-class KFold(DatasetWrapper):
+class WrapKFold(WrapDatasetWrapper):
     name = "Split date to train and test set"
     def __init__(self, step: Step):
         self.configurations = [{
@@ -23,7 +23,6 @@ class KFold(DatasetWrapper):
                 'default': True,
                 'no_gridsearch': True,
             },
-            **self.configurations[0],
         }]
 
         super().__init__(step)
@@ -40,14 +39,23 @@ class KFold(DatasetWrapper):
         outputs: list[Output] = []
         metrics = []
         for i, training_input in enumerate(inputs):
-            Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] (fold={i})")
+            if i != self.get_config('folds'):
+                Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] (fold={i + 1}) ({', '.join(self.step.conf_to_rich_str_list())})")
+            else:
+                Logger().log(f"finishing cross-validation: [b]{self.step.__class__.__name__}[/] ({', '.join(self.step.conf_to_rich_str_list())})")
 
             output: Output = self.step.run(training_input)[0]
             
             outputs.append(output)
-            metrics.append(output.evaluate())
+
+            # X_test will be None when training on the whole dataset,
+            # which means we can't compute metrics.
+            if training_input.dataset.X_test is not None:
+                metrics.append(output.evaluate())
+
+            output.dataset = input.dataset # back to Output (from TrainingInput)
         
-        output = sorted(outputs)[-1]
+        output = outputs[-1]
         output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) for k in outputs[0].computed_metrics.keys() }
 
         return output

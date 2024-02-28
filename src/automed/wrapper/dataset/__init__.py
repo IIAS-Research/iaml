@@ -1,3 +1,3 @@
-from .dataset_wrapper import DatasetWrapper
-from .kfold import KFold
-from .random_split import RandomSplit
+from .wrap_dataset_wrapper import WrapDatasetWrapper
+from .wrap_kfold import WrapKFold
+from .wrap_random_split import WrapRandomSplit
