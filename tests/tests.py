@@ -14,10 +14,10 @@ def main(args):
     if len(args):
         if args[0] == "integration":
             print("Run Integration tests")
-            tests_path = python_file_path+"/tests/integration"
+            tests_path = python_file_path+"/integration"
         elif args[0] == "unit":
             print("Run unit tests")
-            tests_path = python_file_path+"/tests/unit"
+            tests_path = python_file_path+"/unit"
         else:
             print("Invalid arguments")
             exit(os.EX_DATAERR)   

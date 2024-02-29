@@ -22,7 +22,9 @@ class Output:
         self.stacked_path.append(stack)
         
     def get_main_metric_value(self):
-        if self.main_metric in self.evaluate():
+        metrics_values = self.evaluate()
+        
+        if metrics_values and self.main_metric in metrics_values:
             return self.computed_metrics[self.main_metric]
         else:
             return -1
