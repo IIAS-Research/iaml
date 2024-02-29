@@ -19,7 +19,7 @@ class ActGaussianNb(Actionable):
         
     @runner
     def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
+        metric = input.metrics or Metric()
         
         model = GaussianNB()
         
@@ -35,4 +35,3 @@ class ActGaussianNb(Actionable):
     
     def priorize(self, input=None):
         return 0.5 # neutral
-    

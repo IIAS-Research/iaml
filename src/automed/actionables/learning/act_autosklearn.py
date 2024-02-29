@@ -23,7 +23,7 @@ class ActAutoSKLearn(Actionable):
     @runner
     def run(self, input:Output, callback=None):
         dataset = input.dataset
-        metric = input.metric or Metric()
+        metric = input.metrics or Metric()
         model = autosklearn.classification.AutoSklearnClassifier(
             time_left_for_this_task=self.get_config('running_time'),
             max_models_on_disc=5,
