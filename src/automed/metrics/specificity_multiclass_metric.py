@@ -9,7 +9,7 @@ import numpy as np
 class SpecificityMulticlassMetric(Metric):
     
     def __str__(self):
-        return 'specificity'    
+        return 'specificity_multiclass'    
     
     def explain(self):
         return 'Calculate specificity in a multiclass conext, where each instance belongs to just one of several classes'
