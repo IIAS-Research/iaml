@@ -1,7 +1,6 @@
 from ..step import *
 from ..metric import Metric
-from collections import Counter
-import pandas as pd
+
 from sklearn.metrics import mean_squared_log_error
 
 class MeanSquaredLogErrorMetric(Metric):
@@ -12,8 +11,11 @@ class MeanSquaredLogErrorMetric(Metric):
     def explain(self):
         return 'Mean squared logarithmic error regression loss.'
     
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target == 'continuous'
+    def suitable(self, dataset: Dataset) -> bool:
+        return dataset.type_of_target == 'continuous' and not (dataset.Y < 0).any(axis=None)
     
     def compute(self, y, y_pred):
-        return mean_squared_log_error(y, y_pred)
+        try:
+            return mean_squared_log_error(y, y_pred)
+        except:
+            return None

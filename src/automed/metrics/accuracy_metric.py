@@ -2,7 +2,7 @@ from ..step import *
 from ..metric import Metric
 from collections import Counter
 import pandas as pd
-from sklearn.metrics import *
+from sklearn.metrics import accuracy_score
  
 class AccuracyMetric(Metric):
     

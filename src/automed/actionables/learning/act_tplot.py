@@ -4,11 +4,6 @@ from ...output import TrainingInput
 from sklearn.model_selection import RepeatedStratifiedKFold
 from tpot import TPOTClassifier
 
-
-def learn(model, X):
-    return model.predict(X)
-
-
 # @isStep('learning', 'tabular')
 @isStep('to_compare')
 @assessable
@@ -51,7 +46,7 @@ class ActTPLOT(Actionable):
             random_state = self.get_config('random_state')
             )
         
-        model = TPOTClassifier(
+        self.model = TPOTClassifier(
             generations = self.get_config('generations'),
             population_size = self.get_config('population_size'),
             cv=cv,
@@ -61,10 +56,18 @@ class ActTPLOT(Actionable):
             n_jobs = self.get_config('n_jobs')
             )
 
-        model.fit(input.dataset.X_train, input.dataset.Y_train)
+        self.model.fit(input.dataset.X_train, input.dataset.Y_train)
 
-        # print("PERFECT FINISH")
-        return input.set_model(model, learn)
+        return input.set_model(self)
+    
+    
+    def predict(self, X):
+        return self.model.predict(X)
+
+    
+    
+    def suitable(self, input) -> bool:
+        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
 
     def priorize(self, input=None):
         return 0.5 # neutral

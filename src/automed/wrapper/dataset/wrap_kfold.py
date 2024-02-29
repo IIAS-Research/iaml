@@ -36,16 +36,12 @@ class WrapKFold(WrapDatasetWrapper):
             kfold = SKKFold(self.get_config('folds'))
             inputs = input.to_training_inputs(kfold.split, input.dataset.X)
 
+        Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] ({', '.join(self.step.conf_to_rich_str_list())})")
+        
         outputs: list[Output] = []
         metrics = []
-        for i, training_input in enumerate(inputs):
-            if i != self.get_config('folds'):
-                Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] (fold={i + 1}) ({', '.join(self.step.conf_to_rich_str_list())})")
-            else:
-                Logger().log(f"finishing cross-validation: [b]{self.step.__class__.__name__}[/] ({', '.join(self.step.conf_to_rich_str_list())})")
-
+        for training_input in inputs:
             output: Output = self.step.run(training_input)[0]
-            
             outputs.append(output)
 
             # X_test will be None when training on the whole dataset,

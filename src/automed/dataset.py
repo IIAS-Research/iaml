@@ -59,7 +59,7 @@ class Dataset:
         return copy.copy(self)
 
     def apply(self, method, *args, **kw):
-        self.__features = pd.concat(method(self.X, self.Y, *args, **kw), axis=1)
+        self.__features = pd.concat((method(self.X, *args, **kw), self.Y), axis=1)
         self.columns_types = self.__detect_columns_types()
         # TODO find and document changes
     
@@ -160,6 +160,8 @@ class TrainingDataset():
         self.__X_test = X_test
         self.__Y_train = Y_train
         self.__Y_test = Y_test
+
+        self.type_of_target = type_of_target(self.Y_train) # an array with type of target (multiclass, binary, etc)
 
     @property
     def X_train(self):

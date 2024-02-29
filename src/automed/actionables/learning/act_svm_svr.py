@@ -1,33 +1,27 @@
 from ...actionable import *
 from ...output import TrainingInput
 
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn import svm
 from skmultilearn.problem_transform import BinaryRelevance
 
 
 @isStep('learning', 'tabular')
 @assessable
-class ActKNN(Actionable):
-    name = "Learn : KNN"
+class ActSVMSVR(Actionable):
+    name = "Learn : SVM Regression"
     def __init__(self):
         self.configurations = [{
-            'metric': {
-                'description': 'Can be minkowski or manhattan',
-                'default': 'minkowski',
-                'categorical': ['minkowski', 'manhattan']
-            },
-            'n_neighbors': {
-                'description': 'Number of neighbors',
-                'default': 5,
-                'range': [1, float('inf')]
+            'kernel': {
+                'description': 'Kernel to use in the SVM',
+                'default': 'rbf',
+                'categorical': ['linear', 'poly', 'rbf', 'sigmoid']
             }
         }]
         
     @runner
     def run(self, input: TrainingInput, callback=None):
-        self.model = KNeighborsClassifier(
-            n_neighbors = self.get_config('n_neighbors'),
-            metric = self.get_config('metric')
+        self.model = svm.SVR(
+            kernel = self.get_config('kernel')
             )
         
         if input.dataset.is_multilabel:
@@ -37,12 +31,13 @@ class ActKNN(Actionable):
         
         return input.set_model(self)
     
+    
     def predict(self, X):
         return self.model.predict(X)
+        
     
+    def suitable(self, input: Input) -> bool:
+        return input.dataset.type_of_target in ['continuous']
     
-    def suitable(self, input) -> bool:
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
-
     def priorize(self, input=None):
         return 0.5 # neutral

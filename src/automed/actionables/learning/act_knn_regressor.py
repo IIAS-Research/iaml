@@ -1,13 +1,12 @@
 from ...actionable import *
 from ...output import TrainingInput
 
-from sklearn.neighbors import KNeighborsClassifier
-from skmultilearn.problem_transform import BinaryRelevance
+from sklearn.neighbors import KNeighborsRegressor
 
 
-@isStep('learning', 'tabular')
+@isStep('learning', 'tabular', 'fast_learning')
 @assessable
-class ActKNN(Actionable):
+class ActKNNRegressor(Actionable):
     name = "Learn : KNN"
     def __init__(self):
         self.configurations = [{
@@ -25,13 +24,10 @@ class ActKNN(Actionable):
         
     @runner
     def run(self, input: TrainingInput, callback=None):
-        self.model = KNeighborsClassifier(
+        self.model = KNeighborsRegressor(
             n_neighbors = self.get_config('n_neighbors'),
             metric = self.get_config('metric')
             )
-        
-        if input.dataset.is_multilabel:
-            self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
         
         self.model.fit(input.dataset.X_train, input.dataset.Y_train)
         
@@ -41,8 +37,8 @@ class ActKNN(Actionable):
         return self.model.predict(X)
     
     
-    def suitable(self, input) -> bool:
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(self, input: Input) -> bool:
+        return input.dataset.type_of_target in ['continuous']
 
     def priorize(self, input=None):
         return 0.5 # neutral

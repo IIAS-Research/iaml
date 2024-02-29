@@ -5,14 +5,10 @@ from sklearn.linear_model import LogisticRegression
 from skmultilearn.problem_transform import BinaryRelevance
 
 
-def learn(model, X):
-    return model.predict(X)
-
-
 @isStep('learning', 'tabular', 'fast_learning')
 @assessable
 class ActLogisticRegression(Actionable):
-    name = "Learn : Logistic regression"
+    name = "Learn : Logistic Regression Classifier"
     def __init__(self):
         self.configurations = [{
             'max_iterations': {
@@ -28,18 +24,26 @@ class ActLogisticRegression(Actionable):
         
     @runner
     def run(self, input: TrainingInput, callback=None):
-        model = LogisticRegression(
+        self.model = LogisticRegression(
             max_iter = self.get_config('max_iterations'),
             n_jobs = -1,
             random_state = self.get_config('random_state')
             )
         
         if input.dataset.is_multilabel:
-            model = BinaryRelevance(classifier=model, require_dense=[False, True])
+            self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
         
-        model.fit(input.dataset.X_train, input.dataset.Y_train)
+        self.model.fit(input.dataset.X_train, input.dataset.Y_train)
         
-        return input.set_model(model, learn)
+        return input.set_model(self)
+    
+    
+    def predict(self, X):
+        return self.model.predict(X)
+    
+    
+    def suitable(self, input) -> bool:
+        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, input=None):
         return 0.5 # neutral

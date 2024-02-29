@@ -4,10 +4,6 @@ from ...actionable import *
 from ...output import TrainingInput
 
 
-def learn(model, X):
-    return model.predict(X)
-
-
 # @isStep('learning', 'tabular')
 @isStep('to_compare')
 @assessable
@@ -23,16 +19,21 @@ class ActAutoSKLearn(Actionable):
     
     @runner
     def run(self, input: TrainingInput, callback=None):
-        model = autosklearn.classification.AutoSklearnClassifier(
+        self.model = autosklearn.classification.AutoSklearnClassifier(
             time_left_for_this_task=self.get_config('running_time'),
             max_models_on_disc=5,
             memory_limit = 102400)
         
-        model.fit(input.dataset.X_train, input.dataset.Y_train)
+        self.model.fit(input.dataset.X_train, input.dataset.Y_train)
         
-        return input.set_model(model, learn)
+        return input.set_model(self)
+    
 
-        
+    def predict(self, X):
+        return self.model.predict(X)
+
+    def suitable(self, input) -> bool:
+        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
     
     def priorize(self, input=None):
         return 0.5 # neutral

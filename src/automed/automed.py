@@ -4,7 +4,7 @@ from .actionable import Actionable
 from .output import Output, Input
 from .dataset import Dataset
 from .metric import Metric
-from .model import Model
+from .auto_pipeline import AutoPipeline
 from .destroyer import Destroyer
 from .worker_manager import WorkerManager
 from .wrapper.dataset import WrapKFold

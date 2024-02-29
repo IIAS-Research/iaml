@@ -1,5 +1,6 @@
 from .step import Step, isStep, runner
 
+
 @isStep('wrapper')
 class StepWrapper(Step):
     def __init__(self, step: Step):
@@ -29,6 +30,9 @@ class StepWrapper(Step):
         else:
             raise Exception("step must be an occurence of step (or inherited classes)")
         
+    # Is suitable if the wrapped step is
+    def suitable(self, input):
+        return self.step.suitable(input)
     
     def all_configurations(self):
         to_return = Step.all_configurations(self)
