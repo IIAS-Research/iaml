@@ -22,12 +22,11 @@ def each_file(file):
     if len(df.columns) < 2:
         df = pd.read_csv(file, sep=",")
         
-    auto = AutoMed(Dataset(df), quiet=True)
-    
     labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
-    auto.dataset.set_label(labels) 
+
+    auto = AutoMed(quiet=False)
     auto.debug_load()
-    auto.run()
+    auto.fit(df.drop(labels, axis=1), df[labels])
     
     end_file = datetime.now()
     compute_time = (end_file - start_file).seconds
