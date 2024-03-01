@@ -1,12 +1,14 @@
 import pandas as pd
 import pickle
 
-from .output import Input, Output
 from sklearn.pipeline import Pipeline
+
+from .explanation import Explanation
 
 
 class AutoPipeline(Pipeline):
-    def __init__(self, steps: list[tuple[str, object]] = []) -> None:
+    def __init__(self, steps: list[tuple[str, object]] = [], explanations: list[Explanation] = []) -> None:
+        self.explanations = explanations
         self.steps = steps.copy()
         
     def fit(self, x, y):
@@ -21,11 +23,6 @@ class AutoPipeline(Pipeline):
     @property
     def model(self):
         return self.steps[-1][1] if self.have_model else None
-        
-
-    # @property
-    # def stack(self):
-    #     return self.__stack.copy()
     
     # def __str__(self) -> str:
     #     if self.have_model:
@@ -45,7 +42,7 @@ class AutoPipeline(Pipeline):
         return self
 
     def copy(self) -> 'AutoPipeline':
-        return AutoPipeline(self.steps)
+        return AutoPipeline(self.steps, self.explanations)
     
 
     def pickle(self) -> bytes:
@@ -65,11 +62,6 @@ class AutoPipeline(Pipeline):
             return super().predict(X)
         
         return self.model.predict(X)
-
-    # def run(self, dataset: pd.DataFrame) -> Output:
-    #     last_output = dataset
-    #     for instance in self.__stack:
-    #         last_output, _ = instance.transform(last_output, [])
-            
-            
-    #     return last_output
+    
+    def add_explanation(self, step, processings: list[str]):
+        self.explanations.append(Explanation(step, processings))

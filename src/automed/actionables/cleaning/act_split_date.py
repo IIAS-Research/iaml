@@ -13,6 +13,11 @@ class ActSplitDate(Actionable):
     def run(self, input: Input, callback=None) -> Output:
         self.columns = input.dataset.get_columns_names_by_type(DataType.DATE)
 
+        input.pipeline.add_explanation(self, [
+            f'Split date column **`{c}`** into year, month, weekday, hour, minute and second.'
+            for c in self.columns
+        ])
+
         return input.transform_dataset(self)
             
     def transform(self, x) -> Output:

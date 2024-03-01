@@ -19,6 +19,17 @@ class ActOnehot(Actionable):
         values = input.dataset.X_train[self.columns]
         self.encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False).fit(values)
 
+        feature_names = self.encoder.get_feature_names_out()
+        
+        features = { c: [] for c in self.columns }
+        for c, f in map(lambda f: f.split('_'), feature_names):
+            features[c].append(f)
+
+        input.pipeline.add_explanation(self, [
+            f'Encoded categorical column **`{c}`** into **{len(v)}** new columns.'
+            for c, v in features.items() if len(v) > 0
+        ])
+
         return input.transform_dataset(self)
     
     

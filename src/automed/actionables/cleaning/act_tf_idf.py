@@ -4,7 +4,7 @@ from ...data_type import DataType
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-@isStep('cleaning')
+# @isStep('cleaning')
 class ActTfIdf(Actionable):
     name="TF-IDF"
     def __init__(self):
@@ -17,6 +17,12 @@ class ActTfIdf(Actionable):
             values = input.dataset.X_train[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             self.columns.append((column, vectorizer))
+
+        feature_names = { c: v.get_feature_names_out() for c, v in self.columns }
+        input.pipeline.add_explanation(self, [
+            f'Encoded text column **`{c}`** into **{len(v)}** new columns.'
+            for c, v in feature_names.items() if len(v) > 0
+        ])
         
         return input.transform_dataset(self)
     

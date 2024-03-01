@@ -4,11 +4,16 @@ from ...automed import Output
 
 @isStep('cleaning')
 class ActDropDateColumn(Actionable):
-    name = "Drop date column"
+    name = "Drop date columns"
+    description = 'Drop date columns.'
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
         self.columns_to_drop = input.dataset.get_columns_names_by_type(DataType.DATE)
+
+        input.pipeline.add_explanation(self, [
+            f'Dropped column **`{c}`**.' for c in self.columns_to_drop
+        ])
 
         return input.transform_dataset(self)
     
