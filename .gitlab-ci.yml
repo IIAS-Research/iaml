@@ -28,6 +28,7 @@ job:test:unit:
   tags:
     - unix
     - test
+    - calcul
   except:
     - main
   script:
