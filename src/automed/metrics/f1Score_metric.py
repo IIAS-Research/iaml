@@ -14,8 +14,8 @@ class F1ScoreMetric(Metric):
         return 'Compute the F1 score, also known as balanced F-score or F-measure. The F1 score can be interpreted as a harmonic mean of the precision and recall'
     
             
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
     def compute(self, y, y_pred):
         if type_of_target(y) == 'binary':

@@ -12,8 +12,8 @@ class R2ScoreMetric(Metric):
     def __str__(self):
         return 'r2_score'
         
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target == 'continuous'
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        return type_of_target == 'continuous'
 
     def compute(self, y, y_pred):
         return r2_score(y, y_pred)

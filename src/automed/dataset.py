@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 import pandas as pd
+from typing import Iterator
 
 from sklearn.utils.multiclass import type_of_target
 
@@ -8,77 +9,95 @@ from .data_type import DataType
 
 
 class Dataset:
-    def __init__(self, X: pd.DataFrame, Y: pd.DataFrame):
-        self.__features = pd.concat((X, Y), axis=1)
-        self.__labels = Y.columns.to_list()
-        self.__disabled_columns = []
+    def __init__(self, X: pd.DataFrame, y: pd.DataFrame, resample: list=[], splitted:bool=False):
+        self.__X = X
+        self.__y = y
+        
+        self.__resample_stack = resample
+        
+        if splitted: 
+            self.__apply_resample()
+        
+        self.__splitted = splitted
 
         self.columns_types = self.__detect_columns_types()
-        self.type_of_target = type_of_target(self.Y) # an array with type of target (multiclass, binary, etc)
+        self.type_of_target = type_of_target(self.__y)
+    
     
     @property
-    def features(self) -> pd.DataFrame:
-        return self.__features.drop(self.__disabled_columns, axis=1)
+    def splitted(self) -> bool:
+        return self.__splitted
+    
+    @property
+    def features(self) -> list:
+        return self.X.columns.to_list()
 
     @property
     def labels(self) -> list:
-        return self.__labels
+        return self.__y.columns.to_list()
     
     @property
     def X(self) -> pd.DataFrame:
-        return self.features.drop(self.__labels, axis=1)
-    
-    @X.setter
-    def X(self, X: pd.DataFrame) -> None:
-        for column in X.columns:
-            if column in self.__disabled_columns:
-                raise TypeError(f"Column '{column}' is supposed to be disabled, but is defined in new X.")
-            
-        self.__features[self.X.columns] = X
+        return self.__X
 
     @property
-    def Y(self) -> pd.DataFrame:
-        return self.features[self.__labels]
+    def y(self) -> pd.DataFrame:
+        if self.__splitted:
+            return self.__y
+        else:
+            raise Exception("Dataset mush be splitted before access to y value")
 
-    @Y.setter
-    def Y(self, Y: pd.DataFrame) -> None:
-        for column in Y.columns:
-            if column in self.__disabled_columns:
-                raise TypeError(f"Column '{column}' is supposed to be disabled, but is defined in new Y.")
-
-        self.__features[self.__labels] = Y
-    
-    @property
-    def is_multilabel(self):
-        return len(self.__labels) > 1
-
-    def copy(self, deep=True):
+    def copy(self, deep=True) -> 'Dataset':
         if deep:
             return copy.deepcopy(self)
-
         return copy.copy(self)
 
-    def apply(self, method, *args, **kw):
-        self.__features = pd.concat((method(self.X, *args, **kw), self.Y), axis=1)
+    def transform(self, method) -> None:
+        if self.__splitted:
+            raise Exception("Cannot edit a splitted Dataset")
+        
+        self.__X = method(self.X)
         self.columns_types = self.__detect_columns_types()
-        # TODO find and document changes
-    
-    def get_columns_names_by_type(self, types):
+        
+    def resample(self, method) -> None:
+        if self.__splitted:
+            raise Exception("Cannot edit a splitted Dataset")
+        
+        self.__resample_stack.append(method)
+        
+    def __apply_resample(self) -> None:
+        for method in self.__resample_stack:
+            self.X, self.y = method(self.X, self.__y)
+        self.columns_types = self.__detect_columns_types()
+        
+    def split(self, splitter: callable) -> Iterator[tuple['Dataset', 'Dataset']]: 
+        if self.__splitted:
+            raise Exception("Dataset alreadly splitted !")
+        
+        for i_train, i_test in splitter(self.X, self.__y):
+            X_train = self.X.iloc[i_train].copy()
+            X_test = self.X.iloc[i_test].copy()
+            y_train = self.__y.iloc[i_train].copy()
+            y_test = self.__y.iloc[i_test].copy()
+
+            ds_train = Dataset(X_train, y_train, resample=self.__resample_stack, splitted=True)
+            ds_test = Dataset(X_test, y_test, splitted=True)
+
+            yield (ds_train, ds_test)
+        
+    def get_columns_names_by_type(self, types) -> list:
         if type(types) != list:
             types = [types]
 
         return [
             column
             for column, type in self.columns_types.items()
-            if type in types and column not in self.__disabled_columns and column not in self.labels
+            if type in types
         ]
-                
-    def active_columns(self):
-        return [ c for c in self.__features.columns if c not in self.__disabled_columns ]
 
     # Detect data types
     def detect_data_type(self, column_name):
-        column_value = self.__features[column_name]
+        column_value = self.X[column_name]
         if column_value.dtype == object:
             if self.__string_column_to_date(column_name):
                 return DataType.DATE
@@ -95,43 +114,19 @@ class Dataset:
             return DataType.DATE
     
     # Return a dict of with column name as key and value as type of data
-    def __detect_columns_types(self):
+    def __detect_columns_types(self) -> dict:
         types = {}
-        for column in self.__features.columns:
+        for column in self.features:
             types[column] = self.detect_data_type(column)
             
         return types
-
-    # Disable a column with delete it
-    def disable_column(self, column):
-        if column not in self.__disabled_columns:
-            self.__disabled_columns.append(column)
-        else:
-            raise Exception(f"Column '{column}' is already disabled!")
-    
-    # Disable several columns
-    def disable_columns(self, columns):
-        for column in columns:
-            self.disable_column(column)
-            
-    # Enable column from disabled dataset
-    def enable_column(self, column):
-        if column in self.__disabled_columns:
-            self.__disabled_columns.pop(column)
-        else:
-            raise Exception(f"Column '{column}' is already enabled!")
-            
-    # Enable several columns
-    def enable_columns(self, columns):
-        for column in columns:
-            self.enable_column(column)
     
     def __string_column_to_date(self, column_name: str):
-        threshold_count = self.__features[column_name].count() * 0.95
-        new_columns = self.__features[column_name].apply(self.__string_value_to_date)
+        threshold_count = self.X[column_name].count() * 0.95
+        new_columns = self.X[column_name].apply(self.__string_value_to_date)
             
         if new_columns.count() >= threshold_count:
-            self.__features[column_name] = new_columns.replace(pd.NaT, None)
+            self.X[column_name] = new_columns.replace(pd.NaT, None)
 
             return True
 
@@ -148,51 +143,7 @@ class Dataset:
                 pass
 
         return pd.NaT
-
-    def __getitem__(self, key) -> pd.DataFrame | pd.Series:
-        return self.__features.drop(self.__disabled_columns, axis=1)[key]
-
-
-class TrainingDataset():
-
-    def __init__(self, X_train, X_test, Y_train, Y_test):
-        self.__X_train = X_train
-        self.__X_test = X_test
-        self.__Y_train = Y_train
-        self.__Y_test = Y_test
-
-        self.type_of_target = type_of_target(self.Y_train) # an array with type of target (multiclass, binary, etc)
-
-    @property
-    def X_train(self):
-        return self.__X_train
-
-    @property
-    def X_test(self):
-        return self.__X_test
     
-    @property
-    def Y_train(self):
-        if self.is_multilabel:
-            return self.__Y_train
-        else:
-            return self.__Y_train.squeeze(axis=0).values.ravel()
-    
-    @property
-    def Y_test(self):
-        if self.is_multilabel:
-            return self.__Y_test
-        else:
-            return self.__Y_test.squeeze(axis=0).values.ravel()
-    
-    @property
-    def is_multilabel(self):
-        return len(self.__Y_train.columns) > 1
-
     def compute_metric(self, model, metric):
-        # To avoid warnings ( UserWarning: X has feature names, but GaussianNB was fitted without feature names)
-        y_pred = model.predict(self.X_test, model_only = True)
-        if not isinstance(y_pred, np.ndarray):
-            y_pred = y_pred.toarray()
-        else:
-            return metric.compute(self.Y_test, y_pred)
+        y_pred = model.predict(self.X, model_only = self.__splitted)
+        return metric.compute(self.__y, y_pred)

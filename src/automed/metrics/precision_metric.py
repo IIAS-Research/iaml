@@ -13,8 +13,8 @@ class precisionMetric(Metric):
     def explain(self):
         return 'Compute the precision: The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false positives.'
     
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
         
     def compute(self, y, y_pred):
         if type_of_target(y) == 'binary':

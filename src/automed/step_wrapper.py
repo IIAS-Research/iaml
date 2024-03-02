@@ -67,4 +67,7 @@ class StepWrapper(Step):
         pipeline.
         """
         return 1 + self.step.count_steps()
+    
+    def priorize(self, input=None):
+        return self.step.priorize(input)
             

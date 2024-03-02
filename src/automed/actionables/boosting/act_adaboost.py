@@ -1,6 +1,6 @@
 from ...actionable import *
 from ...automed import Metric
-from ...output import TrainingInput
+from ...output import Input
 
 from sklearn.ensemble import AdaBoostClassifier
 
@@ -23,7 +23,7 @@ class ActAdaBoost(Actionable):
         }]
         
     @runner
-    def run(self, input: TrainingInput, callback=None):
+    def run(self, input: Input, callback=None):
         metric = input.metric or Metric()
         
         model = AdaBoostClassifier(
@@ -32,7 +32,7 @@ class ActAdaBoost(Actionable):
             random_state= self.get_config('random_state')
             )
         
-        model.fit(input.dataset.X_train, input.dataset.Y_train)
+        model.fit(input.dataset.X, input.dataset.y)
         
         return input.to_output(None, metric, model)
 

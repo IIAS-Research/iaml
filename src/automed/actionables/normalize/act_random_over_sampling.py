@@ -11,9 +11,9 @@ class ActRandomOverSampling(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
-        return input.transform_dataset(self, before_train=True)
+        return input.resample(self)
     
-    def transform(self, x, y):
+    def resample(self, x, y):
         return RandomOverSampler(sampling_strategy='minority').fit_resample(x, y)
     
     def priorize(self, input=None):

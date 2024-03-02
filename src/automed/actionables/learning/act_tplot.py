@@ -1,5 +1,5 @@
 from ...actionable import *
-from ...output import TrainingInput
+from ...output import Input
 
 from sklearn.model_selection import RepeatedStratifiedKFold
 from tpot import TPOTClassifier
@@ -38,7 +38,7 @@ class ActTPLOT(Actionable):
         }]
     
     @runner
-    def run(self, input: TrainingInput, callback=None):
+    def run(self, input: Input, callback=None):
         
         cv = RepeatedStratifiedKFold(
             n_splits = self.get_config('n_splits'),
@@ -56,7 +56,7 @@ class ActTPLOT(Actionable):
             n_jobs = self.get_config('n_jobs')
             )
 
-        self.model.fit(input.dataset.X_train, input.dataset.Y_train)
+        self.model.fit(input.dataset.X, input.dataset.y)
 
         return input.set_model(self)
     

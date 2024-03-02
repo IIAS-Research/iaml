@@ -1,5 +1,5 @@
 from ...actionable import *
-from ...output import TrainingInput
+from ...output import Input
 
 from sklearn.neighbors import KNeighborsRegressor
 
@@ -23,13 +23,13 @@ class ActKNNRegressor(Actionable):
         }]
         
     @runner
-    def run(self, input: TrainingInput, callback=None):
+    def run(self, input: Input, callback=None):
         self.model = KNeighborsRegressor(
             n_neighbors = self.get_config('n_neighbors'),
             metric = self.get_config('metric')
             )
         
-        self.model.fit(input.dataset.X_train, input.dataset.Y_train)
+        self.model.fit(input.dataset.X, input.dataset.y)
         
         return input.set_model(self)
     

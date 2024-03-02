@@ -12,6 +12,8 @@ from .wrapper.dataset import WrapKFold
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 
+import pandas as pd
+
 # Default Actionables
 from .actionables import *
 
@@ -62,7 +64,6 @@ class AutoMed:
         step.add_step(MetaStep(tag='cleaning'))
         # step.add_step(MetaStep(tag='features_selection'))
         step.add_step(MetaStep(tag='normalize'))
-        step.add_step(MetaStep(tag='metric'))
         step.add_step(ActTPLOT())
 
         return step
@@ -77,7 +78,6 @@ class AutoMed:
             step.add_step(MetaStep(tag='cleaning'))
             step.add_step(MetaStep(tag='features_selection'))
             step.add_step(MetaStep(tag='normalize'))
-            step.add_step(MetaStep(tag='metric'))
 
             learning_tag = 'fast_learning' if fast else 'learning'
             wrap = lambda s: WrapGeneticGridSearch(WrapKFold(s))
@@ -112,11 +112,26 @@ class AutoMed:
     ### RUN ###
     ###########
         
-    def fit(self, X, Y, *args, **kwargs):
-        dataset = Dataset(X, Y)
+    def fit(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
+        dataset = Dataset(X, y)
         input = Input(dataset)
-
+        
+        for metric in self.__metrics_selection(X, y, dataset.type_of_target):
+            input.add_metric(metric)
+        
         return self.run(input, *args, **kwargs)
+    
+    def __metrics_selection(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str):
+        metrics = []
+        
+        for metric_sub_class in Metric.__subclasses__():
+            # Instantiate a subclass
+            metric = metric_sub_class()
+            # Verify if a subclass is suitable or not
+            if metric.suitable(X, y, type_of_target):
+                metrics.append(metric)
+                
+        return metrics
     
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 

@@ -28,13 +28,12 @@ class WrapRandomSplit(WrapDatasetWrapper):
     def run(self, input: Input, callback=None) -> Output:
         test_size = self.get_config('ratio')
         random_state = self.get_config('random_state')
-
-        training_input = next(input.to_training_inputs(
-            ShuffleSplit(1, test_size=test_size, random_state=random_state).split,
-            input.dataset.X
-        ))
-
-        return self.step.run(training_input)
+        
+        splitter = lambda X, y: ShuffleSplit(1, test_size=test_size, random_state=random_state).split(X)
+        
+        train_dataset, test_dataset = next(input.dataset.split(splitter))
+        output = self.step.run(input.to_input(dataset=train_dataset), callback=callback)
+        output.evaluate(test_dataset)
+        
+        return output
     
-    def priorize(self, input=None):
-        return 1

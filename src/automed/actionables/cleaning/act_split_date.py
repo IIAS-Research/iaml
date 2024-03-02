@@ -13,7 +13,7 @@ class ActSplitDate(Actionable):
     def run(self, input: Input, callback=None) -> Output:
         self.columns = input.dataset.get_columns_names_by_type(DataType.DATE)
 
-        return input.transform_dataset(self)
+        return input.add_transform(self)
             
     def transform(self, x) -> Output:
         for column in self.columns:

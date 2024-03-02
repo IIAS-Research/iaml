@@ -12,8 +12,8 @@ class MedianAbsoluteErrorMetric(Metric):
     def explain(self):
         return 'Median absolute error regression loss.'
     
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target == 'continuous'
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        return type_of_target == 'continuous'
     
     def compute(self, y, y_pred):
         return median_absolute_error(y, y_pred)

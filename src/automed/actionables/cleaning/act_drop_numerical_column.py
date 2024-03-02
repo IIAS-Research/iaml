@@ -18,11 +18,11 @@ class ActDropNumericalColumn(Actionable):
     def run(self, input: Input, callback=None) -> Output:
         self.columns_to_drop = []     
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
-            values = input.dataset[column]
+            values = input.dataset.X[column]
             if values.isnull().sum()/len(values) >= self.get_config('empty_threshold'):
                 self.columns_to_drop.append(column)
 
-        return input.transform_dataset(self)
+        return input.add_transform(self)
     
     
     def transform(self, x) -> Output:

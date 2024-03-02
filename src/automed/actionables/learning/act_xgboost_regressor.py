@@ -1,5 +1,5 @@
 from ...actionable import *
-from ...output import TrainingInput
+from ...output import Input
 
 from sklearn.ensemble import GradientBoostingRegressor
 
@@ -32,7 +32,7 @@ class ActXGBoost(Actionable):
         }]
         
     @runner
-    def run(self, input: TrainingInput, callback=None):
+    def run(self, input: Input, callback=None):
         self.model = GradientBoostingRegressor(
                                         n_estimators=self.get_config('n_estimators'),
                                         learning_rate=self.get_config('learning_rate'),
@@ -41,7 +41,7 @@ class ActXGBoost(Actionable):
                                         )
         
         
-        self.model.fit(input.dataset.X_train, input.dataset.Y_train)
+        self.model.fit(input.dataset.X, input.dataset.y)
         
         return input.set_model(self)
     

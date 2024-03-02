@@ -14,8 +14,8 @@ class SpecificityMultilabelMetric(Metric):
     def _str__(self):
         return 'specificity_multilabel'
     
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target in ['multilabel-indicator']
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        return type_of_target in ['multilabel-indicator']
     
     # Specificity is calculated for each label separately, then averaged to obtain an overall measure. 
     def compute(self, y, y_pred):

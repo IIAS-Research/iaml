@@ -13,11 +13,11 @@ class ActMinMaxScaler(Actionable):
     @runner
     def run(self, input: Input, callback=None) -> Output:
         self.columns = input.dataset.get_columns_names_by_type(DataType.NUMERIC)
-        values = input.dataset[self.columns]
+        values = input.dataset.X[self.columns]
         self.scaler = MinMaxScaler()
         self.scaler.fit(values)
 
-        return input.transform_dataset(self)
+        return input.add_transform(self)
         
     def transform(self, x):
         x[self.columns] = self.scaler.transform(x[self.columns])

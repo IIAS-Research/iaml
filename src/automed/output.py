@@ -2,7 +2,7 @@ from copy import copy
 from dataclasses import dataclass
 from typing import Iterator
 
-from .dataset import Dataset, TrainingDataset
+from .dataset import Dataset
 
 
 class Output:
@@ -10,7 +10,7 @@ class Output:
     def __init__(self, dataset:Dataset=None, metrics:list=[], auto_pipeline=None, stack_list=[], main_metric=None):
         from .auto_pipeline import AutoPipeline # Here to avoid circular import. TODO -> Something better to do ?
         
-        self.__train_dataset_transform_stack = []
+        self.__resample_stack = []
 
         self.dataset = dataset
         self.metrics = copy(metrics)
@@ -28,35 +28,35 @@ class Output:
         self.stacked_path.append(stack)
         
     def get_main_metric_value(self):
-        if self.main_metric in self.evaluate():
+        if self.main_metric in self.computed_metrics:
             return self.computed_metrics[self.main_metric]
         else:
             return -1
     
     def __gt__(self, other):
-        if self.evaluate() and other.evaluate():
+        if self.computed_metrics and other.computed_metrics:
             return self.get_main_metric_value() > other.get_main_metric_value()
         else:
-            if self.evaluate():
+            if self.computed_metrics:
                 return True
-            if other.evaluate():
+            if other.computed_metrics:
                 return False
             
             return id(self) > id(other)
             
     def __lt__(self, other):
-        if self.evaluate() and other.evaluate():
+        if self.computed_metrics and other.computed_metrics:
             return self.get_main_metric_value() < other.get_main_metric_value()
         else:
-            if self.evaluate():
+            if self.computed_metrics:
                 return False
-            if other.evaluate():
+            if other.computed_metrics:
                 return True
             
             return id(self) < id(other)
             
     def __eq__(self, other):
-        if self.evaluate() and other.evaluate():
+        if self.computed_metrics and other.computed_metrics:
             return self.get_main_metric_value() == other.get_main_metric_value()
         else:
             return id(self) == id(other)
@@ -75,50 +75,33 @@ class Output:
             auto_pipeline or self.pipeline.copy(),
             stack_list=self.stacked_path)
     
-    def __apply_transformations_before_train(self, X_train, Y_train) -> None:
-        for (transform, args, kw) in self.__train_dataset_transform_stack:
-            X_train, Y_train = transform(X_train, Y_train, *args, **kw)
-
-    def to_training_inputs(self, splitter: callable, *args, **kw) -> Iterator['TrainingInput']: # cast to TrainingInput
-        for i_train, i_test in splitter(*args, **kw):
-            X_train = self.dataset.X.iloc[i_train].copy()
-            X_test = self.dataset.X.iloc[i_test].copy()
-            Y_train = self.dataset.Y.iloc[i_train].copy()
-            Y_test = self.dataset.Y.iloc[i_test].copy()
-
-            self.__apply_transformations_before_train(X_train, Y_train)
-
-            yield self.to_input(TrainingDataset(X_train, X_test, Y_train, Y_test))
-
-        X_train = self.dataset.X.copy()
-        Y_train = self.dataset.Y.copy()
-
-        self.__apply_transformations_before_train(X_train, Y_train)
-        
-        yield self.to_input(TrainingDataset(X_train, None, Y_train, None))
-
-    def transform_dataset(self, instance, before_train: bool = False):
+    def add_transform(self, instance) -> 'Output':
         """
         Transforms the dataset using the provided function, and adds it to the
         stack of functions to be applied before prediction.
         Note: The function must be pickable and therefore must be named (not be
         a lambda) and be declared at the top level of a module.
         See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
-
-        If `before_train` is set to `True`, the function will be applied to the
-        dataset just before training, after splitting into train and test.
         """
-        if before_train:
-            self.__train_dataset_transform_stack.append(instance.transform)
-        else:
-            self.dataset.apply(instance.transform)
+        self.dataset.transform(instance.transform)
             
         if self.pipeline is not None and instance.transform is not None and callable(instance.transform):
             self.pipeline.add_to_stack(instance)
         
         return self.to_output()
     
-    def set_model(self, instance):
+    
+    def add_resample(self, instance) -> 'Output':
+        """
+        Resample the dataset using the resample method of provided instance.
+        The method will be applied to the dataset just before training,
+        after splitting into train and test.
+        """
+        self.dataset.resample(instance.resample)
+        
+        return self.to_output()
+    
+    def set_model(self, instance) -> 'Output':
         """
         Sets the resulting model of the pipeline to this output.
         Note: The function must be pickable and therefore must be named (not be
@@ -139,16 +122,24 @@ class Output:
             
         return str_out
     
-    def evaluate(self, force=False):
+    def evaluate(self, dataset:Dataset, force:bool=False):
         if not(self.pipeline.have_model):
             return None
         
-        if force or not(self.computed_metrics):
-            for metric in self.metrics:
-                result = self.dataset.compute_metric(self.pipeline, metric)
-                self.computed_metrics[metric.__str__()] = result
-                
-        return self.computed_metrics
+        training_stage = dataset.splitted # If dataset is splitted -> We here in the training stage
+        
+        if training_stage and (not(force) and self.computed_metrics):
+                return self.computed_metrics
+            
+        current_compute = {}
+        for metric in self.metrics:
+            result = dataset.compute_metric(self.pipeline, metric)
+            current_compute[metric.__str__()] = result
+            
+        if training_stage:
+            self.computed_metrics = current_compute
+            
+        return current_compute
     
     def log(self, test):
         pass
@@ -163,7 +154,3 @@ class Output:
 # Alias for Output
 class Input(Output):
     pass
-
-
-class TrainingInput(Input):
-    dataset: TrainingDataset

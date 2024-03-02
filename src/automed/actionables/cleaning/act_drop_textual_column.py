@@ -12,7 +12,7 @@ class ActDropTextualColumn(Actionable):
         
         self.columns_to_drop = input.dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT])
 
-        return input.transform_dataset(self)
+        return input.add_transform(self)
     
     
 

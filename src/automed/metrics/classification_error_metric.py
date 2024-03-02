@@ -14,8 +14,8 @@ class ClassificationErrorMetric(Metric):
     def __str__(self):
         return 'classification_error'
     
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
     
     # Calculate the classification error using either accuracy or balanced accuracy, depending on relevence
     def compute(self, y, y_pred):

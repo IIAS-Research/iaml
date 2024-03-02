@@ -18,11 +18,11 @@ class ActMeanColumn(Actionable):
     def run(self, input: Input, callback=None) -> Output:  
         self.columns = []
         for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
-            values = input.dataset[column]
+            values = input.dataset.X[column]
             if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
                 self.columns.append((column, values.mean()))
         
-        return input.transform_dataset(self)
+        return input.add_transform(self)
     
     def transform(self, x):
         for name, mean in self.columns:
@@ -32,4 +32,4 @@ class ActMeanColumn(Actionable):
         
     
     def priorize(self, input=None):
-        return 1-(input.dataset.features.isnull().sum().min()/len(input.dataset.features) ) # TODO -> Do something better. This function have no sense for now. Only an example.
+        return 1-(input.dataset.X.isnull().sum().min()/len(input.dataset.X) ) # TODO -> Do something better. This function have no sense for now. Only an example.

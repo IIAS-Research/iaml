@@ -1,7 +1,7 @@
 import autosklearn.classification
 
 from ...actionable import *
-from ...output import TrainingInput
+from ...output import Input
 
 
 # @isStep('learning', 'tabular')
@@ -18,13 +18,13 @@ class ActAutoSKLearn(Actionable):
         }]
     
     @runner
-    def run(self, input: TrainingInput, callback=None):
+    def run(self, input: Input, callback=None):
         self.model = autosklearn.classification.AutoSklearnClassifier(
             time_left_for_this_task=self.get_config('running_time'),
             max_models_on_disc=5,
             memory_limit = 102400)
         
-        self.model.fit(input.dataset.X_train, input.dataset.Y_train)
+        self.model.fit(input.dataset.X, input.dataset.y)
         
         return input.set_model(self)
     

@@ -29,35 +29,36 @@ class WrapKFold(WrapDatasetWrapper):
         
     @runner
     def run(self, input: Input, callback=None) -> Output:
-        if self.get_config('stratify'):
+        if input.dataset.type_of_target in ['binary', 'multiclass'] and self.get_config('stratify'):
             kfold = StratifiedKFold(self.get_config('folds'))
-            inputs = input.to_training_inputs(kfold.split, input.dataset.X, input.dataset.Y)
         else:
             kfold = SKKFold(self.get_config('folds'))
-            inputs = input.to_training_inputs(kfold.split, input.dataset.X)
-
+        
+        splitted_datasets = input.dataset.split(kfold.split)
+        
         Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] ({', '.join(self.step.conf_to_rich_str_list())})")
         
         outputs: list[Output] = []
         metrics = []
-        for training_input in inputs:
-            output: Output = self.step.run(training_input)[0]
+        for train_ds, test_ds in splitted_datasets:
+            training_input = input.to_input(dataset=train_ds)
+            
+            output: Output = self.step.run(training_input, callback=callback)[0]
+
+            metrics.append(output.evaluate(test_ds))
             outputs.append(output)
-
-            # X_test will be None when training on the whole dataset,
-            # which means we can't compute metrics.
-            if training_input.dataset.X_test is not None:
-                metrics.append(output.evaluate())
-
-            output.dataset = input.dataset # back to Output (from TrainingInput)
         
-        output = outputs[-1]
+        
+        outputs.sort()
+        output = outputs[-1] # TODO -> Better strategy ? May we train a last model with the whole dataset ?
         output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) for k in outputs[0].computed_metrics.keys() }
-
+        output.dataset = input.dataset # back to Output
+        
         return output
     
-    def priorize(self, input=None):
-        return 1
+    
+    def count_steps(self):
+        return 1 + self.step.count_steps()*self.get_config('folds') # 5 folds = 5*steps -> Outch!
 
     def conf_to_rich_str_list(self):
         return [f'step={self.step.__class__.__name__}', *super().conf_to_rich_str_list()]

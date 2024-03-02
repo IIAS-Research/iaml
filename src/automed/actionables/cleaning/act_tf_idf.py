@@ -14,11 +14,11 @@ class ActTfIdf(Actionable):
     def run(self, input: Input, callback=None) -> Output:
         self.columns = []
         for column in input.dataset.get_columns_names_by_type([DataType.SHORT_TEXT, DataType.TEXT]):
-            values = input.dataset[column].fillna('')
+            values = input.dataset.X[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             self.columns.append((column, vectorizer))
         
-        return input.transform_dataset(self)
+        return input.add_transform(self)
     
     
     def transform(self, x):

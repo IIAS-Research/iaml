@@ -13,8 +13,8 @@ class SpecificityMulticlassMetric(Metric):
     def explain(self):
         return 'Calculate specificity in a multiclass conext, where each instance belongs to just one of several classes'
     
-    def suitable(self, dataset) -> bool:
-        return dataset.type_of_target in ['multiclass']
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        return type_of_target in ['multiclass']
     
     
     # Specificity is calculated by summing the true negartives and false positives for each class, then using these totals to obtain an overall specificity"
