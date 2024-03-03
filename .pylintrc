@@ -190,6 +190,10 @@ good-names=i,
            ex,
            Run,
            X,
+           __X,
+           X_train,
+           X_test,
+           __y,
            y,
            _
 
@@ -432,7 +436,8 @@ disable=raw-checker-failed,
         use-symbolic-message-instead,
         use-implicit-booleaness-not-comparison-to-string,
         use-implicit-booleaness-not-comparison-to-zero,
-        trailing-whitespace
+        trailing-whitespace,
+        super-init-not-called
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

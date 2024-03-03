@@ -1,8 +1,14 @@
 {
     "cSpell.words": [
+        "astype",
+        "automed",
         "autosklearn",
         "dset",
+        "dtype",
+        "iloc",
+        "issubdtype",
         "metastep",
+        "multiclass",
         "tplot"
     ],
     "cSpell.language": "en,fr"
