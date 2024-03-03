@@ -6,7 +6,7 @@ import pandas as pd
 
 from .step import Step
 from .metastep import MetaStep
-from .output import Input
+from .output import Input, Output
 from .dataset import Dataset
 from .metric import Metric
 from .destroyer import Destroyer
