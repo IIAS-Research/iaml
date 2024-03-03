@@ -3,14 +3,16 @@ Encapsulate X, y data to be used by Steps
 Add features like data type detection and splitting 
 """
 import copy
-from typing import Iterator
+from typing import Iterator, TYPE_CHECKING
 from sklearn.utils.multiclass import type_of_target
 import numpy as np
 import pandas as pd
 
 from .data_type import DataType
-from .auto_pipeline import AutoPipeline
 from .metric import Metric
+
+if TYPE_CHECKING:
+    from .auto_pipeline import AutoPipeline
 
 class Dataset:
     """
@@ -174,7 +176,7 @@ class Dataset:
         Returns:
             list: columns names
         """
-        if isinstance(types, list):
+        if not isinstance(types, list):
             types = [types]
 
         return [
@@ -270,7 +272,7 @@ class Dataset:
 
         return pd.NaT
     
-    def compute_metric(self, pipeline:AutoPipeline, metric:Metric) -> float:
+    def compute_metric(self, pipeline:'AutoPipeline', metric:Metric) -> float:
         """
         Compute performances of pipeline with metric
 

@@ -3,11 +3,12 @@ Based on Scikit-learn Pipeline but for AutoMed Pipelines !
 Transform, resample and then predict from Input instance 
 """
 import pickle
+from typing import TYPE_CHECKING
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
-from .automed import Step
-
+if TYPE_CHECKING:
+    from .step import Step
 
 class AutoPipeline(Pipeline):
     """
@@ -16,8 +17,7 @@ class AutoPipeline(Pipeline):
     """
     
     def __init__(self, steps: list[tuple[str, object]] = None) -> None:
-        """_summary_
-
+        """
         Args:
             steps (list[tuple[str, object]], optional): Ordered list of Automed.Steps.
                                                         Defaults to None.
@@ -58,7 +58,7 @@ class AutoPipeline(Pipeline):
         return self.steps[-1][1] if self.have_model else None
 
 
-    def add_transform(self, instance:Step) -> None:
+    def add_transform(self, instance:'Step') -> None:
         """
         Add transform Step to the Pipeline
 
@@ -84,7 +84,7 @@ class AutoPipeline(Pipeline):
         if self.have_model: # Replace the previous model 
             self.steps.pop(-1)
             
-        self.steps.append(instance)
+        self.steps.append((str(instance), instance))
 
     def copy(self) -> 'AutoPipeline':
         """
