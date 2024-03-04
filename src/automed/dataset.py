@@ -43,9 +43,16 @@ class Dataset:
     @property
     def y(self) -> pd.DataFrame:
         if self.__splitted:
-            return self.__y
+            if self.is_multilabel:
+                return self.__y
+            else:
+                return self.__y.squeeze(axis=0).values.ravel()
         else:
             raise Exception("Dataset mush be splitted before access to y value")
+    
+    @property
+    def is_multilabel(self):
+        return len(self.__y.columns) > 1
 
     def copy(self, deep=True) -> 'Dataset':
         if deep:
@@ -67,7 +74,7 @@ class Dataset:
         
     def __apply_resample(self) -> None:
         for method in self.__resample_stack:
-            self.X, self.y = method(self.X, self.__y)
+            self.__X, self.__y = method(self.X, self.__y)
         self.columns_types = self.__detect_columns_types()
         
     def split(self, splitter: callable) -> Iterator[tuple['Dataset', 'Dataset']]: 

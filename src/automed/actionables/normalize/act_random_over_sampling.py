@@ -11,7 +11,7 @@ class ActRandomOverSampling(Actionable):
     
     @runner
     def run(self, input: Input, callback=None) -> Output:
-        return input.resample(self)
+        return input.add_resample(self)
     
     def resample(self, x, y):
         return RandomOverSampler(sampling_strategy='minority').fit_resample(x, y)
