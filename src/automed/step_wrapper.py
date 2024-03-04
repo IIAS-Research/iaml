@@ -3,7 +3,7 @@ from .step import Step, is_step, runner
 
 @is_step('wrapper')
 class StepWrapper(Step):
-    def __init__(self, step: Step):
+    def __init__(self, step:Step):
         self.step = step
         
     # Load any kind of StepWrapper
@@ -69,10 +69,9 @@ class StepWrapper(Step):
         return 1 + self.step.count_steps()
     
     def priorize(self, input_data:Input=None) -> float:
-"""
-Try to priorize himself
+        """
+        Try to priorize himself
 
-Return : continuous between 0 and 1
-"""
+        Return : continuous between 0 and 1
+        """
         return self.step.priorize(input_data)
-            
