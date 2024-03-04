@@ -5,7 +5,7 @@ from ..logger import Logger
 from copy import deepcopy
 
 # Wrapper : Implementation of an interative GridSearch
-@isStep('wrapper')
+@is_step('wrapper')
 class WrapIterativeGridSearch(StepWrapper):
     name = "Wrap : Iterative GridSearch"
     def __init__(self, step):
@@ -27,7 +27,7 @@ class WrapIterativeGridSearch(StepWrapper):
         
     to_avoid = ['random_state']
     @runner
-    def run(self, input, callback=None):
+    def run(self, input_data, callback=None):
         # Iterative GridSearch
             # Numeric values
             #   -> Frist run -> 100% of the value
@@ -53,7 +53,7 @@ class WrapIterativeGridSearch(StepWrapper):
                     del config[item]
                     
             gi = GridIteration(self.step, self.get_config('modificator'), copy_config=config, patience=self.get_config('patience'))
-            output, _ = gi.run(input, callback=callback)
+            output, _ = gi.run(input_data, callback=callback)
             results = results + ([output] if type(output) in [Output, Input] else output)
         
         self.step.reset_cache()
@@ -256,11 +256,11 @@ class GridIteration:
         
         
     
-    def run(self, input, callback=None):
+    def run(self, input_data, callback=None):
         # Run and Stack results
         if not self.key:
             # print("# RUN nk # ", self.step, self.step.resume_configuration())
-            return self.step.run(input, callback=callback), []
+            return self.step.run(input_data, callback=callback), []
         
         while not self.done():
             results = []
@@ -271,13 +271,13 @@ class GridIteration:
                 results = []
                 while self.children:
                     child = self.children.pop(0)
-                    current_results, siblings = child.run(input, callback=callback)
+                    current_results, siblings = child.run(input_data, callback=callback)
                     results = results + current_results
                     
                     if siblings:
                         self.children = self.children + siblings
             else:
-                results = results + self.step.run(input, callback=callback)
+                results = results + self.step.run(input_data, callback=callback)
                 # print("# RUN # ", self.step, self.step.resume_configuration())
             
             self.__stack_results(results)

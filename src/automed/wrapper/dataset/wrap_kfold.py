@@ -4,11 +4,11 @@ from sklearn.model_selection import KFold as SKKFold, StratifiedKFold
 
 from ...logger import Logger
 from ...output import Input, Output
-from ...step import isStep, runner, Step
+from ...step import is_step, runner, Step
 from .wrap_dataset_wrapper import WrapDatasetWrapper
 
 
-@isStep('wrapper')
+@is_step('wrapper')
 class WrapKFold(WrapDatasetWrapper):
     name = "Split date to train and test set"
     def __init__(self, step: Step):
@@ -24,24 +24,22 @@ class WrapKFold(WrapDatasetWrapper):
                 'no_gridsearch': True,
             },
         }]
-
-        super().__init__(step)
         
     @runner
-    def run(self, input: Input, callback=None) -> Output:
-        if input.dataset.type_of_target in ['binary', 'multiclass'] and self.get_config('stratify'):
+    def run(self, input_data: Input, callback=None) -> Output:
+        if input_data.dataset.type_of_target in ['binary', 'multiclass'] and self.get_config('stratify'):
             kfold = StratifiedKFold(self.get_config('folds'))
         else:
             kfold = SKKFold(self.get_config('folds'))
         
-        splitted_datasets = input.dataset.split(kfold.split)
+        splitted_datasets = input_data.dataset.split(kfold.split)
         
         Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] ({', '.join(self.step.conf_to_rich_str_list())})")
         
         outputs: list[Output] = []
         metrics = []
         for train_ds, test_ds in splitted_datasets:
-            training_input = input.to_input(dataset=train_ds)
+            training_input = input_data.to_input(dataset=train_ds)
             
             output: Output = self.step.run(training_input, callback=callback)[0]
 
@@ -52,7 +50,7 @@ class WrapKFold(WrapDatasetWrapper):
         outputs.sort()
         output = outputs[-1] # TODO -> Better strategy ? May we train a last model with the whole dataset ?
         output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) for k in outputs[0].computed_metrics.keys() }
-        output.dataset = input.dataset # back to Output
+        output.dataset = input_data.dataset # back to Output
         
         return output
     

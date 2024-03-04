@@ -5,23 +5,22 @@ from sklearn.naive_bayes import GaussianNB
 from skmultilearn.problem_transform import BinaryRelevance
 
 
-@isStep('learning', 'tabular')
-@assessable
+@is_step('learning', 'tabular')
 class ActGaussianNb(Actionable):
     name = "Learn : Gaussian NB"
     def __init__(self):
         self.configurations = [{}]
         
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None):
         self.model = GaussianNB()
         
-        if input.dataset.is_multilabel:
+        if input_data.dataset.is_multilabel:
             self.model = BinaryRelevance(classifier=self.model, require_dense=[True, True])
         
-        self.model.fit(input.dataset.X, input.dataset.y)
+        self.model.fit(input_data.dataset.X, input_data.dataset.y)
         
-        return input.set_model(self)
+        return input_data.set_model(self)
     
     
     def learn(self, X):
@@ -30,5 +29,5 @@ class ActGaussianNb(Actionable):
     def suitable(self, input) -> bool:
         return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # neutral

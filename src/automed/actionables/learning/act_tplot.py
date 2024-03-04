@@ -4,9 +4,8 @@ from ...output import Input
 from sklearn.model_selection import RepeatedStratifiedKFold
 from tpot import TPOTClassifier
 
-# @isStep('learning', 'tabular')
-@isStep('to_compare')
-@assessable
+# @is_step('learning', 'tabular')
+@is_step('to_compare')
 class ActTPLOT(Actionable):
     name="Learn : TPLOT"
     def __init__(self):
@@ -38,7 +37,7 @@ class ActTPLOT(Actionable):
         }]
     
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None):
         
         cv = RepeatedStratifiedKFold(
             n_splits = self.get_config('n_splits'),
@@ -56,9 +55,9 @@ class ActTPLOT(Actionable):
             n_jobs = self.get_config('n_jobs')
             )
 
-        self.model.fit(input.dataset.X, input.dataset.y)
+        self.model.fit(input_data.dataset.X, input_data.dataset.y)
 
-        return input.set_model(self)
+        return input_data.set_model(self)
     
     
     def predict(self, X):
@@ -66,8 +65,8 @@ class ActTPLOT(Actionable):
 
     
     
-    def suitable(self, input) -> bool:
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
+    def suitable(self, input_data) -> bool:
+        return input_data.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
 
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # neutral

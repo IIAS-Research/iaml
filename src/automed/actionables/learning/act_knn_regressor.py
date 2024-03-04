@@ -4,8 +4,7 @@ from ...output import Input
 from sklearn.neighbors import KNeighborsRegressor
 
 
-@isStep('learning', 'tabular', 'fast_learning')
-@assessable
+@is_step('learning', 'tabular', 'fast_learning')
 class ActKNNRegressor(Actionable):
     name = "Learn : KNN"
     def __init__(self):
@@ -23,22 +22,22 @@ class ActKNNRegressor(Actionable):
         }]
         
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None):
         self.model = KNeighborsRegressor(
             n_neighbors = self.get_config('n_neighbors'),
             metric = self.get_config('metric')
             )
         
-        self.model.fit(input.dataset.X, input.dataset.y)
+        self.model.fit(input_data.dataset.X, input_data.dataset.y)
         
-        return input.set_model(self)
+        return input_data.set_model(self)
     
     def predict(self, X):
         return self.model.predict(X)
     
     
-    def suitable(self, input: Input) -> bool:
-        return input.dataset.type_of_target in ['continuous']
+    def suitable(self, input_data: Input) -> bool:
+        return input_data.dataset.type_of_target in ['continuous']
 
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # neutral

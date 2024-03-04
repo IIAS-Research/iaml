@@ -14,7 +14,7 @@ import random
 # This wrapper is inspired by genetic algorithms. 
 # It'll randomly create and mutate generations Step configurations to find the best parameters
 # Each new generation will learn from the previous one
-@isStep('wrapper')
+@is_step('wrapper')
 class WrapGeneticGridSearch(StepWrapper):
     name = "Wrap : Genetic GridSearch"
     def __init__(self, step: WrapDatasetWrapper):
@@ -43,12 +43,12 @@ class WrapGeneticGridSearch(StepWrapper):
             }
         }]
         
-        super().__init__(step)
+        # super().__init__(step)
         self.step.keep_only_first_config() # Avoid run several config for each run
         self.step.current_configuration = self.step.configurations[0] # Will be defined when the step ".run()" but as we'll need it before, let's defined it now.
         
     @runner
-    def run(self, input, callback=None):
+    def run(self, input_data, callback=None):
         outputs = []
         # Genetic GridSearch
             # First generation
@@ -61,7 +61,7 @@ class WrapGeneticGridSearch(StepWrapper):
                 
         # If no configuration, let's run the step once. Nothing to optimize here
         if not(any(self.__config_keys())):
-            return self.step.run(input, callback=callback)
+            return self.step.run(input_data, callback=callback)
                 
         # Create the first generation of Steps. This first generation is full of random Steps configurations
         generation = []
@@ -74,7 +74,7 @@ class WrapGeneticGridSearch(StepWrapper):
             
             meta = MetaExplorerStep() # Use MetaExplorer to run all our generation easily
             meta.add_steps(generation) # Give all steps to MetaExplorer
-            outputs = meta.run(input, callback=callback) # And run !
+            outputs = meta.run(input_data, callback=callback) # And run !
             
             # If this is not the last generation, let's create a new one
             if i_gen+1 < self.get_config('nb_generations'):

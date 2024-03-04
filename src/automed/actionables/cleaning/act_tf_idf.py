@@ -4,21 +4,21 @@ from ...data_type import DataType
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-@isStep('cleaning')
+@is_step('cleaning')
 class ActTfIdf(Actionable):
     name="TF-IDF"
     def __init__(self):
         self.configurations = [{}]
     
     @runner
-    def run(self, input: Input, callback=None) -> Output:
+    def run(self, input_data: Input, callback=None) -> Output:
         self.columns = []
-        for column in input.dataset.get_columns_names_by_type([DataType.SHORT_TEXT, DataType.TEXT]):
-            values = input.dataset.X[column].fillna('')
+        for column in input_data.dataset.get_columns_names_by_type([DataType.SHORT_TEXT, DataType.TEXT]):
+            values = input_data.dataset.X[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             self.columns.append((column, vectorizer))
         
-        return input.add_transform(self)
+        return input_data.add_transform(self)
     
     
     def transform(self, x):
@@ -36,5 +36,5 @@ class ActTfIdf(Actionable):
         return x
         
     
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.4

@@ -3,7 +3,7 @@ from ...automed import Output
 from ...data_type import DataType
 
 
-@isStep('cleaning')
+@is_step('cleaning')
 class ActMeanColumn(Actionable):
     name = "Fill missing values with mean"
     def __init__(self):
@@ -15,14 +15,14 @@ class ActMeanColumn(Actionable):
         }]
     
     @runner
-    def run(self, input: Input, callback=None) -> Output:  
+    def run(self, input_data: Input, callback=None) -> Output:  
         self.columns = []
-        for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
-            values = input.dataset.X[column]
+        for column in input_data.dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = input_data.dataset.X[column]
             if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
                 self.columns.append((column, values.mean()))
         
-        return input.add_transform(self)
+        return input_data.add_transform(self)
     
     def transform(self, x):
         for name, mean in self.columns:
@@ -31,5 +31,5 @@ class ActMeanColumn(Actionable):
         return x
         
     
-    def priorize(self, input=None):
-        return 1-(input.dataset.X.isnull().sum().min()/len(input.dataset.X) ) # TODO -> Do something better. This function have no sense for now. Only an example.
+    def priorize(self, input_data:Input=None) -> float:
+        return 1-(input_data.dataset.X.isnull().sum().min()/len(input_data.dataset.X) ) # TODO -> Do something better. This function have no sense for now. Only an example.

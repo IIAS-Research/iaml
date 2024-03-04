@@ -1,7 +1,7 @@
-from .step import Step, isStep, runner
+from .step import Step, is_step, runner
 
 
-@isStep('wrapper')
+@is_step('wrapper')
 class StepWrapper(Step):
     def __init__(self, step: Step):
         self.step = step
@@ -57,9 +57,9 @@ class StepWrapper(Step):
         
 
     @runner
-    def run(self, input, callback=None):
+    def run(self, input_data, callback=None):
         # This wrapper is useless. Only run the step
-        return self.step.run(input, callback=callback) 
+        return self.step.run(input_data, callback=callback) 
     
     def count_steps(self):
         """
@@ -68,6 +68,6 @@ class StepWrapper(Step):
         """
         return 1 + self.step.count_steps()
     
-    def priorize(self, input=None):
-        return self.step.priorize(input)
+    def priorize(self, input_data=None):
+        return self.step.priorize(input_data)
             

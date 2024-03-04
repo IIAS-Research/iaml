@@ -4,25 +4,25 @@ from ...data_type import DataType
 from sklearn.preprocessing import MinMaxScaler
 
 
-@isStep('normalize')
+@is_step('normalize')
 class ActMinMaxScaler(Actionable):
     name = "Min Max Scaler"
     def __init__(self):
         self.configurations = [{}]
     
     @runner
-    def run(self, input: Input, callback=None) -> Output:
-        self.columns = input.dataset.get_columns_names_by_type(DataType.NUMERIC)
-        values = input.dataset.X[self.columns]
+    def run(self, input_data: Input, callback=None) -> Output:
+        self.columns = input_data.dataset.get_columns_names_by_type(DataType.NUMERIC)
+        values = input_data.dataset.X[self.columns]
         self.scaler = MinMaxScaler()
         self.scaler.fit(values)
 
-        return input.add_transform(self)
+        return input_data.add_transform(self)
         
     def transform(self, x):
         x[self.columns] = self.scaler.transform(x[self.columns])
         return x
 
     
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # TODO -> Do something better. This function have no sense for now. Only an example.

@@ -2,12 +2,12 @@ from ..step_wrapper import *
 from ..output import *
 
 
-@isStep('wrapper')
+@is_step('wrapper')
 class WrapBasicGridSearch(StepWrapper):
     to_avoid = ['random_state']
 
     @runner
-    def run(self, input, callback=None):
+    def run(self, input_data, callback=None):
         # Super basic GridSearch.
         # Numeric values -> 11 runs with 10% (50% to 150%)
         # Categorial values -> 1 run each
@@ -44,12 +44,12 @@ class WrapBasicGridSearch(StepWrapper):
                     
         self.step.keep_only_first_config() # Avoid run several config for each run
                     
-        outputs = self.__recursive_run(input, to_explore, callback=callback)
+        outputs = self.__recursive_run(input_data, to_explore, callback=callback)
         
         return outputs
     
     
-    def __recursive_run(self, input, to_explore, callback=None):
+    def __recursive_run(self, input_data, to_explore, callback=None):
         if any(list(to_explore.keys())):
             results = []
             key = list(to_explore.keys())[0]
@@ -59,12 +59,12 @@ class WrapBasicGridSearch(StepWrapper):
             
             for value in values:
                 self.step.configure_one(0, key, value)
-                output = self.__recursive_run(input, to_explore, callback=callback) 
+                output = self.__recursive_run(input_data, to_explore, callback=callback) 
                 results = results + ([output] if type(output) == Output else output)
                 
             return results
         else:
-            return self.step.run(input, callback=callback)
+            return self.step.run(input_data, callback=callback)
                 
             
         

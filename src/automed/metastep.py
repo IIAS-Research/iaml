@@ -1,5 +1,5 @@
 from .logger import Logger
-from .step import Step, isStep, runner, Output, Input
+from .step import Step, is_step, runner, Output, Input
 from .step_wrapper import *
 
 #
@@ -9,7 +9,7 @@ from .step_wrapper import *
 #
 # There is children classes of MetaStep to execute Steps in a different way
 #
-@isStep('meta')
+@is_step('meta')
 class MetaStep(Step):
     name = "MetaStep"
     def __init__(self, tag=None, wrap=None, *args, **kw):
@@ -92,29 +92,32 @@ class MetaStep(Step):
     
     # Run steps self ordered by "priorize" function
     @runner
-    def run(self, input, callback=None):
+    def run(self, input_data:Input, callback:callable=None):
         results = []
         steps_to_run = self.steps.copy() # TODO copy is usefull ?
         
-        return self.__recursive_run(steps_to_run, [input], callback=callback)
+        return self.__recursive_run(steps_to_run, [input_data], callback=callback)
         
     
     # Recursive_run to manage Step with several outputs 
     def __recursive_run(self, remain_steps, inputs, callback=None):
+        outputs = []
         if remain_steps:
-            for input in inputs:
-                max_eval = remain_steps[0].priorize(input)
+            for current_input in inputs:
+                max_eval = remain_steps[0].priorize(current_input)
                 max_index = 0
                 for index, step in enumerate(remain_steps[1:]):
-                    current_eval = step.priorize(input)
+                    current_eval = step.priorize(current_input)
                     if current_eval > max_eval:
                         max_eval = current_eval 
                         max_index = index+1
                         
-            results = remain_steps[max_index].run(input, callback=callback)
-            futures_steps = remain_steps.copy()
-            futures_steps.pop(max_index)
-            return self.__recursive_run(futures_steps, results, callback=callback)
+                results = remain_steps[max_index].run(current_input, callback=callback)
+                futures_steps = remain_steps.copy()
+                futures_steps.pop(max_index)
+                outputs = outputs + self.__recursive_run(futures_steps, results, callback=callback)
+                
+            return outputs
         else:
             return inputs
 

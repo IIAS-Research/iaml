@@ -4,9 +4,8 @@ from ...actionable import *
 from ...output import Input
 
 
-# @isStep('learning', 'tabular')
-@isStep('to_compare')
-@assessable
+# @is_step('learning', 'tabular')
+@is_step('to_compare')
 class ActAutoSKLearn(Actionable):
     name="Learn : AutoSkLearn"
     def __init__(self):
@@ -18,15 +17,15 @@ class ActAutoSKLearn(Actionable):
         }]
     
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None):
         self.model = autosklearn.classification.AutoSklearnClassifier(
             time_left_for_this_task=self.get_config('running_time'),
             max_models_on_disc=5,
             memory_limit = 102400)
         
-        self.model.fit(input.dataset.X, input.dataset.y)
+        self.model.fit(input_data.dataset.X, input_data.dataset.y)
         
-        return input.set_model(self)
+        return input_data.set_model(self)
     
 
     def predict(self, X):

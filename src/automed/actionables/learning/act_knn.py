@@ -5,8 +5,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from skmultilearn.problem_transform import BinaryRelevance
 
 
-@isStep('learning', 'tabular')
-@assessable
+@is_step('learning', 'tabular')
 class ActKNN(Actionable):
     name = "Learn : KNN"
     def __init__(self):
@@ -24,25 +23,25 @@ class ActKNN(Actionable):
         }]
         
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None):
         self.model = KNeighborsClassifier(
             n_neighbors = self.get_config('n_neighbors'),
             metric = self.get_config('metric')
             )
         
-        if input.dataset.is_multilabel:
+        if input_data.dataset.is_multilabel:
             self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
         
-        self.model.fit(input.dataset.X, input.dataset.y)
+        self.model.fit(input_data.dataset.X, input_data.dataset.y)
         
-        return input.set_model(self)
+        return input_data.set_model(self)
     
     def predict(self, X):
         return self.model.predict(X)
     
     
-    def suitable(self, input) -> bool:
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(self, input_data) -> bool:
+        return input_data.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # neutral

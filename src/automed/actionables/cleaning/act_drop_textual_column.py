@@ -3,16 +3,16 @@ from ...data_type import DataType
 from ...automed import Output
 
 
-@isStep('cleaning')
+@is_step('cleaning')
 class ActDropTextualColumn(Actionable):
     name = "Drop textual column"
     
     @runner
-    def run(self, input: Input, callback=None) -> Output:
+    def run(self, input_data: Input, callback=None) -> Output:
         
-        self.columns_to_drop = input.dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT])
+        self.columns_to_drop = input_data.dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT])
 
-        return input.add_transform(self)
+        return input_data.add_transform(self)
     
     
 
@@ -20,5 +20,5 @@ class ActDropTextualColumn(Actionable):
         return x.drop(self.columns_to_drop, axis=1)
         
     
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0 # Last cleaning action

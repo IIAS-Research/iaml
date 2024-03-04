@@ -3,17 +3,17 @@ from ...data_type import DataType
 from ...automed import Output
 import numpy as np
 
-@isStep('cleaning')
+@is_step('cleaning')
 class ActSplitDate(Actionable):
     name = "Transform string column to date"
     def __init__(self):
         self.configurations = [{}]
     
     @runner
-    def run(self, input: Input, callback=None) -> Output:
-        self.columns = input.dataset.get_columns_names_by_type(DataType.DATE)
+    def run(self, input_data: Input, callback=None) -> Output:
+        self.columns = input_data.dataset.get_columns_names_by_type(DataType.DATE)
 
-        return input.add_transform(self)
+        return input_data.add_transform(self)
             
     def transform(self, x) -> Output:
         for column in self.columns:
@@ -31,6 +31,6 @@ class ActSplitDate(Actionable):
 
     
         
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # medium priority
     

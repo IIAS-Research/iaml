@@ -1,13 +1,13 @@
 from .metastep import MetaStep
 from .output import Input
-from .step import Step, isStep, runner
+from .step import Step, is_step, runner
 from .worker_manager import WorkerFuture, WorkerManager
 
 #
 # Inherit from MetaStep but will execute all steps at the same time. 
 # The goal here is to explore many answer to a question. For example -> Try all Learning models
 #
-@isStep('meta')
+@is_step('meta')
 class MetaExplorerStep(MetaStep):
     name = "MetaExplorerStep"
     def __init__(self, destroyer=None, *args, **kw):
@@ -30,12 +30,12 @@ class MetaExplorerStep(MetaStep):
     
     # Explore all steps
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None):
         output = []
         workers: list[WorkerFuture] = []
 
         for step in self.steps:
-            future = WorkerManager().submit(step, step.run, input.to_input(), callback)
+            future = WorkerManager().submit(step, step.run, input_data.to_input(), callback)
             workers.append(future)
             
         # Wait end of all threads

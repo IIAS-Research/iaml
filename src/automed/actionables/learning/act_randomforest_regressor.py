@@ -5,8 +5,7 @@ from skmultilearn.problem_transform import BinaryRelevance
 from sklearn.ensemble import RandomForestRegressor
 
 
-@isStep('learning', 'tabular')
-@assessable
+@is_step('learning', 'tabular')
 class ActRandomForestRegressor(Actionable):
     name = "Learn : Random Forest Regressor" 
     def __init__(self):
@@ -28,27 +27,27 @@ class ActRandomForestRegressor(Actionable):
         }]
         
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None):
         self.model = RandomForestRegressor(
             max_depth=self.get_config('max_depth'),
             random_state=self.get_config('random_state'),
             n_estimators=self.get_config('n_estimators')
             )
         
-        if input.dataset.is_multilabel:
+        if input_data.dataset.is_multilabel:
             self.model = BinaryRelevance(classifier=self.model, require_dense=[False, True])
         
-        self.model.fit(input.dataset.X, input.dataset.y)
+        self.model.fit(input_data.dataset.X, input_data.dataset.y)
         
-        return input.set_model(self)
+        return input_data.set_model(self)
     
     
     def predict(self, X):
         return self.model.predict(X)
     
     
-    def suitable(self, input: Input) -> bool:
-        return input.dataset.type_of_target in ['continuous']
+    def suitable(self, input_data: Input) -> bool:
+        return input_data.dataset.type_of_target in ['continuous']
 
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # neutral

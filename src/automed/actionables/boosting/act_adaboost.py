@@ -6,8 +6,7 @@ from sklearn.ensemble import AdaBoostClassifier
 
 # TODO Adapt it two try all the compatible learning models
 
-# @isStep('boosting', 'tabular')
-@assessable
+# @is_step('boosting', 'tabular')
 class ActAdaBoost(Actionable):
     name = "Learn : AdaBoost"
     def __init__(self):
@@ -23,20 +22,20 @@ class ActAdaBoost(Actionable):
         }]
         
     @runner
-    def run(self, input: Input, callback=None):
-        metric = input.metric or Metric()
+    def run(self, input_data: Input, callback=None):
+        metric = input_data.metric or Metric()
         
         model = AdaBoostClassifier(
-            input.model,
+            input_data.model,
             n_estimators = self.get_config('n_estimator'),
             random_state= self.get_config('random_state')
             )
         
-        model.fit(input.dataset.X, input.dataset.y)
+        model.fit(input_data.dataset.X, input_data.dataset.y)
         
-        return input.to_output(None, metric, model)
+        return input_data.to_output(None, metric, model)
 
         
     
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5 # neutral

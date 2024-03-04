@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 
 
-@isStep('cleaning')
+@is_step('cleaning')
 class ActOnehot(Actionable):
     name="One hot encoding categorical features"
     def __init__(self):
@@ -14,12 +14,12 @@ class ActOnehot(Actionable):
 
 
     @runner
-    def run(self, input: Input, callback=None) -> Output:
-        self.columns = input.dataset.get_columns_names_by_type(DataType.CATEGORICAL)
-        values = input.dataset.X[self.columns]
+    def run(self, input_data: Input, callback=None) -> Output:
+        self.columns = input_data.dataset.get_columns_names_by_type(DataType.CATEGORICAL)
+        values = input_data.dataset.X[self.columns]
         self.encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False).fit(values)
 
-        return input.add_transform(self)
+        return input_data.add_transform(self)
     
     
     def transform(self, x) -> Output:
@@ -35,5 +35,5 @@ class ActOnehot(Actionable):
         return df
         
     
-    def priorize(self, input=None):
+    def priorize(self, input_data=None):
         return 0.5
