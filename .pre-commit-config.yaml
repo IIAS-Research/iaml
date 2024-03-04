@@ -1,0 +1,14 @@
+files: ^src/automed/
+repos:
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args:
+          [
+            "--rcfile=.pylintrc",
+            "-rn" # Only display messages
+          ]

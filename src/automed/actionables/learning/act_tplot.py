@@ -1,16 +1,23 @@
-from ...actionable import *
+"""
+[STEP] Learn :  TPLOT
+"""
+from tpot import TPOTClassifier
+from sklearn.model_selection import RepeatedStratifiedKFold
+import pandas as pd
+from ...actionable import Actionable
 from ...output import Input
 
-from sklearn.model_selection import RepeatedStratifiedKFold
-from tpot import TPOTClassifier
+from ...step import is_step, runner
 
-# @isStep('learning', 'tabular')
-@isStep('to_compare')
-@assessable
+# @is_step('learning', 'tabular')
+@is_step('to_compare')
 class ActTPLOT(Actionable):
+    """
+    [STEP] Learn :  TPLOT
+    """
     name="Learn : TPLOT"
     def __init__(self):
-        self.configurations = [{
+        self.configurations:list[dict] = [{
             'random_state': {
                 'description': 'Random state TODO',
                 'default': 42
@@ -36,9 +43,20 @@ class ActTPLOT(Actionable):
                 'default': -1
             },
         }]
+        self.model:TPLOTClassifer = None
     
     @runner
-    def run(self, input: Input, callback=None):
+    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+        """
+        Fit TPLOT on Input.dataset
+
+        Args:
+            input_data (Input): Fit data
+            callback (callable, optional): Call after each step. Defaults to None.
+
+        Returns:
+            Output: Transformed input
+        """
         
         cv = RepeatedStratifiedKFold(
             n_splits = self.get_config('n_splits'),
@@ -56,18 +74,33 @@ class ActTPLOT(Actionable):
             n_jobs = self.get_config('n_jobs')
             )
 
-        self.model.fit(input.dataset.X, input.dataset.y)
+        self.model.fit(input_data.dataset.X, input_data.dataset.y)
 
-        return input.set_model(self)
+        return input_data.set_model(self)
     
     
-    def predict(self, X):
+    def predict(self, X:pd.DataFrame) -> list[float]:
+        """
+        Apply prediction model on DataFrame
+
+        Args:
+            X (pd.DataFrame): DataFrame use to predict
+
+        Returns:
+            list[float]: Predicted values
+        """
         return self.model.predict(X)
 
     
     
-    def suitable(self, input) -> bool:
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
+    def suitable(self, input_data) -> bool:
+        return input_data.dataset.type_of_target in \
+            ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
 
-    def priorize(self, input=None):
+    def priorize(self, input_data:Input=None) -> float:
+        """
+        Try to priorize himself
+
+        Return : continuous between 0 and 1
+        """
         return 0.5 # neutral

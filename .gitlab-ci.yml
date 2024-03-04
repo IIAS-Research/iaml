@@ -3,6 +3,7 @@
 ###########
 stages:
   - build
+  - linting
   - perfs # CI
   - docs
   - deploy
@@ -22,6 +23,17 @@ job:build:pythonEnv:
   #   expire_in: 2h
   #   paths: 
   #     - .venv
+
+job:linting:PyLint:
+  stage: linting
+  tags:
+    - unix
+    - test
+    - calcul
+  allow_failure: true
+  script:
+    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
+    - 'pylint --rcfile=.pylintrc ./src/automed'
 
 job:test:unit:
   stage: perfs

@@ -1,19 +1,50 @@
-from ..step import *
-from ..metric import Metric
-from collections import Counter
+"""
+[METRIC] Median Absolute Error
+"""
 import pandas as pd
 from sklearn.metrics import median_absolute_error
+from ..metric import Metric
 
 class MedianAbsoluteErrorMetric(Metric):
-    
+    """
+    [METRIC] Median Absolute Error
+    """
     def __str__(self):
         return 'median_absolute_error'
     
-    def explain(self):
+    def explain(self) -> str:
+        """Describe metric
+
+        Returns:
+            str: Metric description
+        """
         return 'Median absolute error regression loss.'
     
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        """
+        Does this metric is suitable for this input ?
+        Must be regression
+
+        Args:
+            X (pd.DataFrame): Features
+            y (pd.DataFrame): labels
+            type_of_target (str): Type of target
+
+        Returns:
+            bool: Suitable ?
+        """
         return type_of_target == 'continuous'
     
-    def compute(self, y, y_pred):
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+        """
+        Compute metric with predicted data
+
+        Args:
+            y (pd.DataFrame): Ground truth data
+            y_pred (pd.DataFrame): Predicted data
+
+        Returns:
+            float: computed value 
+        """
         return median_absolute_error(y, y_pred)
+    

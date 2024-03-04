@@ -13,7 +13,7 @@ In AutoMed, a step is the smallest componante of a pipeline. There is different 
 There is four easy things to do :
 1. Create a class that inherits from the appropriate Step type (Step, Actionable, MetaStep, StepWrapper or also deeper classes)
 2. Add class decorators
-    1. @isStep(tags,) : This will help AutoMed to know that your Step exist. By adding tags, you can also automatically add your step in existing pipelines. 
+    1. @is_step(tags,) : This will help AutoMed to know that your Step exist. By adding tags, you can also automatically add your step in existing pipelines. 
     2. @assessable : If your step performances can be evaluated by a metric.
 3. Create a constructor (__init__) with your step's configuration and name. 
 4. Create a run(input) method with @running decorator and returning an Output instance. @running will carry out all the hard stuff for you (multiple input, multiple output, configurations, etc.).
@@ -28,7 +28,7 @@ def transform(x, y, columns):
     return x, y
 
 
-@isStep('cleaning')
+@is_step('cleaning')
 class ActMeanColumn(Actionable):
     def __init__(self):
         self.name = "Fill missing values with mean"
@@ -57,8 +57,7 @@ def learn(model, X):
     return model.predict(X)
 
 
-@isStep('learning', 'tabular')
-@assessable
+@is_step('learning', 'tabular')
 class ActRandomForest(Actionable):
     name = "Learn : Random Forest"
     def __init__(self):

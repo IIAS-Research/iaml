@@ -17,7 +17,7 @@ class TestAutomed(unittest.TestCase):
         X = df.drop(columns=labels)
             
         automed = AutoMed(quiet=False)
-        automed.debug_load(fast=True)
+        automed.default_pipeline(fast=True)
         outputs = automed.fit(X, y)
 
         self.assertTrue(isinstance(outputs[0], Output))
