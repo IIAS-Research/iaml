@@ -10,6 +10,7 @@ class WrapDatasetWrapper(StepWrapper):
     Use to pass configuration through wrapped steps
     """
     def __init__(self, step:Step): # pylint: disable=unused-argument
+        super().__init__(step)
         self.learning_configuration:dict = self.step.configurations[0]
 
     def configure_one(self, config_id:int, key: str, value:any) -> None:

@@ -9,7 +9,7 @@ from .metastep import MetaStep
 from .output import Input, Output
 from .dataset import Dataset
 from .metric import Metric
-from .destroyer import Destroyer
+# from .destroyer import Destroyer
 from .worker_manager import WorkerManager
 from .wrapper.dataset import WrapKFold
 from .meta_ordered_step import MetaOrderedStep
@@ -105,8 +105,7 @@ class AutoMed:
         
         if use_destroyer:
             self.first_step.add_step(MetaExplorerStep(tag=learning_tag,
-                                                    wrap=wrap,
-                                                    destroyer=Destroyer()))
+                                                    wrap=wrap))
         else:
             self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap))
 

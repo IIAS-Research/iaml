@@ -64,8 +64,8 @@ class WrapKFold(WrapDatasetWrapper):
         
         
         outputs.sort()
-        output = outputs[-1] 
-        output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) \
+        output = outputs[-1]
+        output.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
             for k in outputs[0].computed_metrics.keys() }
         output.dataset = input_data.dataset # back to Output
         
