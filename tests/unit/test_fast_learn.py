@@ -12,12 +12,12 @@ class TestAutomed(unittest.TestCase):
     def test_fast_learning(self):
         
         df = pd.read_csv('./src/perf_logger/tests_data/life_expectancy.csv', sep=",")
-        dataset = Dataset(df)
         labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
-        dataset.set_label(labels)
+        y = df[labels]
+        X = df.drop(columns=labels)
             
-        automed = AutoMed(dataset, quiet=False)
-        automed.debug_load(fast=True)
-        outputs = automed.run()
+        automed = AutoMed(quiet=False)
+        automed.default_pipeline(fast=True)
+        outputs = automed.fit(X, y)
 
         self.assertTrue(isinstance(outputs[0], Output))

@@ -7,7 +7,7 @@ from pandas.api.types import is_string_dtype
 import re
 import pandas as pd
 
-@isStep('cleaning')
+@is_step('cleaning')
 class ActAtcCode(Actionable):
     name = "Features engineering on ATC codes"
     configuration = {}

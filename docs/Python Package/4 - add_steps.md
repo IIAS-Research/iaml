@@ -13,7 +13,7 @@ In AutoMed, a step is the smallest componante of a pipeline. There is different 
 There is four easy things to do :
 1. Create a class that inherits from the appropriate Step type (Step, Actionable, MetaStep, StepWrapper or also deeper classes)
 2. Add class decorators
-    1. @isStep(tags,) : This will help AutoMed to know that your Step exist. By adding tags, you can also automatically add your step in existing pipelines. 
+    1. @is_step(tags,) : This will help AutoMed to know that your Step exist. By adding tags, you can also automatically add your step in existing pipelines. 
     2. @assessable : If your step performances can be evaluated by a metric.
 3. Create a constructor (__init__) with your step's configuration and name. 
 4. Create a run(input) method with @running decorator and returning an Output instance. @running will carry out all the hard stuff for you (multiple input, multiple output, configurations, etc.).
@@ -21,7 +21,14 @@ There is four easy things to do :
 Here is an basic example of Actionable Step :
 
 ```python
-@isStep('cleaning')
+def transform(x, y, columns):
+    for name, mean in columns:
+        x[name].fillna(mean, inplace=True)
+
+    return x, y
+
+
+@is_step('cleaning')
 class ActMeanColumn(Actionable):
     def __init__(self):
         self.name = "Fill missing values with mean"
@@ -33,23 +40,24 @@ class ActMeanColumn(Actionable):
         }]
     
     @runner
-    def run(self, input, callback=None) -> Output:
-        def transform(x, y, column):
-            x[column].fillna(values.mean(), inplace=True)
-            return x, y
-            
-        for column, values in input.dataset.train_data.items():
-            if is_numeric_dtype(values) and values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
-                input.dataset.apply(transform, column=column)
+    def run(self, input: Input, callback=None) -> Output:  
+        columns = []
+        for column in input.dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = input.dataset[column]
+            if values.isnull().sum()/len(values) <= self.get_config('empty_threshold'):
+                columns.append((column, values.mean()))
         
-        return input.to_output(input.dataset, None, None)
+        return input.transform_dataset(transform, columns)
 ```
 
 Another example ? Yes ! With a ML model this time :
 
 ```python
-@isStep('learning', 'tabular')
-@assessable
+def learn(model, X):
+    return model.predict(X)
+
+
+@is_step('learning', 'tabular')
 class ActRandomForest(Actionable):
     name = "Learn : Random Forest"
     def __init__(self):
@@ -66,13 +74,15 @@ class ActRandomForest(Actionable):
         }]
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
+    def run(self, input: TrainingInput, callback=None):
         model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'))
-        model.fit(input.dataset.X_train, input.dataset.y_train)
         
-        return input.to_output(None, metric, model)
+        if input.dataset.is_multilabel:
+            model = BinaryRelevance(classifier=model, require_dense=[False, True])
+        
+        model.fit(input.dataset.X_train, input.dataset.Y_train)
+        
+        return input.set_model(model, learn)
 ```
 
 These two Steps was already automatically added to all the pipeline using tags. Easy, isn't it ?

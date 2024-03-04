@@ -1,11 +1,20 @@
+"""
+Frozen version of Step created to be stacked in an Input
+"""
 class Stack:
-    def __init__(self, step_class, configuration, step_id):
+    """
+    Frozen version of Step created to be stacked in an Input
+    """
+    def __init__(self, step_class, configuration:dict, step_id:int):
         self.step_class = step_class
-        self.configuration = configuration
-        self.step_id = step_id
+        self.configuration:dict = configuration
+        self.step_id:int = step_id
         
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return self.step_class.name
     
-    def explain(self):
+    def explain(self) -> str:
+        """
+        Return explanation string of Step
+        """
         return self.step_class.explain(self.configuration)

@@ -1,3 +1,6 @@
+"""
+    AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
+"""
 from .automed import *
 from .step import *
 from .metastep import MetaStep
@@ -16,6 +19,9 @@ from .actionables import *
 # Wrappers
 from .wrapper import *
 
+# Metrics
+from .metrics import *
+
 # Tools
 from .thread_with_return_value import *
 
@@ -23,4 +29,4 @@ from .thread_with_return_value import *
 from .stack import Stack
 
 # Destroyer
-from .destroyer import Destroyer
+# from .destroyer import Destroyer
