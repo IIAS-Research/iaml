@@ -9,7 +9,12 @@
         "issubdtype",
         "metastep",
         "multiclass",
-        "tplot"
+        "Onehot",
+        "priorize",
+        "todense",
+        "tplot",
+        "vectorize",
+        "vectorizer"
     ],
     "cSpell.language": "en,fr"
 }

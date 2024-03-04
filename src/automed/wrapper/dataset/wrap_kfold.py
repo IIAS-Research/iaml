@@ -26,7 +26,7 @@ class WrapKFold(WrapDatasetWrapper):
         }]
         
     @runner
-    def run(self, input_data: Input, callback=None) -> Output:
+    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
         if input_data.dataset.type_of_target in ['binary', 'multiclass'] and self.get_config('stratify'):
             kfold = StratifiedKFold(self.get_config('folds'))
         else:
@@ -48,8 +48,10 @@ class WrapKFold(WrapDatasetWrapper):
         
         
         outputs.sort()
-        output = outputs[-1] # TODO -> Better strategy ? May we train a last model with the whole dataset ?
-        output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) for k in outputs[0].computed_metrics.keys() }
+        # TODO -> Better strategy ? May we train a last model with the whole dataset ?
+        output = outputs[-1] 
+        output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) \
+            for k in outputs[0].computed_metrics.keys() }
         output.dataset = input_data.dataset # back to Output
         
         return output

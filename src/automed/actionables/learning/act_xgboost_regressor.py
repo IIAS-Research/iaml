@@ -1,14 +1,21 @@
-from ...actionable import *
-from ...output import Input
-
+"""
+[STEP] Learn :  XGBoost Regressor
+"""
 from sklearn.ensemble import GradientBoostingRegressor
+import pandas as pd
+from ...actionable import Actionable
+from ...output import Input
+from ...step import is_step, runner
 
 
 @is_step('learning', 'tabular')
 class ActXGBoost(Actionable):
-    name = "Learn : XGBoost"
+    """
+    [STEP] Learn :  XGBoost Regressor
+    """
+    name = "Learn : XGBoost Regressor"
     def __init__(self):
-        self.configurations = [{
+        self.configurations:list[dict] = [{
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -29,9 +36,20 @@ class ActXGBoost(Actionable):
                 'range': [1, float("inf")]
             }
         }]
+        self.model:GradientBoostingRegressor = None
         
     @runner
-    def run(self, input_data: Input, callback=None):
+    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+        """
+        Fit XgBoost regressor on Input.dataset
+
+        Args:
+            input_data (Input): Fit data
+            callback (callable, optional): Call after each step. Defaults to None.
+
+        Returns:
+            Output: Transformed input
+        """
         self.model = GradientBoostingRegressor(
                                         n_estimators=self.get_config('n_estimators'),
                                         learning_rate=self.get_config('learning_rate'),
@@ -44,7 +62,16 @@ class ActXGBoost(Actionable):
         
         return input_data.set_model(self)
     
-    def predict(self, X):
+    def predict(self, X:pd.DataFrame) -> list[float]:
+        """
+        Apply prediction model on DataFrame
+
+        Args:
+            X (pd.DataFrame): DataFrame use to predict
+
+        Returns:
+            list[float]: Predicted values
+        """
         return self.model.predict(X)
 
     
@@ -52,5 +79,10 @@ class ActXGBoost(Actionable):
     def suitable(self, input_data: Input) -> bool:
         return input_data.dataset.type_of_target in ['continuous']
 
-    def priorize(self, input_data=None):
+    def priorize(self, input_data:Input=None) -> float:
+        """
+        Try to priorize himself
+
+        Return : continuous between 0 and 1
+        """
         return 0.5 # neutral

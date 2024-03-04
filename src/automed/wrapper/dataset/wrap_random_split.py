@@ -25,7 +25,7 @@ class WrapRandomSplit(WrapDatasetWrapper):
         super().__init__(step)
         
     @runner
-    def run(self, input_data: Input, callback=None) -> Output:
+    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
         test_size = self.get_config('ratio')
         random_state = self.get_config('random_state')
         
