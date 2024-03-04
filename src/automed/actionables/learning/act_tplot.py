@@ -94,7 +94,8 @@ class ActTPLOT(Actionable):
     
     
     def suitable(self, input_data) -> bool:
-        return input_data.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
+        return input_data.dataset.type_of_target in \
+            ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
 
     def priorize(self, input_data:Input=None) -> float:
         """

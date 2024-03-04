@@ -6,7 +6,7 @@ from sklearn.metrics import precision_score
 from sklearn.utils.multiclass import type_of_target as sk_type_of_target
 from ..metric import Metric
 
-class precisionMetric(Metric):
+class PrecisionMetric(Metric):
     """
     [METRIC] Precision
     """
@@ -19,7 +19,8 @@ class precisionMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'Compute the precision: The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false positives.'
+        return 'Compute the precision: The precision is the ratio tp / (tp + fp) \
+            where tp is the number of true positives and fp the number of false positives.'
     
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
@@ -50,9 +51,9 @@ class precisionMetric(Metric):
         if sk_type_of_target(y) == 'binary':
             # TODO Find something less arbitrary
             return precision_score(y, y_pred, pos_label=y[0])
-        elif sk_type_of_target(y) == 'multiclass':
+        if sk_type_of_target(y) == 'multiclass':
             return precision_score(y, y_pred, average = 'weighted') 
-        elif sk_type_of_target(y) == 'multilabel-indicator':
+        if sk_type_of_target(y) == 'multilabel-indicator':
             return precision_score(y, y_pred, average= 'samples')
-        else:
-            raise ValueError('Metric not suitable') 
+        
+        raise ValueError('Metric not suitable') 

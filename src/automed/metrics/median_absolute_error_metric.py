@@ -47,3 +47,4 @@ class MedianAbsoluteErrorMetric(Metric):
             float: computed value 
         """
         return median_absolute_error(y, y_pred)
+    

@@ -58,6 +58,7 @@ class WrapGeneticGridSearch(StepWrapper):
         # Will be defined when the step ".run()" but as we'll need it before, let's defined it now.
         self.step.current_configuration = self.step.configurations[0] 
         
+    # pylint: disable=too-many-locals
     @runner
     def run(self, input_data:Input, callback:callable=None) -> list[Output]:
         """
@@ -163,7 +164,7 @@ class WrapGeneticGridSearch(StepWrapper):
             config = new_step.learning_configuration[key]
             
             if type(config['value']) in [int, float]: # Numeric value ? Let's apply multiplier
-                is_int = type(config['value']) == int
+                is_int = isinstance(config['value'], int)
                 
                 new_value = None
                 # Randomly choose a positive or negative editing
@@ -187,7 +188,8 @@ class WrapGeneticGridSearch(StepWrapper):
                     
             elif 'categorical' in config.keys(): # Categorial value, choose randomly one of them
                 new_value = random.choice(config['categorical'])
-            elif type(config['value']) == bool: # Bool value, choose randomly beetwen True and False
+            elif isinstance(config['value'], bool): 
+                # Bool value, choose randomly beetwen True and False
                 new_value = random.choice([True, False])
             else: # Other value ? Just keep it
                 new_value = config['value']
@@ -264,8 +266,8 @@ class WrapGeneticGridSearch(StepWrapper):
         estimators  = self.get_config('nb_estimators')
         generations = self.get_config('nb_generations')
         
-        return self.step.count_steps() * sum([ estimators * (0.75 ** i) \
-            for i in range(generations) ]) # math
+        return self.step.count_steps() \
+            * sum([ estimators * (0.75 ** i) for i in range(generations) ])
 
     
     def __same_config(self, a: dict, b: dict) -> bool:
@@ -274,7 +276,7 @@ class WrapGeneticGridSearch(StepWrapper):
         for key, value in a.items():
             if isinstance(value, dict):
                 return self.__same_config(value, b[key])
-            elif key not in b or value != b[key]:
+            if key not in b or value != b[key]:
                 return False
         return True
     
@@ -299,8 +301,7 @@ class WrapGeneticGridSearch(StepWrapper):
     def __valide_config(self, config, value):
         if 'range' not in config.keys():
             return True
-        else:
-            return config['range'][0] <= value <= config['range'][1]
+        return config['range'][0] <= value <= config['range'][1]
     
     # Get configurable keys (without ignored keys)    
     def __config_keys(self):

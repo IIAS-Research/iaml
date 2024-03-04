@@ -175,7 +175,8 @@ class Dataset:
             yield (ds_train, ds_test)
 
         # Yield the whole dataset as training data
-        yield Dataset(self.X.copy(), self.__y.copy(), resample=self.__resample_stack, splitted=True), None
+        yield Dataset(self.X.copy(), self.__y.copy(), 
+                    resample=self.__resample_stack, splitted=True), None
         
     def get_columns_names_by_type(self, types:list[DataType]) -> list:
         """

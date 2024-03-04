@@ -4,7 +4,7 @@
 import pandas as pd
 from ...actionable import Actionable
 from ...data_type import DataType
-from ...automed import Output, Input
+from ...output import Output, Input
 from ...step import is_step, runner
 
 
@@ -30,7 +30,8 @@ class ActDropTextualColumn(Actionable):
         Returns:
             Output: Transformed input
         """
-        self.columns_to_drop = input_data.dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT])
+        self.columns_to_drop = input_data.dataset.get_columns_names_by_type(
+            [DataType.TEXT, DataType.SHORT_TEXT])
 
         return input_data.add_transform(self)
     

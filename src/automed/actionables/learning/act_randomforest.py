@@ -44,7 +44,9 @@ class ActRandomForest(Actionable):
         Returns:
             Output: Transformed input
         """
-        self.model = RandomForestClassifier(max_depth=self.get_config('max_depth'), random_state=self.get_config('random_state'), n_estimators=self.get_config('n_estimators'))
+        self.model = RandomForestClassifier(max_depth=self.get_config('max_depth'),
+                                            random_state=self.get_config('random_state'),
+                                            n_estimators=self.get_config('n_estimators'))
         
         self.model.fit(input_data.dataset.X, input_data.dataset.y)
         
@@ -66,7 +68,8 @@ class ActRandomForest(Actionable):
     
     
     def suitable(self, input_data) -> bool:
-        return input_data.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+        return input_data.dataset.type_of_target in \
+            ['binary', 'multiclass',  'multilabel-indicator']
 
     def priorize(self, input_data:Input=None) -> float:
         """

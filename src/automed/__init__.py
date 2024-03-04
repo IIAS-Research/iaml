@@ -1,3 +1,6 @@
+"""
+    AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
+"""
 from .automed import *
 from .step import *
 from .metastep import MetaStep

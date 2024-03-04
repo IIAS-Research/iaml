@@ -4,7 +4,7 @@
 from imblearn.over_sampling import RandomOverSampler
 import pandas as pd
 from ...actionable import Actionable
-from ...automed import Output, Input
+from ...output import Output, Input
 from ...step import is_step, runner
 
 

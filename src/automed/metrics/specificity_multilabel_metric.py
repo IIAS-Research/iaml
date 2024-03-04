@@ -16,7 +16,8 @@ class SpecificityMultilabelMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'Compute specificity for each label separately, then averaged to obtain an overall measure.'
+        return 'Compute specificity for each label separately, \
+            then averaged to obtain an overall measure.'
     
     def _str__(self):
         return 'specificity_multilabel'
@@ -36,7 +37,8 @@ class SpecificityMultilabelMetric(Metric):
         """
         return type_of_target in ['multilabel-indicator']
     
-    # Specificity is calculated for each label separately, then averaged to obtain an overall measure. 
+    # Specificity is calculated for each label separately, 
+    # then averaged to obtain an overall measure. 
     def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
         """
         Compute metric with predicted data

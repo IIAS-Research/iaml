@@ -18,7 +18,8 @@ class SpecificityMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'The proportion of negative instances that are corectely classified as negative: tn / (tn + fp)'
+        return 'The proportion of negative instances that are corectely \
+            classified as negative: tn / (tn + fp)'
     
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """

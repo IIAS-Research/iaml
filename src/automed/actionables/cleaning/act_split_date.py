@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from ...actionable import Actionable
 from ...data_type import DataType
-from ...automed import Output, Input
+from ...output import Output, Input
 from ...step import is_step, runner
 
 @is_step('cleaning')

@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 from ...actionable import Actionable
-from ...automed import Output, Input
+from ...output import Output, Input
 from ...step import is_step, runner
 
 @is_step('features_selection')
@@ -16,7 +16,8 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     def __init__(self):
         self.configurations = [{
             'threshold': {
-                'description': 'If two columns is correlated over this value, only one will be kept',
+                'description': 'If two columns is correlated over this value, only one \
+                    will be kept',
                 'default': 0.9
             }
         }]

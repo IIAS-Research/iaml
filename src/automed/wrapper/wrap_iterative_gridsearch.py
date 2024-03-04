@@ -78,10 +78,11 @@ class WrapIterativeGridSearch(StepWrapper):
         self.step.reset_cache()
         return results
     
-class GridIteration:
+class GridIteration:  # pylint: disable=too-many-instance-attributes
     """
     One iteration of Iterative grid search
     """
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     def __init__(self,
         step:Step,
         modificator_rate:float,
@@ -135,7 +136,7 @@ class GridIteration:
                 for way_ind, way in enumerate([1, -1]):
                     way_values = [self.value+(self.modificator*ind*way) \
                         for ind in range(way_ind, self.max_iterations)]
-                    if type(self.value) == int:
+                    if isinstance(self.value, int):
                         way_values = [round(v) for v in way_values]
                         
                     if ('range' in self.config[self.key]) or value_range:
@@ -167,7 +168,9 @@ class GridIteration:
         """
         Iteration finished ?
         """
-        return (self.iterations_without_improvement >= self.patience) or (self.count_iterations >= self.max_iterations) or (len(self.values)-1 < self.count_iterations)
+        return (self.iterations_without_improvement >= self.patience) \
+            or (self.count_iterations >= self.max_iterations) \
+            or (len(self.values)-1 < self.count_iterations)
     
     def go_deeper(self) -> bool:
         """
@@ -337,4 +340,3 @@ class GridIteration:
         siblings = self.__generate_siblings()
                 
         return self.outputs, siblings
-

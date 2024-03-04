@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from ...actionable import Actionable
 from ...data_type import DataType
-from ...automed import Output, Input
+from ...output import Output, Input
 from ...step import is_step, runner
 
 

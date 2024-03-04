@@ -1,9 +1,9 @@
 """
 [METRIC] Classification Error
 """
+import pandas as pd
 from .balanced_accuracy_metric import BalancedAccuracyMetric
 from ..metric import Metric
-import pandas as pd
 
 class ClassificationErrorMetric(Metric):
     """
@@ -15,7 +15,10 @@ class ClassificationErrorMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'Computes the classification error, if accuracy is relevant then the classification error is calculated by 1 - accuracy otherwise if balanced accuracy is relevant then the classification error is calculated by 1 - balanced _accuracy.'
+        return 'Computes the classification error, if accuracy is relevant then the \
+            classification error is calculated by 1 - accuracy otherwise if balanced \
+            accuracy is relevant then the classification error is \
+            calculated by 1 - balanced _accuracy.'
     
     def __str__(self):
         return 'classification_error'
@@ -35,7 +38,8 @@ class ClassificationErrorMetric(Metric):
         """
         return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
     
-    # Calculate the classification error using either accuracy or balanced accuracy, depending on relevence
+    # Calculate the classification error using either accuracy or balanced accuracy, 
+    # depending on relevence
     def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
         """
         Compute metric with predicted data

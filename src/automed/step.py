@@ -155,26 +155,6 @@ class Step: # pylint: disable=too-many-public-methods
     # Each parameters have a name, a description and a default value.
     # Default value can be fixed or computed based on dataset
     
-    # @property
-    # def configurations(self):
-    #     return self.__configurations
-    
-    # @configurations.setter
-    # def configurations(self, new_value):
-    #     self.__configurations = new_value
-    #     if str(type(self)) == "<class 'automed.wrapper.wrap_genetic_gridsearch.WrapGeneticGridSearch'>":
-    #         print("CALL", new_value[0].keys(), id(self))
-    #         # print(self.__configurations[0].keys())
-    #         # print(self.configurations)
-        
-    # @property
-    # def current_configuration(self):
-    #     return self.__current_configuration
-    
-    # @current_configuration.setter
-    # def current_configuration(self, new_value):
-    #     self.__current_configuration = new_value
-    
     def configure_one(self, config_id:int, key:str, value:any) -> None:
         """
         Configure one parameter in one configuration

@@ -4,7 +4,7 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from ...actionable import Actionable
-from ...automed import Output, Input
+from ...output import Output, Input
 from ...step import is_step, runner
 from ...data_type import DataType
 
@@ -31,7 +31,9 @@ class ActTfIdf(Actionable):
             Output: Transformed input
         """
         self.columns = []
-        for column in input_data.dataset.get_columns_names_by_type([DataType.SHORT_TEXT, DataType.TEXT]):
+        for column in input_data.dataset.get_columns_names_by_type(
+            [DataType.SHORT_TEXT, DataType.TEXT]
+            ):
             values = input_data.dataset.X[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             self.columns.append((column, vectorizer))

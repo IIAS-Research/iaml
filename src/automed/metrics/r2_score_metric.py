@@ -15,7 +15,9 @@ class R2ScoreMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'R2(coefficient of determination) regression score function. Best possible score is 1.0 and it can be negative (because the model can be arbitrarily worse).'
+        return 'R2(coefficient of determination) regression score function. \
+            Best possible score is 1.0 and it can be negative \
+            (because the model can be arbitrarily worse).'
     
     def __str__(self):
         return 'r2_score'

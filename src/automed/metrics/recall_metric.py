@@ -20,7 +20,9 @@ class RecallMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false negatives. The recall is intuitively the ability of the classifier to find all the positive samples.'
+        return 'The recall is the ratio tp / (tp + fn) where tp is the number \
+            of true positives and fn the number of false negatives. The recall is \
+            intuitively the ability of the classifier to find all the positive samples.'
     
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
@@ -51,9 +53,9 @@ class RecallMetric(Metric):
         if sk_type_of_target(y) == 'binary':
             # TODO Find something less arbitrary
             return precision_score(y, y_pred, pos_label=y[0])
-        elif sk_type_of_target(y) == 'multiclass':
+        if sk_type_of_target(y) == 'multiclass':
             return precision_score(y, y_pred, average = 'weighted') 
-        elif sk_type_of_target(y) == 'multilabel-indicator':
+        if sk_type_of_target(y) == 'multilabel-indicator':
             return precision_score(y, y_pred, average= 'samples')
-        else:
-            raise ValueError('Metric not suitable')
+        
+        raise ValueError('Metric not suitable')

@@ -25,7 +25,8 @@ class ActSVMSVC(Actionable):
                 'default': 42
             },
             'probability': {
-                'description': 'If true, the output will be a probability. If false, it will be Binary',
+                'description': 'If true, the output will be a probability. If false, \
+                    it will be Binary',
                 'default': False
             },
             'class_weight': {

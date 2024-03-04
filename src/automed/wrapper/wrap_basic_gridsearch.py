@@ -41,7 +41,11 @@ class WrapBasicGridSearch(StepWrapper):
                     to_explore[key] = item['categorical']
                 elif type(item['value']) in [int, float]: # Numeric
                     current_value = item['value']
-                    tmp = map(lambda x: x*current_value, [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]) # pylint: disable=cell-var-from-loop
+                    
+                    # pylint: disable=cell-var-from-loop
+                    tmp = map(lambda x: x*current_value, \
+                        [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]\
+                        ) 
                     
                     # Keep int
                     if isinstance(item['value'], int):
@@ -76,8 +80,7 @@ class WrapBasicGridSearch(StepWrapper):
             for value in values:
                 self.step.configure_one(0, key, value)
                 output = self.__recursive_run(input_data, to_explore, callback=callback) 
-                results = results + ([output] if type(output) == Output else output)
+                results = results + ([output] if isinstance(output, Output) else output)
                 
             return results
-        else:
-            return self.step.run(input_data, callback=callback)
+        return self.step.run(input_data, callback=callback)
