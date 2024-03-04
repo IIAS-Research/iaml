@@ -45,13 +45,13 @@ class WrapKFold(WrapDatasetWrapper):
             
             output: Output = self.step.run(training_input, callback=callback)[0]
 
-            metrics.append(output.evaluate(test_ds))
             outputs.append(output)
-        
-        outputs.sort()
-        output = outputs[-1] # TODO -> Better strategy ? May we train a last model with the whole dataset ?
+            if test_ds is not None:
+                metrics.append(output.evaluate(test_ds))
+
+        output = outputs[-1]
         output.computed_metrics = { k: np.mean([ metric[k] for metric in metrics ]) for k, v in outputs[0].computed_metrics.items() if v is not None }
-        output.dataset = input.dataset # back to Output
+        output.dataset = input.dataset
         
         return output
     

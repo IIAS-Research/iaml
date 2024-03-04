@@ -18,7 +18,7 @@ class RecallMetric(Metric):
         
     def compute(self, y, y_pred):
         if type_of_target(y) == 'binary':
-            return precision_score(y, y_pred, pos_label=y[y.columns[0]][0]) # TODO Find something less arbitrary
+            return precision_score(y, y_pred, pos_label=y[y.columns[0]].iloc[0]) # TODO Find something less arbitrary
         elif type_of_target(y) == 'multiclass':
             return precision_score(y, y_pred, average = 'weighted') 
         elif type_of_target(y) == 'multilabel-indicator':

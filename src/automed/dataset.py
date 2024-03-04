@@ -81,6 +81,7 @@ class Dataset:
         if self.__splitted:
             raise Exception("Dataset alreadly splitted !")
         
+        # Split the dataset as many times as the splitter requires it
         for i_train, i_test in splitter(self.X, self.__y):
             X_train = self.X.iloc[i_train].copy()
             X_test = self.X.iloc[i_test].copy()
@@ -91,6 +92,9 @@ class Dataset:
             ds_test = Dataset(X_test, y_test, splitted=True)
 
             yield (ds_train, ds_test)
+        
+        # Yield the whole dataset as training data
+        yield Dataset(self.X.copy(), self.__y.copy(), resample=self.__resample_stack, splitted=True), None
         
     def get_columns_names_by_type(self, types) -> list:
         if type(types) != list:
