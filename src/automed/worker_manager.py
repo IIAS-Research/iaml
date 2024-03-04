@@ -28,6 +28,9 @@ class WorkerFuture(Future):
     
 
     def run(self) -> Any:
+        """
+        Execute the thread
+        """
         try:
             return self.task(*self.args, **self.kwargs)
         except:  # pylint: disable=bare-except

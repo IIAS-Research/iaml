@@ -200,7 +200,7 @@ class MetaStep(Step):
             str: Step in rich format
         """
         conf = super().conf_to_rich_str_list()
-        conf.append(f'steps={",".join(set([ step.__class__.__name__ for step in self.steps ]))}')
+        conf.append(f'steps={",".join({ step.__class__.__name__ for step in self.steps })}')
 
         return conf
     

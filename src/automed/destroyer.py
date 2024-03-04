@@ -24,7 +24,8 @@
 #         if child_id in self.destroyed_child: # Already destroyed
 #             return True
 #         elif child_id in self.children_results.keys(): # Cannot be destroy unknown step
-#             if len(self.children_results[child_id]) >= self.patience: # Enough results to be destroyed
+#             # Enough results to be destroyed
+#             if len(self.children_results[child_id]) >= self.patience: 
 #                 maxi = self.children_results[child_id]
 #                 if maxi < self.best_result * (1 - self.bad_result_diff): # Bad results
 #                     # DESTROY !
