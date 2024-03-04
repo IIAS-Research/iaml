@@ -59,10 +59,10 @@ class WrapKFold(WrapDatasetWrapper):
             
             output: Output = self.step.run(training_input, callback=callback)[0]
 
-            metrics.append(output.evaluate(test_ds))
+            if test_ds is not None:
+                metrics.append(output.evaluate(test_ds, force=True))
+
             outputs.append(output)
-        
-        
         outputs.sort()
         output = outputs[-1]
         output.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \

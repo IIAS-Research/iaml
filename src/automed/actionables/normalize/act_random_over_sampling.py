@@ -29,7 +29,7 @@ class ActRandomOverSampling(Actionable):
         Returns:
             Output: Transformed input
         """
-        return input_data.resample(self)
+        return input_data.add_resample(self)
     
     def resample(self, X:pd.DataFrame, y:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """

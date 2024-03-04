@@ -73,6 +73,13 @@ class Dataset:
         return self.__X
 
     @property
+    def is_multilabel(self) -> bool:
+        """
+        Dataset is multilabel ?
+        """
+        return len(self.__y.columns) > 1
+
+    @property
     def y(self) -> pd.DataFrame:
         """
         y data getter
@@ -155,6 +162,7 @@ class Dataset:
         if self.__splitted:
             raise AttributeError("Dataset already splitted !")
         
+        # Split the dataset as many times as the splitter requires it
         for i_train, i_test in splitter(self.X, self.__y):
             X_train = self.X.iloc[i_train].copy()
             X_test = self.X.iloc[i_test].copy()
@@ -165,6 +173,9 @@ class Dataset:
             ds_test = Dataset(X_test, y_test, splitted=True)
 
             yield (ds_train, ds_test)
+
+        # Yield the whole dataset as training data
+        yield Dataset(self.X.copy(), self.__y.copy(), resample=self.__resample_stack, splitted=True), None
         
     def get_columns_names_by_type(self, types:list[DataType]) -> list:
         """
