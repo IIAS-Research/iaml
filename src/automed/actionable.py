@@ -9,5 +9,5 @@ class Actionable(Step):
     """
     Classic kind of Step that transform, resample or predict from Input
     """
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, **kwargs):
         self.configurations = [{}]

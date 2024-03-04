@@ -1,5 +1,8 @@
+"""
+[METASTEP] Explore all sub steps in Thread and return one output by Sub Step
+"""
 from .metastep import MetaStep
-from .output import Input
+from .output import Input, Output
 from .step import Step, is_step, runner
 from .worker_manager import WorkerFuture, WorkerManager
 
@@ -9,20 +12,24 @@ from .worker_manager import WorkerFuture, WorkerManager
 #
 @is_step('meta')
 class MetaExplorerStep(MetaStep):
+    """
+    [METASTEP] Explore all sub steps in Thread and return one output by Sub Step
+    """
     name = "MetaExplorerStep"
-    def __init__(self, destroyer=None, *args, **kw):
+    def __init__(self, *args, destroyer=None, **kwargs):  # pylint: disable=unused-argument
         self.output = []
         
         if destroyer:
             destroyer.set_root(self)
             self.destroyers.append(destroyer)
-        
-    # Run a single Step
-    # Will be executed by Theads
-    def single_run(self, step, input, callback=None):
-        self.output = self.output + (step.run(input, callback=callback))
-        
-    def json_pipeline(self):
+    
+    def json_pipeline(self) -> dict:
+        """
+        Create a JSON format of the pipeline
+
+        Returns:
+            dict: Pipeline in JSON format
+        """
         json = Step.json_pipeline(self)
         json['children'] = list(map(lambda step: step.json_pipeline(), self.steps))
         return json
@@ -30,7 +37,17 @@ class MetaExplorerStep(MetaStep):
     
     # Explore all steps
     @runner
-    def run(self, input_data: Input, callback=None):
+    def run(self, input_data:Input, callback:callable=None) -> Output:
+        """
+        Run all children Step in threads 
+
+        Args:
+            input_data (Input): Input data
+            callback (callable, optional): Call after each step run. Defaults to None.
+
+        Returns:
+            Output: Result output
+        """
         output = []
         workers: list[WorkerFuture] = []
 
