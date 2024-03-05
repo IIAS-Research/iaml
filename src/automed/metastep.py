@@ -161,7 +161,7 @@ class MetaStep(Step):
         return self.__recursive_run(steps_to_run, [input_data], callback=callback)
         
     
-    def __recursive_run(self, remain_steps:list[Step], inputs:Input, callback=None) -> list[Output]:
+    def __recursive_run(self, remain_steps:list[Step], inputs:Input, callback:callable=None) -> list[Output]:
         """
         Recursive_run to manage Step with several outputs 
 
@@ -183,7 +183,7 @@ class MetaStep(Step):
                     if current_eval > max_eval:
                         max_eval = current_eval 
                         max_index = index+1
-                        
+                
                 results = remain_steps[max_index].run(current_input, callback=callback)
                 futures_steps = remain_steps.copy()
                 futures_steps.pop(max_index)

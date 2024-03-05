@@ -59,7 +59,7 @@ class ActGaussianNb(Actionable):
         Returns:
             bool: Suitable ?
         """
-        return input.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+        return input_data.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, input_data:Input=None) -> float:
         """

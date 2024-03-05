@@ -183,7 +183,7 @@ class Output:
         self.metrics.append(metric)
         
     def __str__(self) -> str:
-        str_out = ""
+        str_out = "[INPUT/OUTPUT]"
         if self.metrics:
             str_out = str_out + str(self.metrics) + " "
         if self.pipeline:
