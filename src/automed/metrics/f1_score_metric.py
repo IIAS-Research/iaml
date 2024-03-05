@@ -1,17 +1,17 @@
 """
-[METRIC] Precision
+[METRIC] F1 Score
 """
 import pandas as pd
-from sklearn.metrics import precision_score
 from sklearn.utils.multiclass import type_of_target as sk_type_of_target
+from sklearn.metrics import f1_score
 from ..metric import Metric
 
-class PrecisionMetric(Metric):
+class F1ScoreMetric(Metric):
     """
-    [METRIC] Precision
+    [METRIC] F1 Score
     """
     def __str__(self):
-        return 'precision'
+        return 'f1_score'
     
     def explain(self) -> str:
         """Describe metric
@@ -19,9 +19,10 @@ class PrecisionMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'Compute the precision: The precision is the ratio tp / (tp + fp) \
-            where tp is the number of true positives and fp the number of false positives.'
+        return 'Compute the F1 score, also known as balanced F-score or F-measure. \
+            The F1 score can be interpreted as a harmonic mean of the precision and recall'
     
+            
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
         Does this metric is suitable for this input ?
@@ -36,7 +37,8 @@ class PrecisionMetric(Metric):
             bool: Suitable ?
         """
         return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
-        
+    
+    
     def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
         """
         Compute metric with predicted data
@@ -49,11 +51,11 @@ class PrecisionMetric(Metric):
             float: computed value 
         """
         if sk_type_of_target(y) == 'binary':
-            # TODO Find something less arbitrary
-            return precision_score(y, y_pred, pos_label=y[y.columns[0]].iloc[0])
+            # TODO Find something less arbitrary (about pos_label)
+            return f1_score(y, y_pred, pos_label=y[y.columns[0]].iloc[0])
         if sk_type_of_target(y) == 'multiclass':
-            return precision_score(y, y_pred, average = 'weighted') 
+            return f1_score(y, y_pred, average ='weighted')
         if sk_type_of_target(y) == 'multilabel-indicator':
-            return precision_score(y, y_pred, average= 'samples')
+            return f1_score(y, y_pred, average ='samples')
         
         raise ValueError('Metric not suitable') 

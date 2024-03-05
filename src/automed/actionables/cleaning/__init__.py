@@ -1,4 +1,6 @@
-
+"""
+All cleaning actionables
+"""
 from .act_mean_column import ActMeanColumn
 from .act_drop_numerical_column import ActDropNumericalColumn
 from .act_drop_textual_column import ActDropTextualColumn

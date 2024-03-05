@@ -1,7 +1,10 @@
+"""
+All metrics to evaluate models
+"""
 from .accuracy_metric import *
 from .balanced_accuracy_metric import *
 from .classification_error_metric import *
-from .f1Score_metric import *
+from .f1_score_metric import *
 from .mean_absolute_error_metric import *
 from .mean_squared_error_metric import *
 from .mean_squared_log_error_metric import *

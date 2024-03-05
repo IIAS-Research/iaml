@@ -1,6 +1,22 @@
 {
     "cSpell.words": [
-        "dset"
+        "actionables",
+        "astype",
+        "automed",
+        "autosklearn",
+        "dset",
+        "dtype",
+        "iloc",
+        "issubdtype",
+        "kfold",
+        "metastep",
+        "multiclass",
+        "Onehot",
+        "priorize",
+        "todense",
+        "tplot",
+        "vectorize",
+        "vectorizer"
     ],
     "cSpell.language": "en,fr"
 }

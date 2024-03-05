@@ -22,19 +22,18 @@ def each_file(file):
     if len(df.columns) < 2:
         df = pd.read_csv(file, sep=",")
         
-    auto = AutoMed(Dataset(df), quiet=True)
-    
     labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
-    auto.dataset.set_label(labels) 
-    auto.debug_load()
-    auto.run()
+
+    auto = AutoMed(quiet=True)
+    auto.default_pipeline(fast=False)
+    auto.fit(df.drop(labels, axis=1), df[labels])
     
     end_file = datetime.now()
     compute_time = (end_file - start_file).seconds
     
     # Find best result
     max_result = 0
-    for output in auto.output:
+    for output in auto.outputs:
         tmp = output.get_main_metric_value()
         if tmp > max_result:
             max_result = tmp
@@ -65,7 +64,7 @@ threads = []
 
 for file in files:
     print("->>>", file)
-    threads.append(ThreadWithReturnValue(target=each_file, args=(file,)))
+    threads.append(ThreadWithReturnValue(target=each_file, file=file))
             
 # Run all threads
 for thread in threads:
