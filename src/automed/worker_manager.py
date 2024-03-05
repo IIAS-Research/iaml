@@ -61,6 +61,7 @@ class WorkerManager(metaclass=MetaSingleton):
         self.running_futures: list[WorkerFuture] = []
         self.running_parents: list[list[int]] = []
         self.queue: list[WorkerFuture] = []
+        self.run_tree = {}
 
 
     def __done_callback(self, base_future: Future, worker_future: WorkerFuture) -> None:

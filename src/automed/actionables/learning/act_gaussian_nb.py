@@ -15,7 +15,7 @@ class ActGaussianNb(Actionable):
     """
     name = "Learn : Gaussian NB"
     def __init__(self):
-        self.configurations:list[dict] = [{}]
+        self.configuration:dict = {}
         self.model:GaussianNB = None
         
     @runner
@@ -59,7 +59,8 @@ class ActGaussianNb(Actionable):
         Returns:
             bool: Suitable ?
         """
-        return input_data.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+        return input_data.dataset.type_of_target in \
+            ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, input_data:Input=None) -> float:
         """

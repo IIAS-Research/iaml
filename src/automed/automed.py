@@ -66,7 +66,7 @@ class AutoMed:
         """
         self.first_step = MetaOrderedStep()
         sklearn = ActAutoSKLearn() # pylint: disable=undefined-variable
-        sklearn.configure_one(0, 'running_time', time)
+        sklearn.configure('running_time', time)
 
         self.first_step.add_step(WrapKFold(sklearn))
 
@@ -224,9 +224,9 @@ class AutoMed:
         """
         return self.first_step.all_configurations()
 
-    # Configure one to many steps with a dict configurations 
+    # Configure one to many steps with a dict configuration
     def configure_all(self, configs:dict) -> None:
-        """Configure one to many steps with a dict configurations 
+        """Configure one to many steps with a dict configuration
 
         Args:
             configs (dict): key is a step_id and value is the configuration to set.
@@ -237,7 +237,7 @@ class AutoMed:
             current_step = self.__find_step_by_id(all_steps, step_id)
             if current_step:
                 for key, value in config:
-                    current_step.configure_one(0, key, value)
+                    current_step.configure(key, value)
 
     def __all_steps(self) -> list[Step]:
         """ Recursive method. Return all the pipeline's steps in a list

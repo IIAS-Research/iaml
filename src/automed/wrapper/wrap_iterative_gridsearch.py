@@ -16,7 +16,7 @@ class WrapIterativeGridSearch(StepWrapper):
     """
     name = "Wrap : Iterative GridSearch"
     def __init__(self, step:Step):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'modificator': {
                 'description': 'Value modificator for each iteration',
                 'default': 0.5
@@ -29,7 +29,7 @@ class WrapIterativeGridSearch(StepWrapper):
                 'description': 'Stop iterations after N tries without improvements',
                 'default': 3
             }
-        }]
+        }
         self.step:Step = step
         
     to_avoid = ['random_state']
@@ -61,7 +61,7 @@ class WrapIterativeGridSearch(StepWrapper):
 
             
         results = []
-        configs = deepcopy(self.step.configurations)
+        configs = deepcopy(self.step.configuration)
         self.step.keep_only_first_config() # Avoid run several config for each run
         for config in configs:
             
@@ -100,7 +100,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         self.modificator_rate = modificator_rate
         self.patience = patience
         
-        self.config = (copy_config or deepcopy(step.configurations[0]))
+        self.config = (copy_config or deepcopy(step.configuration))
         
         if key:
             self.key = key
@@ -317,7 +317,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         
         while not self.done():
             results = []
-            self.step.configure_one(0, self.key, self.current_value())
+            self.step.configure(self.key, self.current_value())
             
             if self.go_deeper():
                 self.__generate_child()

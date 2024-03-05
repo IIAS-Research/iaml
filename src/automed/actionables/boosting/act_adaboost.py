@@ -21,7 +21,7 @@ class ActAdaBoost(Actionable):
     name:str = "Learn : AdaBoost"
     
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'random_state': {
                 'description': 'random_state',
                 'default': 42
@@ -30,7 +30,7 @@ class ActAdaBoost(Actionable):
                 'description': 'Number of estimators',
                 'default': 2000
             },
-        }]
+        }
         
     @runner
     def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument

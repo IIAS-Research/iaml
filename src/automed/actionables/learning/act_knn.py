@@ -15,7 +15,7 @@ class ActKNN(Actionable):
     """
     name = "Learn : KNN"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'metric': {
                 'description': 'Can be minkowski or manhattan',
                 'default': 'minkowski',
@@ -26,7 +26,7 @@ class ActKNN(Actionable):
                 'default': 5,
                 'range': [1, float('inf')]
             }
-        }]
+        }
         self.model:KNeighborsClassifier = None
         
     @runner

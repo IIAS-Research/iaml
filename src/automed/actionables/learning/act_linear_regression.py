@@ -15,7 +15,7 @@ class ActLinearRegression(Actionable):
     """
     name = "Learn : Linear Regression"
     def __init__(self):
-        self.configurations:list[dict] = [{}]
+        self.configuration:dict = {}
         self.model:LinearRegression = None
         
     @runner

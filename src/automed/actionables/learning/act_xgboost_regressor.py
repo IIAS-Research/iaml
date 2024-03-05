@@ -15,7 +15,7 @@ class ActXGBoost(Actionable):
     """
     name = "Learn : XGBoost Regressor"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -35,7 +35,7 @@ class ActXGBoost(Actionable):
                 'default': 100,
                 'range': [1, float("inf")]
             }
-        }]
+        }
         self.model:GradientBoostingRegressor = None
         
     @runner
