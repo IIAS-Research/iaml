@@ -578,14 +578,16 @@ def runner(func) -> callable:
             
             for current_input in inputs:
                 # Destroyer will stop Step run if results are not good enough
-                for destroyer in self.destroyers:
-                    if destroyer.destroyed(self):
-                        return result
+                # for destroyer in self.destroyers:
+                #     if destroyer.destroyed(self):
+                #         return result
                 if self.suitable(current_input):
                     output = self.from_cache(current_input)
                     if not output:
                         output = func(self, current_input, callback=callback)
                         self.add_cache(current_input, output)
+                    else:
+                        callback(self) # Call callback manually because we used cache
                         
                     self.track_output(output)
                 else:

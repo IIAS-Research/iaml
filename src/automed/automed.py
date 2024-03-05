@@ -128,7 +128,7 @@ class AutoMed:
     ### RUN ###
     ###########
 
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs) -> list[Output]:
+    def fit(self, X:pd.DataFrame, y:list|pd.DataFrame, *args, **kwargs) -> list[Output]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -138,6 +138,9 @@ class AutoMed:
         Returns:
             list[Output]: List of all the generated outputs. Sorted by performances.
         """
+        if isinstance(y, pd.DataFrame):
+            y = y.values.ravel()
+        
         dataset:Dataset = Dataset(X, y)
         self.fit_input:Input = Input(dataset)
 
