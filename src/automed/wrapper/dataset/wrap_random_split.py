@@ -13,7 +13,7 @@ class WrapRandomSplit(WrapDatasetWrapper):
     """
     [WRAPPER] Wrap learning step to apply Random Split on Dataset
     """
-    name = "Split date to train and test set"
+    name = "Splits the dataset into train and test sets randomly."
     def __init__(self, step: Step):
         self.configurations = [{
             'ratio': {
@@ -39,6 +39,8 @@ class WrapRandomSplit(WrapDatasetWrapper):
         train_dataset, test_dataset = next(input_data.dataset.split(splitter))
         output = self.step.run(input_data.to_input(dataset=train_dataset), callback=callback)
         output.evaluate(test_dataset)
+
+        output.pipeline.add_explanation(self, ['Trained one model.'])
         
-        return output
+        return super().run(output, callback)
     

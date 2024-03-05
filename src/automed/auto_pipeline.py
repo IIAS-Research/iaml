@@ -9,6 +9,7 @@ from sklearn.pipeline import Pipeline
 from .explanation import Explanation
 
 if TYPE_CHECKING:
+    from .metric import Metric
     from .step import Step
 
 class AutoPipeline(Pipeline):
@@ -149,7 +150,11 @@ class AutoPipeline(Pipeline):
         
         return self.model.predict(X)
     
-    def add_explanation(self, step: 'Step', processings: list[str]):
+    def add_explanation(
+            self,
+            step: 'Step',
+            processings: list[str] = None,
+            metrics: dict['Metric', float] = None):
         """
         Explain a step of the pipeline.
 
@@ -158,4 +163,4 @@ class AutoPipeline(Pipeline):
             processings (list[str]): List of all the processings the
                                     the step has done to the data.
         """
-        self.explanations.append(Explanation(step, processings))
+        self.explanations.append(Explanation(step, processings, metrics))
