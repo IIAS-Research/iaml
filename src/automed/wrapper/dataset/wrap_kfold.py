@@ -19,7 +19,7 @@ class WrapKFold(WrapDatasetWrapper):
         train and test sets {folds} times."""
 
     def __init__(self, step: Step):
-        self.configurations = [{
+        self.configuration = {
             'folds': {
                 'description': 'Split ratio',
                 'default': 5,
@@ -30,7 +30,7 @@ class WrapKFold(WrapDatasetWrapper):
                 'default': True,
                 'no_gridsearch': True,
             },
-        }]
+        }
         
     @runner
     def run(self, input_data:Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
@@ -59,7 +59,6 @@ class WrapKFold(WrapDatasetWrapper):
         metrics = []
         for train_ds, test_ds in splitted_datasets:
             training_input = input_data.to_input(dataset=train_ds)
-            
             output: Output = self.step.run(training_input, callback=callback)[0]
 
             if test_ds is not None:

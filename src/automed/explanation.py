@@ -35,7 +35,7 @@ class Explanation:
         Returns:
             str: Formatted description.
         """
-        conf = { k: v['value'] for k, v in self.step.current_configuration.items() }
+        conf = { k: v['value'] for k, v in self.step.configuration.items() }
 
         return self.step.description.format(**conf)
     
@@ -70,7 +70,7 @@ class Explanation:
 
         confs = '\n'.join([
             f'| **{k}** | {v["description"]} | {v["value"]} |'
-            for k, v in self.step.current_configuration.items()
+            for k, v in self.step.configuration.items()
         ])
 
         processings = '\n'.join([ f' - {p}' for p in self.processings[:processings_limit] ])

@@ -11,6 +11,8 @@
         "kfold",
         "metastep",
         "multiclass",
+        "multimethod",
+        "multipledispatch",
         "Onehot",
         "priorize",
         "todense",

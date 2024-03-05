@@ -15,7 +15,7 @@ class WrapRandomSplit(WrapDatasetWrapper):
     """
     name = "Splits the dataset into train and test sets randomly."
     def __init__(self, step: Step):
-        self.configurations = [{
+        self.configuration:dict = {
             'ratio': {
                 'description': 'Split ratio',
                 'default': 0.2,
@@ -26,7 +26,7 @@ class WrapRandomSplit(WrapDatasetWrapper):
                 'default': 42,
                 'no_gridsearch': True,
             },
-        }]
+        }
         
     @runner
     def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument

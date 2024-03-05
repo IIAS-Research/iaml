@@ -52,7 +52,7 @@ class F1ScoreMetric(Metric):
         """
         if sk_type_of_target(y) == 'binary':
             # TODO Find something less arbitrary (about pos_label)
-            return f1_score(y, y_pred, pos_label=y[y.columns[0]].iloc[0])
+            return f1_score(y, y_pred, pos_label=y[0])
         if sk_type_of_target(y) == 'multiclass':
             return f1_score(y, y_pred, average ='weighted')
         if sk_type_of_target(y) == 'multilabel-indicator':

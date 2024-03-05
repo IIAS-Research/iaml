@@ -14,7 +14,7 @@ class ActRandomForest(Actionable):
     """
     name = "Learn : Random Forest" 
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -29,7 +29,7 @@ class ActRandomForest(Actionable):
                 'description': 'random_state',
                 'default': 42
             }
-        }]
+        }
         self.model:RandomForestClassifier = None
         
     @runner

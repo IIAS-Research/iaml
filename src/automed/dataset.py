@@ -20,9 +20,9 @@ class Dataset:
     Add features like data type detection and splitting
     """
     
-    def __init__(self, X:pd.DataFrame, y:pd.DataFrame, resample:list=None, splitted:bool=False):
+    def __init__(self, X:pd.DataFrame, y:list, resample:list=None, splitted:bool=False):
         self.__X:pd.DataFrame = X
-        self.__y:pd.DataFrame = y
+        self.__y:np.array = np.array(y)
         
         self.__resample_stack:list[callable] = resample if resample is not None else []
         
@@ -52,15 +52,15 @@ class Dataset:
         """
         return self.X.columns.to_list()
 
-    @property
-    def labels(self) -> list[str]:
-        """
-        List labels names of y data
+    # @property
+    # def labels(self) -> list[str]:
+    #     """
+    #     List labels names of y data
 
-        Returns:
-            list[str]: labels names
-        """
-        return self.__y.columns.to_list()
+    #     Returns:
+    #         list[str]: labels names
+    #     """
+    #     return self.__y.columns.to_list()
     
     @property
     def X(self) -> pd.DataFrame:
@@ -166,8 +166,8 @@ class Dataset:
         for i_train, i_test in splitter(self.X, self.__y):
             X_train = self.X.iloc[i_train].copy()
             X_test = self.X.iloc[i_test].copy()
-            y_train = self.__y.iloc[i_train].copy()
-            y_test = self.__y.iloc[i_test].copy()
+            y_train = self.__y[i_train].copy()
+            y_test = self.__y[i_test].copy()
 
             ds_train = Dataset(X_train, y_train, resample=self.__resample_stack, splitted=True)
             ds_test = Dataset(X_test, y_test, splitted=True)

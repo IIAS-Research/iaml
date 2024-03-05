@@ -9,7 +9,6 @@ from .metastep import MetaStep
 from .output import Input, Output
 from .dataset import Dataset
 from .metric import Metric
-# from .destroyer import Destroyer
 from .worker_manager import WorkerManager
 from .wrapper.dataset import WrapKFold
 from .meta_ordered_step import MetaOrderedStep
@@ -66,7 +65,7 @@ class AutoMed:
         """
         self.first_step = MetaOrderedStep()
         sklearn = ActAutoSKLearn() # pylint: disable=undefined-variable
-        sklearn.configure_one(0, 'running_time', time)
+        sklearn.configure('running_time', time)
 
         self.first_step.add_step(WrapKFold(sklearn))
 
@@ -81,13 +80,11 @@ class AutoMed:
         self.first_step.add_step(ActTPLOT()) # pylint: disable=undefined-variable
 
     # DEBUG -> Testing purpose.
-    def default_pipeline(self, use_destroyer=False, fast=False) -> None:
+    def default_pipeline(self, fast=False) -> None:
         """Load the default pipeline.
         Default pipeline is the recommended way to create classifier and regressor
 
         Args:
-            use_destroyer (bool, optional): Enable/Disabled destroyer. 
-                                            Destroyer doesn't work yet. Defaults to False.
             fast (bool, optional): If true, will only load fast machine learning model.
                                     Fast mode is use to create fast pipeline and iterate
                                     quickly when debugging code. Defaults to False.
@@ -103,11 +100,7 @@ class AutoMed:
         def wrap(step: Step) -> 'WrapGeneticGridSearch':
             return WrapGeneticGridSearch(WrapKFold(step))
         
-        if use_destroyer:
-            self.first_step.add_step(MetaExplorerStep(tag=learning_tag,
-                                                    wrap=wrap))
-        else:
-            self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap))
+        self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap))
 
 
     ##################
@@ -128,7 +121,7 @@ class AutoMed:
     ### RUN ###
     ###########
 
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs) -> list[Output]:
+    def fit(self, X:pd.DataFrame, y:list|pd.DataFrame, *args, **kwargs) -> list[Output]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -138,6 +131,9 @@ class AutoMed:
         Returns:
             list[Output]: List of all the generated outputs. Sorted by performances.
         """
+        if isinstance(y, pd.DataFrame):
+            y = y.values.ravel()
+        
         dataset:Dataset = Dataset(X, y)
         self.fit_input:Input = Input(dataset)
 
@@ -221,9 +217,9 @@ class AutoMed:
         """
         return self.first_step.all_configurations()
 
-    # Configure one to many steps with a dict configurations 
+    # Configure one to many steps with a dict configuration
     def configure_all(self, configs:dict) -> None:
-        """Configure one to many steps with a dict configurations 
+        """Configure one to many steps with a dict configuration
 
         Args:
             configs (dict): key is a step_id and value is the configuration to set.
@@ -234,7 +230,7 @@ class AutoMed:
             current_step = self.__find_step_by_id(all_steps, step_id)
             if current_step:
                 for key, value in config:
-                    current_step.configure_one(0, key, value)
+                    current_step.configure(key, value)
 
     def __all_steps(self) -> list[Step]:
         """ Recursive method. Return all the pipeline's steps in a list

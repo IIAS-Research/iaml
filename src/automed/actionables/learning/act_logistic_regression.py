@@ -15,7 +15,7 @@ class ActLogisticRegression(Actionable):
     """
     name = "Learn : Logistic Regression Classifier"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'max_iterations': {
                 'description': 'Maximum number of iterations',
                 'default': 1000,
@@ -25,7 +25,7 @@ class ActLogisticRegression(Actionable):
                 'description': 'random_state',
                 'default': 42
             }
-        }]
+        }
         self.model:LogisticRegression = None
         
     @runner

@@ -15,7 +15,7 @@ class ActSplitDate(Actionable):
     """
     name = "Transform string column to date"
     def __init__(self):
-        self.configurations:list[dict] = [{}]
+        self.configuration:dict = {}
         self.columns:list[str] = None
     
     @runner

@@ -16,13 +16,13 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     description = 'Remove columns which correlation with other columns is higher than {threshold}.'
 
     def __init__(self):
-        self.configurations = [{
+        self.configuration:dict = {
             'threshold': {
                 'description': 'If two columns is correlated over this value, only one \
                     will be kept',
                 'default': 0.9
             }
-        }]
+        }
         self.to_drop:list[str] = None
     
     @runner

@@ -14,7 +14,7 @@ class ActSVMSVC(Actionable):
     """
     name = "Learn : SVM Classification"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'kernel': {
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
@@ -34,7 +34,7 @@ class ActSVMSVC(Actionable):
                 'default': None,
                 'categorical': [None, 'balanced']
             }
-        }]
+        }
         self.model:svm.SVC = None
         
     @runner

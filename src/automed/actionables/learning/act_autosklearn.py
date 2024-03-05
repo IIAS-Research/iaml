@@ -16,13 +16,13 @@ class ActAutoSKLearn(Actionable):
     """
     name="Learn : AutoSkLearn"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'running_time': {
                 'description': 'In seconds. Auto-SkLearn will search the best \
                     models during this time',
                 'default': 30
             }
-        }]
+        }
         self.model:autosklearn.classification.AutoSklearnClassifier = None
     
     @runner

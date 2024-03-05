@@ -1,7 +1,8 @@
 """
 [WRAPPER] Dataset Wrapper 
 """
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+from multipledispatch import dispatch
 from automed.step import Step
 from ...step_wrapper import StepWrapper
 
@@ -15,7 +16,7 @@ class WrapDatasetWrapper(StepWrapper):
     """
     def __init__(self, step: Step):
         super().__init__(step)
-        self.learning_configuration:dict = self.step.configurations[0]
+        self.learning_configuration:dict = self.step.configuration
 
     def run(self, input_data: 'Input', callback: callable = None) -> None:
         metrics = { m: input_data.computed_metrics[str(m)] for m in input_data.metrics }
@@ -23,16 +24,16 @@ class WrapDatasetWrapper(StepWrapper):
 
         return input_data
 
-    def configure_one(self, config_id:int, key: str, value:any) -> None:
+    @dispatch(str, object)
+    def configure(self, key: str, value:Any) -> None:
         """
         Configure this step or wrapped step
 
         Args:
-            config_id (int): Index of configuration
             key (str): Key of parameter
             value (any): Value to set
         """
-        if key not in self.configurations[0]:
-            self.step.configure_one(config_id, key, value)
+        if key not in self.configuration:
+            self.step.configure(key, value)
         else:
-            super().configure_one(config_id, key, value)
+            super().configure(key, value)

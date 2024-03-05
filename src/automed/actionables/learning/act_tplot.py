@@ -17,7 +17,7 @@ class ActTPLOT(Actionable):
     """
     name="Learn : TPLOT"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'random_state': {
                 'description': 'Random state TODO',
                 'default': 42
@@ -42,7 +42,7 @@ class ActTPLOT(Actionable):
                 'description': 'n jobs TODO',
                 'default': -1
             },
-        }]
+        }
         self.model: TPOTClassifier = None
     
     @runner

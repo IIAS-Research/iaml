@@ -15,7 +15,7 @@ class ActRandomOverSampling(Actionable):
     """
     name = "Random Over Sampling"
     def __init__(self):
-        self.configurations = [{}]
+        self.configuration:dict = {}
     
     @runner
     def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
