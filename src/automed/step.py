@@ -49,10 +49,6 @@ class Step: # pylint: disable=too-many-public-methods
         # Step give many method to help user to configure Steps
         self.configuration:dict = {}
         
-        # List of destroyer. Destroyers are object with a global vision of the pipeline and are able
-        # to stop a pipeline branch if the results is badder then others branches
-        self.destroyers:list = []
-        
         self.parents_steps:list[Step] = [] # List all the previous steps before this one
         
         self.default_configuration() # Load default configuration 
@@ -123,7 +119,7 @@ class Step: # pylint: disable=too-many-public-methods
     def configure_child(self, child:'Step') -> 'Step':
         """
         When a Step contain others ones, this will help to setup everything
-        (Transmit destroyers, increment parents steps)
+        (increment parents steps)
 
         Args:
             child (Step): Step to configure
@@ -131,8 +127,6 @@ class Step: # pylint: disable=too-many-public-methods
         Returns:
             Step: Configured step
         """
-        if any(self.destroyers):
-            child.destroyers = self.destroyers
 
         child.configure_parents(self)
         
@@ -444,7 +438,7 @@ class Step: # pylint: disable=too-many-public-methods
     # Track output
     def track_output(self, output:Output) -> None:
         """
-        Automatically add Stack & call destroyers methods
+        Automatically add Stack
 
         Args:
             output (Output): Output to track
@@ -456,8 +450,6 @@ class Step: # pylint: disable=too-many-public-methods
                 for one_output in output:
                     one_output.add_stack(self.to_stack())
         
-        for destroyer in self.destroyers:
-            destroyer.track_output(self, output)
     
     @classmethod
     def find_steps_by_tag(cls, tag:str) -> list['Step']:
@@ -554,10 +546,6 @@ def runner(func) -> callable:
             Logger().log(f'running step: {self.to_rich_str()}')
         
         for current_input in inputs:
-            # Destroyer will stop Step run if results are not good enough
-            # for destroyer in self.destroyers:
-            #     if destroyer.destroyed(self):
-            #         return result
             if self.suitable(current_input):
                 output = self.from_cache(current_input)
                 if not output:

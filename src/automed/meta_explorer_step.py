@@ -16,12 +16,8 @@ class MetaExplorerStep(MetaStep):
     [METASTEP] Explore all sub steps in Thread and return one output by Sub Step
     """
     name = "MetaExplorerStep"
-    def __init__(self, *args, destroyer=None, **kwargs):  # pylint: disable=unused-argument
+    def __init__(self, *args, **kwargs):  # pylint: disable=unused-argument
         self.output = []
-        
-        if destroyer:
-            destroyer.set_root(self)
-            self.destroyers.append(destroyer)
     
     def json_pipeline(self) -> dict:
         """

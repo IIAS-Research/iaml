@@ -9,7 +9,6 @@ from .metastep import MetaStep
 from .output import Input, Output
 from .dataset import Dataset
 from .metric import Metric
-# from .destroyer import Destroyer
 from .worker_manager import WorkerManager
 from .wrapper.dataset import WrapKFold
 from .meta_ordered_step import MetaOrderedStep
@@ -81,13 +80,11 @@ class AutoMed:
         self.first_step.add_step(ActTPLOT()) # pylint: disable=undefined-variable
 
     # DEBUG -> Testing purpose.
-    def default_pipeline(self, use_destroyer=False, fast=False) -> None:
+    def default_pipeline(self, fast=False) -> None:
         """Load the default pipeline.
         Default pipeline is the recommended way to create classifier and regressor
 
         Args:
-            use_destroyer (bool, optional): Enable/Disabled destroyer. 
-                                            Destroyer doesn't work yet. Defaults to False.
             fast (bool, optional): If true, will only load fast machine learning model.
                                     Fast mode is use to create fast pipeline and iterate
                                     quickly when debugging code. Defaults to False.
@@ -103,11 +100,7 @@ class AutoMed:
         def wrap(step: Step) -> 'WrapGeneticGridSearch':
             return WrapGeneticGridSearch(WrapKFold(step))
         
-        if use_destroyer:
-            self.first_step.add_step(MetaExplorerStep(tag=learning_tag,
-                                                    wrap=wrap))
-        else:
-            self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap))
+        self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap))
 
 
     ##################

@@ -27,6 +27,3 @@ from .thread_with_return_value import *
 
 # Stack
 from .stack import Stack
-
-# Destroyer
-# from .destroyer import Destroyer
