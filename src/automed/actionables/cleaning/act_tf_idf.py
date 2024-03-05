@@ -15,7 +15,7 @@ class ActTfIdf(Actionable):
     """
     name="TF-IDF"
     def __init__(self):
-        self.configurations:list[dict] = [{}]
+        self.configuration:dict = {}
         self.columns:list[tuple[str, TfidfVectorizer]] = None
     
     @runner

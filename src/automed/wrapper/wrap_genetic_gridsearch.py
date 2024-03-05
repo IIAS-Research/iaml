@@ -31,7 +31,7 @@ class WrapGeneticGridSearch(StepWrapper):
             if 'no_gridsearch' in v and v['no_gridsearch'] ]
         self.ignored_configs:list[str] = set(['random_state', *step_ignored_configs]) 
         
-        self.configurations = [{
+        self.configuration:dict = {
             'initial_modificator': {
                 'description': 'Maximum multiplier of default value to generate \
                     the first generation of steps',
@@ -52,11 +52,7 @@ class WrapGeneticGridSearch(StepWrapper):
                 'default': 0.1,
                 'range': [0.001, 1]
             }
-        }]
-        
-        self.step.keep_only_first_config() # Avoid run several config for each run
-        # Will be defined when the step ".run()" but as we'll need it before, let's defined it now.
-        self.step.current_configuration = self.step.configurations[0] 
+        }
         
     # pylint: disable=too-many-locals
     @runner
@@ -194,7 +190,7 @@ class WrapGeneticGridSearch(StepWrapper):
             else: # Other value ? Just keep it
                 new_value = config['value']
                 
-            new_step.configure_one(0, key, new_value) # Set new configuration in the step
+            new_step.configure(key, new_value) # Set new configuration in the step
             
         return new_step
             
@@ -242,7 +238,7 @@ class WrapGeneticGridSearch(StepWrapper):
         else: # Other -> Keep it
             new_value = random_item['value']
             
-        new_step.configure_one(0, random_key, new_value) # Apply configuration
+        new_step.configure(random_key, new_value) # Apply configuration
         return new_step
     
 

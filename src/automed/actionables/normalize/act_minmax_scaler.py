@@ -16,7 +16,7 @@ class ActMinMaxScaler(Actionable):
     """
     name = "Min Max Scaler"
     def __init__(self):
-        self.configurations:list[dict] = [{}]
+        self.configuration:dict = {}
         self.columns:list[str] = None
         self.scaler:MinMaxScaler = None
     

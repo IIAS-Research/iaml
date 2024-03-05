@@ -98,7 +98,7 @@ class StepWrapper(Step):
             'step': self.__class__.__name__,
             'name': self.name,
             'description': self.description,
-            'configuration': self.configurations[0],
+            'configuration': self.configuration,
             'children': [self.step.json_pipeline()]
         }
     

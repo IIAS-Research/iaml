@@ -16,7 +16,7 @@ class ActOnehot(Actionable):
     """
     name="One hot encoding categorical features"
     def __init__(self):
-        self.configurations:list[dict] = [{}]
+        self.configuration:dict = {}
         self.columns:list[str] = None
         self.encoder:OneHotEncoder = None
 

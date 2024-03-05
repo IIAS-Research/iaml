@@ -16,7 +16,7 @@ class WrapKFold(WrapDatasetWrapper):
     """
     name = "Split date to train and test set"
     def __init__(self, step: Step):
-        self.configurations = [{
+        self.configuration = {
             'folds': {
                 'description': 'Split ratio',
                 'default': 5,
@@ -27,7 +27,7 @@ class WrapKFold(WrapDatasetWrapper):
                 'default': True,
                 'no_gridsearch': True,
             },
-        }]
+        }
         
     @runner
     def run(self, input_data:Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
@@ -69,9 +69,6 @@ class WrapKFold(WrapDatasetWrapper):
         output.dataset = input_data.dataset # back to Output
         
         return output
-    
-    def suitable(self, input_data:Input) -> bool:
-        return super().suitable(input_data)
     
     def count_steps(self) -> int:
         """

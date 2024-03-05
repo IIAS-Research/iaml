@@ -32,38 +32,36 @@ class WrapBasicGridSearch(StepWrapper):
         """
         
         to_explore = {}
-        for config in self.step.configurations:
-            for key, item in config.items():
-                if key in self.to_avoid:
-                    continue
+        
+        for key, item in self.step.configuration.items():
+            if key in self.to_avoid:
+                continue
+            
+            if 'categorical' in item.keys(): # Categorial 
+                to_explore[key] = item['categorical']
+            elif type(item['value']) in [int, float]: # Numeric
+                current_value = item['value']
                 
-                if 'categorical' in item.keys(): # Categorial 
-                    to_explore[key] = item['categorical']
-                elif type(item['value']) in [int, float]: # Numeric
-                    current_value = item['value']
+                # pylint: disable=cell-var-from-loop
+                tmp = map(lambda x: x*current_value, \
+                    [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]\
+                    ) 
+                
+                # Keep int
+                if isinstance(item['value'], int):
+                    tmp = [round(x) for x in tmp]
+                
+                # Check range
+                if 'range' in item.keys():
+                    tmp = filter(lambda x: item['range'][0] >= x <= item['range'][1], tmp)  # pylint: disable=cell-var-from-loop
+                
+                to_explore[key] = set(tmp)
                     
-                    # pylint: disable=cell-var-from-loop
-                    tmp = map(lambda x: x*current_value, \
-                        [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]\
-                        ) 
-                    
-                    # Keep int
-                    if isinstance(item['value'], int):
-                        tmp = [round(x) for x in tmp]
-                    
-                    # Check range
-                    if 'range' in item.keys():
-                        tmp = filter(lambda x: item['range'][0] >= x <= item['range'][1], tmp)  # pylint: disable=cell-var-from-loop
-                    
-                    to_explore[key] = set(tmp)
-                        
-                elif isinstance(item['value'], bool): # Bool
-                    to_explore[key] = [True, False]
-                else: # Other 
-                    to_explore[key] = [item['value']]
-                    
-        self.step.keep_only_first_config() # Avoid run several config for each run
-                    
+            elif isinstance(item['value'], bool): # Bool
+                to_explore[key] = [True, False]
+            else: # Other 
+                to_explore[key] = [item['value']]
+        
         outputs = self.__recursive_run(input_data, to_explore, callback=callback)
         
         return outputs
@@ -78,7 +76,7 @@ class WrapBasicGridSearch(StepWrapper):
             del to_explore[key]
             
             for value in values:
-                self.step.configure_one(0, key, value)
+                self.step.configure(key, value)
                 output = self.__recursive_run(input_data, to_explore, callback=callback) 
                 results = results + ([output] if isinstance(output, Output) else output)
                 

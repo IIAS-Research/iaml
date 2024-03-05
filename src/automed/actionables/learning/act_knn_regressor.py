@@ -16,7 +16,7 @@ class ActKNNRegressor(Actionable):
     """
     name = "Learn : KNN"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'metric': {
                 'description': 'Can be minkowski or manhattan',
                 'default': 'minkowski',
@@ -27,7 +27,7 @@ class ActKNNRegressor(Actionable):
                 'default': 5,
                 'range': [1, float('inf')]
             }
-        }]
+        }
         self.model:KNeighborsRegressor = None
         
     @runner

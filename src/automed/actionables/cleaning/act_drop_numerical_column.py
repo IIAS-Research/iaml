@@ -16,13 +16,13 @@ class ActDropNumericalColumn(Actionable):
     
     def __init__(self):
         self.columns_to_drop:list[str] = None
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'empty_threshold': {
                 'description': 'Column with more or equal proportion of empty row \
                     will dropped. 1 will drop all columns',
                 'default': 0.5
             }
-        }]
+        }
     
     @runner
     def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument

@@ -8,7 +8,9 @@ There is also decorators needed to create a Step. See it under Step class.
 """
 
 import sys
+from typing import Any
 from copy import deepcopy
+from multipledispatch import dispatch
 import pandas as pd
 from .output import Output, Input
 
@@ -25,8 +27,7 @@ class Step: # pylint: disable=too-many-public-methods
         STATIC name (str) : Name of the step
         STATIC description (str) : Description of the step
         output (Output): Last output of the Step
-        configuration (list[dict]) : Configurations of the step
-        current_configuration (dict) : Current configuration enable for the next run
+        configuration (dict) : Configuration of the step
         self.__use_cache (bool) : Enable / Disable caching
         caches (list) : Cached result 
     """
@@ -44,10 +45,9 @@ class Step: # pylint: disable=too-many-public-methods
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
         
-        # Configuration of the Step. Each Step can have configurations and will save it here.
+        # Configuration of the Step. Each Step can have one configuration and will save it here.
         # Step give many method to help user to configure Steps
-        self.configurations:list[dict] = [{}]
-        self.current_configuration:dict = {} # Current configuration
+        self.configuration:dict = {}
         
         # List of destroyer. Destroyers are object with a global vision of the pipeline and are able
         # to stop a pipeline branch if the results is badder then others branches
@@ -55,10 +55,9 @@ class Step: # pylint: disable=too-many-public-methods
         
         self.parents_steps:list[Step] = [] # List all the previous steps before this one
         
-        self.default_configurations() # Load default configuration 
+        self.default_configuration() # Load default configuration 
         
-            
-    # 
+        
     @classmethod
     def from_pipeline(cls, pipeline:dict, *args) -> 'Step':
         """
@@ -85,7 +84,7 @@ class Step: # pylint: disable=too-many-public-methods
             
                 if 'configuration' in pipeline:
                     for name, value in pipeline['configuration'].items():
-                        step.configure_one(0, name, value['value'])
+                        step.configure(name, value['value'])
             else: 
                 step = step_class.from_pipeline(pipeline)
         else: 
@@ -155,51 +154,53 @@ class Step: # pylint: disable=too-many-public-methods
     # Each parameters have a name, a description and a default value.
     # Default value can be fixed or computed based on dataset
     
-    def configure_one(self, config_id:int, key:str, value:any) -> None:
+    @dispatch(str, object)
+    def configure(self, key:str, value:Any) -> None:
         """
-        Configure one parameter in one configuration
+        Configure one parameter
 
         Args:
-            config_id (int): Index of the configuration
             key (str): Name of the parameter
             value (any): Value to set 
 
         Raises:
             Exception: _description_
         """
-        if key in self.configurations[config_id].keys():
-            self.configurations[config_id][key]['value'] = value
+        if key in self.configuration:
+            self.configuration[key]['value'] = value
         else:
             raise AttributeError(f"Configurable Key '{key}' does not exist.")
         
-    
-    def configure(self, config:dict, config_id:int):
+    @dispatch(dict)
+    def configure(self, config:dict): # pylint: disable=function-redefined
         """
-        Configure all parameters with a dictionary
+        Configure several parameters with a dictionary
 
         Args:
             config (dict): key as parameter name, value as value to set
-            config_id (int, optional): Index of the configuration to update.
         """
         for key, value in config.items():
-            self.configure_one(config_id, key, value)
+            self.configure(key, value)
+            
+    def all_configurations(self) -> list[dict]:
+        """Recursive function (last one here) to get all configurations in a pipeline
+
+        Returns:
+            list[dict]: list of all configurations
+        """
+        return [{
+            'step_id': id(self),
+            'configuration': self.configuration
+        }]
     
-    def resume_configuration(self, config_id=None) -> dict:
+    def resume_configuration(self) -> dict:
         """
         Resume a configuration -> No meta data, only "key: value"
-
-        Args:
-            config_id (_type_, optional): index of the configuration to resume,
-                if None either the current_configuration or the first one will be choose.
-                Defaults to None.
 
         Returns:
             dict: Configuration resume
         """
-        if config_id:
-            return Step.__resume_a_configuration(self.configurations[config_id])
-        
-        return Step.__resume_a_configuration(self.current_configuration or self.configurations[0])
+        return Step.__resume_a_configuration(self.configuration)
     
     @classmethod
     def __resume_a_configuration(cls, config:dict):
@@ -220,37 +221,16 @@ class Step: # pylint: disable=too-many-public-methods
         Returns:
             any: Value of parameter
         """
-        return self.resume_configuration()[key]
+        param:dict = self.configuration[key]
+        return param['value'] if 'value' in param else param['default']
     
-    def default_configurations(self) -> None:
+    def default_configuration(self) -> None:
         """
         Set default configuration
-        Explore all configurations parameter and set default as value
+        Explore configuration parameters and set default as value
         """
-        for idx, current in enumerate(self.configurations):
-            for key, _ in current.items():
-                self.configurations[idx][key]['value'] = self.configurations[idx][key]['default']
-
-
-    def keep_only_first_config(self) -> None:
-        """
-        Remove all configurations except the first one.
-        Useful when you want a better control of step execution
-        """
-        self.configurations = [self.configurations[0]]
-        
-        
-    def all_configurations(self) -> list[dict]:
-        """Recursive function (last one here) to get all configurations in a pipeline
-
-        Returns:
-            list[dict]: list of all configurations
-        """
-        return [{
-            'step_id': id(self),
-            'configuration': self.configurations
-        }]
-        
+        for param in self.configuration.values():
+            param['value'] = param['default']
     
     def all_step(self):
         """Recursive function (last one here) to get all steps in a pipeline
@@ -355,7 +335,7 @@ class Step: # pylint: disable=too-many-public-methods
             'step': self.__class__.__name__,
             'name': self.name,
             'description': self.description,
-            'configuration': self.configurations[0],
+            'configuration': self.configuration,
             'children': []
         }
     
@@ -367,7 +347,7 @@ class Step: # pylint: disable=too-many-public-methods
         Returns:
             list: Configurations for rich logger
         """
-        conf = [ f'{name}={conf["value"]}' for name, conf in self.configurations[0].items() ]
+        conf = [ f'{name}={conf["value"]}' for name, conf in self.configuration.items() ]
         
         return conf
 
@@ -445,7 +425,7 @@ class Step: # pylint: disable=too-many-public-methods
         """
         return Stack(
             self.__class__,
-            self.current_configuration,
+            self.configuration,
             id(self)
         )
         
@@ -527,7 +507,7 @@ def is_step(*tags) -> callable:
                 super().__init__(*args, **kw) # All parent constructor 
             
             initial_init(self, *args, **kw) # Run your __init__
-            self.default_configurations() # Setup default configuration
+            self.default_configuration() # Setup default configuration
             
         cls.__init__ = __init__ # Replace your init
             
@@ -542,7 +522,6 @@ def is_step(*tags) -> callable:
 def runner(func) -> callable:
     """
     runner MUST decorate your run() method. It you manage every boring things for you.
-        - Run configurations one by one
         - Store results in cache
         - Send information to Destroyers
         - Put results in good shape
@@ -569,32 +548,30 @@ def runner(func) -> callable:
             inputs = [inputs]
         
         result:list[Output] = []
-        for current in self.configurations:
-            self.current_configuration = current
 
-            # only print "parent" steps to reduce logs
-            if hasattr(self, 'step') or hasattr(self, 'steps'):
-                Logger().log(f'running step: {self.to_rich_str()}')
-            
-            for current_input in inputs:
-                # Destroyer will stop Step run if results are not good enough
-                # for destroyer in self.destroyers:
-                #     if destroyer.destroyed(self):
-                #         return result
-                if self.suitable(current_input):
-                    output = self.from_cache(current_input)
-                    if not output:
-                        output = func(self, current_input, callback=callback)
-                        self.add_cache(current_input, output)
-                    else:
-                        callback(self) # Call callback manually because we used cache
-                        
-                    self.track_output(output)
+        # only print "parent" steps to reduce logs
+        if hasattr(self, 'step') or hasattr(self, 'steps'):
+            Logger().log(f'running step: {self.to_rich_str()}')
+        
+        for current_input in inputs:
+            # Destroyer will stop Step run if results are not good enough
+            # for destroyer in self.destroyers:
+            #     if destroyer.destroyed(self):
+            #         return result
+            if self.suitable(current_input):
+                output = self.from_cache(current_input)
+                if not output:
+                    output = func(self, current_input, callback=callback)
+                    self.add_cache(current_input, output)
                 else:
-                    output = current_input    
-                
+                    callback(self) # Call callback manually because we used cache
                     
-                result = result + ([output] if type(output) in [Output, Input] else output)
+                self.track_output(output)
+            else:
+                output = current_input    
+            
+                
+            result = result + ([output] if type(output) in [Output, Input] else output)
 
         self.output = result        
         if callback:

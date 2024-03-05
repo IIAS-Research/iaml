@@ -14,13 +14,13 @@ class ActSVMSVR(Actionable):
     """
     name = "Learn : SVM Regression"
     def __init__(self):
-        self.configurations:list[dict] = [{
+        self.configuration:dict = {
             'kernel': {
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
                 'categorical': ['linear', 'poly', 'rbf', 'sigmoid']
             }
-        }]
+        }
         self.model:svm.SVR = None
         
     @runner

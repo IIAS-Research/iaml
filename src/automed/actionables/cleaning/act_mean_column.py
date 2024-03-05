@@ -16,13 +16,13 @@ class ActMeanColumn(Actionable):
     name = "Fill missing values with mean"
     def __init__(self):
         self.columns:list[str] = None
-        self.configurations = [{
+        self.configuration:dict = {
             'empty_threshold': {
                 'description': 'Column with less or equal proportion of empty row will\
                     be fill with mean value. 1 will always fill void values',
                 'default': 0.5
             }
-        }]
+        }
     
     @runner
     def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument  

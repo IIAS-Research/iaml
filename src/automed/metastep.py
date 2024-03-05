@@ -161,7 +161,10 @@ class MetaStep(Step):
         return self.__recursive_run(steps_to_run, [input_data], callback=callback)
         
     
-    def __recursive_run(self, remain_steps:list[Step], inputs:Input, callback:callable=None) -> list[Output]:
+    def __recursive_run(self,
+                        remain_steps:list[Step],
+                        inputs:Input,
+                        callback:callable=None) -> list[Output]:
         """
         Recursive_run to manage Step with several outputs 
 
