@@ -36,7 +36,7 @@ class Explanation:
         """
         self.processings.append(processing)
     
-    def to_markdown(self) -> str:
+    def to_markdown(self, processings_limit: int = 100) -> str:
         """
         Renders the explanation as Markdown text.
 
@@ -48,23 +48,27 @@ class Explanation:
                 f'| **{k}** | {v["description"]} | {v["value"]} |'
                 for k, v in self.step.current_configuration.items()
             ])
-            entries = '\n'.join([ f' - {p}' for p in self.processings ])
+            entries = '\n'.join([ f' - {p}' for p in self.processings[:processings_limit] ])
 
-            return f'''
+            processings_left = len(self.processings) - processings_limit
+            print(processings_left)
+
+            return f"""
 ## {self.step.name}
 **{self.description}**
 
-{f"""
+{f'''
 ### Configuration
 | Name | Description | Value |
 | ---- | ----------- | ----- |
 {confs}
-""" if len(confs) > 0 else ""}
+''' if len(confs) > 0 else ""}
 
-{f"""
+{f'''
 ### Processings
 {entries}
-""" if len(entries) > 0 else ""}
-            '''
+{f" - *and **{processings_left}** more processings...*" if processings_left > 0 else ""}
+''' if len(entries) > 0 else ""}
+            """
         
         return ''

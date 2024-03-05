@@ -47,7 +47,8 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         self.to_drop = [ c for c, v in corr.items() if len(v) > 0 ]
 
         input_data.pipeline.add_explanation(self, [
-            f'Dropped column **`{c}`** because it was too correlated with {", ".join([ f"**`{i}`**" for i in corr[c] ])}.'
+            f"""Dropped column **`{c}`** because it was too correlated with
+                {", ".join([ f"**`{i}`**" for i in corr[c] ])}."""
             for c in self.to_drop
         ])
         

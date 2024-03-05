@@ -43,7 +43,7 @@ class ActTPLOT(Actionable):
                 'default': -1
             },
         }]
-        self.model:TPLOTClassifer = None
+        self.model: TPOTClassifier = None
     
     @runner
     def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument

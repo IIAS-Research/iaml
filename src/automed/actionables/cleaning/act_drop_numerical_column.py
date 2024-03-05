@@ -13,8 +13,8 @@ class ActDropNumericalColumn(Actionable):
     [STEP] Drop Numerical Column
     """
     name = 'Drop numerical columns'
-    description = '''Drop numerical columns where the proportion of empty rows
-        in the dataset is higher than {empty_threshold}.'''
+    description = """Drop numerical columns where the proportion of empty rows
+        in the dataset is higher than {empty_threshold}."""
     
     def __init__(self):
         self.columns_to_drop:list[str] = None
@@ -27,7 +27,7 @@ class ActDropNumericalColumn(Actionable):
         }]
     
     @runner
-    def run(self, input_data: Input, callback=None) -> Output:
+    def run(self, input_data: Input, callback: callable = None) -> Output: # pylint: disable=unused-argument
         """
         Find columns to drop
 
@@ -54,7 +54,8 @@ class ActDropNumericalColumn(Actionable):
                 ))
 
         input_data.pipeline.add_explanation(self, [
-            f'Dropped column **`{c}`** because **{v[0]}** values out of **{v[1]}** (**{v[2]:.2f}%**) are empty.'
+            f"""Dropped column **`{c}`** because **{v[0]}** values out of
+                **{v[1]}** (**{v[2]:.2f}%**) are empty."""
             for c, v in zip(self.columns_to_drop, explain)
         ])
 
