@@ -178,7 +178,7 @@ class Dataset:
         yield Dataset(self.X.copy(), self.__y.copy(), 
                     resample=self.__resample_stack, splitted=True), None
         
-    def get_columns_names_by_type(self, types:list[DataType]) -> list:
+    def get_columns_names_by_type(self, types:list[DataType]) -> list[str]:
         """
         Get names of all the columns with DataType in types
 
@@ -186,7 +186,7 @@ class Dataset:
             types (list[DataType]): List of Datatype to search
 
         Returns:
-            list: columns names
+            list[str]: columns names
         """
         if not isinstance(types, list):
             types = [types]

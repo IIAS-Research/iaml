@@ -30,6 +30,7 @@ class ActTfIdf(Actionable):
         Returns:
             Output: Transformed input
         """
+        
         self.columns = []
         for column in input_data.dataset.get_columns_names_by_type(
             [DataType.SHORT_TEXT, DataType.TEXT]
@@ -37,6 +38,12 @@ class ActTfIdf(Actionable):
             values = input_data.dataset.X[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             self.columns.append((column, vectorizer))
+
+        feature_names = { c: v.get_feature_names_out() for c, v in self.columns }
+        input_data.pipeline.add_explanation(self, [
+            f'Encoded text column **`{c}`** into **{len(v)}** new columns.'
+            for c, v in feature_names.items() if len(v) > 0
+        ])
         
         return input_data.add_transform(self)
     

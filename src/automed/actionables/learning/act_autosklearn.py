@@ -1,7 +1,7 @@
 """
 [STEP] Learn : AutoSkLearn
 """
-import autosklearn.classification
+import autosklearn.classification # pylint: disable=import-error
 import pandas as pd
 from ...actionable import Actionable
 from ...output import Input, Output
@@ -69,7 +69,7 @@ class ActAutoSKLearn(Actionable):
         Returns:
             bool: Suitable ?
         """
-        return input.dataset.type_of_target in \
+        return input_data.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
     
     def priorize(self, input_data:Input=None) -> float:

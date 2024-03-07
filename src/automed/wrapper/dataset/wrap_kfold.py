@@ -14,7 +14,10 @@ class WrapKFold(WrapDatasetWrapper):
     """
     [WRAPPER] Warp learning step to implement cross validation
     """
-    name = "Split date to train and test set"
+    name = "K-Fold cross validation"
+    description = """Performs cross-validation on the dataset, splitting into
+        train and test sets {folds} times."""
+
     def __init__(self, step: Step):
         self.configuration = {
             'folds': {
@@ -62,13 +65,20 @@ class WrapKFold(WrapDatasetWrapper):
                 metrics.append(output.evaluate(test_ds, force=True))
 
             outputs.append(output)
+
         outputs.sort()
         output = outputs[-1]
         output.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
-            for k in outputs[0].computed_metrics.keys() }
+            for k in output.computed_metrics.keys() }
         output.dataset = input_data.dataset # back to Output
+
+        output.pipeline.add_explanation(self, [
+            'Computed mean metrics.',
+            f"""Trained {self.get_config('folds')} models, then one last model
+                on the whole dataset, and returned it as the output."""
+        ])
         
-        return output
+        return super().run(output, callback)
     
     def count_steps(self) -> int:
         """

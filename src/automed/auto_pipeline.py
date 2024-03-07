@@ -6,8 +6,10 @@ import pickle
 from typing import TYPE_CHECKING
 import pandas as pd
 from sklearn.pipeline import Pipeline
+from .explanation import Explanation
 
 if TYPE_CHECKING:
+    from .metric import Metric
     from .step import Step
 
 class AutoPipeline(Pipeline):
@@ -16,7 +18,11 @@ class AutoPipeline(Pipeline):
     Transform, resample and then predict from Input instance 
     """
     
-    def __init__(self, steps: list[tuple[str, object]] = None) -> None:
+    def __init__(
+        self,
+        steps: list[tuple[str, object]] = None,
+        explanations: list[Explanation] = None,
+    ) -> None:
         """
         Args:
             steps (list[tuple[str, object]], optional): Ordered list of Automed.Steps.
@@ -24,8 +30,12 @@ class AutoPipeline(Pipeline):
         """
         if steps is None:
             steps = []
+
+        if explanations is None:
+            explanations = []
             
         self.steps:list[tuple[str, object]] = steps.copy()
+        self.explanations:list[Explanation] = explanations.copy()
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
         """
@@ -56,7 +66,6 @@ class AutoPipeline(Pipeline):
             Step: Prediction model of the pipeline (or None)
         """
         return self.steps[-1][1] if self.have_model else None
-
 
     def add_transform(self, instance:'Step') -> None:
         """
@@ -93,7 +102,7 @@ class AutoPipeline(Pipeline):
         Returns:
             AutoPipeline: Copied AutoPipeline instance
         """
-        return AutoPipeline(self.steps)
+        return AutoPipeline(self.steps, self.explanations)
     
 
     def pickle(self) -> bytes:
@@ -140,3 +149,18 @@ class AutoPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.model.predict(X)
+    
+    def add_explanation(
+            self,
+            step: 'Step',
+            processings: list[str] = None,
+            metrics: dict['Metric', float] = None):
+        """
+        Explain a step of the pipeline.
+
+        Args:
+            step (Step): Step to explain.
+            processings (list[str]): List of all the processings the
+                                    the step has done to the data.
+        """
+        self.explanations.append(Explanation(step, processings, metrics))

@@ -32,6 +32,11 @@ class ActSplitDate(Actionable):
         """
         self.columns = input_data.dataset.get_columns_names_by_type(DataType.DATE)
 
+        input_data.pipeline.add_explanation(self, [
+            f'Split date column **`{c}`** into year, month, weekday, hour, minute and second.'
+            for c in self.columns
+        ])
+
         return input_data.add_transform(self)
             
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:

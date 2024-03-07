@@ -25,7 +25,7 @@ def each_file(file):
     labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
 
     auto = AutoMed(quiet=True)
-    auto.debug_load(fast=False)
+    auto.default_pipeline(fast=False)
     auto.fit(df.drop(labels, axis=1), df[labels])
     
     end_file = datetime.now()
@@ -33,7 +33,7 @@ def each_file(file):
     
     # Find best result
     max_result = 0
-    for output in auto.output:
+    for output in auto.outputs:
         tmp = output.get_main_metric_value()
         if tmp > max_result:
             max_result = tmp
@@ -64,7 +64,7 @@ threads = []
 
 for file in files:
     print("->>>", file)
-    threads.append(ThreadWithReturnValue(target=each_file, args=(file,)))
+    threads.append(ThreadWithReturnValue(target=each_file, file=file))
             
 # Run all threads
 for thread in threads:

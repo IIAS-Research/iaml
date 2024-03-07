@@ -20,5 +20,8 @@
         "vectorize",
         "vectorizer"
     ],
-    "cSpell.language": "en,fr"
+    "cSpell.language": "en,fr",
+    "pylint.args": [
+        "--rcfile=.pylintrc"
+    ]
 }

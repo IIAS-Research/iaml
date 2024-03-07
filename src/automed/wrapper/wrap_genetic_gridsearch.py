@@ -263,7 +263,7 @@ class WrapGeneticGridSearch(StepWrapper):
         generations = self.get_config('nb_generations')
         
         return self.step.count_steps() \
-            * sum([ estimators * (0.75 ** i) for i in range(generations) ])
+            * sum(estimators * (0.75 ** i) for i in range(generations))
 
     
     def __same_config(self, a: dict, b: dict) -> bool:

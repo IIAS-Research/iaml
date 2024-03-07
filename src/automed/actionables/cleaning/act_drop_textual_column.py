@@ -13,13 +13,14 @@ class ActDropTextualColumn(Actionable):
     """
     [STEP] Drop Textual Column
     """
-    name = "Drop textual column"
+    name = 'Drop textual columns'
+    description = 'Drop textual columns.'
     
     def __init__(self):
         self.columns_to_drop:list[str] = None
     
     @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def run(self, input_data: Input, callback=None) -> Output: # pylint: disable=unused-argument
         """
         Find columns to drop
 
@@ -30,16 +31,18 @@ class ActDropTextualColumn(Actionable):
         Returns:
             Output: Transformed input
         """
-        self.columns_to_drop = input_data.dataset.get_columns_names_by_type(
-            [DataType.TEXT, DataType.SHORT_TEXT])
+        self.columns_to_drop = (input_data.dataset
+            .get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]))
 
-        return input_data.add_transform(self)
-    
-    
+        input_data.pipeline.add_explanation(self, [
+            f'Dropped column **`{c}`**.' for c in self.columns_to_drop
+        ])
 
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+        return input_data.add_transform(self)    
+
+    def transform(self, x) -> pd.DataFrame:
         """
-        Drop textual column
+        Drop columns.
 
         Args:
             x (pd.DataFrame): DataFrame to transform
@@ -47,8 +50,7 @@ class ActDropTextualColumn(Actionable):
         Returns:
             pd.DataFrame: Transformed dataset
         """
-        return X.drop(self.columns_to_drop, axis=1)
-        
+        return x.drop(self.columns_to_drop, axis=1)
     
     def priorize(self, input_data:Input=None) -> float:
         """

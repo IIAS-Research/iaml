@@ -12,7 +12,8 @@ class ActDropDateColumn(Actionable):
     """
     Find and drop data column
     """
-    name = "Drop date column"
+    name = "Drop date columns"
+    description = 'Drop date columns.'
     
     def __init__(self):
         self.columns_to_drop:list[str] = None
@@ -29,7 +30,11 @@ class ActDropDateColumn(Actionable):
         Returns:
             Output: Transformed output (with updated pipeline)
         """
-        self.columns_to_drop:list[str] = input_data.dataset.get_columns_names_by_type(DataType.DATE)
+        self.columns_to_drop = input_data.dataset.get_columns_names_by_type(DataType.DATE)
+
+        input_data.pipeline.add_explanation(self, [
+            f'Dropped column **`{c}`**.' for c in self.columns_to_drop
+        ])
 
         return input_data.add_transform(self)
     

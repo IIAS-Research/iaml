@@ -12,7 +12,9 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     """
     [STEP] Remove High Correlated Column
     """
-    name = "Remove High Correlated Column"
+    name = 'Remove High Correlated Column'
+    description = 'Remove columns which correlation with other columns is higher than {threshold}.'
+
     def __init__(self):
         self.configuration:dict = {
             'threshold': {
@@ -40,8 +42,15 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
         
         # Find features with above-threshold correlation
-        self.to_drop = [column for column in upper.columns \
-            if any(upper[column] >= self.get_config('threshold'))]
+        # self.to_drop = list(to_drop.keys())
+        corr = { c: (upper[upper[c] >= self.get_config('threshold')].index) for c in upper.columns }
+        self.to_drop = [ c for c, v in corr.items() if len(v) > 0 ]
+
+        input_data.pipeline.add_explanation(self, [
+            f"""Dropped column **`{c}`** because it was too correlated with
+                {", ".join([ f"**`{i}`**" for i in corr[c] ])}."""
+            for c in self.to_drop
+        ])
         
         return input_data.add_transform(self)
     
