@@ -10,7 +10,7 @@ from ..step_wrapper import StepWrapper
 from ..step import Step
 from ..decorators.all import is_step, runner
 from .dataset import WrapDatasetWrapper
-from ..output import Output, Input
+from ..candidate import Candidate
 from ..meta_explorer_step import MetaExplorerStep
 from ..logger import Logger
 
@@ -57,7 +57,7 @@ class WrapGeneticGridSearch(StepWrapper):
         
     # pylint: disable=too-many-locals
     @runner
-    def run(self, input_data:Input, callback:callable=None) -> list[Output]:
+    def run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
         """
         Will iterate over generation to find best parameters
         
@@ -70,18 +70,18 @@ class WrapGeneticGridSearch(StepWrapper):
                 Mutation 2/4 BEST to New steps
                 Generate totally new steps
         Args:
-            input_data (Input): Input data
+            candidate (Candidate): Candidate data
             callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
-            list[Output]: All generated Output
+            list[Candidate]: All generated Candidate
         """
-        outputs = []
+        candidates = []
         
                 
         # If no configuration, let's run the step once. Nothing to optimize here
         if not any(self.__config_keys()):
-            return self.step.run(input_data, callback=callback)
+            return self.step.run(candidate, callback=callback)
                 
         # Create the first generation of Steps. 
         # This first generation is full of random Steps configurations
@@ -96,15 +96,15 @@ class WrapGeneticGridSearch(StepWrapper):
             
             meta = MetaExplorerStep() # Use MetaExplorer to run all our generation easily
             meta.add_steps(generation) # Give all steps to MetaExplorer
-            outputs = meta.run(input_data, callback=callback) # And run !
+            candidates = meta.run(candidate, callback=callback) # And run !
             
             # If this is not the last generation, let's create a new one
             if i_gen+1 < self.get_config('nb_generations'):
                 # Generate next generation
                 nb_to_get = int(self.get_config('nb_estimators')/4)
-                outputs.sort(reverse=True)
+                candidates.sort(reverse=True)
                 ordered_ids = self.__get_unique_ordered(list(map(
-                    lambda x: x.stacked_path[-2].step_id, outputs)))
+                    lambda x: x.stacked_path[-2].step_id, candidates)))
                 
                 # Keep the 1/4 better Steps
                 steps_to_keep = []
@@ -142,7 +142,7 @@ class WrapGeneticGridSearch(StepWrapper):
             else:
                 Logger().log(f"finished all generations: [b]{self.step.__class__.__name__}[/]")
         
-        return outputs
+        return candidates
             
             
             

@@ -1,12 +1,12 @@
 """
 MetaStep is a direct child of Step and will carry and execute several other Steps
--> MetaStep will execute Step one by one, using the output of a step as input of the next one. 
+-> MetaStep will execute Step one by one, using the candidate of a step as candidate of the next one. 
 The order of Step is defined by the priorize() method 
 
 There is children classes of MetaStep to execute Steps in a different way
 """
 from .step import Step
-from .output import Output, Input
+from .candidate import Candidate
 from .decorators.all import is_step, runner
 from .step_wrapper import StepWrapper
 
@@ -14,7 +14,7 @@ from .step_wrapper import StepWrapper
 class MetaStep(Step):
     """
     MetaStep is a direct child of Step and will carry and execute several other Steps
-    -> MetaStep will execute Step one by one, using the output of a step as input of the next one. 
+    -> MetaStep will execute Step one by one, using the candidate of a step as candidate of the next one. 
     The order of Step is defined by the priorize() method 
 
     There is children classes of MetaStep to execute Steps in a different way
@@ -147,55 +147,56 @@ class MetaStep(Step):
         return self.steps
     
     @runner
-    def run(self, input_data:Input, callback:callable=None) -> Output:
+    def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
         """
         Run steps self ordered by "priorize" function
 
         Args:
-            input_data (Input): Imput data
+            candidate (Candidate): Imput data
             callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
-            Output: Results
+            Candidate: Results
         """
         steps_to_run = self.steps.copy()
         
-        return self.__recursive_run(steps_to_run, [input_data], callback=callback)
+        return self.__recursive_run(steps_to_run, [candidate], callback=callback)
         
     
     def __recursive_run(self,
                         remain_steps:list[Step],
-                        inputs:Input,
-                        callback:callable=None) -> list[Output]:
+                        candidates:list[Candidate],
+                        callback:callable=None) -> list[Candidate]:
         """
-        Recursive_run to manage Step with several outputs 
+        Recursive_run to manage Step with several candidates 
 
         Args:
             remain_steps (list[Step]): Remaining Steps
-            inputs (Input): Output of previous Step
+            candidates (Candidate): Candidate of previous Step
             callback (_type_, optional): Call after each step run. Defaults to None.
 
         Returns:
-            list[Output]: Results
+            list[Candidate]: Results
         """
-        outputs = []
+        output_candidates = []
         if remain_steps:
-            for current_input in inputs:
-                max_eval = remain_steps[0].priorize(current_input)
+            for current_candidate in candidates:
+                max_eval = remain_steps[0].priorize(current_candidate)
                 max_index = 0
                 for index, step in enumerate(remain_steps[1:]):
-                    current_eval = step.priorize(current_input)
+                    current_eval = step.priorize(current_candidate)
                     if current_eval > max_eval:
                         max_eval = current_eval 
                         max_index = index+1
                 
-                results = remain_steps[max_index].run(current_input, callback=callback)
+                results = remain_steps[max_index].run(current_candidate, callback=callback)
                 futures_steps = remain_steps.copy()
                 futures_steps.pop(max_index)
-                outputs = outputs + self.__recursive_run(futures_steps, results, callback=callback)
+                output_candidates = output_candidates + \
+                    self.__recursive_run(futures_steps, results, callback=callback)
                 
-            return outputs
-        return inputs
+            return output_candidates
+        return candidates
 
     def conf_to_rich_str_list(self) -> str:
         """

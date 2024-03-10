@@ -4,7 +4,7 @@
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
 
@@ -24,12 +24,12 @@ class ActMeanColumn(Actionable):
             'empty_threshold': {
                 'description': """Column with less or equal proportion of empty row will
                     be fill with mean value. 1 will always fill void values""",
-                'default': 0.5
+                'default': 1 # TODO Review when adding new kind of imputer
             }
         }
     
     def fit(self, dataset:Dataset):
-        threshold = self.get_config('empty_threshold')
+        # threshold = self.get_config('empty_threshold')
 
         self.columns = []
         explain = []
@@ -38,20 +38,17 @@ class ActMeanColumn(Actionable):
             values = dataset.X[column]
             nan_values_count = values.isnull().sum()
 
-            if (nan_values_count > 0
-                and nan_values_count / len(values) <= threshold
-            ):
-                self.columns.append((column, values.mean()))
-                explain.append((
-                    nan_values_count,
-                    len(values),
-                    nan_values_count / len(values) * 100,
-                ))
+            self.columns.append((column, values.mean()))
+            explain.append((
+                nan_values_count,
+                len(values),
+                nan_values_count / len(values) * 100,
+            ))
 
         self.explanations = [
             f"""Filled missing values of column **`{c}`** with **{mean:.2f}**
-                because **{v[0]}** out of **{v[1]}** values (**{v[2]:.2f}**%)
-                were missing."""
+                (**{v[0]}** out of **{v[1]}** values (**{v[2]:.2f}**%)
+                were missing in train data)."""
             for (c, mean), v in zip(self.columns, explain)
         ]
         
@@ -69,14 +66,14 @@ class ActMeanColumn(Actionable):
         """
         for name, mean in self.columns:
             X[name].fillna(mean, inplace=True)
-
+        
         return X
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 
         Return : continuous between 0 and 1
         """
-        return 1-(input_data.dataset.X.isnull().sum().min()/len(input_data.dataset.X))
+        return 1-(candidate.dataset.X.isnull().sum().min()/len(candidate.dataset.X))

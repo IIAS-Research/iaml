@@ -5,7 +5,7 @@ from imblearn.over_sampling import RandomOverSampler
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
@@ -21,14 +21,14 @@ class ActRandomOverSampling(Actionable):
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Add resample random over sampling to Input
+        Add resample random over sampling to Candidate
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.resampler = RandomOverSampler(sampling_strategy='minority')
         self.resampler.fit(dataset.X, dataset.y)
@@ -47,7 +47,7 @@ class ActRandomOverSampling(Actionable):
         """
         return self.resampler.fit_resample(X, y)
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 
@@ -55,5 +55,5 @@ class ActRandomOverSampling(Actionable):
         """
         return 1
     
-    def suitable(self, input_data: Input) -> bool:
-        return input_data.dataset.type_of_target in ['binary', 'multiclass']
+    def suitable(self, candidate: Candidate) -> bool:
+        return candidate.dataset.type_of_target in ['binary', 'multiclass']

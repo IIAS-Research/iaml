@@ -4,13 +4,13 @@
 """
 from sklearn.neighbors import KNeighborsClassifier
 import pandas as pd
-from ...actionable import Actionable
-from ...output import Input
+from ...predictor import Predictor
+from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
-class ActKNN(Actionable):
+class ActKNN(Predictor):
     """
     [STEP] Learn :  KNN
     """
@@ -32,14 +32,14 @@ class ActKNN(Actionable):
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Knn classifier on Input.dataset
+        Fit Knn classifier on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.model = KNeighborsClassifier(
             n_neighbors = self.get_config('n_neighbors'),
@@ -63,11 +63,11 @@ class ActKNN(Actionable):
         return self.model.predict(X)
     
     
-    def suitable(self, input_data) -> bool:
-        return input_data.dataset.type_of_target in \
+    def suitable(self, candidate) -> bool:
+        return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

@@ -5,7 +5,7 @@ import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...data_type import DataType
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
@@ -25,11 +25,11 @@ class ActDropTextualColumn(Actionable):
         Find columns to drop
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.columns_to_drop = (dataset
             .get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]))
@@ -52,7 +52,7 @@ class ActDropTextualColumn(Actionable):
         """
         return x.drop(self.columns_to_drop, axis=1)
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

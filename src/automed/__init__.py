@@ -5,7 +5,7 @@ from .automed import *
 from .step import *
 from .metastep import MetaStep
 from .actionable import Actionable
-from .output import Output
+from .candidate import Candidate
 from .dataset import Dataset
 from .data_type import DataType
 from .metric import Metric

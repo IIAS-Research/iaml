@@ -4,13 +4,13 @@
 
 from sklearn.naive_bayes import GaussianNB
 import pandas as pd
-from ...actionable import Actionable
+from ...predictor import Predictor
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
-class ActGaussianNb(Actionable):
+class ActGaussianNb(Predictor):
     """
     [STEP] Learn : Gaussian NB
     """
@@ -21,10 +21,10 @@ class ActGaussianNb(Actionable):
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit GaussianNB on Input.dataset
+        Fit GaussianNB on Candidate.dataset
 
         Args:
-            dataset (Input): Fit data
+            dataset (Candidate): Fit data
 
         Returns:
             Fitted step
@@ -48,20 +48,20 @@ class ActGaussianNb(Actionable):
         """
         return self.model.predict(X)
     
-    def suitable(self, input_data:Input) -> bool:
+    def suitable(self, candidate:Candidate) -> bool:
         """
-        Does this step suitable for this input
+        Does this step suitable for this candidate
 
         Args:
-            input_data (Input): Suitable for this input
+            candidate (Candidate): Suitable for this candidate
 
         Returns:
             bool: Suitable ?
         """
-        return input_data.dataset.type_of_target in \
+        return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

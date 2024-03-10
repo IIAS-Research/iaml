@@ -2,7 +2,7 @@
 [WRAPPER] Wrap a step to apply Grid Search configuration parameters
 """
 from ..step_wrapper import StepWrapper
-from ..output import Output, Input
+from ..candidate import Candidate
 from ..decorators.all import is_step, runner
 
 
@@ -15,7 +15,7 @@ class WrapBasicGridSearch(StepWrapper):
     to_avoid:list[str] = ['random_state'] # List of ignored key
 
     @runner
-    def run(self, input_data:Input, callback:callable=None) -> list[Output]:
+    def run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
         """
         Super basic GridSearch.
             Numeric values -> 11 runs with 10% (50% to 150%)
@@ -24,11 +24,11 @@ class WrapBasicGridSearch(StepWrapper):
             Other -> keep current value
 
         Args:
-            input_data (Input): Input data
+            candidate (Candidate): Candidate data
             callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
-            list[Output]: All transformed input
+            list[Candidate]: All transformed candidate
         """
         
         to_explore = {}
@@ -62,12 +62,12 @@ class WrapBasicGridSearch(StepWrapper):
             else: # Other 
                 to_explore[key] = [item['value']]
         
-        outputs = self.__recursive_run(input_data, to_explore, callback=callback)
+        candidates = self.__recursive_run(candidate, to_explore, callback=callback)
         
-        return outputs
+        return candidates
     
     
-    def __recursive_run(self, input_data, to_explore, callback=None):
+    def __recursive_run(self, candidate, to_explore, callback=None):
         if any(list(to_explore.keys())):
             results = []
             key = list(to_explore.keys())[0]
@@ -77,8 +77,8 @@ class WrapBasicGridSearch(StepWrapper):
             
             for value in values:
                 self.step.configure(key, value)
-                output = self.__recursive_run(input_data, to_explore, callback=callback) 
-                results = results + ([output] if isinstance(output, Output) else output)
+                candidate = self.__recursive_run(candidate, to_explore, callback=callback) 
+                results = results + ([candidate] if isinstance(candidate, Candidate) else candidate)
                 
             return results
-        return self.step.run(input_data, callback=callback)
+        return self.step.run(candidate, callback=callback)

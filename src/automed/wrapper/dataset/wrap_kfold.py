@@ -4,7 +4,7 @@
 import numpy as np
 from sklearn.model_selection import KFold as SKKFold, StratifiedKFold
 from ...logger import Logger
-from ...output import Input, Output
+from ...candidate import Candidate
 from ...step import Step
 from ...decorators.all import is_step, runner
 from .wrap_dataset_wrapper import WrapDatasetWrapper
@@ -34,52 +34,52 @@ class WrapKFold(WrapDatasetWrapper):
         }
         
     @runner
-    def run(self, input_data:Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def run(self, candidate:Candidate, callback:callable=None) -> Candidate: # pylint: disable=unused-argument
         """
-        Run wrapped step on kfold and merge results into one output
+        Run wrapped step on kfold and merge results into one candidate
 
         Args:
-            input_data (Input): Data to run on
+            candidate (Candidate): Data to run on
             callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
-        if input_data.dataset.type_of_target in ['binary', 'multiclass'] \
+        if candidate.dataset.type_of_target in ['binary', 'multiclass'] \
             and self.get_config('stratify'):
             kfold = StratifiedKFold(self.get_config('folds'))
         else:
             kfold = SKKFold(self.get_config('folds'))
         
-        splitted_datasets = input_data.dataset.split(kfold.split)
+        splitted_datasets = candidate.dataset.split(kfold.split)
         
         Logger().log(f"running k-folds: [b]{self.step.__class__.__name__}[/] \
             ({', '.join(self.step.conf_to_rich_str_list())})")
         
-        outputs: list[Output] = []
+        candidates: list[Candidate] = []
         metrics = []
         for train_ds, test_ds in splitted_datasets:
-            training_input = input_data.to_input(dataset=train_ds)
-            output: Output = self.step.run(training_input, callback=callback)[0]
+            training_candidate = candidate.to_input(dataset=train_ds)
+            candidate: Candidate = self.step.run(training_candidate, callback=callback)[0]
 
             if test_ds is not None:
-                metrics.append(output.evaluate(test_ds, force=True))
+                metrics.append(candidate.evaluate(test_ds, force=True))
 
-            outputs.append(output)
+            candidates.append(candidate)
 
-        outputs.sort()
-        output = outputs[-1]
-        output.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
-            for k in output.computed_metrics.keys() }
-        output.dataset = input_data.dataset # back to Output
+        candidates.sort()
+        candidate = candidates[-1]
+        candidate.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
+            for k in candidate.computed_metrics.keys() }
+        candidate.dataset = candidate.dataset # back to Candidate
 
         self.explanations = [
             'Computed mean metrics.',
             f"""Trained {self.get_config('folds')} models, then one last model
-                on the whole dataset, and returned it as the output."""
+                on the whole dataset, and returned it as the candidate."""
         ]
         
-        return super().run(output, callback)
+        return super().run(candidate, callback)
     
     def count_steps(self) -> int:
         """

@@ -3,13 +3,13 @@
 """
 from sklearn import svm
 import pandas as pd
-from ...actionable import Actionable
-from ...output import Input
+from ...predictor import Predictor
+from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
-class ActSVMSVC(Actionable):
+class ActSVMSVC(Predictor):
     """
     [STEP] Learn :  SVM Classifier
     """
@@ -26,7 +26,7 @@ class ActSVMSVC(Actionable):
                 'default': 42
             },
             'probability': {
-                'description': 'If true, the output will be a probability. If false, \
+                'description': 'If true, the candidate will be a probability. If false, \
                     it will be Binary',
                 'default': False
             },
@@ -40,14 +40,14 @@ class ActSVMSVC(Actionable):
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit SVM classifier on Input.dataset
+        Fit SVM classifier on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.model = svm.SVC(
             kernel = self.get_config('kernel'),
@@ -73,11 +73,11 @@ class ActSVMSVC(Actionable):
         return self.model.predict(X)
         
     
-    def suitable(self, input_data) -> bool:
-        return input_data.dataset.type_of_target in \
+    def suitable(self, candidate) -> bool:
+        return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

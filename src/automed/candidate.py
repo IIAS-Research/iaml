@@ -1,9 +1,12 @@
 """
-Output (and Input alias) is used to exchange data between Steps  
+Candidate (and Candidate alias) is used to exchange data between Steps  
 """
-from copy import copy
+import numpy as np
+import pandas as pd
+from copy import copy, deepcopy
 from typing import TYPE_CHECKING
 from .dataset import Dataset
+from .splitter import random_splitter
 
 from .auto_pipeline import AutoPipeline
 
@@ -13,9 +16,9 @@ if TYPE_CHECKING:
     from .step import Step
 
 
-class Output:
+class Candidate:
     """
-    Output of every Automed Step
+    Candidate of every Automed Step
     
     Attributes:
         dataset(Dataset): Dataset being built
@@ -23,7 +26,7 @@ class Output:
         main_metric(Metric): Main metric to evaluate model
         pipeline(AutoPipeline): Pipeline being built
         computed_metrics(dict): Results of metrics computation
-        stacked_path(list): Stack of all steps used to build this Output
+        stacked_path(list): Stack of all steps used to build this Candidate
     """
     
     def __init__(self,
@@ -97,7 +100,7 @@ class Output:
     def to_output(self,
                 dataset:Dataset=None,
                 metrics:'Metric'=None,
-                auto_pipeline:'AutoPipeline'=None) -> 'Output':
+                auto_pipeline:'AutoPipeline'=None) -> 'Candidate':
         """
         Create a copy of current instance and assign parameters values to attributes 
 
@@ -107,9 +110,9 @@ class Output:
             auto_pipeline (AutoPipeline, optional): Replace current pipeline. Defaults to None.
 
         Returns:
-            Output: New Output
+            Candidate: New Candidate
         """
-        return Output(
+        return Candidate(
             dataset or self.dataset,
             metrics or copy(self.metrics),
             auto_pipeline or self.pipeline.copy(),
@@ -118,7 +121,7 @@ class Output:
     def to_input(self,
                 dataset:Dataset=None,
                 metrics:'Metric'=None,
-                auto_pipeline:'AutoPipeline'=None) -> 'Input':
+                auto_pipeline:'AutoPipeline'=None) -> 'Candidate':
         """
         Create a copy of current instance and assign parameters values to attributes 
 
@@ -128,15 +131,11 @@ class Output:
             auto_pipeline (AutoPipeline, optional): Replace current pipeline. Defaults to None.
 
         Returns:
-            Input: New Input
+            Candidate: New Candidate
         """
-        return Input(
-            dataset or self.dataset,
-            metrics or copy(self.metrics),
-            auto_pipeline or self.pipeline.copy(),
-            stacked_path=self.stacked_path)
+        return self.to_output(dataset, metrics, auto_pipeline)
         
-    def add_to_pipeline(self, instance:'Step') -> 'Output':
+    def add_to_pipeline(self, instance:'Step') -> 'Candidate':
         """
         Add a Step to prediction Pipeline.
         instance must implement one of these methods :
@@ -152,7 +151,8 @@ class Output:
             elif hasattr(instance, 'predict') and callable(instance.predict):
                 self.pipeline.set_model(instance)
             elif hasattr(instance, 'resample') and callable(instance.resample):
-                self.dataset.resample(instance.resample)
+                self.pipeline.add_resample(instance.resample)
+                self.dataset.resample(instance.resample) # Resample in Dataset used in pipeline generation step
                 
         return self.to_output()
         
@@ -174,7 +174,8 @@ class Output:
             
         return str_out
     
-    def evaluate(self, dataset:Dataset, force:bool=False) -> dict:
+    def training_evaluate(self, dataset:Dataset, \
+                splitter:callable=random_splitter, force:bool=False) -> dict:
         """
         Evaluate pipeline model with self.metrics on dataset
         If evaluate is called in training process, result will be cached in
@@ -191,20 +192,31 @@ class Output:
         if not self.pipeline.have_model :
             return None
         
-        training_stage = dataset.splitted # If dataset is splitted -> We here in the training stage
+        splitted_datasets:list[tuple[Dataset, Dataset]] = splitter(dataset)
         
-        if training_stage and not(force) and self.computed_metrics:
-            return self.computed_metrics
-            
-        current_compute = {}
-        for metric in self.metrics:
-            result = dataset.compute_metric(self.pipeline, metric)
-            current_compute[str(metric)] = result
-            
-        if training_stage:
-            self.computed_metrics = current_compute
-            
-        return current_compute
+        metrics:list[dict] = []
+        for train_ds, test_ds in splitted_datasets:
+            copied_pipe = deepcopy(self.pipeline)
+            copied_pipe.fit(train_ds.X, train_ds.y)
+            y_pred = copied_pipe.predict(test_ds.X)
+            metrics.append(self.__compute_metrics(test_ds.y, y_pred))
+        
+        self.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
+            for k in map(str, self.metrics) }
+        
+        return self.computed_metrics
+    
+    
+    def evaluate(self, X:pd.DataFrame, y:np.array) -> dict:
+        if not self.pipeline.have_model:
+            return None
+        
+        y_pred = self.pipeline.predict(X)
+        return self.__compute_metrics(y, y_pred)
+    
+    def __compute_metrics(self, y:np.array, y_pred:np.array) -> dict:
+        return {str(metric): metric.compute(y, y_pred) for metric in self.metrics}
+        
     
     def explain(self):
         """
@@ -214,9 +226,3 @@ class Output:
             list: Explain strings
         """
         return list(map(lambda stack: stack.explain(), self.stacked_path))
-    
-
-class Input(Output):
-    """
-    Use as alias for Output
-    """

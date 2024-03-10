@@ -1,7 +1,7 @@
 """
     Step.run() decorator.
 """
-from ..output import Input, Output
+from ..candidate import Candidate
 from ..logger import Logger
 
 def runner(func) -> callable:
@@ -20,43 +20,48 @@ def runner(func) -> callable:
     Returns:
         callable: edited method
     """
-    def runner_wrapper(self, inputs:list[Input],
+    def runner_wrapper(self, candidates:list[Candidate],
                         callback:callable=None
-                        ) -> list[Output]:
+                        ) -> list[Candidate]:
         """Wrapping decorated method
 
         Returns:
-            list[Output]: All generated outputs
+            list[Candidate]: All generated candidates
         """
         
-        if inputs.__class__ in [Output, Input]:
-            inputs = [inputs]
+        if candidates.__class__ in [Candidate]:
+            candidates = [candidates]
+            
+        print("Begin step", self)
+        print("input cand", candidates)
         
-        result:list[Output] = []
+        result:list[Candidate] = []
 
         # only print "parent" steps to reduce logs
         if hasattr(self, 'step') or hasattr(self, 'steps'):
             Logger().log(f'running step: {self.to_rich_str()}')
         
-        for current_input in inputs:
-            if self.suitable(current_input):
-                output = self.from_cache(current_input)
-                if not output:
-                    output = func(self, current_input, callback=callback)
-                    self.add_cache(current_input, output)
+        for current_candidate in candidates:
+            if self.suitable(current_candidate):
+                candidate = self.from_cache(current_candidate)
+                if not candidate:
+                    candidate = func(self, current_candidate, callback=callback)
+                    self.add_cache(current_candidate, candidate)
                 else:
                     callback(self) # Call callback manually because we used cache
                     
-                self.track_output(output)
+                self.track_candidate(candidate)
             else:
-                output = current_input    
+                candidate = current_candidate    
             
                 
-            result = result + ([output] if type(output) in [Output, Input] else output)
+            result = result + ([candidate] if type(candidate) in [Candidate] else candidate)
 
-        self.output = result        
+        self.candidate = result        
         if callback:
             callback(self)
             
+        print("output cand", result)
+        
         return result
     return runner_wrapper

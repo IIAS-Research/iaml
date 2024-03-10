@@ -3,15 +3,15 @@
 """
 from sklearn.neighbors import KNeighborsRegressor
 import pandas as pd
-from ...actionable import Actionable
-from ...output import Input
+from ...predictor import Predictor
+from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
 
 
 
 @is_step('learning', 'tabular', 'fast_learning')
-class ActKNNRegressor(Actionable):
+class ActKNNRegressor(Predictor):
     """
     [STEP] Learn : KNN
     """
@@ -33,14 +33,14 @@ class ActKNNRegressor(Actionable):
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Knn regressor on Input.dataset
+        Fit Knn regressor on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.model = KNeighborsRegressor(
             n_neighbors = self.get_config('n_neighbors'),
@@ -65,19 +65,19 @@ class ActKNNRegressor(Actionable):
         return self.model.predict(X)
     
     
-    def suitable(self, input_data: Input) -> bool:
+    def suitable(self, candidate: Candidate) -> bool:
         """
-        Does this step suitable for this input
+        Does this step suitable for this candidate
 
         Args:
-            input_data (Input): Suitable for this input
+            candidate (Candidate): Suitable for this candidate
 
         Returns:
             bool: Suitable ?
         """
-        return input_data.dataset.type_of_target in ['continuous']
+        return candidate.dataset.type_of_target in ['continuous']
 
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

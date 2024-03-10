@@ -11,7 +11,7 @@ import sys
 from typing import Any
 from copy import deepcopy
 from multipledispatch import dispatch
-from .output import Output, Input
+from .candidate import Candidate
 from .dataset import Dataset
 from .stack import Stack
 from .decorators.runner import runner
@@ -25,7 +25,7 @@ class Step: # pylint: disable=too-many-public-methods
         STATIC available_steps (dict) : Reference of all available Steps to create pipeline
         STATIC name (str) : Name of the step
         STATIC __description (str) : Description of the step
-        output (Output): Last output of the Step
+        candidate (Candidate): Last candidate of the Step
         configuration (dict) : Configuration of the step
         self.__use_cache (bool) : Enable / Disable caching
         caches (list) : Cached result 
@@ -41,7 +41,7 @@ class Step: # pylint: disable=too-many-public-methods
     __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
-        self.output:Output = None
+        self.candidate:Candidate = None
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
@@ -105,12 +105,12 @@ class Step: # pylint: disable=too-many-public-methods
     def __str__(self):
         return self.name
     
-    def suitable(self, input_data:Input) -> bool: # pylint: disable=unused-argument
+    def suitable(self, candidate:Candidate) -> bool: # pylint: disable=unused-argument
         """
-        Have to be overwrote. Check if a step is suitable for a given Input
+        Have to be overwrote. Check if a step is suitable for a given Candidate
 
         Args:
-            input_data (Input): Input to test
+            candidate (Candidate): Candidate to test
 
         Returns:
             bool: Is it suitable ?
@@ -241,33 +241,33 @@ class Step: # pylint: disable=too-many-public-methods
     #####################
     # Results of run() can by stored in cache to avoid compute it several time
     
-    def from_cache(self, input_data:Input) -> Output:
+    def from_cache(self, candidate:Candidate) -> Candidate:
         """
-        If a previous run with same input & configuration was cached, return it
+        If a previous run with same candidate & configuration was cached, return it
         Else return None
 
         Args:
-            input_data (Input): Try to find this input in cache
+            candidate (Candidate): Try to find this candidate in cache
 
         Returns:
-            Output: Cached output or None
+            Candidate: Cached candidate or None
         """
         if not self.use_cache:
             return None
         
         for cache in self.caches:
             if same_types(self.resume_configuration(), cache['config']) \
-                and id(input_data) == cache['input_id']:
+                and id(candidate) == cache['input_id']:
                 return cache['output']
         return None
     
-    def add_cache(self, input_data:Input, output:Output) -> bool:
+    def add_cache(self, input_candidate:Candidate, output_candidate:Candidate) -> bool:
         """
-        Add an input, output pair to cache
+        Add an candidate, candidate pair to cache
 
         Args:
-            input_data (Input): Input to add
-            output (Output): Result output to add
+            candidate (Candidate): Candidate to add
+            candidate (Candidate): Result candidate to add
 
         Returns:
             bool: Success ? 
@@ -276,9 +276,9 @@ class Step: # pylint: disable=too-many-public-methods
             return False
         
         self.caches.append({
-            'input_id': id(input_data),
+            'input_id': id(input_candidate),
             'config': deepcopy(self.resume_configuration()),
-            'output': output
+            'output': output_candidate
         })
         return True
     
@@ -377,12 +377,12 @@ class Step: # pylint: disable=too-many-public-methods
     # Base on the dataset (or not) priorize usefulness of this actionable.
     # Result is a value between 0 and 1. 0 stand for not useful
     #
-    def priorize(self, input_data:Input=None) -> float: # pylint: disable=unused-argument
+    def priorize(self, candidate:Candidate=None) -> float: # pylint: disable=unused-argument
         """
-        Try to evaluate the priorities level of himself on an input  
+        Try to evaluate the priorities level of himself on an candidate  
 
         Args:
-            input_data (Input, optional): Input used to compute priorities. Defaults to None.
+            candidate (Candidate, optional): Candidate used to compute priorities. Defaults to None.
 
         Returns:
             float: Continuous value 0 to 1 
@@ -405,18 +405,18 @@ class Step: # pylint: disable=too-many-public-methods
         return self
     
     @runner  
-    def run(self, input_data:'Input', callback:callable=None) -> Output:
+    def run(self, candidate:'Candidate', callback:callable=None) -> Candidate:
         """
-        Run the step on input data
+        Run the step on candidate data
 
         Args:
-            input_data (Input): Input informations 
+            candidate (Candidate): Candidate informations 
 
         Returns:
-            Output: transformed Input 
+            Candidate: transformed Candidate 
         """
-        self.fit(input_data.dataset)
-        return input_data.add_to_pipeline(self)
+        self.fit(candidate.dataset)
+        return candidate.add_to_pipeline(self)
     
     ###########
     ## STACK ##
@@ -438,20 +438,20 @@ class Step: # pylint: disable=too-many-public-methods
             id(self)
         )
         
-    # Track output
-    def track_output(self, output:Output) -> None:
+    # Track candidate
+    def track_candidate(self, candidate:Candidate) -> None:
         """
         Automatically add Stack
 
         Args:
-            output (Output): Output to track
+            candidate (Candidate): Candidate to track
         """
         if isinstance(self, Step):
-            if type(output) in [Output, Input]:
-                output.add_stack(self.to_stack())
+            if type(candidate) in [Candidate]:
+                candidate.add_stack(self.to_stack())
             else:
-                for one_output in output:
-                    one_output.add_stack(self.to_stack())
+                for one_candidate in candidate:
+                    one_candidate.add_stack(self.to_stack())
         
     
     @classmethod

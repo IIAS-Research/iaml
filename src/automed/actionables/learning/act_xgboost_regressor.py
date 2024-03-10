@@ -3,14 +3,14 @@
 """
 from sklearn.ensemble import GradientBoostingRegressor
 import pandas as pd
-from ...actionable import Actionable
+from ...predictor import Predictor
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
 @is_step('learning', 'tabular')
-class ActXGBoost(Actionable):
+class ActXGBoost(Predictor):
     """
     [STEP] Learn :  XGBoost Regressor
     """
@@ -41,14 +41,14 @@ class ActXGBoost(Actionable):
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit XgBoost regressor on Input.dataset
+        Fit XgBoost regressor on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.model = GradientBoostingRegressor(
                                         n_estimators=self.get_config('n_estimators'),
@@ -76,10 +76,10 @@ class ActXGBoost(Actionable):
 
     
     
-    def suitable(self, input_data: Input) -> bool:
-        return input_data.dataset.type_of_target in ['continuous']
+    def suitable(self, candidate: Candidate) -> bool:
+        return candidate.dataset.type_of_target in ['continuous']
 
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

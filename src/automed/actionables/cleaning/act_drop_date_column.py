@@ -4,7 +4,7 @@
 import pandas as pd
 from ...actionable import Actionable
 from ...data_type import DataType
-from ...output import Input
+from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
 
@@ -27,7 +27,7 @@ class ActDropDateColumn(Actionable):
             dataset (Dataset): Data to fit on
 
         Returns:
-            Output: Transformed output (with updated pipeline)
+            Candidate: Transformed candidate (with updated pipeline)
         """
         self.columns_to_drop = dataset.get_columns_names_by_type(DataType.DATE)
 
@@ -40,7 +40,7 @@ class ActDropDateColumn(Actionable):
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """
-        Drop all date column of input dataset
+        Drop all date column of candidate dataset
 
         Args:
             x (pd.DataFrame): Dataset to transform
@@ -50,7 +50,7 @@ class ActDropDateColumn(Actionable):
         """
         return X.drop(self.columns_to_drop, axis=1) 
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

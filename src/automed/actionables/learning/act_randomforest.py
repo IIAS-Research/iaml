@@ -3,13 +3,13 @@
 """
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
-from ...actionable import Actionable
+from ...predictor import Predictor
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
-class ActRandomForest(Actionable):
+class ActRandomForest(Predictor):
     """
     [STEP] Learn :  Random Forest
     """
@@ -35,14 +35,14 @@ class ActRandomForest(Actionable):
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Random forest on Input.dataset
+        Fit Random forest on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.model = RandomForestClassifier(max_depth=self.get_config('max_depth'),
                                             random_state=self.get_config('random_state'),
@@ -67,11 +67,11 @@ class ActRandomForest(Actionable):
         return self.model.predict(X)
     
     
-    def suitable(self, input_data) -> bool:
-        return input_data.dataset.type_of_target in \
+    def suitable(self, candidate) -> bool:
+        return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

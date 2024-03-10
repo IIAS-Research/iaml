@@ -7,7 +7,7 @@ from automed.step import Step
 from ...step_wrapper import StepWrapper
 
 if TYPE_CHECKING:
-    from ...output import Input
+    from ...candidate import Candidate
 
 class WrapDatasetWrapper(StepWrapper):
     """
@@ -18,11 +18,11 @@ class WrapDatasetWrapper(StepWrapper):
         super().__init__(step)
         self.learning_configuration:dict = self.step.configuration
 
-    def run(self, input_data: 'Input', callback: callable = None) -> None:
-        # metrics = { m: input_data.computed_metrics[str(m)] for m in input_data.metrics }
-        # input_data.pipeline.add_explanation(self.step, None, metrics)
+    def run(self, candidate: 'Candidate', callback: callable = None) -> None:
+        # metrics = { m: candidate.computed_metrics[str(m)] for m in candidate.metrics }
+        # candidate.pipeline.add_explanation(self.step, None, metrics)
 
-        return input_data
+        return candidate
 
     @dispatch(str, object)
     def configure(self, key: str, value:Any) -> None:

@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from ...actionable import Actionable
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
 
@@ -24,11 +24,11 @@ class ActTfIdf(Actionable):
         Find columns to vectorize and fit vectorizer
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         
         self.columns = []
@@ -72,7 +72,7 @@ class ActTfIdf(Actionable):
         return X
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

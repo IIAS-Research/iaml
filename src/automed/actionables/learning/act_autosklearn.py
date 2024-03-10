@@ -3,15 +3,15 @@
 """
 import autosklearn.classification # pylint: disable=import-error
 import pandas as pd
-from ...actionable import Actionable
+from ...predictor import Predictor
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
 # @is_step('learning', 'tabular')
 @is_step('to_compare')
-class ActAutoSKLearn(Actionable):
+class ActAutoSKLearn(Predictor):
     """
     [STEP] Learn : AutoSkLearn
     """
@@ -28,14 +28,14 @@ class ActAutoSKLearn(Actionable):
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit AutoSkLearn on Input.dataset
+        Fit AutoSkLearn on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.model = autosklearn.classification.AutoSklearnClassifier(
             time_left_for_this_task=self.get_config('running_time'),
@@ -59,20 +59,20 @@ class ActAutoSKLearn(Actionable):
         """
         return self.model.predict(X)
 
-    def suitable(self, input_data:Input) -> bool:
+    def suitable(self, candidate:Candidate) -> bool:
         """
-        Does this step suitable for this input
+        Does this step suitable for this candidate
 
         Args:
-            input_data (Input): Suitable for this input
+            candidate (Candidate): Suitable for this candidate
 
         Returns:
             bool: Suitable ?
         """
-        return input_data.dataset.type_of_target in \
+        return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

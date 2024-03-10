@@ -16,6 +16,7 @@
         "Onehot",
         "priorize",
         "resampler",
+        "resamplers",
         "todense",
         "tplot",
         "vectorize",

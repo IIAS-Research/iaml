@@ -6,11 +6,11 @@ import pandas as pd
 
 from .step import Step
 from .metastep import MetaStep
-from .output import Input, Output
+from .candidate import Candidate
 from .dataset import Dataset
 from .metric import Metric
 from .worker_manager import WorkerManager
-from .wrapper.dataset import WrapKFold
+from .splitter import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 
@@ -35,12 +35,12 @@ class AutoMed:
     AutoMed will load, configure and fit machine learning pipelines
 
     Attributes:
-        output (list): Outputs of the pipeline after run
-        fit_input (Input): last Input sent to the first step 
+        candidate (list): Candidates of the pipeline after run
+        fit_candidate (Candidate): last Candidate sent to the first step 
     """
     def __init__(self, max_workers:int=None, quiet:bool=False):
-        self.outputs:list[Output] = None
-        self.fit_input:Input = None
+        self.candidates:list[Candidate] = None
+        self.fit_candidate:Candidate = None
         self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep)
         
         Logger().set_quiet(quiet)
@@ -67,7 +67,7 @@ class AutoMed:
         sklearn = ActAutoSKLearn() # pylint: disable=undefined-variable
         sklearn.configure('running_time', time)
 
-        self.first_step.add_step(WrapKFold(sklearn))
+        self.first_step.add_step(sklearn)
 
     # DEBUG -> Testing purpose
     def tplot_pipeline(self) -> None:
@@ -97,28 +97,28 @@ class AutoMed:
 
         learning_tag = 'fast_learning' if fast else 'learning'
         
-        self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=WrapKFold))
+        self.first_step.add_step(MetaExplorerStep(tag=learning_tag))
 
 
     ##################
     ### PROPERTIES ###
     ##################
 
-    # Dataset from input data
+    # Dataset from candidate data
     @property
     def dataset(self) -> Dataset:
-        """Shortcut to get input Dataset
+        """Shortcut to get candidate Dataset
 
         Returns:
-            Dataset: Input dataset defined by .fit()
+            Dataset: Candidate dataset defined by .fit()
         """
-        return self.fit_input.dataset
+        return self.fit_candidate.dataset
 
     ###########
     ### RUN ###
     ###########
 
-    def fit(self, X:pd.DataFrame, y:list|pd.DataFrame, *args, **kwargs) -> list[Output]:
+    def fit(self, X:pd.DataFrame, y:list|pd.DataFrame, *args, **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -126,19 +126,37 @@ class AutoMed:
             y (pd.DataFrame): Training labels
 
         Returns:
-            list[Output]: List of all the generated outputs. Sorted by performances.
+            list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
         if isinstance(y, pd.DataFrame):
             y = y.values.ravel()
+            
+        X = deepcopy(X)
+        y = deepcopy(y)
         
         dataset:Dataset = Dataset(X, y)
-        self.fit_input:Input = Input(dataset)
+        self.fit_candidate:Candidate = Candidate(dataset)
 
         # Select metrics used to evaluate performances
         for metric in self.__metrics_selection(X, y, dataset.type_of_target):
-            self.fit_input.add_metric(metric)
+            self.fit_candidate.add_metric(metric)
 
-        return self.__run(self.fit_input, *args, **kwargs)
+        # Generate candidates
+        candidates = self.__run(self.fit_candidate, *args, **kwargs)
+        for candidate in candidates:
+            candidate.training_evaluate(dataset, splitter=kfold_splitter)
+        candidates.sort(reverse=True)
+        
+        # Finetuning stage
+        
+        # TODO Ajouter ici le système de stage avec finetuning etc
+        
+        
+        # Fit candidate with the whole dataset
+        for candidate in candidates:
+            candidate.pipeline.fit(X, y)
+            
+        return candidates
 
     def __metrics_selection(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str):
         """Select metrics used to evaluate performances
@@ -164,16 +182,16 @@ class AutoMed:
 
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 
-    def __run(self, input_data:Input, callback:callable=None) -> list[Output]:
+    def __run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
         """Run pipeline
 
         Args:
-            input_data (Input): Data used to fit models and steps
+            candidate (Candidate): Data used to fit models and steps
             callback (callable, optional): Will be call after each Step run (-> many times).
                                             Defaults to None.
 
         Returns:
-            list[Output]: List of all the generated outputs. Sorted by performances.
+            list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
         with Logger().progress as progress:
             step_count:int = self.first_step.count_steps()
@@ -186,13 +204,13 @@ class AutoMed:
                     callback(step)
                     
             # RUN!
-            self.outputs = self.first_step.run(input_data, callback=progress_callback)
+            self.candidates = self.first_step.run(candidate, callback=progress_callback)
 
             progress.update(task, completed=step_count)
 
         # Order ouputs according the first metric
-        self.outputs.sort(reverse=True)
-        return self.outputs
+        self.candidates.sort(reverse=True)
+        return self.candidates
 
     ########################
     #### CONFIGURATIONS ####

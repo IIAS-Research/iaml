@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
 @is_step('features_selection')
@@ -31,11 +31,11 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         Find high correlated columns to drop
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         # Compute correlation matrix 
         corr_matrix = dataset.X.corr().abs()
@@ -69,7 +69,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
 
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

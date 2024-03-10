@@ -20,27 +20,12 @@ class Dataset:
     Add features like data type detection and splitting
     """
     
-    def __init__(self, X:pd.DataFrame, y:list, resample:list=None, splitted:bool=False):
+    def __init__(self, X:pd.DataFrame, y:list):
         self.__X:pd.DataFrame = X
         self.__y:np.array = np.array(y)
         
-        self.__resample_stack:list[callable] = resample if resample is not None else []
-        
-        if splitted: 
-            self.__apply_resample()
-        
-        self.__splitted = splitted
-
         self.columns_types:list[DataType] = self.__detect_columns_types()
         self.type_of_target:str = type_of_target(self.__y)
-    
-    
-    @property
-    def splitted(self) -> bool:
-        """
-        Does this Dataset is splitted ?
-        """
-        return self.__splitted
     
     @property
     def features(self) -> list[str]:
@@ -51,16 +36,6 @@ class Dataset:
             list[str]: columns names
         """
         return self.X.columns.to_list()
-
-    # @property
-    # def labels(self) -> list[str]:
-    #     """
-    #     List labels names of y data
-
-    #     Returns:
-    #         list[str]: labels names
-    #     """
-    #     return self.__y.columns.to_list()
     
     @property
     def X(self) -> pd.DataFrame:
@@ -84,15 +59,9 @@ class Dataset:
         """
         y data getter
 
-        Raises:
-            AttributeError: Dataset must be splitted before access to y value
-
         Returns:
             pd.DataFrame: y data
         """
-        if not self.__splitted:
-            raise AttributeError("Dataset must be splitted before access to y value")
-        
         return self.__y
 
     def copy(self, deep:bool=True) -> 'Dataset':
@@ -115,53 +84,17 @@ class Dataset:
 
         Args:
             method (callable): Callable to apply. Will be call with X as parameter 
-
-        Raises:
-            AttributeError: Cannot edit a splitted Dataset
         """
-        if self.__splitted:
-            raise AttributeError("Cannot edit a splitted Dataset")
-        
         self.__X = method(self.X)
-        self.columns_types = self.__detect_columns_types()
-        
-    def resample(self, method:callable) -> None:
-        """
-        Add method to the resample stack.
-        Resample stack will be apply between transform & predict steps
-
-        Args:
-            method (callable): Will be called with X, y as parameters
-
-        Raises:
-            AttributeError: Cannot edit a splitted Dataset
-        """
-        if self.__splitted:
-            raise AttributeError("Cannot edit a splitted Dataset")
-        
-        self.__resample_stack.append(method)
-        
-    def __apply_resample(self) -> None:
-        """
-        Apply all stacked resample methods
-        """
-        for method in self.__resample_stack:
-            self.__X, self.__y = method(self.X, self.__y)
         self.columns_types = self.__detect_columns_types()
         
     def split(self, splitter: callable) -> Iterator[tuple['Dataset', 'Dataset']]: 
         """
         Use splitter to split dataset into a list of tuple (train set, test set) 
 
-        Raises:
-            AttributeError: Dataset already splitted !
-
         Yields:
             tuple['Dataset', 'Dataset']: Train set and Test set 
         """
-        if self.__splitted:
-            raise AttributeError("Dataset already splitted !")
-        
         # Split the dataset as many times as the splitter requires it
         for i_train, i_test in splitter(self.X, self.__y):
             X_train = self.X.iloc[i_train].copy()
@@ -169,14 +102,10 @@ class Dataset:
             y_train = self.__y[i_train].copy()
             y_test = self.__y[i_test].copy()
 
-            ds_train = Dataset(X_train, y_train, resample=self.__resample_stack, splitted=True)
-            ds_test = Dataset(X_test, y_test, splitted=True)
+            ds_train = Dataset(X_train, y_train)
+            ds_test = Dataset(X_test, y_test)
 
             yield (ds_train, ds_test)
-
-        # Yield the whole dataset as training data
-        yield Dataset(self.X.copy(), self.__y.copy(), 
-                    resample=self.__resample_stack, splitted=True), None
         
     def get_columns_names_by_type(self, types:list[DataType]) -> list[str]:
         """
@@ -283,17 +212,3 @@ class Dataset:
                 pass # Let's try the next date format
 
         return pd.NaT
-    
-    def compute_metric(self, pipeline:'AutoPipeline', metric:Metric) -> float:
-        """
-        Compute performances of pipeline with metric
-
-        Args:
-            pipeline (AutoPipeline): Prediction pipeline. Must implement predict(X, model_only:bool)
-            metric (Metric): Metric to compute. Must implement compute(y, y_pred)
-
-        Returns:
-            float: Computed performances
-        """
-        y_pred = pipeline.predict(self.X, model_only = self.__splitted)
-        return metric.compute(self.__y, y_pred)

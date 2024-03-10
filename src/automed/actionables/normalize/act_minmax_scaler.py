@@ -5,7 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
-from ...output import Input
+from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
 
@@ -27,11 +27,11 @@ class ActMinMaxScaler(Actionable):
         Find columns to scale and fit scaler
 
         Args:
-            input_data (Input): Fit data
+            candidate (Candidate): Fit data
             callback (callable, optional): Call after each step. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
         values = dataset.X[self.columns]
@@ -54,7 +54,7 @@ class ActMinMaxScaler(Actionable):
         return X
 
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 
