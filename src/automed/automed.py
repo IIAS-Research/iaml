@@ -192,7 +192,7 @@ class AutoMed:
             # TODO Use thread here -> need to adapt Worker Manager ?
             for candidate in candidates:
                 # Use cache
-                fingerprint = candidate.pipeline.to_md5()
+                fingerprint = candidate.pipeline.fingerprint()
                 if fingerprint in cache:
                     candidate.computed_metrics = cache[fingerprint]
                 else:

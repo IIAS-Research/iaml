@@ -14,7 +14,7 @@ class GeneticOptimizer(Optimizer):
         self.ignored_configs:list[str] = {'random_state'}
         self.mutation_power:float = mutation_power
         self.initial_modifier:float = initial_modifier
-        self.max_generations:int = 10
+        self.max_generations:int = 5
         
     @property
     def finished(self) -> bool:
@@ -156,7 +156,7 @@ class GeneticOptimizer(Optimizer):
         unique_candidates:list[Candidate] = []
         unique_fingerprint:list[str] = []
         for candidate in candidates:
-            fingerprint:str = candidate.pipeline.to_md5()
+            fingerprint:str = candidate.pipeline.fingerprint()
             if fingerprint not in unique_fingerprint:
                 unique_candidates.append(candidate)
                 unique_fingerprint.append(fingerprint)

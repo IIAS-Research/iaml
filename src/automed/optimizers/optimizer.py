@@ -25,6 +25,5 @@ class Optimizer():
         Returns:
             list[Candidate]: Optimized candidates
         """
-        print("RUN OPTIMIZER")
         self.__finished = True
         return candidates

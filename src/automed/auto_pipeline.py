@@ -217,9 +217,9 @@ class AutoPipeline(Pipeline):
         return self.model.predict(X)
     
     def __eq__(self, other: 'AutoPipeline') -> bool:
-        return self.to_md5() == other.to_md5()
+        return self.fingerprint() == other.fingerprint()
     
-    def to_md5(self) -> str:
+    def fingerprint(self) -> str:
         """
         Return a md5 hash that can by use to compare Pipelines 
 

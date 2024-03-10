@@ -28,5 +28,8 @@ from .thread_with_return_value import *
 # Stack
 from .stack import Stack
 
-# Stack
+# Optimizer
 from .optimizers import *
+
+# Cache
+from .caching import Caching
