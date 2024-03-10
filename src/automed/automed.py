@@ -183,10 +183,10 @@ class AutoMed:
                 and iterations_without_improvement < patience \
                 and (max_duration == -1 or max_duration > duration):
             
-            Logger().log(f'Finetuning...  patience={iterations_without_improvement}/{patience}, duration={round(duration, 2)}/{max_duration}, best_result={best_result}')
-            
             # Generate new candidates
             candidates = optimizer.run(candidates)
+            
+            Logger().log(f'Finetuning...  candidates={len(candidates)} patience={iterations_without_improvement}/{patience}, duration={round(duration, 2)}/{max_duration}, best_result={best_result}')
             
             # Evaluate new candidates
             # TODO Use thread here -> need to adapt Worker Manager ?
@@ -199,7 +199,9 @@ class AutoMed:
                     candidate.training_evaluate(dataset, splitter=splitter)
                     cache[fingerprint] = candidate.computed_metrics
                 
-            candidates.sort(reverse=True)   
+            candidates.sort(reverse=True) 
+            
+            Logger().log([(round(candidate.get_main_metric_value(), 5), candidate.pipeline.predictor[0], candidate.pipeline.predictor[1].resume_configuration()) for candidate in candidates])
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()
