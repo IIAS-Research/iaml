@@ -31,9 +31,6 @@ def runner(func) -> callable:
         
         if candidates.__class__ in [Candidate]:
             candidates = [candidates]
-            
-        print("Begin step", self)
-        print("input cand", candidates)
         
         result:list[Candidate] = []
 
@@ -60,8 +57,6 @@ def runner(func) -> callable:
         self.candidate = result        
         if callback:
             callback(self)
-            
-        print("output cand", result)
         
         return result
     return runner_wrapper

@@ -3,6 +3,7 @@
 """
 
 import pandas as pd
+import time
 
 from .step import Step
 from .metastep import MetaStep
@@ -13,6 +14,7 @@ from .worker_manager import WorkerManager
 from .splitter import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
+from .optimizers import Optimizer, GeneticOptimizer
 
 # Default Actionables -> Must be a wildcard import to help AutoMed to know all available the steps 
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
@@ -143,13 +145,17 @@ class AutoMed:
 
         # Generate candidates
         candidates = self.__run(self.fit_candidate, *args, **kwargs)
+        
+        # Remove candidate without predictor 
+        candidates = [candidate for candidate in candidates \
+            if candidate.pipeline.predictor is not None]
+        
+        # Evaluate candidates
         for candidate in candidates:
             candidate.training_evaluate(dataset, splitter=kfold_splitter)
-        candidates.sort(reverse=True)
-        
-        # Finetuning stage
-        
-        # TODO Ajouter ici le système de stage avec finetuning etc
+            
+        # Finetune stages
+        candidates = self.__optimize(dataset, candidates, optimizer=GeneticOptimizer())
         
         
         # Fit candidate with the whole dataset
@@ -157,6 +163,58 @@ class AutoMed:
             candidate.pipeline.fit(X, y)
             
         return candidates
+    
+    def __optimize(self,
+                    dataset:Dataset,
+                    candidates:list[Candidate],
+                    splitter:callable=kfold_splitter,
+                    optimizer:Optimizer=Optimizer(),
+                    patience:int=10,
+                    max_duration:int=-1) -> list[Candidate]:
+        # init
+        candidates.sort(reverse=True)
+        best_result:float = candidates[0].get_main_metric_value()
+        iterations_without_improvement:int = 0
+        duration:int = 0
+        starting_time:int = time.time() # seconds
+        cache:dict = {}
+        
+        while   not(optimizer.finished) \
+                and iterations_without_improvement < patience \
+                and (max_duration == -1 or max_duration > duration):
+            
+            Logger().log(f'Finetuning...  patience={iterations_without_improvement}/{patience}, duration={round(duration, 2)}/{max_duration}, best_result={best_result}')
+            
+            # Generate new candidates
+            candidates = optimizer.run(candidates)
+            
+            # Evaluate new candidates
+            # TODO Use thread here -> need to adapt Worker Manager ?
+            for candidate in candidates:
+                # Use cache
+                fingerprint = candidate.pipeline.to_md5()
+                if fingerprint in cache:
+                    candidate.computed_metrics = cache[fingerprint]
+                else:
+                    candidate.training_evaluate(dataset, splitter=splitter)
+                    cache[fingerprint] = candidate.computed_metrics
+                
+            candidates.sort(reverse=True)   
+            
+            # Improvement ?
+            new_best:float = candidates[0].get_main_metric_value()
+            if new_best > best_result:
+                best_result = new_best
+                iterations_without_improvement = 0
+            else:
+                iterations_without_improvement += 1
+                
+            # Duration in seconds
+            duration = time.time() - starting_time
+            
+        return candidates
+        
+        
 
     def __metrics_selection(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str):
         """Select metrics used to evaluate performances

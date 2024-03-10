@@ -3,6 +3,8 @@ Based on Scikit-learn Pipeline but for AutoMed Pipelines !
 Transform, resample and then predict from Candidate instance 
 """
 import pickle
+import json
+from hashlib import md5
 from typing import TYPE_CHECKING
 import pandas as pd
 from sklearn.pipeline import Pipeline
@@ -112,7 +114,7 @@ class AutoPipeline(Pipeline):
         Returns:
             Step: Prediction model of the pipeline (or None)
         """
-        return self.steps[-1][1] if self.have_model else None
+        return self.predictor
 
     def add_transform(self, instance:'Step') -> None:
         """
@@ -213,3 +215,20 @@ class AutoPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.model.predict(X)
+    
+    def __eq__(self, other: 'AutoPipeline') -> bool:
+        return self.to_md5() == other.to_md5()
+    
+    def to_md5(self) -> str:
+        """
+        Return a md5 hash that can by use to compare Pipelines 
+
+        Returns:
+            str: md5 sting
+        """
+        to_hash = "\n".join([str(step.__class__) + " = " \
+            + json.dumps(step.configuration, sort_keys=True) \
+                for _, step in self.training_steps])
+        
+        return md5(to_hash.encode()).hexdigest()
+            

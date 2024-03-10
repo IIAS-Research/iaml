@@ -25,7 +25,7 @@ class ActKNN(Predictor):
             'n_neighbors': {
                 'description': 'Number of neighbors',
                 'default': 5,
-                'range': [1, float('inf')]
+                'range': [1, 200]
             }
         }
         self.model:KNeighborsClassifier = None

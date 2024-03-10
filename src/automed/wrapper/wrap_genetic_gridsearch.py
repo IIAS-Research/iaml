@@ -9,7 +9,6 @@ import random
 from ..step_wrapper import StepWrapper
 from ..step import Step
 from ..decorators.all import is_step, runner
-from .dataset import WrapDatasetWrapper
 from ..candidate import Candidate
 from ..meta_explorer_step import MetaExplorerStep
 from ..logger import Logger
@@ -25,7 +24,7 @@ class WrapGeneticGridSearch(StepWrapper):
     """
     name = "Wrap : Genetic GridSearch"
     
-    def __init__(self, step: WrapDatasetWrapper):
+    def __init__(self, step: Step):
         # Set of configuration key to ignore. 
         # For example, random_state is not a parameter to optimize
         step_ignored_configs:list[str] = [ k for k, v in step.learning_configuration.items() \

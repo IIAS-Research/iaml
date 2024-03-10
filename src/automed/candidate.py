@@ -175,7 +175,7 @@ class Candidate:
         return str_out
     
     def training_evaluate(self, dataset:Dataset, \
-                splitter:callable=random_splitter, force:bool=False) -> dict:
+                splitter:callable=random_splitter) -> dict:
         """
         Evaluate pipeline model with self.metrics on dataset
         If evaluate is called in training process, result will be cached in
@@ -203,6 +203,7 @@ class Candidate:
         
         self.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
             for k in map(str, self.metrics) }
+            
         
         return self.computed_metrics
     
@@ -226,3 +227,4 @@ class Candidate:
             list: Explain strings
         """
         return list(map(lambda stack: stack.explain(), self.stacked_path))
+    

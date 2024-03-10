@@ -1,0 +1,30 @@
+
+from ..candidate import Candidate
+
+class Optimizer():
+    def __init__(self):
+        self.__finished:bool = False
+        
+    @property
+    def finished(self) -> bool:
+        """
+        Does optimisation is finished ?
+
+        Returns:
+            bool: finished ?
+        """
+        return self.__finished
+    
+    def run(self, candidates:list[Candidate]) -> list[Candidate]:
+        """
+        Run one optimisation stage. Run of Optimzer have to be overwrite (do nothing).
+
+        Args:
+            candidates (list[Candidate]): List of candidates to optimize
+
+        Returns:
+            list[Candidate]: Optimized candidates
+        """
+        print("RUN OPTIMIZER")
+        self.__finished = True
+        return candidates
