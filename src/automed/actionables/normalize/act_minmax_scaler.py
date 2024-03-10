@@ -4,8 +4,9 @@
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from ...actionable import Actionable
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...output import Input
+from ...decorators.all import is_step
 from ...data_type import DataType
 
 
@@ -20,8 +21,8 @@ class ActMinMaxScaler(Actionable):
         self.columns:list[str] = None
         self.scaler:MinMaxScaler = None
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Find columns to scale and fit scaler
 
@@ -32,12 +33,12 @@ class ActMinMaxScaler(Actionable):
         Returns:
             Output: Transformed input
         """
-        self.columns = input_data.dataset.get_columns_names_by_type(DataType.NUMERIC)
-        values = input_data.dataset.X[self.columns]
+        self.columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
+        values = dataset.X[self.columns]
         self.scaler = MinMaxScaler()
         self.scaler.fit(values)
 
-        return input_data.add_transform(self)
+        return self
         
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """

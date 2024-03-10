@@ -4,7 +4,8 @@
 import pandas as pd
 from sklearn.model_selection import ShuffleSplit
 from ...output import Input, Output
-from ...step import is_step, runner, Step
+from ...step import Step
+from ...decorators.all import is_step, runner
 from .wrap_dataset_wrapper import WrapDatasetWrapper
 
 
@@ -40,7 +41,7 @@ class WrapRandomSplit(WrapDatasetWrapper):
         output = self.step.run(input_data.to_input(dataset=train_dataset), callback=callback)
         output.evaluate(test_dataset)
 
-        output.pipeline.add_explanation(self, ['Trained one model.'])
+        self.explanations = ['Trained one model.']
         
         return super().run(output, callback)
     

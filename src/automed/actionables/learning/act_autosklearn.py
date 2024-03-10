@@ -4,8 +4,9 @@
 import autosklearn.classification # pylint: disable=import-error
 import pandas as pd
 from ...actionable import Actionable
-from ...output import Input, Output
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...output import Input
+from ...decorators.all import is_step
 
 
 # @is_step('learning', 'tabular')
@@ -25,8 +26,7 @@ class ActAutoSKLearn(Actionable):
         }
         self.model:autosklearn.classification.AutoSklearnClassifier = None
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit AutoSkLearn on Input.dataset
 
@@ -42,9 +42,9 @@ class ActAutoSKLearn(Actionable):
             max_models_on_disc=5,
             memory_limit = 102400)
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
 
     def predict(self, X:pd.DataFrame) -> list[float]:

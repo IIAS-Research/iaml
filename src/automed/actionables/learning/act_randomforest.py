@@ -4,8 +4,9 @@
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...output import Input
-from ...step import is_step, runner
+from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
 class ActRandomForest(Actionable):
@@ -32,8 +33,7 @@ class ActRandomForest(Actionable):
         }
         self.model:RandomForestClassifier = None
         
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit Random forest on Input.dataset
 
@@ -48,9 +48,9 @@ class ActRandomForest(Actionable):
                                             random_state=self.get_config('random_state'),
                                             n_estimators=self.get_config('n_estimators'))
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
     
 

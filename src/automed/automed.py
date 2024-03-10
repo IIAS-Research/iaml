@@ -96,11 +96,8 @@ class AutoMed:
         self.first_step.add_step(MetaStep(tag='normalize'))
 
         learning_tag = 'fast_learning' if fast else 'learning'
-
-        def wrap(step: Step) -> 'WrapGeneticGridSearch':
-            return WrapGeneticGridSearch(WrapKFold(step))
         
-        self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=wrap))
+        self.first_step.add_step(MetaExplorerStep(tag=learning_tag, wrap=WrapKFold))
 
 
     ##################

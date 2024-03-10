@@ -5,7 +5,7 @@ Apply AdaBoost on models
 from sklearn.ensemble import AdaBoostClassifier
 
 from ...actionable import Actionable
-from ...step import runner
+from ...decorators.all import runner
 from ...output import Input, Output
 
 

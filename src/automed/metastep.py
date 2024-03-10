@@ -5,7 +5,9 @@ The order of Step is defined by the priorize() method
 
 There is children classes of MetaStep to execute Steps in a different way
 """
-from .step import Step, is_step, runner, Output, Input
+from .step import Step
+from .output import Output, Input
+from .decorators.all import is_step, runner
 from .step_wrapper import StepWrapper
 
 @is_step('meta')

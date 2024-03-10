@@ -19,8 +19,8 @@ class WrapDatasetWrapper(StepWrapper):
         self.learning_configuration:dict = self.step.configuration
 
     def run(self, input_data: 'Input', callback: callable = None) -> None:
-        metrics = { m: input_data.computed_metrics[str(m)] for m in input_data.metrics }
-        input_data.pipeline.add_explanation(self.step, None, metrics)
+        # metrics = { m: input_data.computed_metrics[str(m)] for m in input_data.metrics }
+        # input_data.pipeline.add_explanation(self.step, None, metrics)
 
         return input_data
 

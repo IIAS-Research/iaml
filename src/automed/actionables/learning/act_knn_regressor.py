@@ -5,7 +5,8 @@ from sklearn.neighbors import KNeighborsRegressor
 import pandas as pd
 from ...actionable import Actionable
 from ...output import Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...decorators.all import is_step
 
 
 
@@ -30,8 +31,7 @@ class ActKNNRegressor(Actionable):
         }
         self.model:KNeighborsRegressor = None
         
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit Knn regressor on Input.dataset
 
@@ -47,9 +47,9 @@ class ActKNNRegressor(Actionable):
             metric = self.get_config('metric')
             )
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
     def predict(self, X:pd.DataFrame) -> list[float]:
 

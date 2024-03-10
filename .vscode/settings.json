@@ -15,6 +15,7 @@
         "multipledispatch",
         "Onehot",
         "priorize",
+        "resampler",
         "todense",
         "tplot",
         "vectorize",

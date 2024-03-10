@@ -3,6 +3,7 @@
 
 # -> Must be a wildcard import to help AutoMed to know all available the steps 
 from .step import * # pylint: disable=unused-wildcard-import,wildcard-import
+from .decorators.all import is_step
 
 @is_step('actionable')
 class Actionable(Step):

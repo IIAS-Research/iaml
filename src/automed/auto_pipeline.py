@@ -6,7 +6,7 @@ import pickle
 from typing import TYPE_CHECKING
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from .explanation import Explanation
+from .dataset import Dataset
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -20,8 +20,7 @@ class AutoPipeline(Pipeline):
     
     def __init__(
         self,
-        steps: list[tuple[str, object]] = None,
-        explanations: list[Explanation] = None,
+        steps: list[tuple[str, object]] = None
     ) -> None:
         """
         Args:
@@ -30,34 +29,42 @@ class AutoPipeline(Pipeline):
         """
         if steps is None:
             steps = []
-
-        if explanations is None:
-            explanations = []
             
-        self.steps:list[tuple[str, object]] = steps.copy()
-        self.explanations:list[Explanation] = explanations.copy()
+        super().__init__(steps.copy())
         
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
+    def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, **kwargs) -> 'AutoPipeline':
         """
-        fit is not usable with AutoPipeline
+        Fit Pipeline on new data (or with new parameters)
+        
+        Args:
+            X (pd.DataFrame): Input features
+            y (pd.DataFrame): label to predict
         """
-        raise NotImplementedError("fit() is not usable with AutoMed Pipeline. \
-                                    You have to use AutoMed.run()")
+        dataset = Dataset(X, y, splitted=True)
+        
+        for _, step in self.steps:
+            if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
+                step.fit(dataset)
+            else:
+                step.fit(dataset.X, dataset.y, **kwargs)
+                
+            if hasattr(step, 'transform'):
+                dataset = Dataset(step.transform(dataset.X), y, splitted=True)
+            elif hasattr(step, 'resample'):
+                dataset = Dataset(*step.resample(dataset.X, dataset.y), splitted=True)
+        
+        return self
+        
+    @property
+    def explanations(self):
+        """
+        Get explanations from all pipeline steps
+
+        Returns:
+            list[str]: List of markdown explanations
+        """
+        return [step.explain() for _, step in self.steps]
     
-    def fit_predict(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
-        """
-        fit_predict is not usable with AutoPipeline
-        """
-        raise NotImplementedError("fit_predict is not usable with AutoMed Pipeline. \
-                                    You have to use AutoMed.run()")
-        
-    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
-        """
-        fit_transform is not usable with AutoPipeline
-        """
-        raise NotImplementedError("fit_transform is not usable with AutoMed Pipeline. \
-                                You have to use AutoMed.run()")
-        
     @property
     def model(self) -> 'Step':
         """Shortcut to get the prediction model of AutoPipeline 
@@ -102,7 +109,7 @@ class AutoPipeline(Pipeline):
         Returns:
             AutoPipeline: Copied AutoPipeline instance
         """
-        return AutoPipeline(self.steps, self.explanations)
+        return AutoPipeline(self.steps)
     
 
     def pickle(self) -> bytes:
@@ -149,18 +156,3 @@ class AutoPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.model.predict(X)
-    
-    def add_explanation(
-            self,
-            step: 'Step',
-            processings: list[str] = None,
-            metrics: dict['Metric', float] = None):
-        """
-        Explain a step of the pipeline.
-
-        Args:
-            step (Step): Step to explain.
-            processings (list[str]): List of all the processings the
-                                    the step has done to the data.
-        """
-        self.explanations.append(Explanation(step, processings, metrics))

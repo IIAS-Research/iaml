@@ -3,7 +3,7 @@
 """
 from ..step_wrapper import StepWrapper
 from ..output import Output, Input
-from ..step import is_step, runner
+from ..decorators.all import is_step, runner
 
 
 @is_step('wrapper')

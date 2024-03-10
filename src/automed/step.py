@@ -11,11 +11,10 @@ import sys
 from typing import Any
 from copy import deepcopy
 from multipledispatch import dispatch
-import pandas as pd
 from .output import Output, Input
-
+from .dataset import Dataset
 from .stack import Stack
-from .logger import Logger
+from .decorators.runner import runner
 
 class Step: # pylint: disable=too-many-public-methods
     """
@@ -25,11 +24,12 @@ class Step: # pylint: disable=too-many-public-methods
     Attributes:
         STATIC available_steps (dict) : Reference of all available Steps to create pipeline
         STATIC name (str) : Name of the step
-        STATIC description (str) : Description of the step
+        STATIC __description (str) : Description of the step
         output (Output): Last output of the Step
         configuration (dict) : Configuration of the step
         self.__use_cache (bool) : Enable / Disable caching
         caches (list) : Cached result 
+        explanations (list[str]) : String explanation of step actions
     """
     # Available steps. This will be filled be all the new Step loaded in Python environments
     # It will be a reference of all available Steps to create pipeline
@@ -38,12 +38,13 @@ class Step: # pylint: disable=too-many-public-methods
     
     # Name and description of the Step. Useful to explain pipeline to users
     name = "Step" 
-    description = "Step description..."
+    __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
         self.output:Output = None
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
+        self.explanations:list[str] = []
         
         # Configuration of the Step. Each Step can have one configuration and will save it here.
         # Step give many method to help user to configure Steps
@@ -88,18 +89,18 @@ class Step: # pylint: disable=too-many-public-methods
         
         return step
     
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame) -> None: # pylint: disable=unused-argument
-        """
-        WIll always raise NotImplementedError.
+    # def fit(self, X:pd.DataFrame, y:pd.DataFrame) -> None: # pylint: disable=unused-argument
+    #     """
+    #     WIll always raise NotImplementedError.
 
-        Args:
-            X (pd.DataFrame): X Data
-            y (pd.DataFrame): Y data
+    #     Args:
+    #         X (pd.DataFrame): X Data
+    #         y (pd.DataFrame): Y data
 
-        Raises:
-            NotImplementedError: AutoMed Step can't be fit this way. You have to use AutoMed.run()
-        """
-        raise NotImplementedError("AutoMed Step can't be fit. You have to use AutoMed.run()")
+    #     Raises:
+    #         NotImplementedError: AutoMed Step can't be fit this way. You have to use AutoMed.run()
+    #     """
+    #     raise NotImplementedError("AutoMed Step can't be fit. You have to use AutoMed.run()")
         
     def __str__(self):
         return self.name
@@ -391,7 +392,20 @@ class Step: # pylint: disable=too-many-public-methods
     #######
     # RUN #
     #######
-    def run(self, input_data:'Input') -> Output:
+    def fit(self, dataset:Dataset) -> 'Step':
+        """
+        Fit Step on a Dataset.
+
+        Args:
+            dataset (Dataset): Features and labels
+
+        Returns:
+            Step: fitted step 
+        """
+        return self
+    
+    @runner  
+    def run(self, input_data:'Input', callback:callable=None) -> Output:
         """
         Run the step on input data
 
@@ -401,7 +415,8 @@ class Step: # pylint: disable=too-many-public-methods
         Returns:
             Output: transformed Input 
         """
-        return input_data.to_output()
+        self.fit(input_data.dataset)
+        return input_data.add_to_pipeline(self)
     
     ###########
     ## STACK ##
@@ -422,18 +437,6 @@ class Step: # pylint: disable=too-many-public-methods
             self.configuration,
             id(self)
         )
-        
-    # Explain 
-    @classmethod
-    def explain(cls, config:dict) -> str:
-        """
-        Basic explanation of the Step
-        """
-        return f"""
-            # {cls.name}
-            {cls.description}
-            {cls.__resume_a_configuration(config)}
-        """
         
     # Track output
     def track_output(self, output:Output) -> None:
@@ -465,109 +468,66 @@ class Step: # pylint: disable=too-many-public-methods
         return set(filter(lambda key: tag in cls.available_steps[key], cls.available_steps.keys()))
     
     
-#############   
-# Decorator #
-#############
-
-#
-# Class decorators
-#
-
-def is_step(*tags) -> callable:
-    """
-    is_step is needed to declare new Step.
-    With the Step inheritance, it will setup everything to make it work smoothly
-    Tags -> Your Step will be attached to these tags. 
-        tags are use to easily include Step into Pipeline
-    """
-    def step_wrapper(cls) -> Step:
+    ####################
+    ### Explanations ###
+    ####################
+    @property
+    def description(self) -> str:
         """
-        Declare the new step to Automed
-        Add call to Step.__init__() so the Sub Step developer have one to care about this
-        Returns:
-            Step: Edited class
-        """
-        Step.available_steps[cls] = tags # Declare your Step to AutoMed
-        
-        # Help Python to find parent class
-        __class__ = cls # pylint: disable=unused-variable
-        
-        
-        initial_init = cls.__init__ # Keep the __init__ you have created
-        def __init__(self, *args, **kw):
-            if cls != Step:
-                super().__init__(*args, **kw) # All parent constructor 
-            
-            initial_init(self, *args, **kw) # Run your __init__
-            self.default_configuration() # Setup default configuration
-            
-        cls.__init__ = __init__ # Replace your init
-            
-        return cls
-        
-    return step_wrapper
-
-#
-# Method decorator
-#
-
-def runner(func) -> callable:
-    """
-    runner MUST decorate your run() method. It you manage every boring things for you.
-        - Store results in cache
-        - Send information to Destroyers
-        - Put results in good shape
-        - Increment Stack data
-        - Call callback method
-        - And maybe more
-
-    Args:
-        func (callable): decorated method
-
-    Returns:
-        callable: edited method
-    """
-    def runner_wrapper(self, inputs:list[Input],
-                        callback:callable=None
-                        ) -> list[Output]:
-        """Wrapping decorated method
+        Formats the description of a step with its configuration.
 
         Returns:
-            list[Output]: All generated outputs
+            str: Formatted description.
+        """
+        conf = { k: v['value'] for k, v in self.configuration.items() }
+
+        return self.__description.format(**conf)
+
+    @description.setter
+    def description(self, value:str) -> str:
+        """
+        Description setter
+        """
+        self.__description = value
+        return self.description
+    
+    def explain(self, explanations_limit: int = 20) -> str:
+        """
+        Renders the explanation as Markdown text.
+
+        Returns:
+            str: Markdown text.
+        """
+        if not self.explanations:
+            return ''
+
+        confs = '\n'.join([
+            f'| **{k}** | {v["description"]} | {v["value"]} |'
+            for k, v in self.configuration.items()
+        ])
+
+        explanations = '\n'.join([ f' - {p}' for p in self.explanations[:explanations_limit] ])
+
+        explanations_left = len(self.explanations) - explanations_limit
+
+        return f"""
+## {self.name}
+**{self.description}**
+
+{f'''
+### Configuration
+| Name | Description | Value |
+| ---- | ----------- | ----- |
+{confs}
+''' if len(confs) > 0 else ""}
+
+{f'''
+### Processings
+{explanations}
+{f" - *and **{explanations_left}** more explanations...*" if explanations_left > 0 else ""}
+''' if len(explanations) > 0 else ""}
         """
         
-        if inputs.__class__ in [Output, Input]:
-            inputs = [inputs]
-        
-        result:list[Output] = []
-
-        # only print "parent" steps to reduce logs
-        if hasattr(self, 'step') or hasattr(self, 'steps'):
-            Logger().log(f'running step: {self.to_rich_str()}')
-        
-        for current_input in inputs:
-            if self.suitable(current_input):
-                output = self.from_cache(current_input)
-                if not output:
-                    output = func(self, current_input, callback=callback)
-                    self.add_cache(current_input, output)
-                else:
-                    callback(self) # Call callback manually because we used cache
-                    
-                self.track_output(output)
-            else:
-                output = current_input    
-            
-                
-            result = result + ([output] if type(output) in [Output, Input] else output)
-
-        self.output = result        
-        if callback:
-            callback(self)
-            
-        return result
-    return runner_wrapper
-
 
 ## Other methods
 def same_types(a:dict, b:dict) -> bool:

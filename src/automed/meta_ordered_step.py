@@ -3,7 +3,7 @@
 """
 from typing import TYPE_CHECKING
 
-from .step import is_step, runner
+from .decorators.all import is_step, runner
 from .metastep import MetaStep
 
 if TYPE_CHECKING:

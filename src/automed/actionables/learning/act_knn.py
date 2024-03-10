@@ -6,7 +6,8 @@ from sklearn.neighbors import KNeighborsClassifier
 import pandas as pd
 from ...actionable import Actionable
 from ...output import Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
 class ActKNN(Actionable):
@@ -29,8 +30,7 @@ class ActKNN(Actionable):
         }
         self.model:KNeighborsClassifier = None
         
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit Knn classifier on Input.dataset
 
@@ -46,9 +46,9 @@ class ActKNN(Actionable):
             metric = self.get_config('metric')
             )
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
     def predict(self, X:pd.DataFrame) -> list[float]:
         """

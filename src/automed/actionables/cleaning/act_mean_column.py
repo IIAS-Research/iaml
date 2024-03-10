@@ -3,8 +3,9 @@
 """
 import pandas as pd
 from ...actionable import Actionable
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...output import Input
+from ...decorators.all import is_step
 from ...data_type import DataType
 
 
@@ -27,15 +28,14 @@ class ActMeanColumn(Actionable):
             }
         }
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset):
         threshold = self.get_config('empty_threshold')
 
         self.columns = []
         explain = []
 
-        for column in input_data.dataset.get_columns_names_by_type(DataType.NUMERIC):
-            values = input_data.dataset.X[column]
+        for column in dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = dataset.X[column]
             nan_values_count = values.isnull().sum()
 
             if (nan_values_count > 0
@@ -48,14 +48,14 @@ class ActMeanColumn(Actionable):
                     nan_values_count / len(values) * 100,
                 ))
 
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f"""Filled missing values of column **`{c}`** with **{mean:.2f}**
                 because **{v[0]}** out of **{v[1]}** values (**{v[2]:.2f}**%)
                 were missing."""
             for (c, mean), v in zip(self.columns, explain)
-        ])
+        ]
         
-        return input_data.add_transform(self)
+        return self
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """

@@ -4,8 +4,9 @@
 from sklearn import svm
 import pandas as pd
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...output import Input
-from ...step import is_step, runner
+from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
 class ActSVMSVR(Actionable):
@@ -23,8 +24,7 @@ class ActSVMSVR(Actionable):
         }
         self.model:svm.SVR = None
         
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit SVM Regressor on Input.dataset
 
@@ -39,9 +39,9 @@ class ActSVMSVR(Actionable):
             kernel = self.get_config('kernel')
             )
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
     
     def predict(self, X:pd.DataFrame) -> list[float]:

@@ -4,8 +4,9 @@
 from sklearn.ensemble import RandomForestRegressor
 import pandas as pd
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...output import Input
-from ...step import is_step, runner
+from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
 class ActRandomForestRegressor(Actionable):
@@ -32,8 +33,7 @@ class ActRandomForestRegressor(Actionable):
         }
         self.model:RandomForestRegressor = None
         
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit Random Forest regressor on Input.dataset
 
@@ -50,9 +50,9 @@ class ActRandomForestRegressor(Actionable):
             n_estimators=self.get_config('n_estimators')
             )
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
     
     def predict(self, X:pd.DataFrame) -> list[float]:

@@ -5,8 +5,9 @@
 from sklearn.naive_bayes import GaussianNB
 import pandas as pd
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...output import Input
-from ...step import is_step, runner
+from ...decorators.all import is_step
 
 @is_step('learning', 'tabular')
 class ActGaussianNb(Actionable):
@@ -17,24 +18,22 @@ class ActGaussianNb(Actionable):
     def __init__(self):
         self.configuration:dict = {}
         self.model:GaussianNB = None
-        
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit GaussianNB on Input.dataset
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Input): Fit data
 
         Returns:
-            Output: Transformed input
+            Fitted step
         """
         self.model = GaussianNB()
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
     
     def predict(self, X:pd.DataFrame) -> list[float]:

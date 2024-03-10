@@ -5,7 +5,8 @@ from copy import deepcopy
 from ..step_wrapper import StepWrapper
 from ..output import Output, Input
 from ..logger import Logger
-from ..step import is_step, runner, Step
+from ..step import Step
+from ..decorators.all import is_step, runner
 
 
 # Wrapper : Implementation of an interative GridSearch

@@ -5,7 +5,8 @@ import numpy as np
 from sklearn.model_selection import KFold as SKKFold, StratifiedKFold
 from ...logger import Logger
 from ...output import Input, Output
-from ...step import is_step, runner, Step
+from ...step import Step
+from ...decorators.all import is_step, runner
 from .wrap_dataset_wrapper import WrapDatasetWrapper
 
 
@@ -72,11 +73,11 @@ class WrapKFold(WrapDatasetWrapper):
             for k in output.computed_metrics.keys() }
         output.dataset = input_data.dataset # back to Output
 
-        output.pipeline.add_explanation(self, [
+        self.explanations = [
             'Computed mean metrics.',
             f"""Trained {self.get_config('folds')} models, then one last model
                 on the whole dataset, and returned it as the output."""
-        ])
+        ]
         
         return super().run(output, callback)
     

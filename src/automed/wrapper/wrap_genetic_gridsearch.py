@@ -7,7 +7,8 @@ Each new generation will learn from the previous one
 from copy import deepcopy
 import random
 from ..step_wrapper import StepWrapper
-from ..step import is_step, runner, Step
+from ..step import Step
+from ..decorators.all import is_step, runner
 from .dataset import WrapDatasetWrapper
 from ..output import Output, Input
 from ..meta_explorer_step import MetaExplorerStep

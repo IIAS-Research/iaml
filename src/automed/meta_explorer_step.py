@@ -3,7 +3,8 @@
 """
 from .metastep import MetaStep
 from .output import Input, Output
-from .step import Step, is_step, runner
+from .step import Step
+from .decorators.all import is_step, runner
 from .worker_manager import WorkerFuture, WorkerManager
 
 #

@@ -2,7 +2,8 @@
 StepWrapper is a direct child of Step and will wrap and execute another step.
 Wrap with StepWrapper is useless, use children classes
 """
-from .step import Step, is_step, runner
+from .step import Step
+from .decorators.all import is_step, runner
 from .output import Input, Output
 
 

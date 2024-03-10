@@ -135,44 +135,27 @@ class Output:
             metrics or copy(self.metrics),
             auto_pipeline or self.pipeline.copy(),
             stacked_path=self.stacked_path)
-    
-    def add_transform(self, instance:'Step') -> 'Output':
-        """
-        Transforms the dataset using the provided function, and adds it to the
-        stack of functions to be applied before prediction.
-        Note: The function must be pickable and therefore must be named (not be
-        a lambda) and be declared at the top level of a module.
-        See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
-        """
-        self.dataset.transform(instance.transform)
-            
-        if self.pipeline is not None \
-            and instance.transform is not None \
-            and callable(instance.transform):
-            self.pipeline.add_transform(instance)
         
+    def add_to_pipeline(self, instance:'Step') -> 'Output':
+        """
+        Add a Step to prediction Pipeline.
+        instance must implement one of these methods :
+            - transform(X) : Apply column transformations to Dataset
+            - predict(X) : Predict values with AI model
+            - resample(X,y) : Apply row transformations to Dataset 
+                (will be run just before prediction)
+        """
+        if self.pipeline is not None:
+            if hasattr(instance, 'transform') and callable(instance.transform):
+                self.dataset.transform(instance.transform)
+                self.pipeline.add_transform(instance)
+            elif hasattr(instance, 'predict') and callable(instance.predict):
+                self.pipeline.set_model(instance)
+            elif hasattr(instance, 'resample') and callable(instance.resample):
+                self.dataset.resample(instance.resample)
+                
         return self.to_output()
-    
-    
-    def add_resample(self, instance:'Step') -> 'Output':
-        """
-        Resample the dataset using the resample method of provided instance.
-        The method will be applied to the dataset just before training,
-        after splitting into train and test.
-        """
-        self.dataset.resample(instance.resample)
         
-        return self.to_output()
-    
-    def set_model(self, instance:'Step') -> 'Output':
-        """
-        Sets the resulting model of the pipeline to this output.
-        Note: The function must be pickable and therefore must be named (not be
-        a lambda) and be declared at the top level of a module.
-        See https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled.
-        """
-        return self.to_output(auto_pipeline=self.pipeline.set_model(instance))
-    
     def add_metric(self, metric:'Metric') -> None:
         """
         Add a new Metric to evaluate models

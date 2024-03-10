@@ -4,8 +4,9 @@
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...output import Input
-from ...step import is_step, runner
+from ...decorators.all import is_step
 
 
 @is_step('learning', 'tabular', 'fast_learning')
@@ -27,9 +28,8 @@ class ActLogisticRegression(Actionable):
             }
         }
         self.model:LogisticRegression = None
-        
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit LOgistic Regression on Input.dataset
 
@@ -46,9 +46,9 @@ class ActLogisticRegression(Actionable):
             random_state = self.get_config('random_state')
             )
         
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
     
     def predict(self, X:pd.DataFrame) -> list[float]:
