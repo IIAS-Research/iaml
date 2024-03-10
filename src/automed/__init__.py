@@ -30,6 +30,3 @@ from .stack import Stack
 
 # Optimizer
 from .optimizers import *
-
-# Cache
-from .caching import Caching

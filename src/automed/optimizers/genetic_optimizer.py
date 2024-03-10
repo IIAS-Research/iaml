@@ -1,3 +1,6 @@
+"""
+Pipeline optimizer based on genetic concepts
+"""
 from copy import deepcopy
 import random
 from ..candidate import Candidate
@@ -7,6 +10,9 @@ from ..step import Step
 # TODO -> Only optimize predictor for now. See if we can optimize cleaning stage
 
 class GeneticOptimizer(Optimizer):
+    """
+    Pipeline optimizer based on genetic concepts
+    """
     def __init__(self, nb_candidate:int=20, mutation_power:float=0.1, initial_modifier:float=5):
         super().__init__()
         self.number_of_candidate:int = max(nb_candidate, 4)
@@ -55,6 +61,9 @@ class GeneticOptimizer(Optimizer):
         return self.__unique(new_generation) # Remove duplicated
     
     def __random_configuration(self, candidate:Candidate) -> Candidate:
+        """
+        From a candidate generate a new one with a full random configuration
+        """
         # Deepcopy to avoid editing other Steps of the same generation
         new_candidate:Candidate = deepcopy(candidate)
         _, predictor = new_candidate.pipeline.predictor
@@ -103,6 +112,9 @@ class GeneticOptimizer(Optimizer):
         return new_candidate
     
     def __mutate(self, candidate:Candidate) -> Candidate:
+        """
+        Mutate a candidate into a new one 
+        """
         new_candidate:Candidate = deepcopy(candidate)
         _, predictor = new_candidate.pipeline.predictor
         

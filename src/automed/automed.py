@@ -2,8 +2,8 @@
     AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
 """
 
-import pandas as pd
 import time
+import pandas as pd
 
 from .step import Step
 from .metastep import MetaStep
@@ -58,16 +58,17 @@ class AutoMed:
         self.first_step = Step.from_pipeline(pipeline)
 
     # DEBUG -> Testing purpose
-    def autosklearn_pipeline(self, time:int=30) -> None:
+    def autosklearn_pipeline(self, timeout:int=30) -> None:
         """DEBUG -> Testing purpose
         Load a basic pipeline with AutoSkLearn as model 
 
         Args:
-            time (int, optional): Max running time of AutoSKLearn model in seconds. Defaults to 30.
+            timeout (int, optional): Max running timeout of AutoSKLearn model in seconds.
+            Defaults to 30.
         """
         self.first_step = MetaOrderedStep()
         sklearn = ActAutoSKLearn() # pylint: disable=undefined-variable
-        sklearn.configure('running_time', time)
+        sklearn.configure('running_time', timeout)
 
         self.first_step.add_step(sklearn)
 
@@ -186,7 +187,10 @@ class AutoMed:
             # Generate new candidates
             candidates = optimizer.run(candidates)
             
-            Logger().log(f'Finetuning...  candidates={len(candidates)} patience={iterations_without_improvement}/{patience}, duration={round(duration, 2)}/{max_duration}, best_result={best_result}')
+            Logger().log(f'Finetuning...  candidates={len(candidates)} \
+                patience={iterations_without_improvement}/{patience}, \
+                duration={round(duration, 2)}/{max_duration}, \
+                best_result={best_result}')
             
             # Evaluate new candidates
             # TODO Use thread here -> need to adapt Worker Manager ?
@@ -201,7 +205,10 @@ class AutoMed:
                 
             candidates.sort(reverse=True) 
             
-            Logger().log([(round(candidate.get_main_metric_value(), 5), candidate.pipeline.predictor[0], candidate.pipeline.predictor[1].resume_configuration()) for candidate in candidates])
+            Logger().log([(round(candidate.get_main_metric_value(), 5), \
+                candidate.pipeline.predictor[0], \
+                candidate.pipeline.predictor[1].resume_configuration()) \
+                    for candidate in candidates])
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()

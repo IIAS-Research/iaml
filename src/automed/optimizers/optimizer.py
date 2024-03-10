@@ -1,7 +1,15 @@
 
+"""
+Base class of AutoMed Optimizer. Optimizer receive a pool of Candidates, 
+optimize parameters and return a new pool of candidate
+"""
 from ..candidate import Candidate
 
 class Optimizer():
+    """
+    Base class of AutoMed Optimizer. Optimizer receive a pool of Candidates, 
+    optimize parameters and return a new pool of candidate
+    """
     def __init__(self):
         self.__finished:bool = False
         

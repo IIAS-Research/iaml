@@ -1,6 +1,7 @@
 """
 MetaStep is a direct child of Step and will carry and execute several other Steps
--> MetaStep will execute Step one by one, using the candidate of a step as candidate of the next one. 
+-> MetaStep will execute Step one by one, using the candidate of a step 
+    as candidate of the next one. 
 The order of Step is defined by the priorize() method 
 
 There is children classes of MetaStep to execute Steps in a different way
@@ -14,7 +15,8 @@ from .step_wrapper import StepWrapper
 class MetaStep(Step):
     """
     MetaStep is a direct child of Step and will carry and execute several other Steps
-    -> MetaStep will execute Step one by one, using the candidate of a step as candidate of the next one. 
+    -> MetaStep will execute Step one by one, using the candidate of a step as 
+        candidate of the next one. 
     The order of Step is defined by the priorize() method 
 
     There is children classes of MetaStep to execute Steps in a different way

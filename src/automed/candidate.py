@@ -1,10 +1,10 @@
 """
-Candidate (and Candidate alias) is used to exchange data between Steps  
+Candidate is used to exchange data between Steps  
 """
+from typing import TYPE_CHECKING
+from copy import copy, deepcopy
 import numpy as np
 import pandas as pd
-from copy import copy, deepcopy
-from typing import TYPE_CHECKING
 from .dataset import Dataset
 from .splitter import random_splitter
 
@@ -152,7 +152,8 @@ class Candidate:
                 self.pipeline.set_model(instance)
             elif hasattr(instance, 'resample') and callable(instance.resample):
                 self.pipeline.add_resample(instance.resample)
-                self.dataset.resample(instance.resample) # Resample in Dataset used in pipeline generation step
+                # Resample in Dataset used in pipeline generation step
+                self.dataset.resample(instance.resample) 
                 
         return self.to_output()
         
@@ -189,7 +190,7 @@ class Candidate:
         Returns:
             dict: Metric name as key and result as value
         """
-        if not self.pipeline.have_model :
+        if not self.pipeline.have_model:
             return None
         
         splitted_datasets:list[tuple[Dataset, Dataset]] = splitter(dataset)
@@ -203,12 +204,21 @@ class Candidate:
         
         self.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
             for k in map(str, self.metrics) }
-            
         
         return self.computed_metrics
     
     
     def evaluate(self, X:pd.DataFrame, y:np.array) -> dict:
+        """
+        Evaluate pipeline performances with self.metrics
+
+        Args:
+            X (pd.DataFrame): Features
+            y (np.array): label
+
+        Returns:
+            dict: Computed metrics
+        """
         if not self.pipeline.have_model:
             return None
         
@@ -218,6 +228,14 @@ class Candidate:
     def __compute_metrics(self, y:np.array, y_pred:np.array) -> dict:
         return {str(metric): metric.compute(y, y_pred) for metric in self.metrics}
         
+    def fingerprint(self) -> str:
+        """
+        Generate a fingerprint to identify this instance
+
+        Returns:
+            str: String fingerprint
+        """
+        return self.pipeline.fingerprint()
     
     def explain(self):
         """

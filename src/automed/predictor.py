@@ -1,13 +1,15 @@
-import numpy as np
-
-from automed.step import Step
+"""
+Last step of a pipeline -> can make prediction
+"""
 from .actionables import Actionable
 from .decorators.runner import runner
-from .splitter import random_splitter
 from .candidate import Candidate
-from .dataset import Dataset
 
 class Predictor(Actionable):
+    """
+    Last step of a pipeline -> can make prediction
+    """
+    
     @runner
     def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
         """

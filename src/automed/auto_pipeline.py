@@ -56,7 +56,8 @@ class AutoPipeline(Pipeline):
         Returns:
             list[tuple[str, object]]: list of steps
         """
-        return [item for item in [*self.transformers, *self.resamplers, self.predictor] if item is not None]
+        return [item for item in [*self.transformers, *self.resamplers, self.predictor] \
+            if item is not None]
     
     @steps.setter
     def steps(self, values:list[tuple[str, object]]) -> list[tuple[str, object]]:

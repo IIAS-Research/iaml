@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 from .data_type import DataType
-from .metric import Metric
 
 if TYPE_CHECKING:
     from .auto_pipeline import AutoPipeline
@@ -46,13 +45,6 @@ class Dataset:
             pd.DataFrame: X data
         """
         return self.__X
-
-    @property
-    def is_multilabel(self) -> bool:
-        """
-        Dataset is multilabel ?
-        """
-        return len(self.__y.columns) > 1
 
     @property
     def y(self) -> pd.DataFrame:
