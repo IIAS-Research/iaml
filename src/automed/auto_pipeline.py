@@ -75,7 +75,8 @@ class AutoPipeline(Pipeline):
         elif hasattr(instance, 'resample') and callable(instance.resample):
             self.resamplers.append(step)
         
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
+    def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
+            only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
         
@@ -130,7 +131,7 @@ class AutoPipeline(Pipeline):
         Returns:
             list[str]: List of markdown explanations
         """
-        return [step.explain() for _, step in self.steps]
+        return [step.explain() for _, step in self.training_steps]
     
     @property
     def model(self) -> 'Step':

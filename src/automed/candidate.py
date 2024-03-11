@@ -249,6 +249,12 @@ class Candidate:
     
     def __compute_metrics(self, y:np.array, y_pred:np.array) -> dict:
         return {str(metric): metric.compute(y, y_pred) for metric in self.metrics}
+    
+    def __metric_value(self, metric) -> float:
+        for key, value in self.computed_metrics.items():
+            if key == str(metric):
+                return value
+        return None
         
     def fingerprint(self) -> str:
         """
@@ -263,12 +269,24 @@ class Candidate:
         
         return md5(to_hash.encode()).hexdigest()
     
-    def explain(self):
+    def explain(self) -> list:
         """
         Explain all steps
 
         Returns:
             list: Explain strings
         """
-        return list(map(lambda stack: stack.explain(), self.stacked_path))
+        # Results explain 
+        metrics = '\n'.join([
+            f'| `{m}` | **{self.__metric_value(m):.4f}** | *{m.explain()}* |'
+            for m in self.metrics
+        ])
+        results_explain:str = f'''
+### Results
+| Metric name | Computed value | Description |
+| ----------- | -------------- | ----------- |
+{metrics}
+''' if len(metrics) > 0 else ""
+        
+        return [*self.pipeline.explanations, results_explain]
     
