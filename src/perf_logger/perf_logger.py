@@ -15,6 +15,8 @@ from automed import *
 DURATION = 60*30 # 30 minutes
 
 def each_file(file):
+    Logger.reset()
+    Cache.reset()
     start_file = datetime.now()
     filename = file.split('/')[-1]
     print('FILE :', filename)
