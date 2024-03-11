@@ -20,7 +20,7 @@ class GeneticOptimizer(Optimizer):
         self.ignored_configs:list[str] = {'random_state'}
         self.mutation_power:float = mutation_power
         self.initial_modifier:float = initial_modifier
-        self.max_generations:int = 5
+        self.max_generations:int = 20
         
     @property
     def finished(self) -> bool:

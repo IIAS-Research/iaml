@@ -4,6 +4,7 @@
 
 import time
 import pandas as pd
+import concurrent.futures
 
 from .step import Step
 from .metastep import MetaStep
@@ -121,7 +122,13 @@ class AutoMed:
     ### RUN ###
     ###########
 
-    def fit(self, X:pd.DataFrame, y:list|pd.DataFrame, *args, **kwargs) -> list[Candidate]:
+    def fit(self,
+            X:pd.DataFrame,
+            y:pd.DataFrame,
+            max_duration:int=-1,
+            max_worker:int=None,
+            patience:int=-1,
+            *args, **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -156,7 +163,12 @@ class AutoMed:
             candidate.training_evaluate(dataset, splitter=kfold_splitter)
             
         # Finetune stages
-        candidates = self.__optimize(dataset, candidates, optimizer=GeneticOptimizer())
+        candidates = self.__optimize(dataset,
+                                    candidates,
+                                    optimizer=GeneticOptimizer(),
+                                    max_duration=max_duration,
+                                    max_worker=max_worker,
+                                    patience=patience)
         
         
         # Fit candidate with the whole dataset
@@ -170,45 +182,69 @@ class AutoMed:
                     candidates:list[Candidate],
                     splitter:callable=kfold_splitter,
                     optimizer:Optimizer=Optimizer(),
-                    patience:int=10,
-                    max_duration:int=-1) -> list[Candidate]:
+                    patience:int=5,
+                    max_duration:int=-1,
+                    max_worker:int=None) -> list[Candidate]:
         # init
         candidates.sort(reverse=True)
         best_result:float = candidates[0].get_main_metric_value()
         iterations_without_improvement:int = 0
+        iterations_count:int = 0
         duration:int = 0
         starting_time:int = time.time() # seconds
         cache:dict = {}
         
+        # If there is not, define an arbitrary stop condition
+        if max_duration == -1 and patience == -1:
+            patience = 20
+        
         while   not(optimizer.finished) \
-                and iterations_without_improvement < patience \
+                and (patience == -1 or iterations_without_improvement < patience) \
                 and (max_duration == -1 or max_duration > duration):
             
             # Generate new candidates
             candidates = optimizer.run(candidates)
             
-            Logger().log(f'Finetuning...  candidates={len(candidates)} \
+            Logger().log(f'Finetuning... \
+                stage={iterations_count} \
+                candidates={len(candidates)} \
                 patience={iterations_without_improvement}/{patience}, \
                 duration={round(duration, 2)}/{max_duration}, \
                 best_result={best_result}')
             
             # Evaluate new candidates
-            # TODO Use thread here -> need to adapt Worker Manager ?
-            for candidate in candidates:
-                # Use cache
-                fingerprint = candidate.pipeline.fingerprint()
-                if fingerprint in cache:
-                    candidate.computed_metrics = cache[fingerprint]
-                else:
-                    candidate.training_evaluate(dataset, splitter=splitter)
-                    cache[fingerprint] = candidate.computed_metrics
-                
-            candidates.sort(reverse=True) 
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
+                future_jobs = []
+                for candidate in candidates:
+                    # Use cache
+                    fingerprint = candidate.pipeline.fingerprint()
+                    if fingerprint in cache:
+                        candidate.computed_metrics = cache[fingerprint]
+                    else:
+                        candidate.computed_metrics = {}
+                        future_jobs.append(
+                            executor.submit(candidate.training_evaluate, dataset, splitter=splitter)
+                        )
+                        
+                # Wait for all tasks to complete with a timeout
+                concurrent.futures.wait(future_jobs, timeout=max_duration - duration)
             
-            Logger().log([(round(candidate.get_main_metric_value(), 5), \
-                candidate.pipeline.predictor[0], \
-                candidate.pipeline.predictor[1].resume_configuration()) \
-                    for candidate in candidates])
+            candidates.sort(reverse=True)
+            
+            # Remove not computed (error or timeout)
+            candidates = [candidate for candidate in candidates if candidate.computed_metrics]
+            
+            # Add to cache
+            for candidate in candidates:
+                fingerprint = candidate.pipeline.fingerprint()
+                if fingerprint not in cache:
+                        cache[fingerprint] = candidate.computed_metrics
+                
+            
+            # Logger().log([(round(candidate.get_main_metric_value(), 5), \
+            #     candidate.pipeline.predictor[0], \
+            #     candidate.pipeline.predictor[1].resume_configuration()) \
+            #         for candidate in candidates])
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()
@@ -221,7 +257,11 @@ class AutoMed:
             # Duration in seconds
             duration = time.time() - starting_time
             
-        return candidates
+            # Increase Iteration count
+            iterations_count += 1
+            
+            
+        return candidates[0:5]
         
         
 

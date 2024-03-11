@@ -9,6 +9,7 @@ from .candidate import Candidate
 from .dataset import Dataset
 from .data_type import DataType
 from .metric import Metric
+from .cache import Cache
 
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep

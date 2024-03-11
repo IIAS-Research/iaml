@@ -75,7 +75,7 @@ class AutoPipeline(Pipeline):
         elif hasattr(instance, 'resample') and callable(instance.resample):
             self.resamplers.append(step)
         
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, **kwargs) -> 'AutoPipeline':
+    def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
         
@@ -84,8 +84,32 @@ class AutoPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         dataset = Dataset(X, y)
+        if only_predictor:
+            self.predictor[1].fit(dataset)
+        else:
+            for _, step in self.training_steps:
+                if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
+                    step.fit(dataset)
+                else:
+                    step.fit(dataset.X, dataset.y, **kwargs)
+                    
+                if hasattr(step, 'transform'):
+                    dataset = Dataset(step.transform(dataset.X), y)
+                elif hasattr(step, 'resample'):
+                    dataset = Dataset(*step.resample(dataset.X, dataset.y))
         
-        for _, step in self.training_steps:
+        return self
+    
+    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, **kwargs) -> 'AutoPipeline':
+        """
+        Fit Pipeline and transform data 
+        
+        Args:
+            X (pd.DataFrame): Candidate features
+            y (pd.DataFrame): label to predict
+        """
+        dataset = Dataset(X, y)
+        for _, step in [*self.transformers, *self.resamplers]:
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
                 step.fit(dataset)
             else:
@@ -96,7 +120,7 @@ class AutoPipeline(Pipeline):
             elif hasattr(step, 'resample'):
                 dataset = Dataset(*step.resample(dataset.X, dataset.y))
         
-        return self
+        return dataset.X, dataset.y
         
     @property
     def explanations(self):
@@ -215,7 +239,7 @@ class AutoPipeline(Pipeline):
         if not model_only:
             return super().predict(X, **kwargs)
         
-        return self.model.predict(X)
+        return self.model[1].predict(X)
     
     def __eq__(self, other: 'AutoPipeline') -> bool:
         return self.fingerprint() == other.fingerprint()

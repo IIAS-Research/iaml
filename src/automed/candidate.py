@@ -3,9 +3,12 @@ Candidate is used to exchange data between Steps
 """
 from typing import TYPE_CHECKING
 from copy import copy, deepcopy
+from hashlib import md5
+import json
 import numpy as np
 import pandas as pd
 from .dataset import Dataset
+from .cache import Cache
 from .splitter import random_splitter
 
 from .auto_pipeline import AutoPipeline
@@ -151,9 +154,9 @@ class Candidate:
             elif hasattr(instance, 'predict') and callable(instance.predict):
                 self.pipeline.set_model(instance)
             elif hasattr(instance, 'resample') and callable(instance.resample):
-                self.pipeline.add_resample(instance.resample)
+                self.pipeline.add_resample(instance)
                 # Resample in Dataset used in pipeline generation step
-                self.dataset.resample(instance.resample) 
+                self.dataset = Dataset(*instance.resample(self.dataset.X, self.dataset.y))
                 
         return self.to_output()
         
@@ -192,15 +195,34 @@ class Candidate:
         """
         if not self.pipeline.have_model:
             return None
-        
-        splitted_datasets:list[tuple[Dataset, Dataset]] = splitter(dataset)
-        
         metrics:list[dict] = []
+
+        # without cache !
+        from_cache:bool = True
+        splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
+        if not splitted_datasets:  
+            from_cache = False
+            to_cache:list = []
+            splitted_datasets:list[tuple[Dataset, Dataset]] = splitter(dataset)
+            
         for train_ds, test_ds in splitted_datasets:
             copied_pipe = deepcopy(self.pipeline)
-            copied_pipe.fit(train_ds.X, train_ds.y)
-            y_pred = copied_pipe.predict(test_ds.X)
+            
+            # Fit in two step to allow caching
+            if not from_cache:
+                train_ds =  Dataset(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
+                test_ds =  Dataset(copied_pipe.transform(test_ds.X), test_ds.y)
+            
+            copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
+            
+            y_pred = copied_pipe.predict(test_ds.X, model_only=True)
             metrics.append(self.__compute_metrics(test_ds.y, y_pred))
+            
+            if not from_cache:
+                to_cache.append((train_ds, test_ds))
+        
+        if not from_cache:
+            Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)    
         
         self.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
             for k in map(str, self.metrics) }
@@ -235,7 +257,11 @@ class Candidate:
         Returns:
             str: String fingerprint
         """
-        return self.pipeline.fingerprint()
+        to_hash = "\n".join([str(step.__class__) + " = " \
+            + json.dumps(step.configuration, sort_keys=True) \
+                for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]])
+        
+        return md5(to_hash.encode()).hexdigest()
     
     def explain(self):
         """
