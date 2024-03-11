@@ -1,14 +1,18 @@
 """
 Output (and Input alias) is used to exchange data between Steps  
 """
-from copy import copy
 from typing import TYPE_CHECKING
-from .dataset import Dataset
+
+from copy import copy
+import shap
 
 from .auto_pipeline import AutoPipeline
+from .dataset import Dataset
+from .explanation import Explanation
 
 
 if TYPE_CHECKING:
+    import pandas as pd
     from .metric import Metric
     from .step import Step
 
@@ -222,6 +226,32 @@ class Output:
             self.computed_metrics = current_compute
             
         return current_compute
+    
+    def explain_model(self, X: 'pd.DataFrame'):
+        """
+        Explains the model by computing SHAP values on the fitted model.
+        Uses the train set as the masker, and the provided set as
+        prediction.
+
+        Args:
+            X (DataFrame): Prediction set to compute SHAP values for.
+
+        Returns:
+            Explanation: Model explanation, with an overview of the
+                most important features, and graphs.
+        """
+        if not self.pipeline.have_model:
+            raise RuntimeError('There is no model to explain.')
+
+        med = self.dataset.X
+        pred = self.pipeline.transform(X)
+
+        step = self.pipeline.model
+        model = step.model
+
+        shap_values = shap.Explainer(lambda x: model.predict_proba(x)[:, 1], med)(pred)
+
+        return Explanation(step, None, None, shap_values)
     
     def explain(self):
         """
