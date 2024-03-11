@@ -38,7 +38,7 @@ def each_file(file):
 
     auto = AutoMed(quiet=True)
     auto.default_pipeline(fast=False)
-    local_results = auto.fit(X, y, max_duration=DURATION, patient=10)
+    local_results = auto.fit(X, y, max_duration=DURATION, patience=10)
     
     end_file = datetime.now()
     compute_time = (end_file - start_file).seconds
