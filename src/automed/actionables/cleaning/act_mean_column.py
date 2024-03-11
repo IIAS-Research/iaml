@@ -28,7 +28,7 @@ class ActMeanColumn(Actionable):
             }
         }
     
-    def fit(self, dataset:Dataset):
+    def fit(self, dataset:Dataset) -> Actionable:
         # threshold = self.get_config('empty_threshold')
 
         self.columns = []

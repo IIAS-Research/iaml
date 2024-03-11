@@ -27,8 +27,7 @@ class ActMinMaxScaler(Actionable):
         Find columns to scale and fit scaler
 
         Args:
-            candidate (Candidate): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
             Candidate: Transformed candidate

@@ -51,8 +51,7 @@ class ActTPLOT(Predictor):
         Fit TPLOT on Candidate.dataset
 
         Args:
-            candidate (Candidate): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
             Candidate: Transformed candidate

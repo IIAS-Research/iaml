@@ -22,13 +22,12 @@ class ActOnehot(Actionable):
         self.encoder:OneHotEncoder = None
 
 
-    def fit(self, dataset:Dataset):
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find columns to encode and fit encoder
 
         Args:
-            candidate (Candidate): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
             Candidate: Transformed candidate

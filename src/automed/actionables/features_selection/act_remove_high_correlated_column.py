@@ -26,13 +26,12 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         }
         self.to_drop:list[str] = None
     
-    def fit(self, dataset:Dataset):
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find high correlated columns to drop
 
         Args:
-            candidate (Candidate): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
             Candidate: Transformed candidate

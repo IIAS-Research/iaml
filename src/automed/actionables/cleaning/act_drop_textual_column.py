@@ -20,13 +20,12 @@ class ActDropTextualColumn(Actionable):
     def __init__(self):
         self.columns_to_drop:list[str] = None
     
-    def fit(self, dataset:Dataset):
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find columns to drop
 
         Args:
-            candidate (Candidate): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
             Candidate: Transformed candidate

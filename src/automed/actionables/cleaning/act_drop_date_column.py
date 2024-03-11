@@ -19,7 +19,7 @@ class ActDropDateColumn(Actionable):
     def __init__(self):
         self.columns_to_drop:list[str] = None
     
-    def fit(self, dataset:Dataset):
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find column to drop
 
