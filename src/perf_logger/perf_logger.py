@@ -36,9 +36,9 @@ def each_file(file):
     X_test = test_df.drop(columns=labels)
         
 
-    auto = AutoMed(quiet=False)
+    auto = AutoMed(quiet=True)
     auto.default_pipeline(fast=False)
-    local_results = auto.fit(X, y, max_duration=DURATION)
+    local_results = auto.fit(X, y, max_duration=DURATION, patient=10)
     
     end_file = datetime.now()
     compute_time = (end_file - start_file).seconds
@@ -71,6 +71,7 @@ threads = []
 
 for file in files:
     print("->>>", file)
+    print("TIME", str(datetime.now()))
     output = each_file(file=file)
     results = pd.concat([output, results], ignore_index=True)
     results.to_csv(history_path, index=False)
