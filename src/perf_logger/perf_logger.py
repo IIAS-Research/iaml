@@ -31,7 +31,7 @@ def each_file(file):
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=43)
 
     labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
-    y = train_df[labels]
+    y = np.array(train_df[labels[0]])
     X = train_df.drop(columns=labels)
 
     y_test = test_df[labels]
