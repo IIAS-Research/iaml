@@ -5,7 +5,6 @@
 import time
 import pandas as pd
 import concurrent.futures
-
 from .step import Step
 from .cache import Cache
 from .metastep import MetaStep
@@ -147,6 +146,7 @@ class AutoMed:
         X = deepcopy(X)
         y = deepcopy(y)
         
+        ### INITIAL GENERATE CANDIDATE 
         dataset:Dataset = Dataset(X, y)
         self.fit_candidate:Candidate = Candidate(dataset)
 
@@ -161,20 +161,23 @@ class AutoMed:
         candidates = [candidate for candidate in candidates \
             if candidate.pipeline.predictor is not None]
         
+        ### INITIAL EVALUATION
+        
         # Evaluate candidates
         self.__run_evaluations(candidates,
                         dataset,
                         splitter=kfold_splitter,
                         timeout=max_duration - (time.time() - start_time))
-        candidates.sort(reverse=True)
             
-        # Finetune stages
+        ### FINETUNING
+        
         candidates = self.__optimize(dataset,
                                     candidates,
                                     optimizer=GeneticOptimizer(),
                                     max_duration=max_duration - (time.time() - start_time),
                                     patience=patience)
         
+        ### FINAL FIT
         
         # Fit candidate with the whole dataset
         for candidate in candidates:
@@ -186,30 +189,49 @@ class AutoMed:
                         candidates:Candidate,
                         dataset:Dataset,
                         splitter:callable=kfold_splitter,
-                        timeout=None) -> None:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_jobs = []
-            for candidate in candidates:
-                from_cache = Cache().from_cache( \
-                    'automed_'+candidate.pipeline.fingerprint(), dataset.X)
+                        timeout=None,
+                        stage_number:int=None) -> None:
+
+        with Logger().progress as progress:
+            task = progress.add_task(
+                f'Stage {stage_number}' if stage_number is not None else "Initial evaluate",
+                total=len(candidates))
+            
+            def update_progressbar(*args):
+                progress.update(task, advance=1)
                 
-                if from_cache:
-                    candidate.computed_metrics = from_cache
-                else:
-                    candidate.computed_metrics = {}
-                    future_jobs.append(
-                        executor.submit(candidate.training_evaluate, dataset, splitter=splitter)
-                    )
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                future_jobs = []
+                for candidate in candidates:
+                    from_cache = Cache().from_cache( \
+                        'automed_'+candidate.pipeline.fingerprint(), dataset.X)
                     
-            # Wait for all tasks to complete with a timeout
-            concurrent.futures.wait(future_jobs, timeout=timeout)
-        
+                    if from_cache:
+                        candidate.computed_metrics = from_cache
+                        update_progressbar() # Update progressbar even if data come from cache
+                    else:
+                        candidate.computed_metrics = {}
+                        future_jobs.append(executor.submit(candidate.training_evaluate, dataset, splitter=splitter))
+                    
+                # Add callback to update progressbar
+                for future in future_jobs:
+                    future.add_done_callback(update_progressbar) 
+                
+                # Wait for all tasks to complete with a timeout
+                concurrent.futures.wait(future_jobs, timeout=timeout)
+                
+                candidates.sort(reverse=True)
+                
+                # Add results to progressbar
+                progress.tasks[task].description = f'{progress.tasks[task].description} ({candidates[0].get_main_metric_value():.4f})'
+                
+            
         # Add to cache
         for candidate in candidates:
             fingerprint = candidate.pipeline.fingerprint()
             if not Cache().from_cache('automed_'+fingerprint, dataset.X):
                 Cache().add_to_cache('automed_'+fingerprint, dataset.X, candidate.computed_metrics)
-        
+            
     
     def __optimize(self,
                     dataset:Dataset,
@@ -248,8 +270,8 @@ class AutoMed:
             self.__run_evaluations(candidates,
                         dataset,
                         splitter=kfold_splitter,
-                        timeout=max_duration - (time.time() - starting_time))
-            candidates.sort(reverse=True)
+                        timeout=max_duration - (time.time() - starting_time),
+                        stage_number=iterations_count)
             
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
@@ -315,7 +337,7 @@ class AutoMed:
         """
         with Logger().progress as progress:
             step_count:int = self.first_step.count_steps()
-            task = progress.add_task('Running...', total=step_count)
+            task = progress.add_task('Generate candidates', total=step_count)
             
             # Override callback to handle progress bar
             def progress_callback(step: Step) -> None:
