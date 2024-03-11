@@ -34,7 +34,7 @@ def each_file(file):
     y = np.array(train_df[labels[0]])
     X = train_df.drop(columns=labels)
 
-    y_test = test_df[labels]
+    y_test = np.array(test_df[labels[0]])
     X_test = test_df.drop(columns=labels)
         
 
