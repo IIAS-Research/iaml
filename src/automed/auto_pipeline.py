@@ -4,6 +4,7 @@ Transform, resample and then predict from Input instance
 """
 import pickle
 from typing import TYPE_CHECKING
+from numpy import ndarray
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from .explanation import Explanation
@@ -20,7 +21,7 @@ class AutoPipeline(Pipeline):
     
     def __init__(
         self,
-        steps: list[tuple[str, object]] = None,
+        steps: list[tuple[str, 'Step']] = None,
         explanations: list[Explanation] = None,
     ) -> None:
         """
@@ -34,7 +35,7 @@ class AutoPipeline(Pipeline):
         if explanations is None:
             explanations = []
             
-        self.steps:list[tuple[str, object]] = steps.copy()
+        self.steps:list[tuple[str, 'Step']] = steps.copy()
         self.explanations:list[Explanation] = explanations.copy()
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
@@ -66,6 +67,10 @@ class AutoPipeline(Pipeline):
             Step: Prediction model of the pipeline (or None)
         """
         return self.steps[-1][1] if self.have_model else None
+    
+    @property
+    def _estimator_type(self) -> str:
+        return getattr('_estimator_type', self.model.model) if self.have_model else None
 
     def add_transform(self, instance:'Step') -> None:
         """
@@ -123,9 +128,7 @@ class AutoPipeline(Pipeline):
         Returns:
             bool: True a model have been set
         """
-        if self.steps and hasattr(self.steps[-1][1], 'predict'):
-            return True
-        return False
+        return self.steps and hasattr(self.steps[-1][1], 'predict')
     
     def predict(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
         """
@@ -149,12 +152,19 @@ class AutoPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.model.predict(X)
+
+    def transform(self, X: pd.DataFrame) -> ndarray:
+        for _, s in self.steps[:-1]: # ignore last step (training)
+            X = s.transform(X)
+        
+        return X
     
     def add_explanation(
             self,
             step: 'Step',
             processings: list[str] = None,
-            metrics: dict['Metric', float] = None):
+            metrics: dict['Metric', float] = None,
+            shap_values: list = None):
         """
         Explain a step of the pipeline.
 
@@ -163,4 +173,9 @@ class AutoPipeline(Pipeline):
             processings (list[str]): List of all the processings the
                                     the step has done to the data.
         """
-        self.explanations.append(Explanation(step, processings, metrics))
+        self.explanations.append(Explanation(step, processings, metrics, shap_values))
+    
+    # Implement scikit-learn estimator's methods
+        
+    def __sklearn_is_fitted__(self):
+        return self.have_model
