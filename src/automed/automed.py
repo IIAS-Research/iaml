@@ -7,6 +7,7 @@ import pandas as pd
 import concurrent.futures
 
 from .step import Step
+from .cache import Cache
 from .metastep import MetaStep
 from .candidate import Candidate
 from .dataset import Dataset
@@ -49,6 +50,7 @@ class AutoMed:
         Logger().set_quiet(quiet)
         self.default_pipeline() # Load default pipeline
         WorkerManager(max_workers=max_workers)
+        self.max_workers = max_workers
 
     def load_pipeline(self, pipeline:dict) -> None:
         """Load any kind of pipeline
@@ -126,7 +128,6 @@ class AutoMed:
             X:pd.DataFrame,
             y:pd.DataFrame,
             max_duration:int=-1,
-            max_worker:int=None,
             patience:int=-1,
             *args, **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
@@ -138,6 +139,8 @@ class AutoMed:
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
+        start_time = time.time()
+        
         if isinstance(y, pd.DataFrame):
             y = y.values.ravel()
             
@@ -159,15 +162,17 @@ class AutoMed:
             if candidate.pipeline.predictor is not None]
         
         # Evaluate candidates
-        for candidate in candidates:
-            candidate.training_evaluate(dataset, splitter=kfold_splitter)
+        self.__run_evaluations(candidates,
+                        dataset,
+                        splitter=kfold_splitter,
+                        timeout=max_duration - (time.time() - start_time))
+        candidates.sort(reverse=True)
             
         # Finetune stages
         candidates = self.__optimize(dataset,
                                     candidates,
                                     optimizer=GeneticOptimizer(),
-                                    max_duration=max_duration,
-                                    max_worker=max_worker,
+                                    max_duration=max_duration - (time.time() - start_time),
                                     patience=patience)
         
         
@@ -177,14 +182,42 @@ class AutoMed:
             
         return candidates
     
+    def __run_evaluations(self,
+                        candidates:Candidate,
+                        dataset:Dataset,
+                        splitter:callable=kfold_splitter,
+                        timeout=None) -> None:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_jobs = []
+            for candidate in candidates:
+                from_cache = Cache().from_cache( \
+                    'automed_'+candidate.pipeline.fingerprint(), dataset.X)
+                
+                if from_cache:
+                    candidate.computed_metrics = from_cache
+                else:
+                    candidate.computed_metrics = {}
+                    future_jobs.append(
+                        executor.submit(candidate.training_evaluate, dataset, splitter=splitter)
+                    )
+                    
+            # Wait for all tasks to complete with a timeout
+            concurrent.futures.wait(future_jobs, timeout=timeout)
+        
+        # Add to cache
+        for candidate in candidates:
+            fingerprint = candidate.pipeline.fingerprint()
+            if not Cache().from_cache('automed_'+fingerprint, dataset.X):
+                Cache().add_to_cache('automed_'+fingerprint, dataset.X, candidate.computed_metrics)
+        
+    
     def __optimize(self,
                     dataset:Dataset,
                     candidates:list[Candidate],
                     splitter:callable=kfold_splitter,
                     optimizer:Optimizer=Optimizer(),
                     patience:int=5,
-                    max_duration:int=-1,
-                    max_worker:int=None) -> list[Candidate]:
+                    max_duration:int=-1) -> list[Candidate]:
         # init
         candidates.sort(reverse=True)
         best_result:float = candidates[0].get_main_metric_value()
@@ -192,7 +225,6 @@ class AutoMed:
         iterations_count:int = 0
         duration:int = 0
         starting_time:int = time.time() # seconds
-        cache:dict = {}
         
         # If there is not, define an arbitrary stop condition
         if max_duration == -1 and patience == -1:
@@ -213,33 +245,14 @@ class AutoMed:
                 best_result={best_result}')
             
             # Evaluate new candidates
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
-                future_jobs = []
-                for candidate in candidates:
-                    # Use cache
-                    fingerprint = candidate.pipeline.fingerprint()
-                    if fingerprint in cache:
-                        candidate.computed_metrics = cache[fingerprint]
-                    else:
-                        candidate.computed_metrics = {}
-                        future_jobs.append(
-                            executor.submit(candidate.training_evaluate, dataset, splitter=splitter)
-                        )
-                        
-                # Wait for all tasks to complete with a timeout
-                concurrent.futures.wait(future_jobs, timeout=max_duration - duration)
-            
+            self.__run_evaluations(candidates,
+                        dataset,
+                        splitter=kfold_splitter,
+                        timeout=max_duration - (time.time() - starting_time))
             candidates.sort(reverse=True)
             
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
-            
-            # Add to cache
-            for candidate in candidates:
-                fingerprint = candidate.pipeline.fingerprint()
-                if fingerprint not in cache:
-                        cache[fingerprint] = candidate.computed_metrics
-                
             
             # Logger().log([(round(candidate.get_main_metric_value(), 5), \
             #     candidate.pipeline.predictor[0], \
