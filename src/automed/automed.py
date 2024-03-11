@@ -2,9 +2,9 @@
     AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
 """
 
+import concurrent.futures
 import time
 import pandas as pd
-import concurrent.futures
 from .step import Step
 from .cache import Cache
 from .metastep import MetaStep
@@ -126,9 +126,10 @@ class AutoMed:
     def fit(self,
             X:pd.DataFrame,
             y:pd.DataFrame,
+            *args,
             max_duration:int=-1,
             patience:int=-1,
-            *args, **kwargs) -> list[Candidate]:
+            **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -197,7 +198,7 @@ class AutoMed:
                 f'Stage {stage_number}' if stage_number is not None else "Initial evaluate",
                 total=len(candidates))
             
-            def update_progressbar(*args):
+            def update_progressbar(*args): # pylint: disable=unused-argument
                 progress.update(task, advance=1)
                 
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
@@ -211,7 +212,13 @@ class AutoMed:
                         update_progressbar() # Update progressbar even if data come from cache
                     else:
                         candidate.computed_metrics = {}
-                        future_jobs.append(executor.submit(candidate.training_evaluate, dataset, splitter=splitter))
+                        future_jobs.append(
+                            executor.submit(
+                                candidate.training_evaluate,
+                                dataset,
+                                splitter=splitter
+                            )
+                        )
                     
                 # Add callback to update progressbar
                 for future in future_jobs:
@@ -223,7 +230,8 @@ class AutoMed:
                 candidates.sort(reverse=True)
                 
                 # Add results to progressbar
-                progress.tasks[task].description = f'{progress.tasks[task].description} ({candidates[0].get_main_metric_value():.4f})'
+                progress.tasks[task].description = f'{progress.tasks[task].description} \
+                    ({candidates[0].get_main_metric_value():.4f})'
                 
             
         # Add to cache
@@ -269,7 +277,7 @@ class AutoMed:
             # Evaluate new candidates
             self.__run_evaluations(candidates,
                         dataset,
-                        splitter=kfold_splitter,
+                        splitter=splitter,
                         timeout=max_duration - (time.time() - starting_time),
                         stage_number=iterations_count)
             

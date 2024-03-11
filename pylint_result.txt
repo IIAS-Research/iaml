@@ -1,6 +1,6 @@
 ************* Module automed.automed
-src/automed/automed.py:196:13: W0511: TODO Use thread here -> need to adapt Worker Manager ? (fixme)
-src/automed/automed.py:168:4: R0913: Too many arguments (7/6) (too-many-arguments)
+src/automed/automed.py:244:4: R0913: Too many arguments (7/6) (too-many-arguments)
+src/automed/automed.py:7:0: C0411: standard import "concurrent.futures" should be placed before third party import "pandas" (wrong-import-order)
 ************* Module automed.metrics.recall_metric
 src/automed/metrics/recall_metric.py:54:13: W0511: TODO Find something less arbitrary (fixme)
 ************* Module automed.metrics.f1_score_metric
@@ -14,15 +14,15 @@ src/automed/wrapper/wrap_iterative_gridsearch.py:152:70: W0511: TODO improve thi
 ************* Module automed.optimizers.genetic_optimizer
 src/automed/optimizers/genetic_optimizer.py:10:1: W0511: TODO -> Only optimize predictor for now. See if we can optimize cleaning stage (fixme)
 ************* Module automed.optimizers.optimizer
-src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_xgboost -> automed.predictor) (cyclic-import)
-src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_svm_svr -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_svm_svc -> automed.predictor) (cyclic-import)
+src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_xgboost -> automed.predictor) (cyclic-import)
+src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_gaussian_nb -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_knn -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_randomforest_regressor -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_randomforest -> automed.predictor) (cyclic-import)
+src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_svm_svr -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_linear_regression -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_xgboost_regressor -> automed.predictor) (cyclic-import)
-src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_gaussian_nb -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_logistic_regression -> automed.predictor) (cyclic-import)
 src/automed/optimizers/optimizer.py:1:0: R0401: Cyclic import (automed.actionables -> automed.actionables.learning -> automed.actionables.learning.act_knn_regressor -> automed.predictor) (cyclic-import)
 
