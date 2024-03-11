@@ -3,13 +3,12 @@
 [STEP] Learn :  KNN
 """
 from sklearn.neighbors import KNeighborsClassifier
-import pandas as pd
-from ...actionable import Actionable
+from .act_base_learning import ActBaseLearning
 from ...output import Input
 from ...step import is_step, runner
 
 @is_step('learning', 'tabular')
-class ActKNN(Actionable):
+class ActKNN(ActBaseLearning):
     """
     [STEP] Learn :  KNN
     """
@@ -50,27 +49,6 @@ class ActKNN(Actionable):
         
         return input_data.set_model(self)
     
-    def predict(self, X:pd.DataFrame) -> list[float]:
-        """
-        Apply prediction model on DataFrame
-
-        Args:
-            X (pd.DataFrame): DataFrame use to predict
-
-        Returns:
-            list[float]: Predicted values
-        """
-        return self.model.predict(X)
-    
-    
     def suitable(self, input_data) -> bool:
         return input_data.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
-
-    def priorize(self, input_data:Input=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
-        return 0.5 # neutral

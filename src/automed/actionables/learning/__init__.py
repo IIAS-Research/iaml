@@ -3,6 +3,7 @@ Learning Actionables
 """
 # from .act_autosklearn import *
 # from .act_tplot import ActTPLOT
+from .act_base_learning import ActBaseLearning
 from .act_svm_svr import *
 from .act_svm_svc import *
 from .act_randomforest import *

@@ -43,19 +43,15 @@ class ActDropNumericalColumn(Actionable):
 
         for column in input_data.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input_data.dataset.X[column]
-            nan_values_count = values.isnull().sum()
+            nan_count = values.isnull().sum()
 
-            if nan_values_count / len(values) >= self.get_config('empty_threshold'):
+            if nan_count / len(values) >= self.get_config('empty_threshold'):
                 self.columns_to_drop.append(column)
-                explain.append((
-                    nan_values_count,
-                    len(values),
-                    nan_values_count / len(values) * 100,
-                ))
+                explain.append((nan_count, len(values)))
 
         input_data.pipeline.add_explanation(self, [
             f"""Dropped column **`{c}`** because **{v[0]}** values out of
-                **{v[1]}** (**{v[2]:.2f}%**) are empty."""
+                **{v[1]}** (**{(v[0] / v[1] * 100):.2f}%**) are empty."""
             for c, v in zip(self.columns_to_drop, explain)
         ])
 

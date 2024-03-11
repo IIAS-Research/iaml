@@ -21,37 +21,30 @@ class ActMeanColumn(Actionable):
         self.columns:list[str] = None
         self.configuration:dict = {
             'empty_threshold': {
-                'description': """Column with less or equal proportion of empty row will
-                    be fill with mean value. 1 will always fill void values""",
+                'description': 'Column with less or equal proportion of empty row will \
+                    be fill with mean value. 1 will always fill void values',
                 'default': 0.5
             }
         }
     
     @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
-        threshold = self.get_config('empty_threshold')
-
+    def run(self, input_data: Input, callback: callable = None) -> Output: # pylint: disable=unused-argument
         self.columns = []
         explain = []
 
         for column in input_data.dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = input_data.dataset.X[column]
-            nan_values_count = values.isnull().sum()
+            nan_count = values.isnull().sum()
 
-            if (nan_values_count > 0
-                and nan_values_count / len(values) <= threshold
-            ):
+            threshold = self.get_config('empty_threshold')
+            if (nan_count > 0 and nan_count / len(values) <= threshold):
                 self.columns.append((column, values.mean()))
-                explain.append((
-                    nan_values_count,
-                    len(values),
-                    nan_values_count / len(values) * 100,
-                ))
+                explain.append((nan_count, len(values)))
 
         input_data.pipeline.add_explanation(self, [
             f"""Filled missing values of column **`{c}`** with **{mean:.2f}**
-                because **{v[0]}** out of **{v[1]}** values (**{v[2]:.2f}**%)
-                were missing."""
+                because **{v[0]}** out of **{v[1]}** values
+                (**{(v[0] / v[1] * 100):.2f}**%) were missing."""
             for (c, mean), v in zip(self.columns, explain)
         ])
         
