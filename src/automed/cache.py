@@ -9,7 +9,11 @@ class Cache(metaclass=MetaSingleton):
     Singleton used by Automed to cache results
     """
     def __init__(self) -> None:
-        self.saved:dict = {}
+        self.saved:list = []
+        self.max_cache_size = 100
+        
+    def __get_from_fingerprint(self, fingerprint:str) -> list:
+        return [item for item in self.saved if item[0] == fingerprint]
         
     def from_cache(self, fingerprint:str, dataset:pd.DataFrame) -> any:
         """
@@ -18,18 +22,21 @@ class Cache(metaclass=MetaSingleton):
         Args:
             fingerprint (bool): New quiet value
         """
-        if fingerprint in self.saved:
-            cached = self.saved[fingerprint]
-            for old_data, output in cached:
-                if dataset.equals(old_data):
-                    return output
+        for idx, item in enumerate(self.__get_from_fingerprint(fingerprint)):
+            _, input_data, output = item
+            if dataset.equals(input_data):
+                # Put item on the top of the list
+                del self.saved[idx]
+                self.saved.append(item)
+                # Return cached data
+                return output
         return None
 
     def add_to_cache(self, fingerprint:str, dataset:pd.DataFrame, output:any) -> None:
         """
         Add something to cache
         """
-        if fingerprint not in self.saved:
-            self.saved[fingerprint] = []
-                
-        self.saved[fingerprint].append((dataset, output))
+        self.saved.append((fingerprint, dataset, output))
+        
+        if len(self.saved) > self.max_cache_size:
+            del self.saved[0]
