@@ -171,13 +171,11 @@ class AutoMed:
                         timeout=max_duration - (time.time() - start_time))
             
         ### FINETUNING
-        
         candidates = self.__optimize(dataset,
                                     candidates,
                                     optimizer=GeneticOptimizer(),
                                     max_duration=max_duration - (time.time() - start_time),
                                     patience=patience)
-        
         ### FINAL FIT
         
         # Fit candidate with the whole dataset
@@ -190,7 +188,7 @@ class AutoMed:
                         candidates:Candidate,
                         dataset:Dataset,
                         splitter:callable=kfold_splitter,
-                        timeout=None,
+                        timeout:int=None,
                         stage_number:int=None) -> None:
 
         with Logger().progress as progress:
@@ -222,16 +220,18 @@ class AutoMed:
                     
                 # Add callback to update progressbar
                 for future in future_jobs:
-                    future.add_done_callback(update_progressbar) 
+                    future.add_done_callback(update_progressbar)
                 
                 # Wait for all tasks to complete with a timeout
-                concurrent.futures.wait(future_jobs, timeout=timeout)
-                
-                candidates.sort(reverse=True)
-                
-                # Add results to progressbar
-                progress.tasks[task].description = f'{progress.tasks[task].description} \
-                    ({candidates[0].get_main_metric_value():.4f})'
+                _, not_done = concurrent.futures.wait(future_jobs, timeout=timeout)
+                if not_done:
+                    executor.shutdown(wait=False, cancel_futures=True) # TODO -> Does not work help, we have to find a way to kill all running process
+                    
+            candidates.sort(reverse=True)
+            
+            # Add results to progressbar
+            progress.tasks[task].description = f'{progress.tasks[task].description} \
+                ({candidates[0].get_main_metric_value():.4f})'
                 
             
         # Add to cache
