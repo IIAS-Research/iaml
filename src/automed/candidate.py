@@ -245,7 +245,7 @@ class Candidate:
             return None
         
         y_pred = self.pipeline.predict(X)
-        return self.__compute_metrics(y, y_pred)
+        return self.__compute_metrics(np.array(y), y_pred)
     
     def __compute_metrics(self, y:np.array, y_pred:np.array) -> dict:
         return {str(metric): metric.compute(y, y_pred) for metric in self.metrics}
