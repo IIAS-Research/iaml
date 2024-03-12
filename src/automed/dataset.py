@@ -131,16 +131,13 @@ class Dataset:
         column_value = self.X[column_name]
         detected:DataType = None
         if column_value.dtype == object:
-            if self.__string_column_to_date(column_name):
-                detected = DataType.DATE
+            if (len(column_value.unique()) / len(column_value) < 0.05 \
+                or len(column_value.unique()) < 7):
+                detected = DataType.CATEGORICAL
+            elif column_value.astype(str).apply(len).max() <= 85:
+                detected = DataType.SHORT_TEXT
             else:
-                if (len(column_value.unique()) / len(column_value) < 0.05 \
-                    or len(column_value.unique()) < 7):
-                    detected = DataType.CATEGORICAL
-                elif column_value.astype(str).apply(len).max() <= 85:
-                    detected = DataType.SHORT_TEXT
-                else:
-                    detected = DataType.TEXT
+                detected = DataType.TEXT
         elif np.issubdtype(column_value.dtype, np.number):
             detected = DataType.NUMERIC
         elif np.issubdtype(column_value.dtype, np.datetime64):
@@ -160,47 +157,3 @@ class Dataset:
             types[column] = self.__detect_data_type(column)
             
         return types
-    
-    def __string_column_to_date(self, column_name: str) -> bool:
-        """
-        Convert a column of string value (with data format) to a column of dates
-        
-        Args:
-            column_name (str): Column to convert
-
-        Returns:
-            bool: Successful convert ?
-        """
-        threshold_count:float = self.X[column_name].count() * 0.95
-        new_columns:pd.DataFrame = self.X[column_name].apply(self.__string_value_to_date)
-            
-        if new_columns.count() >= threshold_count:
-            self.X[column_name] = new_columns.replace(pd.NaT, None)
-            return True
-
-        return False
-            
-    def __string_value_to_date(self, value:str, \
-                            date_formats = None) -> pd.Timestamp:
-        """
-        Convert a string value (with date format) to a date
-        
-
-        Args:
-            value (str): String in a date format
-
-        Returns:
-            pd.datetime: converted date
-        """
-        if date_formats is None:
-            date_formats = ['%Y-%M-%d', '%d-%M-%Y', '%Y/%M/%d', '%d/%M/%Y', None]
-        elif isinstance(date_formats, list):
-            date_formats = list(date_formats)
-        
-        for date_format in date_formats:
-            try:
-                return pd.to_datetime(value, format=date_format)
-            except ValueError:
-                pass # Let's try the next date format
-
-        return pd.NaT

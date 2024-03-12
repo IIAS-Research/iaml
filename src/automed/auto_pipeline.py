@@ -84,11 +84,11 @@ class AutoPipeline(Pipeline):
             X (pd.DataFrame): Candidate features
             y (pd.DataFrame): label to predict
         """
-        if only_predictor:
-            dataset = Dataset(X, y)
-            self.predictor[1].fit(dataset)
-        else:
-            self.fit_transform(X, y)
+        if not only_predictor:
+            X, y = self.fit_transform(X, y)
+            
+        dataset = Dataset(X, y)
+        self.predictor[1].fit(dataset)
         
         return self
     

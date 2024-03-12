@@ -96,6 +96,7 @@ class AutoMed:
         """
         self.first_step = MetaOrderedStep() # First step -> Contain all stages of the pipeline
 
+        self.first_step.add_step(MetaStep(tag='features_preprocessing'))
         self.first_step.add_step(MetaStep(tag='cleaning'))
         self.first_step.add_step(MetaStep(tag='features_selection'))
         self.first_step.add_step(MetaStep(tag='normalize'))
