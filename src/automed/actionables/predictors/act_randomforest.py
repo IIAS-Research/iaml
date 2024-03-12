@@ -1,38 +1,41 @@
-
 """
-[STEP] Learn :  KNN
+[STEP] Learn :  Random Forest
 """
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 from ...predictor import Predictor
-from ...candidate import Candidate
 from ...dataset import Dataset
+from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('learning', 'tabular')
-class ActKNN(Predictor):
+@is_step('predictor', 'tabular')
+class ActRandomForest(Predictor):
     """
-    [STEP] Learn :  KNN
+    [STEP] Learn :  Random Forest
     """
-    name = "Learn : KNN"
+    name = "Learn : Random Forest" 
     def __init__(self):
         self.configuration:dict = {
-            'metric': {
-                'description': 'Can be minkowski or manhattan',
-                'default': 'minkowski',
-                'categorical': ['minkowski', 'manhattan']
+            'max_depth': {
+                'description': 'Max depth of each tree',
+                'default': 15,
+                'range': [1, float('inf')]
             },
-            'n_neighbors': {
-                'description': 'Number of neighbors',
-                'default': 5,
-                'range': [1, 200]
+            'n_estimators': {
+                'description': 'Number of threes',
+                'default': 100,
+                'range': [1, float('inf')]
+            },
+            'random_state': {
+                'description': 'random_state',
+                'default': 42
             }
         }
-        self.model:KNeighborsClassifier = None
+        self.model:RandomForestClassifier = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Knn classifier on Candidate.dataset
+        Fit Random forest on Candidate.dataset
 
         Args:
             dataset (Dataset): Fit data
@@ -40,15 +43,16 @@ class ActKNN(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = KNeighborsClassifier(
-            n_neighbors = self.get_config('n_neighbors'),
-            metric = self.get_config('metric')
-            )
+        self.model = RandomForestClassifier(max_depth=self.get_config('max_depth'),
+                                            random_state=self.get_config('random_state'),
+                                            n_estimators=self.get_config('n_estimators'))
         
         self.model.fit(dataset.X, dataset.y)
         
         return self
     
+    
+
     def predict(self, X:pd.DataFrame) -> list[float]:
         """
         Apply prediction model on DataFrame

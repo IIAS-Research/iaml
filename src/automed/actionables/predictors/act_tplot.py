@@ -10,7 +10,7 @@ from ...candidate import Candidate
 
 from ...decorators.all import is_step
 
-# @is_step('learning', 'tabular')
+# @is_step('predictor', 'tabular')
 @is_step('to_compare')
 class ActTPLOT(Predictor):
     """

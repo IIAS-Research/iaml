@@ -1,35 +1,36 @@
 """
-[STEP] Learn :  Linear Regression
+[STEP] Learn : Gaussian NB
 """
-from sklearn.linear_model import LinearRegression
+
+from sklearn.naive_bayes import GaussianNB
 import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-
-@is_step('learning', 'tabular', 'fast_learning')
-class ActLinearRegression(Predictor):
+@is_step('predictor', 'tabular')
+class ActGaussianNb(Predictor):
     """
-    [STEP] Learn :  Linear Regression
+    [STEP] Learn : Gaussian NB
     """
-    name = "Learn : Linear Regression"
+    name = "Learn : Gaussian NB"
     def __init__(self):
         self.configuration:dict = {}
-        self.model:LinearRegression = None
-        
+        self.model:GaussianNB = None
+    
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Linear regression on Candidate.dataset
+        Fit GaussianNB on Candidate.dataset
 
         Args:
-            dataset (Dataset): Fit data
+            dataset (Candidate): Fit data
 
         Returns:
-            Candidate: Transformed candidate
+            Fitted step
         """
-        self.model = LinearRegression()
+        self.model = GaussianNB()
+        
         self.model.fit(dataset.X, dataset.y)
         
         return self
@@ -47,8 +48,18 @@ class ActLinearRegression(Predictor):
         """
         return self.model.predict(X)
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['continuous']
+    def suitable(self, candidate:Candidate) -> bool:
+        """
+        Does this step suitable for this candidate
+
+        Args:
+            candidate (Candidate): Suitable for this candidate
+
+        Returns:
+            bool: Suitable ?
+        """
+        return candidate.dataset.type_of_target in \
+            ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

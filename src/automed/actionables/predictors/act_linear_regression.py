@@ -1,41 +1,27 @@
 """
-[STEP] Learn :  Random Forest Regressor
+[STEP] Learn :  Linear Regression
 """
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
 import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('learning', 'tabular')
-class ActRandomForestRegressor(Predictor):
+
+@is_step('predictor', 'tabular', 'fast_predictor')
+class ActLinearRegression(Predictor):
     """
-    [STEP] Learn :  Random Forest Regressor
+    [STEP] Learn :  Linear Regression
     """
-    name = "Learn : Random Forest Regressor" 
+    name = "Learn : Linear Regression"
     def __init__(self):
-        self.configuration:dict = {
-            'max_depth': {
-                'description': 'Max depth of each tree',
-                'default': 15,
-                'range': [1, float('inf')]
-            },
-            'n_estimators': {
-                'description': 'Number of threes',
-                'default': 100,
-                'range': [1, float('inf')]
-            },
-            'random_state': {
-                'description': 'random_state',
-                'default': 42
-            }
-        }
-        self.model:RandomForestRegressor = None
+        self.configuration:dict = {}
+        self.model:LinearRegression = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Random Forest regressor on Candidate.dataset
+        Fit Linear regression on Candidate.dataset
 
         Args:
             dataset (Dataset): Fit data
@@ -43,12 +29,7 @@ class ActRandomForestRegressor(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = RandomForestRegressor(
-            max_depth=self.get_config('max_depth'),
-            random_state=self.get_config('random_state'),
-            n_estimators=self.get_config('n_estimators')
-            )
-        
+        self.model = LinearRegression()
         self.model.fit(dataset.X, dataset.y)
         
         return self
@@ -66,10 +47,9 @@ class ActRandomForestRegressor(Predictor):
         """
         return self.model.predict(X)
     
-    
     def suitable(self, candidate: Candidate) -> bool:
         return candidate.dataset.type_of_target in ['continuous']
-
+    
     def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself

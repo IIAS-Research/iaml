@@ -1,19 +1,19 @@
 """
-[STEP] Learn :  Random Forest
+[STEP] Learn :  Random Forest Regressor
 """
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('learning', 'tabular')
-class ActRandomForest(Predictor):
+@is_step('predictor', 'tabular')
+class ActRandomForestRegressor(Predictor):
     """
-    [STEP] Learn :  Random Forest
+    [STEP] Learn :  Random Forest Regressor
     """
-    name = "Learn : Random Forest" 
+    name = "Learn : Random Forest Regressor" 
     def __init__(self):
         self.configuration:dict = {
             'max_depth': {
@@ -31,11 +31,11 @@ class ActRandomForest(Predictor):
                 'default': 42
             }
         }
-        self.model:RandomForestClassifier = None
+        self.model:RandomForestRegressor = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Random forest on Candidate.dataset
+        Fit Random Forest regressor on Candidate.dataset
 
         Args:
             dataset (Dataset): Fit data
@@ -43,16 +43,17 @@ class ActRandomForest(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = RandomForestClassifier(max_depth=self.get_config('max_depth'),
-                                            random_state=self.get_config('random_state'),
-                                            n_estimators=self.get_config('n_estimators'))
+        self.model = RandomForestRegressor(
+            max_depth=self.get_config('max_depth'),
+            random_state=self.get_config('random_state'),
+            n_estimators=self.get_config('n_estimators')
+            )
         
         self.model.fit(dataset.X, dataset.y)
         
         return self
     
     
-
     def predict(self, X:pd.DataFrame) -> list[float]:
         """
         Apply prediction model on DataFrame
@@ -66,9 +67,8 @@ class ActRandomForest(Predictor):
         return self.model.predict(X)
     
     
-    def suitable(self, candidate) -> bool:
-        return candidate.dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(self, candidate: Candidate) -> bool:
+        return candidate.dataset.type_of_target in ['continuous']
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

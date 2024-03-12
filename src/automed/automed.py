@@ -50,7 +50,7 @@ class AutoMed:
         Logger().set_quiet(quiet)
         self.default_pipeline() # Load default pipeline
         self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) else multiprocessing.cpu_count()
-        print("max worker", self.max_workers)
+        
         WorkerManager(max_workers=self.max_workers)
 
     def load_pipeline(self, pipeline:dict) -> None:
@@ -103,7 +103,7 @@ class AutoMed:
         self.first_step.add_step(MetaStep(tag='features_selection'))
         self.first_step.add_step(MetaStep(tag='normalize'))
 
-        learning_tag = 'fast_learning' if fast else 'learning'
+        learning_tag = 'fast_predictor' if fast else 'predictor'
         
         self.first_step.add_step(MetaExplorerStep(tag=learning_tag))
 

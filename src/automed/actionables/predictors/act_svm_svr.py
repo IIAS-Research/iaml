@@ -1,35 +1,42 @@
 """
-[STEP] Learn : Gaussian NB
+[STEP] Learn :  SVM Regressor
 """
-
-from sklearn.naive_bayes import GaussianNB
+from sklearn import svm
 import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('learning', 'tabular')
-class ActGaussianNb(Predictor):
+@is_step('predictor', 'tabular')
+class ActSVMSVR(Predictor):
     """
-    [STEP] Learn : Gaussian NB
+    [STEP] Learn :  SVM Regressor
     """
-    name = "Learn : Gaussian NB"
+    name = "Learn : SVM Regression"
     def __init__(self):
-        self.configuration:dict = {}
-        self.model:GaussianNB = None
-    
+        self.configuration:dict = {
+            'kernel': {
+                'description': 'Kernel to use in the SVM',
+                'default': 'rbf',
+                'categorical': ['linear', 'poly', 'rbf', 'sigmoid']
+            }
+        }
+        self.model:svm.SVR = None
+        
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit GaussianNB on Candidate.dataset
+        Fit SVM Regressor on Candidate.dataset
 
         Args:
-            dataset (Candidate): Fit data
+            dataset (Dataset): Fit data
 
         Returns:
-            Fitted step
+            Candidate: Transformed candidate
         """
-        self.model = GaussianNB()
+        self.model = svm.SVR(
+            kernel = self.get_config('kernel')
+            )
         
         self.model.fit(dataset.X, dataset.y)
         
@@ -47,19 +54,10 @@ class ActGaussianNb(Predictor):
             list[float]: Predicted values
         """
         return self.model.predict(X)
+        
     
-    def suitable(self, candidate:Candidate) -> bool:
-        """
-        Does this step suitable for this candidate
-
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
-        return candidate.dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(self, candidate: Candidate) -> bool:
+        return candidate.dataset.type_of_target in ['continuous']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

@@ -1,37 +1,38 @@
+
 """
-[STEP] Learn :  Logistic Regression Classifier
+[STEP] Learn :  KNN
 """
-from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
 import pandas as pd
 from ...predictor import Predictor
-from ...dataset import Dataset
 from ...candidate import Candidate
+from ...dataset import Dataset
 from ...decorators.all import is_step
 
-
-@is_step('learning', 'tabular', 'fast_learning')
-class ActLogisticRegression(Predictor):
+@is_step('predictor', 'tabular')
+class ActKNN(Predictor):
     """
-    [STEP] Learn :  Logistic Regression Classifier
+    [STEP] Learn :  KNN
     """
-    name = "Learn : Logistic Regression Classifier"
+    name = "Learn : KNN"
     def __init__(self):
         self.configuration:dict = {
-            'max_iterations': {
-                'description': 'Maximum number of iterations',
-                'default': 1000,
-                'range': [100, float('inf')]
+            'metric': {
+                'description': 'Can be minkowski or manhattan',
+                'default': 'minkowski',
+                'categorical': ['minkowski', 'manhattan']
             },
-            'random_state': {
-                'description': 'random_state',
-                'default': 42
+            'n_neighbors': {
+                'description': 'Number of neighbors',
+                'default': 5,
+                'range': [1, 200]
             }
         }
-        self.model:LogisticRegression = None
-    
+        self.model:KNeighborsClassifier = None
+        
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit LOgistic Regression on Candidate.dataset
+        Fit Knn classifier on Candidate.dataset
 
         Args:
             dataset (Dataset): Fit data
@@ -39,19 +40,16 @@ class ActLogisticRegression(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = LogisticRegression(
-            max_iter = self.get_config('max_iterations'),
-            n_jobs = -1,
-            random_state = self.get_config('random_state')
+        self.model = KNeighborsClassifier(
+            n_neighbors = self.get_config('n_neighbors'),
+            metric = self.get_config('metric')
             )
         
         self.model.fit(dataset.X, dataset.y)
         
         return self
     
-    
     def predict(self, X:pd.DataFrame) -> list[float]:
-
         """
         Apply prediction model on DataFrame
 
@@ -67,7 +65,7 @@ class ActLogisticRegression(Predictor):
     def suitable(self, candidate) -> bool:
         return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
-    
+
     def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself

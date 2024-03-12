@@ -1,20 +1,19 @@
 """
-[STEP] Learn :  XGBoost Regressor
+[STEP] Learn :  XGBoost
 """
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingClassifier
 import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-
-@is_step('learning', 'tabular')
+@is_step('predictor', 'tabular')
 class ActXGBoost(Predictor):
     """
-    [STEP] Learn :  XGBoost Regressor
+    [STEP] Learn :  XGBoost
     """
-    name = "Learn : XGBoost Regressor"
+    name = "Learn : XGBoost"
     def __init__(self):
         self.configuration:dict = {
             'max_depth': {
@@ -37,11 +36,11 @@ class ActXGBoost(Predictor):
                 'range': [1, float("inf")]
             }
         }
-        self.model:GradientBoostingRegressor = None
+        self.model:GradientBoostingClassifier = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit XgBoost regressor on Candidate.dataset
+        Fit XgBoost on Candidate.dataset
 
         Args:
             dataset (Dataset): Fit data
@@ -49,14 +48,13 @@ class ActXGBoost(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = GradientBoostingRegressor(
+        self.model = GradientBoostingClassifier(
                                         n_estimators=self.get_config('n_estimators'),
                                         learning_rate=self.get_config('learning_rate'),
                                         max_depth=self.get_config('max_depth'),
                                         random_state=self.get_config('random_state')
                                         )
-        
-        
+            
         self.model.fit(dataset.X, dataset.y)
         
         return self
@@ -75,8 +73,9 @@ class ActXGBoost(Predictor):
 
     
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['continuous']
+    def suitable(self, candidate) -> bool:
+        return candidate.dataset.type_of_target in \
+            ['binary', 'multiclass',  'multilabel-indicator']
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

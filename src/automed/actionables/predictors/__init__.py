@@ -1,5 +1,5 @@
 """
-Learning Actionables
+Predictors Actionables
 """
 # from .act_autosklearn import *
 # from .act_tplot import ActTPLOT
