@@ -3,6 +3,7 @@
 """
 
 import concurrent.futures
+import multiprocessing
 import time
 import pandas as pd
 from .step import Step
@@ -48,8 +49,9 @@ class AutoMed:
         
         Logger().set_quiet(quiet)
         self.default_pipeline() # Load default pipeline
-        WorkerManager(max_workers=max_workers)
-        self.max_workers = max_workers
+        self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) else multiprocessing.cpu_count()
+        print("max worker", self.max_workers)
+        WorkerManager(max_workers=self.max_workers)
 
     def load_pipeline(self, pipeline:dict) -> None:
         """Load any kind of pipeline
