@@ -10,6 +10,7 @@ from .dataset import Dataset
 from .data_type import DataType
 from .metric import Metric
 from .cache import Cache
+from .meta_predictor import MetaPredictor
 
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
@@ -28,3 +29,6 @@ from .stack import Stack
 
 # Optimizer
 from .optimizers import *
+
+# Meta predictors
+from .meta_predictors import *

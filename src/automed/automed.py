@@ -17,6 +17,7 @@ from .splitter import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer
+from .meta_predictor import MetaPredictor
 
 # Default Actionables -> Must be a wildcard import to help AutoMed to know all available the steps 
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
@@ -194,7 +195,7 @@ class AutoMed:
 
         with Logger().progress as progress:
             task = progress.add_task(
-                f'Stage {stage_number}' if stage_number is not None else "Initial evaluate",
+                f'Stage {stage_number}' if stage_number is not None else "Initial evaluation",
                 total=len(candidates))
             
             def update_progressbar(*args): # pylint: disable=unused-argument
@@ -235,7 +236,6 @@ class AutoMed:
             # Add results to progressbar
             progress.tasks[task].description = f'{progress.tasks[task].description} \
                 ({candidates[0].get_main_metric_value():.4f})'
-                
             
         # Add to cache
         for candidate in candidates:
@@ -270,6 +270,13 @@ class AutoMed:
             # Generate new candidates
             candidates = optimizer.run(candidates)
             
+            # Generate metapredictor
+            for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
+                meta_candidate:MetaPredictor = metapredictor(
+                    [candidate for candidate in candidates if not candidate.is_meta][0:5]
+                    ).to_candidate()
+                candidates.append(meta_candidate)
+            
             Logger().log(f'Finetuning... \
                 stage={iterations_count} \
                 candidates={len(candidates)} \
@@ -287,10 +294,10 @@ class AutoMed:
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
             
-            # Logger().log([(round(candidate.get_main_metric_value(), 5), \
-            #     candidate.pipeline.predictor[0], \
-            #     candidate.pipeline.predictor[1].resume_configuration()) \
-            #         for candidate in candidates])
+            Logger().log([(round(candidate.get_main_metric_value(), 5), \
+                candidate.pipeline.predictor[0], \
+                candidate.pipeline.predictor[1].resume_configuration()) \
+                    for candidate in candidates])
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()
@@ -332,6 +339,12 @@ class AutoMed:
                 metrics.append(metric)
 
         return metrics
+    
+    def __meta_predictor_iter(self, type_of_target:str):
+        for subclass in MetaPredictor.__subclasses__():
+            # Verify if a subclass is suitable or not
+            if subclass.suitable(type_of_target):
+                yield subclass
 
     # Execute all the pipeline steps
         # Callback -> Will be call after each step 

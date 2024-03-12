@@ -4,6 +4,7 @@ Transform, resample and then predict from Candidate instance
 """
 import pickle
 import json
+from copy import deepcopy
 from hashlib import md5
 from typing import TYPE_CHECKING
 import pandas as pd
@@ -22,7 +23,8 @@ class AutoPipeline(Pipeline):
     
     def __init__(
         self,
-        steps: list[tuple[str, object]] = None
+        steps: list[tuple[str, object]] = None,
+        estimator_type:str = None
     ) -> None:
         """
         Args:
@@ -32,12 +34,31 @@ class AutoPipeline(Pipeline):
         if steps is None:
             steps = []
             
+        
         self.transformers:list[tuple[str, object]] = []
         self.resamplers:list[tuple[str, object]] = []
         self.predictor:tuple[str, object] = None
         
-        super().__init__(steps.copy())
+        if estimator_type not in ['classifier', 'regressor']:
+            raise ValueError(f"Estimator type ({estimator_type}) must be classifier or regressor")
+        self.__estimator_type = estimator_type
         
+        super().__init__(steps)
+        
+    @property
+    def _estimator_type(self):
+        """
+        Needed because used by Scikit-learn metalearner
+        """
+        return self.__estimator_type
+    
+    @property
+    def estimator_type(self):
+        """
+        Needed because used by Scikit-learn metalearner (yes also without "_" ...)
+        """
+        return self.__estimator_type
+    
     @property
     def steps(self):
         """
@@ -61,6 +82,9 @@ class AutoPipeline(Pipeline):
     
     @steps.setter
     def steps(self, values:list[tuple[str, object]]) -> list[tuple[str, object]]:
+        self.transformers = []
+        self.resamplers = []
+        self.predictor = None
         for value in values:
             self.__add_step(value)
             
@@ -68,10 +92,10 @@ class AutoPipeline(Pipeline):
             
     def __add_step(self, step:tuple[str, object]) -> None:
         _, instance = step
-        if hasattr(instance, 'transform') and callable(instance.transform):
-            self.transformers.append(step)
-        elif hasattr(instance, 'predict') and callable(instance.predict):
+        if hasattr(instance, 'predict') and callable(instance.predict):
             self.predictor = step
+        elif hasattr(instance, 'transform') and callable(instance.transform):
+            self.transformers.append(step)
         elif hasattr(instance, 'resample') and callable(instance.resample):
             self.resamplers.append(step)
         
@@ -173,7 +197,7 @@ class AutoPipeline(Pipeline):
         Returns:
             AutoPipeline: Copied AutoPipeline instance
         """
-        return AutoPipeline(self.training_steps)
+        return deepcopy(self)
     
 
     def pickle(self) -> bytes:
@@ -231,10 +255,16 @@ class AutoPipeline(Pipeline):
         if not model_only:
             return super().predict(X, **kwargs)
         
-        return self.model[1].predict(X)
+        return self.predictor[1].predict(X)
     
     def __eq__(self, other: 'AutoPipeline') -> bool:
-        return self.fingerprint() == other.fingerprint()
+        if isinstance(other, AutoPipeline):
+            return self.fingerprint() == other.fingerprint()
+        else:
+            return NotImplemented 
+        
+    def __sklearn_clone__(self):
+        return deepcopy(self)
     
     def fingerprint(self) -> str:
         """

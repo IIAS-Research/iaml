@@ -145,6 +145,13 @@ class Dataset:
             
         return detected
     
+    @property
+    def needed_estimator(self) -> str:
+        """
+        Kind of estimator needed for this dataset
+        """
+        return 'regressor' if self.type_of_target == 'continuous' else 'classifier'
+    
     def __detect_columns_types(self) -> dict:
         """
         Detect column type of all features in X

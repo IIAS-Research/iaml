@@ -25,11 +25,6 @@ class ActSVMSVC(Predictor):
                 'description': 'random_state',
                 'default': 42
             },
-            'probability': {
-                'description': 'If true, the candidate will be a probability. If false, \
-                    it will be Binary',
-                'default': False
-            },
             'class_weight': {
                 'description': 'Can be set on "balenced" to improve results on unbalenced data',
                 'default': None,
@@ -52,25 +47,12 @@ class ActSVMSVC(Predictor):
             kernel = self.get_config('kernel'),
             class_weight = self.get_config('class_weight'),
             random_state = self.get_config('random_state'),
-            probability = self.get_config('probability')
+            probability = True # Needed to predict_proba (thus MetaLearner)
             )
         
         self.model.fit(dataset.X, dataset.y)
         
         return self
-        
-    def predict(self, X:pd.DataFrame) -> list[float]:
-        """
-        Apply prediction model on DataFrame
-
-        Args:
-            X (pd.DataFrame): DataFrame use to predict
-
-        Returns:
-            list[float]: Predicted values
-        """
-        return self.model.predict(X)
-        
     
     def suitable(self, candidate) -> bool:
         return candidate.dataset.type_of_target in \

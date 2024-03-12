@@ -41,18 +41,19 @@ class Candidate:
 
         self.dataset = dataset
         self.metrics = copy(metrics) if metrics is not None else []
-        self.pipeline = auto_pipeline or AutoPipeline() # Pipeline
+        self.pipeline = auto_pipeline or AutoPipeline(estimator_type=dataset.needed_estimator) # Pipeline
         
-        if main_metric is None and dataset and dataset.type_of_target:
-            if 'continuous' in dataset.type_of_target:
-                self.main_metric = 'r2_score'
-            else:
+        if main_metric is None:
+            if self.pipeline.estimator_type == "classifier":
                 self.main_metric = 'balanced_accuracy'
+            else:
+                self.main_metric = 'r2_score'
         else:
             self.main_metric = main_metric
             
         self.computed_metrics = {}
         self.stacked_path = copy(stacked_path) if stacked_path is not None else []
+        self.is_meta:bool = False
         
     def add_stack(self, stack:'Step'):
         """
@@ -196,28 +197,31 @@ class Candidate:
         if not self.pipeline.have_model:
             return None
         metrics:list[dict] = []
+        
 
         # without cache !
         from_cache:bool = True
         splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
-        if not splitted_datasets:  
+        if not splitted_datasets or self.is_meta: # Cannot use cache with meta for now
             from_cache = False
             to_cache:list = []
             splitted_datasets:list[tuple[Dataset, Dataset]] = splitter(dataset)
-            
+        
         for train_ds, test_ds in splitted_datasets:
             copied_pipe = deepcopy(self.pipeline)
             
-            # Fit in two step to allow caching
-            if not from_cache:
-                train_ds =  Dataset(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
-                test_ds =  Dataset(copied_pipe.transform(test_ds.X), test_ds.y)
-            
-            copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
-            
-            y_pred = copied_pipe.predict(test_ds.X, model_only=True)
+            if self.is_meta:
+                copied_pipe.fit(train_ds.X, train_ds.y)
+            else:
+                # Fit in two step to allow caching
+                if not from_cache:
+                    train_ds =  Dataset(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
+                    test_ds =  Dataset(copied_pipe.transform(test_ds.X), test_ds.y)
+                
+                copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
+                
+            y_pred = copied_pipe.predict(test_ds.X, model_only=(not self.is_meta))
             metrics.append(self.__compute_metrics(test_ds.y, y_pred))
-            
             if not from_cache:
                 to_cache.append((train_ds, test_ds))
         

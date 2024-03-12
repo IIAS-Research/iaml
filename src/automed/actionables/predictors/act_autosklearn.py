@@ -44,19 +44,7 @@ class ActAutoSKLearn(Predictor):
         self.model.fit(dataset.X, dataset.y)
         
         return self
-    
 
-    def predict(self, X:pd.DataFrame) -> list[float]:
-        """
-        Apply prediction model on DataFrame
-
-        Args:
-            X (pd.DataFrame): DataFrame use to predict
-
-        Returns:
-            list[float]: Predicted values
-        """
-        return self.model.predict(X)
 
     def suitable(self, candidate:Candidate) -> bool:
         """

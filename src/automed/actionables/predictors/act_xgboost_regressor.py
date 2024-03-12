@@ -61,20 +61,6 @@ class ActXGBoost(Predictor):
         
         return self
     
-    def predict(self, X:pd.DataFrame) -> list[float]:
-        """
-        Apply prediction model on DataFrame
-
-        Args:
-            X (pd.DataFrame): DataFrame use to predict
-
-        Returns:
-            list[float]: Predicted values
-        """
-        return self.model.predict(X)
-
-    
-    
     def suitable(self, candidate: Candidate) -> bool:
         return candidate.dataset.type_of_target in ['continuous']
 

@@ -46,7 +46,7 @@ class ActDateConverter(Actionable):
         """
         self.columns = []
         if self.get_config('sample_size') > 0:
-            sample = dataset.X.sample(n=self.get_config('sample_size'))
+            sample = dataset.X.sample(n=min(self.get_config('sample_size'), len(dataset.X)))
         else:
             sample = dataset.X
         
