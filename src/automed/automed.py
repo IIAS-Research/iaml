@@ -144,15 +144,12 @@ class AutoMed:
         if isinstance(y, pd.DataFrame):
             y = y.values.ravel()
             
-        X = deepcopy(X)
-        y = deepcopy(y)
-        
         ### INITIAL GENERATE CANDIDATE 
-        dataset:Dataset = Dataset(X, y)
+        dataset:Dataset = Dataset(deepcopy(X), deepcopy(y))
         self.fit_candidate:Candidate = Candidate(dataset)
 
         # Select metrics used to evaluate performances
-        for metric in self.__metrics_selection(X, y, dataset.type_of_target):
+        for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
             self.fit_candidate.add_metric(metric)
 
         # Generate candidates
@@ -179,9 +176,10 @@ class AutoMed:
         ### FINAL FIT
         
         # Fit candidate with the whole dataset
+        Cache.reset()
         for candidate in candidates:
             candidate.pipeline.fit(X, y)
-            
+        
         return candidates
     
     def __run_evaluations(self,
@@ -225,8 +223,10 @@ class AutoMed:
                 # Wait for all tasks to complete with a timeout
                 _, not_done = concurrent.futures.wait(future_jobs, timeout=timeout)
                 if not_done:
-                    executor.shutdown(wait=False, cancel_futures=True) # TODO -> Does not work help, we have to find a way to kill all running process
-                    
+                    # TODO -> Does not work help, we have to find a way to kill all running process
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    for job in not_done:
+                        job.cancel()      
             candidates.sort(reverse=True)
             
             # Add results to progressbar

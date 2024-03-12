@@ -75,6 +75,10 @@ for file in files:
     print("->>>", file)
     print("TIME", str(datetime.now()))
     output = each_file(file=file)
+    print("######")
+    print("RESULT", file, output)
+    print("######")
+    
     results = pd.concat([output, results], ignore_index=True)
     results.to_csv(history_path, index=False)
     

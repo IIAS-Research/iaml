@@ -11,6 +11,13 @@ class Cache(metaclass=MetaSingleton):
     def __init__(self) -> None:
         self.saved:list = []
         self.max_cache_size = 100
+        self.__disable = False
+        
+    def disable(self) -> None:
+        self.__disable = True
+        
+    def enable(self) -> None:
+        self.__disable = False
         
     def __get_from_fingerprint(self, fingerprint:str) -> list:
         return [item for item in self.saved if item[0] == fingerprint]
@@ -22,6 +29,9 @@ class Cache(metaclass=MetaSingleton):
         Args:
             fingerprint (bool): New quiet value
         """
+        if self.__disable:
+            return None
+        
         for idx, item in enumerate(self.__get_from_fingerprint(fingerprint)):
             _, input_data, output = item
             if dataset.equals(input_data):
@@ -36,6 +46,9 @@ class Cache(metaclass=MetaSingleton):
         """
         Add something to cache
         """
+        if self.__disable:
+            return None
+        
         self.saved.append((fingerprint, dataset, output))
         
         if len(self.saved) > self.max_cache_size:

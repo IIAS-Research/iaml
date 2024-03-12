@@ -19,7 +19,7 @@ class Dataset:
     Add features like data type detection and splitting
     """
     
-    def __init__(self, X:pd.DataFrame, y:list):
+    def __init__(self, X:pd.DataFrame, y:list=None):
         self.__X:pd.DataFrame = X
         self.__y:np.array = np.array(y)
         

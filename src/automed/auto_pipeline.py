@@ -35,7 +35,7 @@ class AutoPipeline(Pipeline):
         self.transformers:list[tuple[str, object]] = []
         self.resamplers:list[tuple[str, object]] = []
         self.predictor:tuple[str, object] = None
-            
+        
         super().__init__(steps.copy())
         
     @property
@@ -84,20 +84,11 @@ class AutoPipeline(Pipeline):
             X (pd.DataFrame): Candidate features
             y (pd.DataFrame): label to predict
         """
-        dataset = Dataset(X, y)
         if only_predictor:
+            dataset = Dataset(X, y)
             self.predictor[1].fit(dataset)
         else:
-            for _, step in self.training_steps:
-                if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
-                    step.fit(dataset)
-                else:
-                    step.fit(dataset.X, dataset.y, **kwargs)
-                    
-                if hasattr(step, 'transform'):
-                    dataset = Dataset(step.transform(dataset.X), y)
-                elif hasattr(step, 'resample'):
-                    dataset = Dataset(*step.resample(dataset.X, dataset.y))
+            self.fit_transform(X, y)
         
         return self
     
