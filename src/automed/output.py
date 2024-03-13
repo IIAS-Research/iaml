@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from copy import copy
 import shap
+import warnings
 
 from .auto_pipeline import AutoPipeline
 from .dataset import Dataset
@@ -227,7 +228,7 @@ class Output:
             
         return current_compute
     
-    def explain_model(self, X: 'pd.DataFrame'):
+    def explain_model(self, X: 'pd.DataFrame', max_evals: int = 'auto'):
         """
         Explains the model by computing SHAP values on the fitted model.
         Uses the train set as the masker, and the provided set as
@@ -235,6 +236,8 @@ class Output:
 
         Args:
             X (DataFrame): Prediction set to compute SHAP values for.
+            max_evals (int): Max number of SHAP evaluations to do on
+                the dataset.
 
         Returns:
             Explanation: Model explanation, with an overview of the
@@ -244,12 +247,17 @@ class Output:
             raise RuntimeError('There is no model to explain.')
 
         med = self.dataset.X
-        pred = self.pipeline.transform(X)
+        if len(med.columns) > 250:
+            warnings.warn('The input shape is very large. Computing SHAP \
+                          values will take a long time, and results may be \
+                          inaccurate.')
 
         step = self.pipeline.model
         model = step.model
+        pred = self.pipeline.transform(X)
 
-        shap_values = shap.Explainer(lambda x: model.predict_proba(x)[:, 1], med)(pred)
+        explainer = shap.Explainer(lambda x: model.predict_proba(x)[:, 1], med)
+        shap_values = explainer(pred, max_evals=max_evals)
 
         return Explanation(step, None, None, shap_values)
     
