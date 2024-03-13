@@ -294,10 +294,10 @@ class AutoMed:
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
             
-            Logger().log([(round(candidate.get_main_metric_value(), 5), \
-                candidate.pipeline.predictor[0], \
-                candidate.pipeline.predictor[1].resume_configuration()) \
-                    for candidate in candidates])
+            # Logger().log([(round(candidate.get_main_metric_value(), 5), \
+            #     candidate.pipeline.predictor[0], \
+            #     candidate.pipeline.predictor[1].resume_configuration()) \
+            #         for candidate in candidates])
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()
