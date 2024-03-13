@@ -38,7 +38,7 @@ def each_file(file):
     X_test = test_df.drop(columns=labels)
         
 
-    auto = AutoMed(quiet=True)
+    auto = AutoMed(quiet=True, max_workers=8)
     auto.default_pipeline(fast=False)
     local_results = auto.fit(X, y, max_duration=DURATION, patience=5)
     
