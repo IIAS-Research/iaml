@@ -438,7 +438,8 @@ disable=raw-checker-failed,
         use-implicit-booleaness-not-comparison-to-zero,
         trailing-whitespace,
         super-init-not-called,
-        abstract-method
+        abstract-method,
+        R0801
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

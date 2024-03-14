@@ -4,8 +4,9 @@
 import pandas as pd
 from ...actionable import Actionable
 from ...data_type import DataType
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...candidate import Candidate
+from ...dataset import Dataset
+from ...decorators.all import is_step
 
 @is_step('cleaning')
 class ActDropDateColumn(Actionable):
@@ -18,29 +19,28 @@ class ActDropDateColumn(Actionable):
     def __init__(self):
         self.columns_to_drop:list[str] = None
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find column to drop
 
         Args:
-            input_data (Input): Data to fit on
-            callback (callable, optional): Call after each run. Defaults to None.
+            dataset (Dataset): Data to fit on
 
         Returns:
-            Output: Transformed output (with updated pipeline)
+            Candidate: Transformed candidate (with updated pipeline)
         """
-        self.columns_to_drop = input_data.dataset.get_columns_names_by_type(DataType.DATE)
+        self.columns_to_drop = dataset.get_columns_names_by_type(DataType.DATE)
 
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f'Dropped column **`{c}`**.' for c in self.columns_to_drop
-        ])
-
-        return input_data.add_transform(self)
+        ]
+        
+        return self
+        
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """
-        Drop all date column of input dataset
+        Drop all date column of candidate dataset
 
         Args:
             x (pd.DataFrame): Dataset to transform
@@ -50,7 +50,7 @@ class ActDropDateColumn(Actionable):
         """
         return X.drop(self.columns_to_drop, axis=1) 
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

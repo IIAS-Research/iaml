@@ -4,14 +4,15 @@
 from tpot import TPOTClassifier
 from sklearn.model_selection import RepeatedStratifiedKFold
 import pandas as pd
-from ...actionable import Actionable
-from ...output import Input
+from ...predictor import Predictor
+from ...dataset import Dataset
+from ...candidate import Candidate
 
-from ...step import is_step, runner
+from ...decorators.all import is_step
 
-# @is_step('learning', 'tabular')
+# @is_step('predictor', 'tabular')
 @is_step('to_compare')
-class ActTPLOT(Actionable):
+class ActTPLOT(Predictor):
     """
     [STEP] Learn :  TPLOT
     """
@@ -45,17 +46,15 @@ class ActTPLOT(Actionable):
         }
         self.model: TPOTClassifier = None
     
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit TPLOT on Input.dataset
+        Fit TPLOT on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         
         cv = RepeatedStratifiedKFold(
@@ -74,30 +73,15 @@ class ActTPLOT(Actionable):
             n_jobs = self.get_config('n_jobs')
             )
 
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
 
-        return input_data.set_model(self)
+        return self
     
-    
-    def predict(self, X:pd.DataFrame) -> list[float]:
-        """
-        Apply prediction model on DataFrame
-
-        Args:
-            X (pd.DataFrame): DataFrame use to predict
-
-        Returns:
-            list[float]: Predicted values
-        """
-        return self.model.predict(X)
-
-    
-    
-    def suitable(self, input_data) -> bool:
-        return input_data.dataset.type_of_target in \
+    def suitable(self, candidate) -> bool:
+        return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
 
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

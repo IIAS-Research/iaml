@@ -3,12 +3,13 @@
 """
 from sklearn.ensemble import GradientBoostingClassifier
 import pandas as pd
-from ...actionable import Actionable
-from ...output import Input
-from ...step import is_step, runner
+from ...predictor import Predictor
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
-@is_step('learning', 'tabular')
-class ActXGBoost(Actionable):
+@is_step('predictor', 'tabular')
+class ActXGBoost(Predictor):
     """
     [STEP] Learn :  XGBoost
     """
@@ -37,17 +38,15 @@ class ActXGBoost(Actionable):
         }
         self.model:GradientBoostingClassifier = None
         
-    @runner
-    def run(self, input_data: Input, callback=None): # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit XgBoost on Input.dataset
+        Fit XgBoost on Candidate.dataset
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.model = GradientBoostingClassifier(
                                         n_estimators=self.get_config('n_estimators'),
@@ -56,29 +55,15 @@ class ActXGBoost(Actionable):
                                         random_state=self.get_config('random_state')
                                         )
             
-        self.model.fit(input_data.dataset.X, input_data.dataset.y)
+        self.model.fit(dataset.X, dataset.y)
         
-        return input_data.set_model(self)
+        return self
     
-    def predict(self, X:pd.DataFrame) -> list[float]:
-        """
-        Apply prediction model on DataFrame
-
-        Args:
-            X (pd.DataFrame): DataFrame use to predict
-
-        Returns:
-            list[float]: Predicted values
-        """
-        return self.model.predict(X)
-
-    
-    
-    def suitable(self, input_data) -> bool:
-        return input_data.dataset.type_of_target in \
+    def suitable(self, candidate) -> bool:
+        return candidate.dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

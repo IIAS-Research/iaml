@@ -1,12 +1,15 @@
 """
 Based on Scikit-learn Pipeline but for AutoMed Pipelines !
-Transform, resample and then predict from Input instance 
+Transform, resample and then predict from Candidate instance 
 """
 import pickle
+import json
+from copy import deepcopy
+from hashlib import md5
 from typing import TYPE_CHECKING
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from .explanation import Explanation
+from .dataset import Dataset
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -15,13 +18,13 @@ if TYPE_CHECKING:
 class AutoPipeline(Pipeline):
     """
     Based on Scikit-learn Pipeline but for AutoMed Pipelines !
-    Transform, resample and then predict from Input instance 
+    Transform, resample and then predict from Candidate instance 
     """
     
     def __init__(
         self,
         steps: list[tuple[str, object]] = None,
-        explanations: list[Explanation] = None,
+        estimator_type:str = None
     ) -> None:
         """
         Args:
@@ -30,34 +33,121 @@ class AutoPipeline(Pipeline):
         """
         if steps is None:
             steps = []
-
-        if explanations is None:
-            explanations = []
             
-        self.steps:list[tuple[str, object]] = steps.copy()
-        self.explanations:list[Explanation] = explanations.copy()
         
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
+        self.transformers:list[tuple[str, object]] = []
+        self.resamplers:list[tuple[str, object]] = []
+        self.predictor:tuple[str, object] = None
+        
+        if estimator_type not in ['classifier', 'regressor']:
+            raise ValueError(f"Estimator type ({estimator_type}) must be classifier or regressor")
+        self.__estimator_type = estimator_type
+        
+        super().__init__(steps)
+        
+    @property
+    def _estimator_type(self):
         """
-        fit is not usable with AutoPipeline
+        Needed because used by Scikit-learn metalearner
         """
-        raise NotImplementedError("fit() is not usable with AutoMed Pipeline. \
-                                    You have to use AutoMed.run()")
+        return self.__estimator_type
     
-    def fit_predict(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
+    @property
+    def estimator_type(self):
         """
-        fit_predict is not usable with AutoPipeline
+        Needed because used by Scikit-learn metalearner (yes also without "_" ...)
         """
-        raise NotImplementedError("fit_predict is not usable with AutoMed Pipeline. \
-                                    You have to use AutoMed.run()")
+        return self.__estimator_type
+    
+    @property
+    def steps(self):
+        """
+        Steps used to fit pipeline (same as steps property but with resamplers)
+
+        Returns:
+            list[tuple[str, object]]: list of steps
+        """
+        return [item for item in [*self.transformers, self.predictor] if item is not None]
+    
+    @property
+    def training_steps(self) -> list[tuple[str, object]]:
+        """
+        Steps used to fit pipeline (same as steps property but with resamplers)
+
+        Returns:
+            list[tuple[str, object]]: list of steps
+        """
+        return [item for item in [*self.transformers, *self.resamplers, self.predictor] \
+            if item is not None]
+    
+    @steps.setter
+    def steps(self, values:list[tuple[str, object]]) -> list[tuple[str, object]]:
+        self.transformers = []
+        self.resamplers = []
+        self.predictor = None
+        for value in values:
+            self.__add_step(value)
+            
+        return self.steps
+            
+    def __add_step(self, step:tuple[str, object]) -> None:
+        _, instance = step
+        if hasattr(instance, 'predict') and callable(instance.predict):
+            self.predictor = step
+        elif hasattr(instance, 'transform') and callable(instance.transform):
+            self.transformers.append(step)
+        elif hasattr(instance, 'resample') and callable(instance.resample):
+            self.resamplers.append(step)
         
-    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame, *args, **kwargs):
+    def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
+            only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
         """
-        fit_transform is not usable with AutoPipeline
-        """
-        raise NotImplementedError("fit_transform is not usable with AutoMed Pipeline. \
-                                You have to use AutoMed.run()")
+        Fit Pipeline on new data (or with new parameters)
         
+        Args:
+            X (pd.DataFrame): Candidate features
+            y (pd.DataFrame): label to predict
+        """
+        if not only_predictor:
+            X, y = self.fit_transform(X, y)
+            
+        dataset = Dataset(X, y)
+        self.predictor[1].fit(dataset)
+        
+        return self
+    
+    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, **kwargs) -> 'AutoPipeline':
+        """
+        Fit Pipeline and transform data 
+        
+        Args:
+            X (pd.DataFrame): Candidate features
+            y (pd.DataFrame): label to predict
+        """
+        dataset = Dataset(X, y)
+        for _, step in [*self.transformers, *self.resamplers]:
+            if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
+                step.fit(dataset)
+            else:
+                step.fit(dataset.X, dataset.y, **kwargs)
+                
+            if hasattr(step, 'transform'):
+                dataset = Dataset(step.transform(dataset.X), y)
+            elif hasattr(step, 'resample'):
+                dataset = Dataset(*step.resample(dataset.X, dataset.y))
+        
+        return dataset.X, dataset.y
+        
+    @property
+    def explanations(self):
+        """
+        Get explanations from all pipeline steps
+
+        Returns:
+            list[str]: List of markdown explanations
+        """
+        return [step.explain() for _, step in self.training_steps]
+    
     @property
     def model(self) -> 'Step':
         """Shortcut to get the prediction model of AutoPipeline 
@@ -65,7 +155,7 @@ class AutoPipeline(Pipeline):
         Returns:
             Step: Prediction model of the pipeline (or None)
         """
-        return self.steps[-1][1] if self.have_model else None
+        return self.predictor
 
     def add_transform(self, instance:'Step') -> None:
         """
@@ -75,12 +165,21 @@ class AutoPipeline(Pipeline):
             instance (Step): Step to add (must implement transform)
         """
         if instance and hasattr(instance, 'transform'):
-            if self.have_model: # Model must stay the last step
-                self.steps.insert(-1, (str(instance), instance))
-            else:
-                self.steps.append((str(instance), instance))
+            self.transformers.append((str(instance), instance))
         else:
             raise ValueError("Step must implement transform method")
+        
+    def add_resample(self, instance:'Step') -> None:
+        """
+        Add resample Step to the Pipeline
+
+        Args:
+            instance (Step): Step to add (must implement resample)
+        """
+        if instance and hasattr(instance, 'resample'):
+            self.resamplers.append((str(instance), instance))
+        else:
+            raise ValueError("Step must implement resample method")
                 
     def set_model(self, instance) -> None:
         """
@@ -89,11 +188,7 @@ class AutoPipeline(Pipeline):
         Args:
             instance (Step): Model Step to add (must implement predict)
         """
-        
-        if self.have_model: # Replace the previous model 
-            self.steps.pop(-1)
-            
-        self.steps.append((str(instance), instance))
+        self.predictor = (str(instance), instance)
 
     def copy(self) -> 'AutoPipeline':
         """
@@ -102,7 +197,7 @@ class AutoPipeline(Pipeline):
         Returns:
             AutoPipeline: Copied AutoPipeline instance
         """
-        return AutoPipeline(self.steps, self.explanations)
+        return deepcopy(self)
     
 
     def pickle(self) -> bytes:
@@ -123,16 +218,28 @@ class AutoPipeline(Pipeline):
         Returns:
             bool: True a model have been set
         """
-        if self.steps and hasattr(self.steps[-1][1], 'predict'):
-            return True
-        return False
+        return bool(self.predictor)
+    
+    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+        """Apply transformers without predict
+
+        Args:
+            X (pd.DataFrame): candidate data
+
+        Returns:
+            pd.DataFrame: transformed DF
+        """
+        for _, step in self.transformers:
+            X = step.transform(X)
+            
+        return X
     
     def predict(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
         """
-        Run all the steps to predict labels from input data
+        Run all the steps to predict labels from candidate data
 
         Args:
-            X (pd.DataFrame): Features used as input of the pipeline
+            X (pd.DataFrame): Features used as candidate of the pipeline
             model_only (bool, optional): True to execute only the model with already
                                         transformed data. Defaults to False.
 
@@ -148,19 +255,27 @@ class AutoPipeline(Pipeline):
         if not model_only:
             return super().predict(X, **kwargs)
         
-        return self.model.predict(X)
+        return self.predictor[1].predict(X)
     
-    def add_explanation(
-            self,
-            step: 'Step',
-            processings: list[str] = None,
-            metrics: dict['Metric', float] = None):
+    def __eq__(self, other: 'AutoPipeline') -> bool:
+        if isinstance(other, AutoPipeline):
+            return self.fingerprint() == other.fingerprint()
+        else:
+            return NotImplemented 
+        
+    def __sklearn_clone__(self):
+        return deepcopy(self)
+    
+    def fingerprint(self) -> str:
         """
-        Explain a step of the pipeline.
+        Return a md5 hash that can by use to compare Pipelines 
 
-        Args:
-            step (Step): Step to explain.
-            processings (list[str]): List of all the processings the
-                                    the step has done to the data.
+        Returns:
+            str: md5 sting
         """
-        self.explanations.append(Explanation(step, processings, metrics))
+        to_hash = "\n".join([str(step.__class__) + " = " \
+            + json.dumps(step.configuration, sort_keys=True) \
+                for _, step in self.training_steps])
+        
+        return md5(to_hash.encode()).hexdigest()
+            

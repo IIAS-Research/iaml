@@ -1,9 +1,10 @@
 """
-[METASTEP] Explore all sub steps in Thread and return one output by Sub Step
+[METASTEP] Explore all sub steps in Thread and return one candidate by Sub Step
 """
 from .metastep import MetaStep
-from .output import Input, Output
-from .step import Step, is_step, runner
+from .candidate import Candidate
+from .step import Step
+from .decorators.all import is_step, runner
 from .worker_manager import WorkerFuture, WorkerManager
 
 #
@@ -13,11 +14,11 @@ from .worker_manager import WorkerFuture, WorkerManager
 @is_step('meta')
 class MetaExplorerStep(MetaStep):
     """
-    [METASTEP] Explore all sub steps in Thread and return one output by Sub Step
+    [METASTEP] Explore all sub steps in Thread and return one candidate by Sub Step
     """
     name = "MetaExplorerStep"
     def __init__(self, *args, **kwargs):  # pylint: disable=unused-argument
-        self.output = []
+        self.candidate = []
     
     def json_pipeline(self) -> dict:
         """
@@ -33,22 +34,22 @@ class MetaExplorerStep(MetaStep):
     
     # Explore all steps
     @runner
-    def run(self, input_data:Input, callback:callable=None) -> Output:
+    def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
         """
         Run all children Step in threads 
 
         Args:
-            input_data (Input): Input data
+            candidate (Candidate): Candidate data
             callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
-            Output: Result output
+            Candidate: Result candidate
         """
         output = []
         workers: list[WorkerFuture] = []
 
         for step in self.steps:
-            future = WorkerManager().submit(step, step.run, input_data.to_input(), callback)
+            future = WorkerManager().submit(step, step.run, candidate.to_input(), callback)
             workers.append(future)
             
         # Wait end of all threads

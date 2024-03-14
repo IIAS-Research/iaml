@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "actionables",
+        "adaboost",
         "astype",
         "automed",
         "autosklearn",
@@ -9,12 +10,15 @@
         "iloc",
         "issubdtype",
         "kfold",
+        "metapredictor",
         "metastep",
         "multiclass",
         "multimethod",
         "multipledispatch",
         "Onehot",
         "priorize",
+        "resampler",
+        "resamplers",
         "todense",
         "tplot",
         "vectorize",

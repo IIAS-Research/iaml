@@ -3,9 +3,10 @@
 """
 from copy import deepcopy
 from ..step_wrapper import StepWrapper
-from ..output import Output, Input
+from ..candidate import Candidate
 from ..logger import Logger
-from ..step import is_step, runner, Step
+from ..step import Step
+from ..decorators.all import is_step, runner
 
 
 # Wrapper : Implementation of an interative GridSearch
@@ -35,7 +36,7 @@ class WrapIterativeGridSearch(StepWrapper):
     to_avoid = ['random_state']
     
     @runner
-    def run(self, input_data:Input, callback:callable=None) -> list[Output]:
+    def run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
         """
         Iterative GridSearch
             Numeric values
@@ -52,11 +53,11 @@ class WrapIterativeGridSearch(StepWrapper):
             Other -> keep current value
 
         Args:
-            input_data (Input): _description_
+            candidate (Candidate): _description_
             callback (callable, optional): _description_. Defaults to None.
 
         Returns:
-            list[Output]: All generated Output 
+            list[Candidate]: All generated Candidate 
         """
 
             
@@ -72,8 +73,8 @@ class WrapIterativeGridSearch(StepWrapper):
                     
             gi = GridIteration(self.step, self.get_config('modificator'), \
                 copy_config=config, patience=self.get_config('patience'))
-            output, _ = gi.run(input_data, callback=callback)
-            results = results + ([output] if type(output) in [Output, Input] else output)
+            candidate, _ = gi.run(candidate, callback=callback)
+            results = results + ([candidate] if type(candidate) in [Candidate] else candidate)
         
         self.step.reset_cache()
         return results
@@ -157,7 +158,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
             else: # Other 
                 self.values = [self.value]
                 
-            self.outputs = []
+            self.candidates = []
             self.results = []
             self.number_of_results = number_of_results
             self.best_result = best_result
@@ -270,7 +271,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         return self.values[self.count_iterations]
     
     # Stack, compute and save results
-    def __stack_results(self, results:list[Output]) -> None:
+    def __stack_results(self, results:list[Candidate]) -> None:
         if not any(results):
             return None
         
@@ -294,26 +295,26 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
             self.best_result = best_val
             self.iterations_without_improvement = 0
         
-        self.outputs = self.outputs + [results[best_index]]
+        self.candidates = self.candidates + [results[best_index]]
         
         # Keep only n best
-        self.outputs.sort(reverse=True)
-        self.outputs = self.outputs[:self.number_of_results]
+        self.candidates.sort(reverse=True)
+        self.candidates = self.candidates[:self.number_of_results]
         
         return None
         
         
         
     
-    def run(self, input_data:Input, callback:callable=None) \
-        -> tuple[list[Output], list['GridIteration']]:
+    def run(self, candidate:Candidate, callback:callable=None) \
+        -> tuple[list[Candidate], list['GridIteration']]:
         """
         Run and Stack results
         """
         # Run and Stack results
         if not self.key:
             # print("# RUN nk # ", self.step, self.step.resume_configuration())
-            return self.step.run(input_data, callback=callback), []
+            return self.step.run(candidate, callback=callback), []
         
         while not self.done():
             results = []
@@ -324,13 +325,13 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
                 results = []
                 while self.children:
                     child = self.children.pop(0)
-                    current_results, siblings = child.run(input_data, callback=callback)
+                    current_results, siblings = child.run(candidate, callback=callback)
                     results = results + current_results
                     
                     if siblings:
                         self.children = self.children + siblings
             else:
-                results = results + self.step.run(input_data, callback=callback)
+                results = results + self.step.run(candidate, callback=callback)
                 # print("# RUN # ", self.step, self.step.resume_configuration())
             
             self.__stack_results(results)
@@ -339,4 +340,4 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
             
         siblings = self.__generate_siblings()
                 
-        return self.outputs, siblings
+        return self.candidates, siblings

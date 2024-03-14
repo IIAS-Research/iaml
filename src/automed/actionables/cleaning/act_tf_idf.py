@@ -4,8 +4,9 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from ...actionable import Actionable
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
 from ...data_type import DataType
 
 @is_step('cleaning')
@@ -18,34 +19,32 @@ class ActTfIdf(Actionable):
         self.configuration:dict = {}
         self.columns:list[tuple[str, TfidfVectorizer]] = None
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find columns to vectorize and fit vectorizer
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         
         self.columns = []
-        for column in input_data.dataset.get_columns_names_by_type(
+        for column in dataset.get_columns_names_by_type(
             [DataType.SHORT_TEXT, DataType.TEXT]
             ):
-            values = input_data.dataset.X[column].fillna('')
+            values = dataset.X[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             self.columns.append((column, vectorizer))
 
         feature_names = { c: v.get_feature_names_out() for c, v in self.columns }
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f'Encoded text column **`{c}`** into **{len(v)}** new columns.'
             for c, v in feature_names.items() if len(v) > 0
-        ])
+        ]
         
-        return input_data.add_transform(self)
+        return self
     
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
@@ -72,7 +71,7 @@ class ActTfIdf(Actionable):
         return X
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

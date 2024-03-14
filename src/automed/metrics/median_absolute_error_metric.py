@@ -22,7 +22,7 @@ class MedianAbsoluteErrorMetric(Metric):
     
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
-        Does this metric is suitable for this input ?
+        Does this metric is suitable for this candidate ?
         Must be regression
 
         Args:

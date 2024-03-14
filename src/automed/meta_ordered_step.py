@@ -3,11 +3,11 @@
 """
 from typing import TYPE_CHECKING
 
-from .step import is_step, runner
+from .decorators.all import is_step, runner
 from .metastep import MetaStep
 
 if TYPE_CHECKING:
-    from .output import Input, Output
+    from .candidate import Candidate
 
 #
 # Inherit from MetaStep but will execute all steps without priorize() method. 
@@ -19,20 +19,20 @@ class MetaOrderedStep(MetaStep):
     """
     # Run steps self ordered by "priorize" function
     @runner
-    def run(self, input_data:'Input', callback:callable=None) -> 'Output':
+    def run(self, candidate:'Candidate', callback:callable=None) -> 'Candidate':
         """
-        Run all step in order. Input will be transform successively by Steps
+        Run all step in order. Candidate will be transform successively by Steps
 
         Args:
-            input_data (Input): Input to transform
+            candidate (Candidate): Candidate to transform
             callback (callable, optional): Method to call after each Step. Defaults to None.
 
         Returns:
-            Output: transformed data
+            Candidate: transformed data
         """
-        current_input:Input = input_data
+        current_candidate:Candidate = candidate
         for step in self.steps:
-            current_input = step.run(current_input, callback=callback)
+            current_candidate = step.run(current_candidate, callback=callback)
         
-        return current_input
+        return current_candidate
             

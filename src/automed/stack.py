@@ -1,9 +1,9 @@
 """
-Frozen version of Step created to be stacked in an Input
+Frozen version of Step created to be stacked in an Candidate
 """
 class Stack:
     """
-    Frozen version of Step created to be stacked in an Input
+    Frozen version of Step created to be stacked in an Candidate
     """
     def __init__(self, step_class, configuration:dict, step_id:int):
         self.step_class = step_class

@@ -3,9 +3,10 @@
 """
 import pandas as pd
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...data_type import DataType
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
 @is_step('cleaning')
 class ActDropNumericalColumn(Actionable):
@@ -26,23 +27,21 @@ class ActDropNumericalColumn(Actionable):
             }
         }
     
-    @runner
-    def run(self, input_data: Input, callback: callable = None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find columns to drop
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         self.columns_to_drop = []
         explain = []
 
-        for column in input_data.dataset.get_columns_names_by_type(DataType.NUMERIC):
-            values = input_data.dataset.X[column]
+        for column in dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = dataset.X[column]
             nan_values_count = values.isnull().sum()
 
             if nan_values_count / len(values) >= self.get_config('empty_threshold'):
@@ -53,13 +52,13 @@ class ActDropNumericalColumn(Actionable):
                     nan_values_count / len(values) * 100,
                 ))
 
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f"""Dropped column **`{c}`** because **{v[0]}** values out of
                 **{v[1]}** (**{v[2]:.2f}%**) are empty."""
             for c, v in zip(self.columns_to_drop, explain)
-        ])
+        ]
 
-        return input_data.add_transform(self)
+        return self
     
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
@@ -75,7 +74,7 @@ class ActDropNumericalColumn(Actionable):
         return X.drop(self.columns_to_drop, axis=1)
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

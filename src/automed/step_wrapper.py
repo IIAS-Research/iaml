@@ -2,8 +2,9 @@
 StepWrapper is a direct child of Step and will wrap and execute another step.
 Wrap with StepWrapper is useless, use children classes
 """
-from .step import Step, is_step, runner
-from .output import Input, Output
+from .step import Step
+from .decorators.all import is_step, runner
+from .candidate import Candidate
 
 
 @is_step('wrapper')
@@ -62,17 +63,17 @@ class StepWrapper(Step):
         else:
             raise ValueError("Step must be an occurrence of step (or inherited classes)")
         
-    def suitable(self, input_data:Input) -> bool:
+    def suitable(self, candidate:Candidate) -> bool:
         """
         Is suitable if the wrapped step is
 
         Args:
-            input_data (Input): Input data
+            candidate (Candidate): Candidate data
 
         Returns:
             bool: Suitable?
         """
-        return self.step.suitable(input_data)
+        return self.step.suitable(candidate)
     
     def all_configurations(self) -> list[dict]:
         """
@@ -114,11 +115,11 @@ class StepWrapper(Step):
         
 
     @runner
-    def run(self, input_data:Input, callback:callable=None) -> Output:
+    def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
         """
         This wrapper is useless. Only run the step
         """
-        return self.step.run(input_data, callback=callback) 
+        return self.step.run(candidate, callback=callback) 
     
     def count_steps(self) -> int:
         """
@@ -127,10 +128,10 @@ class StepWrapper(Step):
         """
         return 1 + self.step.count_steps()
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 
         Return : continuous between 0 and 1
         """
-        return self.step.priorize(input_data)
+        return self.step.priorize(candidate)

@@ -3,7 +3,7 @@
 """
 import pandas as pd
 from sklearn.utils.multiclass import type_of_target as sk_type_of_target
-from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
 from ..metric import Metric
 
 class RecallMetric(Metric):
@@ -26,7 +26,7 @@ class RecallMetric(Metric):
     
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
-        Does this metric is suitable for this input ?
+        Does this metric is suitable for this candidate ?
         Must be classification
 
         Args:
@@ -52,10 +52,10 @@ class RecallMetric(Metric):
         """
         if sk_type_of_target(y) == 'binary':
             # TODO Find something less arbitrary
-            return precision_score(y, y_pred, pos_label=y[0])
+            return recall_score(y, y_pred, pos_label=y[0], zero_division=0.0)
         if sk_type_of_target(y) == 'multiclass':
-            return precision_score(y, y_pred, average = 'weighted') 
+            return recall_score(y, y_pred, average = 'weighted', zero_division=0.0) 
         if sk_type_of_target(y) == 'multilabel-indicator':
-            return precision_score(y, y_pred, average= 'samples')
+            return recall_score(y, y_pred, average= 'samples', zero_division=0.0)
         
         raise ValueError('Metric not suitable')
