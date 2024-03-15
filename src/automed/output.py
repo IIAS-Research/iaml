@@ -4,6 +4,7 @@ Output (and Input alias) is used to exchange data between Steps
 from typing import TYPE_CHECKING
 
 from copy import copy
+import pandas as pd
 import shap
 import warnings
 
@@ -13,7 +14,6 @@ from .explanation import Explanation
 
 
 if TYPE_CHECKING:
-    import pandas as pd
     from .metric import Metric
     from .step import Step
 
@@ -246,20 +246,24 @@ class Output:
         if not self.pipeline.have_model:
             raise RuntimeError('There is no model to explain.')
 
-        med = self.dataset.X
-        if len(med.columns) > 250:
-            warnings.warn('The input shape is very large. Computing SHAP \
-                          values will take a long time, and results may be \
-                          inaccurate.')
-
         step = self.pipeline.model
-        model = step.model
-        pred = self.pipeline.transform(X)
 
-        explainer = shap.Explainer(lambda x: model.predict_proba(x)[:, 1], med)
-        shap_values = explainer(pred, max_evals=max_evals)
+        def p(pred_data):
+            return self.pipeline.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
 
-        return Explanation(step, None, None, shap_values)
+        # explainer = shap.Explainer(lambda x: model.predict_proba(x)[:, 1], med)
+        n = 68
+        explainer = shap.KernelExplainer(p, X)
+        shap_values = explainer.shap_values(X, nsamples=n)
+
+        import numpy as np
+        shap_explanation = shap.Explanation(
+            shap_values,
+            base_values=np.tile(explainer.expected_value, (shap_values.shape[0], 1)),
+            data=X,
+            feature_names=X.columns)
+
+        return Explanation(step, None, None, shap_explanation)
     
     def explain(self):
         """

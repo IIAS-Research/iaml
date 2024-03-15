@@ -22,7 +22,8 @@ class Explanation:
             step: 'Step',
             processings: list[str] = None,
             metrics: dict['Metric', float] = None,
-            shap_values: list = None) -> None:
+            shap_values: list[tuple[str, list[float]]] = None) -> None:
+        print(shap_values)
         if processings is None:
             processings = []
 
@@ -147,7 +148,7 @@ class Explanation:
         Markdown text.
 
         Returns
-            str: Markdown text.
+            str: Markdown document.
         """
         confs = '\n'.join([
             f'| **{k}** | {v["description"]} | {v["value"]} |'
@@ -164,6 +165,14 @@ class Explanation:
     def to_markdown_processings(self, processings_limit: int = 20) -> str:
         """
         Renders the processings for this explanation as Markdown text.
+
+        Args:
+            processings_limit (int, optional): Limit the number of
+                processings that are displayed in the Markdown document
+                (defaults to 20).
+        
+        Returns:
+            str: Markdown document.
         """
         processings = '\n'.join([ f' - {p}' for p in self.processings[:processings_limit] ])
         processings_left = len(self.processings) - processings_limit
@@ -179,7 +188,7 @@ class Explanation:
         Renders model metrics for this explanation as Markdown text.
 
         Returns
-            str: Markdown text.
+            str: Markdown document.
         """
         metrics = '\n'.join([
             f'| `{m}` | **{v:.4f}** | *{m.explain()}* |'
@@ -198,13 +207,13 @@ class Explanation:
         Renders SHAP values for this explanation as Markdown text.
 
         Returns
-            str: Markdown text.
+            str: Markdown document.
         """
         if self.shap_values is not None:
             feature_names = self.shap_values.feature_names
-            feature_values = np.abs(self.shap_values.values).mean(0)
+            feature_values = np.abs(self.shap_values.values).mean(axis=0)
             feature_impacts = '\n'.join(map(
-                lambda i: f'| `{i[0]}` | **{i[1]:.3f}** |',
+                lambda i: f'| `{i[0]}` | **{np.mean(i[1]):.3f}** |',
                 list(zip(feature_names, feature_values))))
         
         return f"""
@@ -214,7 +223,7 @@ class Explanation:
 {feature_impacts}
 """ if self.shap_values is not None else ""
 
-    def to_markdown_plots(self) -> str:
+    def to_markdown_plots(self, plots: list[str] = None) -> str:
         """
         Generates SHAP plots for this explanation, and renders them as
         Markdown text.
@@ -222,48 +231,73 @@ class Explanation:
         Returns
             str: Markdown text.
         """
-        if self.shap_values is not None:
-            features = self.shap_values.feature_names
+        if plots is None:
+            plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
 
-            values = self.shap_values[0].values
-            force_shap, force_feature = max(zip(values, features), key=lambda v: abs(v[0]))
+        if self.shap_values is None or len(plots) == 0:
+            return ""
+        
+        features = self.shap_values.feature_names
 
-            mean_shap = np.abs(self.shap_values.values).mean(axis=0)
-            bar_shap, bar_feature = max(zip(mean_shap, features), key=lambda v: v[0])
+        values = self.shap_values[0].values
+        force_shap, force_feature = max(zip(values, features), key=lambda v: abs(v[0]))
+
+        mean_shap = np.abs(self.shap_values.values).mean(axis=0)
+        bar_shap, bar_feature = max(zip(mean_shap, features), key=lambda v: v[0])
 
         return f"""
 ### SHAP plots
+
+{f'''
 #### Force plot
 {self.to_markdown_data_uri_plot('force')}
 
 ***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
+''' if 'force' in plots else ''}
 
+{f'''
 #### Waterfall plot
 {self.to_markdown_data_uri_plot('waterfall')}
 
 ***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
+''' if 'waterfall' in plots else ''}
 
+{f'''
 #### Beeswarm plot
 {self.to_markdown_data_uri_plot('beeswarm')}
+''' if 'beeswarm' in plots else ''}
 
+{f'''
 #### Heatmap plot
 {self.to_markdown_data_uri_plot('heatmap')}
+''' if 'heatmap' in plots else ''}
 
+{f'''
 #### Scatter plot
 {self.to_markdown_data_uri_plot('scatter')}
+''' if 'scatter' in plots else ''}
 
+{f'''
 #### Bar plot
 {self.to_markdown_data_uri_plot('bar')}
 
 ***Reading**: `{bar_feature}` has an absolute impact of **{bar_shap:.3f}** on the average final prediction value.*
-""" if self.shap_values is not None else ""
+''' if 'bar' in plots else ''}
+"""
     
-    def to_markdown(self, processings_limit: int = 20) -> str:
+    def to_markdown(
+            self,
+            processings_limit: int = 20,
+            plots: list[str] = None) -> str:
         """
         Renders the explanation as Markdown text.
 
+        Args:
+            processings_limit (int, optional): Limit the number of
+                processings that are displayed in the Markdown document
+                (defaults to 20).
         Returns:
-            str: Markdown text.
+            str: Markdown document.
         """
         if len(self.processings) == 0 and len(self.metrics) == 0 and self.shap_values is None:
             return ''
@@ -276,5 +310,5 @@ class Explanation:
 {self.to_markdown_processings(processings_limit)}
 {self.to_markdown_metrics()}
 {self.to_markdown_shap()}
-{self.to_markdown_plots()}
+{self.to_markdown_plots(plots)}
         """

@@ -44,6 +44,9 @@ class ActBaseLearning(Actionable, metaclass=ABCMeta):
             list[float]: Predicted values
         """
         return self.model.predict(X)
+    
+    def predict_proba(self, X: pd.DataFrame) -> list[float]:
+        return self.model.predict_proba(X)
 
     def priorize(self, input_data: Input = None) -> float:
         """

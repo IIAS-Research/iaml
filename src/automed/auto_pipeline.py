@@ -152,6 +152,10 @@ class AutoPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.model.predict(X)
+    
+    def predict_proba(self, X: ndarray | pd.DataFrame, **predict_proba_params) -> ndarray:
+        print('CALLED!!!', len(X.index))
+        return super().predict_proba(X, **predict_proba_params)
 
     def transform(self, X: pd.DataFrame) -> ndarray:
         for _, s in self.steps[:-1]: # ignore last step (training)
