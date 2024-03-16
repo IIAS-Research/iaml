@@ -197,7 +197,6 @@ class Candidate:
         if not self.pipeline.have_model:
             return None
         metrics:list[dict] = []
-        
 
         # without cache !
         from_cache:bool = True

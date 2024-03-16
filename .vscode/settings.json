@@ -15,6 +15,7 @@
         "multiclass",
         "multimethod",
         "multipledispatch",
+        "multiprocess",
         "Onehot",
         "priorize",
         "resampler",

@@ -8,7 +8,8 @@ from ..dataset import Dataset
 
 # TODO Does not work, fix it
 
-class StackingRegressor(MetaPredictor):
+# class StackingRegressor(MetaPredictor):
+class StackingRegressor():
     """
     Ensemble based predict method
     """

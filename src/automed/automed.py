@@ -2,10 +2,9 @@
     AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
 """
 
-import concurrent.futures
-import multiprocessing
 import time
 import pandas as pd
+from .timed_pool_executor import TimedPoolExecutor
 from .step import Step
 from .cache import Cache
 from .metastep import MetaStep
@@ -192,6 +191,8 @@ class AutoMed:
                         splitter:callable=kfold_splitter,
                         timeout:int=None,
                         stage_number:int=None) -> None:
+        
+        new_candidates:list[Candidate] = []
 
         with Logger().progress as progress:
             task = progress.add_task(
@@ -200,48 +201,45 @@ class AutoMed:
             
             def update_progressbar(*args): # pylint: disable=unused-argument
                 progress.update(task, advance=1)
+            
+            executor = TimedPoolExecutor(max_workers=self.max_workers, callback=update_progressbar)
+            for candidate in candidates:
+                from_cache = Cache().from_cache( \
+                    'automed_'+candidate.pipeline.fingerprint(), dataset.X)
                 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                future_jobs = []
-                for candidate in candidates:
-                    from_cache = Cache().from_cache( \
-                        'automed_'+candidate.pipeline.fingerprint(), dataset.X)
-                    
-                    if from_cache:
-                        candidate.computed_metrics = from_cache
-                        update_progressbar() # Update progressbar even if data come from cache
-                    else:
-                        candidate.computed_metrics = {}
-                        future_jobs.append(
-                            executor.submit(
-                                candidate.training_evaluate,
-                                dataset,
-                                splitter=splitter
-                            )
+                if from_cache:
+                    candidate.computed_metrics = from_cache
+                    new_candidates.append(candidate)
+                    update_progressbar() # Update progressbar even if data come from cache
+                else:
+                    executor.submit(
+                            process_executor,
+                            candidate,
+                            dataset,
+                            splitter=splitter
                         )
-                    
-                # Add callback to update progressbar
-                for future in future_jobs:
-                    future.add_done_callback(update_progressbar)
                 
-                # Wait for all tasks to complete with a timeout
-                _, not_done = concurrent.futures.wait(future_jobs, timeout=timeout)
-                if not_done:
-                    # TODO -> Does not work help, we have to find a way to kill all running process
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    for job in not_done:
-                        job.cancel()      
-            candidates.sort(reverse=True)
+            # # Add callback to update progressbar
+            # for future in future_jobs:
+            #     future.add_done_callback(update_progressbar)
+            
+            # Wait for all tasks to complete with a timeout
+            new_candidates += executor.join(timeout)
+            
+            new_candidates.sort(reverse=True)
             
             # Add results to progressbar
             progress.tasks[task].description = f'{progress.tasks[task].description} \
-                ({candidates[0].get_main_metric_value():.4f})'
-            
+                ({new_candidates[0].get_main_metric_value():.4f})'
+                            
         # Add to cache
-        for candidate in candidates:
+        for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()
             if not Cache().from_cache('automed_'+fingerprint, dataset.X):
                 Cache().add_to_cache('automed_'+fingerprint, dataset.X, candidate.computed_metrics)
+                
+        return new_candidates
+        
             
     
     def __optimize(self,
@@ -265,7 +263,7 @@ class AutoMed:
         
         while   not(optimizer.finished) \
                 and (patience == -1 or iterations_without_improvement < patience) \
-                and (max_duration == -1 or max_duration > duration):
+                and (max_duration == -1 or max_duration >= duration):
             
             # Generate new candidates
             candidates = optimizer.run(candidates)
@@ -435,3 +433,11 @@ class AutoMed:
             if id(step) == step_id:
                 return step
         return None
+
+
+def process_executor(candidate:Candidate, *args, **kwargs):
+    # Deepcopy -> Without it, process end is never detected. Strange...
+    candidate = deepcopy(candidate)
+    
+    candidate.training_evaluate(*args, **kwargs)
+    return candidate

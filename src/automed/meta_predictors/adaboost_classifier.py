@@ -9,7 +9,8 @@ from ..candidate import Candidate
 from ..auto_pipeline import AutoPipeline
 from ..dataset import Dataset
 
-class AdaBoostClassifier(MetaPredictor):
+# class AdaBoostClassifier(MetaPredictor):
+class AdaBoostClassifier():
     """
     Ensemble based predict method
     """
