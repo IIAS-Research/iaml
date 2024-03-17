@@ -42,7 +42,7 @@ class ActKNNRegressor(Predictor):
             Candidate: Transformed candidate
         """
         self.model = KNeighborsRegressor(
-            n_neighbors = self.get_config('n_neighbors'),
+            n_neighbors = min(self.get_config('n_neighbors'), dataset.X.shape[0]),
             metric = self.get_config('metric')
             )
         

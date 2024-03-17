@@ -47,6 +47,8 @@ class AutoMed:
         self.fit_candidate:Candidate = None
         self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep)
         
+        self.executor = None
+        
         Logger().set_quiet(quiet)
         self.default_pipeline() # Load default pipeline
         self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) else multiprocessing.cpu_count()
@@ -144,6 +146,8 @@ class AutoMed:
         """
         start_time = time.time()
         
+        self.executor = TimedPoolExecutor(max_workers=self.max_workers)
+        
         if isinstance(y, pd.DataFrame):
             y = y.values.ravel()
             
@@ -178,6 +182,8 @@ class AutoMed:
                                     patience=patience)
         ### FINAL FIT
         
+        self.executor.shutdown()
+        
         # Fit candidate with the whole dataset
         Cache.reset()
         for candidate in candidates:
@@ -202,7 +208,7 @@ class AutoMed:
             def update_progressbar(*args): # pylint: disable=unused-argument
                 progress.update(task, advance=1)
             
-            executor = TimedPoolExecutor(max_workers=self.max_workers, callback=update_progressbar)
+            self.executor.set_callback(update_progressbar)
             for candidate in candidates:
                 from_cache = Cache().from_cache( \
                     'automed_'+candidate.pipeline.fingerprint(), dataset.X)
@@ -212,7 +218,7 @@ class AutoMed:
                     new_candidates.append(candidate)
                     update_progressbar() # Update progressbar even if data come from cache
                 else:
-                    executor.submit(
+                    self.executor.submit(
                             process_executor,
                             candidate,
                             dataset,
@@ -224,7 +230,7 @@ class AutoMed:
             #     future.add_done_callback(update_progressbar)
             
             # Wait for all tasks to complete with a timeout
-            new_candidates += executor.join(timeout)
+            new_candidates += self.executor.join(timeout)
             
             new_candidates.sort(reverse=True)
             
@@ -269,12 +275,13 @@ class AutoMed:
             candidates = optimizer.run(candidates)
             
             # Generate metapredictor
-            for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
-                meta_candidate:MetaPredictor = metapredictor(
-                    [candidate for candidate in candidates if not candidate.is_meta][0:5]
-                    ).to_candidate()
-                candidates.append(meta_candidate)
-            
+            if len(candidates) > 1:
+                for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
+                    meta_candidate:MetaPredictor = metapredictor(
+                        [candidate for candidate in candidates if not candidate.is_meta][0:5]
+                        ).to_candidate()
+                    candidates.append(meta_candidate)
+                
             Logger().log(f'Finetuning... \
                 stage={iterations_count} \
                 candidates={len(candidates)} \
@@ -283,7 +290,7 @@ class AutoMed:
                 best_result={best_result}')
             
             # Evaluate new candidates
-            self.__run_evaluations(candidates,
+            candidates = self.__run_evaluations(candidates,
                         dataset,
                         splitter=splitter,
                         timeout=max_duration - (time.time() - starting_time),

@@ -13,7 +13,7 @@ class GeneticOptimizer(Optimizer):
     """
     Pipeline optimizer based on genetic concepts
     """
-    def __init__(self, nb_candidate:int=50, mutation_power:float=0.1, initial_modifier:float=5):
+    def __init__(self, nb_candidate:int=25, mutation_power:float=0.1, initial_modifier:float=5):
         super().__init__()
         self.number_of_candidate:int = max(nb_candidate, 4)
         self.generation_count:int = 0
