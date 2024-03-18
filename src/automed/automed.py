@@ -3,6 +3,7 @@
 """
 
 import time
+import math
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor
 from .step import Step
@@ -12,7 +13,7 @@ from .candidate import Candidate
 from .dataset import Dataset
 from .metric import Metric
 from .worker_manager import WorkerManager
-from .splitter import kfold_splitter
+from .splitter import kfold_splitter, random_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer
@@ -42,17 +43,48 @@ class AutoMed:
         candidate (list): Candidates of the pipeline after run
         fit_candidate (Candidate): last Candidate sent to the first step 
     """
-    def __init__(self, max_workers:int=None, quiet:bool=False):
+    def __init__(self,
+                max_workers:int=None,
+                quiet:bool=False,
+                max_stage_duration:int=None,
+                metalearner:bool=None,
+                splitter=None,
+                max_duration:int=None):
+        
+        Logger().set_quiet(quiet)
+        
+        # Enable / Disable Meta Learner
+        if metalearner is None:
+            if max_duration < 500:
+                Logger().log("Max duration under 500 seconds : \
+                    Meta learner are disabled (you can enable it, \
+                    with the parameter 'metalearner')")
+                self.metalearner = False
+        else:
+            self.metalearner = metalearner
+            
+        # Set max duration of each stage
+        if max_stage_duration is None:
+            self.max_stage_duration = max(max_duration / 5, 300)
+            Logger().log(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
+        else:
+            self.max_stage_duration = max_stage_duration
+
+        # Set splitter
+        self.splitter = splitter if splitter is not None else kfold_splitter
+        
+        
+        self.max_duration = max_duration
         self.candidates:list[Candidate] = None
         self.fit_candidate:Candidate = None
         self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep)
         
         self.executor = None
         
-        Logger().set_quiet(quiet)
         self.default_pipeline() # Load default pipeline
         self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) else multiprocessing.cpu_count()
         
+        self.chosen_candidate:Candidate = None
         WorkerManager(max_workers=self.max_workers)
 
     def load_pipeline(self, pipeline:dict) -> None:
@@ -132,7 +164,6 @@ class AutoMed:
             X:pd.DataFrame,
             y:pd.DataFrame,
             *args,
-            max_duration:int=-1,
             patience:int=-1,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
@@ -171,14 +202,13 @@ class AutoMed:
         # Evaluate candidates
         self.__run_evaluations(candidates,
                         dataset,
-                        splitter=kfold_splitter,
-                        timeout=max_duration - (time.time() - start_time))
+                        timeout=self.max_duration - (time.time() - start_time))
             
         ### FINETUNING
         candidates = self.__optimize(dataset,
                                     candidates,
                                     optimizer=GeneticOptimizer(),
-                                    max_duration=max_duration - (time.time() - start_time),
+                                    max_duration=self.max_duration - (time.time() - start_time),
                                     patience=patience)
         ### FINAL FIT
         
@@ -186,15 +216,21 @@ class AutoMed:
         
         # Fit candidate with the whole dataset
         Cache.reset()
-        for candidate in candidates:
-            candidate.pipeline.fit(X, y)
+        self.chosen_candidate = deepcopy(candidates[0])
+        self.chosen_candidate.pipeline.fit(X, y)
         
         return candidates
+    
+    @property
+    def chosen_model(self):
+        if not self.chosen_candidate:
+            return None
+        
+        return self.chosen_candidate.pipeline
     
     def __run_evaluations(self,
                         candidates:Candidate,
                         dataset:Dataset,
-                        splitter:callable=kfold_splitter,
                         timeout:int=None,
                         stage_number:int=None) -> None:
         
@@ -222,7 +258,7 @@ class AutoMed:
                             process_executor,
                             candidate,
                             dataset,
-                            splitter=splitter
+                            splitter=self.splitter
                         )
                 
             # # Add callback to update progressbar
@@ -230,7 +266,7 @@ class AutoMed:
             #     future.add_done_callback(update_progressbar)
             
             # Wait for all tasks to complete with a timeout
-            new_candidates += self.executor.join(timeout)
+            new_candidates += self.executor.join(min(timeout, self.max_stage_duration))
             
             new_candidates.sort(reverse=True)
             
@@ -251,7 +287,6 @@ class AutoMed:
     def __optimize(self,
                     dataset:Dataset,
                     candidates:list[Candidate],
-                    splitter:callable=kfold_splitter,
                     optimizer:Optimizer=Optimizer(),
                     patience:int=5,
                     max_duration:int=-1) -> list[Candidate]:
@@ -274,13 +309,14 @@ class AutoMed:
             # Generate new candidates
             candidates = optimizer.run(candidates)
             
-            # Generate metapredictor
-            if len(candidates) > 1:
-                for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
-                    meta_candidate:MetaPredictor = metapredictor(
-                        [candidate for candidate in candidates if not candidate.is_meta][0:5]
-                        ).to_candidate()
-                    candidates.append(meta_candidate)
+            if self.metalearner:
+                # Generate metapredictor
+                if len(candidates) > 1:
+                    for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
+                        meta_candidate:MetaPredictor = metapredictor(
+                            [candidate for candidate in candidates if not candidate.is_meta][0:5]
+                            ).to_candidate()
+                        candidates.append(meta_candidate)
                 
             Logger().log(f'Finetuning... \
                 stage={iterations_count} \
@@ -292,7 +328,6 @@ class AutoMed:
             # Evaluate new candidates
             candidates = self.__run_evaluations(candidates,
                         dataset,
-                        splitter=splitter,
                         timeout=max_duration - (time.time() - starting_time),
                         stage_number=iterations_count)
             

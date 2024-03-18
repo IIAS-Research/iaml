@@ -2,7 +2,6 @@
 [STEP] Learn :  XGBoost
 """
 from sklearn.ensemble import GradientBoostingClassifier
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -48,12 +47,7 @@ class ActXGBoost(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = GradientBoostingClassifier(
-                                        n_estimators=self.get_config('n_estimators'),
-                                        learning_rate=self.get_config('learning_rate'),
-                                        max_depth=self.get_config('max_depth'),
-                                        random_state=self.get_config('random_state')
-                                        )
+        self.model = GradientBoostingClassifier(**self.model_parameters())
             
         self.model.fit(dataset.X, dataset.y)
         

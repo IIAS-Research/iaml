@@ -1,50 +1,46 @@
 """
-[STEP] Learn : AutoSkLearn
+[STEP] Learn : Quadratic Discriminant Analysis
 """
-import autosklearn.classification # pylint: disable=import-error
+
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-
-# @is_step('predictor', 'tabular')
-@is_step('to_compare')
-class ActAutoSKLearn(Predictor):
+@is_step('predictor', 'tabular')
+class ActQuadraticDiscriminantAnalysis(Predictor):
     """
-    [STEP] Learn : AutoSkLearn
+    [STEP] Learn : Quadratic Discriminant Analysis
     """
-    name="Learn : AutoSkLearn"
+    name = "Learn : Quadratic Discriminant Analysis"
     def __init__(self):
         self.configuration:dict = {
-            'running_time': {
-                'description': 'In seconds. Auto-SkLearn will search the best \
-                    models during this time',
-                'default': 30
+            'reg_param': {
+                'description': 'Regularizes the per-class covariance estimates by transforming S2',
+                'default': 0.0001,
+                'range': [0.0001, 1.0]
+                }
             }
-        }
-        self.model:autosklearn.classification.AutoSklearnClassifier = None
+        self.model:QuadraticDiscriminantAnalysis = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit AutoSkLearn on Candidate.dataset
+        Fit Quadratic Discriminant Analysis on Candidate.dataset
 
         Args:
-            dataset (Dataset): Fit data
+            dataset (Candidate): Fit data
 
         Returns:
-            Candidate: Transformed candidate
+            Fitted step
         """
-        self.model = autosklearn.classification.AutoSklearnClassifier(
-            time_left_for_this_task=self.get_config('running_time'),
-            max_models_on_disc=5,
-            memory_limit = 102400)
+        self.model = QuadraticDiscriminantAnalysis(**self.model_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         
         return self
-
-
+    
+    
     def suitable(self, candidate:Candidate) -> bool:
         """
         Does this step suitable for this candidate
@@ -56,7 +52,7 @@ class ActAutoSKLearn(Predictor):
             bool: Suitable ?
         """
         return candidate.dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator', 'continuous']
+            ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

@@ -1,26 +1,39 @@
 """
-[STEP] Learn : Gaussian NB
+[STEP] Learn : Multinomial NB
 """
 
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import MultinomialNB
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
 @is_step('predictor', 'tabular')
-class ActGaussianNb(Predictor):
+class ActMultinomialNB(Predictor):
     """
-    [STEP] Learn : Gaussian NB
+    [STEP] Learn : Multinomial NB
     """
-    name = "Learn : Gaussian NB"
+    name = "Learn : Multinomial NB"
     def __init__(self):
-        self.configuration:dict = {}
-        self.model:GaussianNB = None
+        self.configuration:dict = {
+            'alpha': {
+                'description': 'Additive (Laplace/Lidstone) \
+                    smoothing parameter (set alpha=0 and force_alpha=True, for no smoothing).',
+                'default': 1.0,
+                'range': [0.01, 100.0]
+                },
+            'fit_prior': {
+                'description': 'Whether to learn class prior probabilities \
+                    or not. If false, a uniform prior will be used.',
+                'default': True,
+                'categorical': [True, False]
+                }
+            }
+        self.model:MultinomialNB = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit GaussianNB on Candidate.dataset
+        Fit MultinomialNB on Candidate.dataset
 
         Args:
             dataset (Candidate): Fit data
@@ -28,7 +41,7 @@ class ActGaussianNb(Predictor):
         Returns:
             Fitted step
         """
-        self.model = GaussianNB()
+        self.model = MultinomialNB(**self.model_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

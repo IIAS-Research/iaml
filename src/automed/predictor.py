@@ -28,6 +28,15 @@ class Predictor(Actionable):
         return candidate.add_to_pipeline(self)
     
     def predict_proba(self, X:pd.DataFrame) -> list[float]:
+        """ 
+        Apply prediction model on DataFrame with probability
+
+        Args:
+            X (pd.DataFrame): DataFrame use to predict
+
+        Returns:
+            list[float]: Predicted values
+        """
         if self.model and hasattr(self.model, 'predict_proba'):
             return self.model.predict_proba(X)
         return None
@@ -46,3 +55,17 @@ class Predictor(Actionable):
             return self.model.predict(X)
         return None
     
+    def model_parameters(self, default:bool=True):
+        parameters = {}
+        for key, value in self.configuration.items():
+            if "model_parameter" in value:
+                if value['model_parameter']:
+                    parameters[key] = value['value']
+            elif default:
+                parameters[key] = value['value']
+                
+        return parameters
+                
+    @property
+    def classes_(self):
+        return self.model.classes_

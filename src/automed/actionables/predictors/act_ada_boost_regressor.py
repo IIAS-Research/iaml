@@ -1,40 +1,46 @@
 """
-[STEP] Learn :  Random Forest
+[STEP] Learn :  AdaBoost Regressor
 """
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostRegressor
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
 @is_step('predictor', 'tabular')
-class ActRandomForest(Predictor):
+class ActAdaBoostRegressor(Predictor):
     """
-    [STEP] Learn :  Random Forest
+    [STEP] Learn :  AdaBoost Regressor
     """
-    name = "Learn : Random Forest" 
+    name = "Learn : AdaBoost Regressor" 
     def __init__(self):
         self.configuration:dict = {
-            'max_depth': {
-                'description': 'Max depth of each tree',
-                'default': 15,
-                'range': [1, float('inf')]
+            'learning_rate': {
+                'description': 'Weight applied to each regressor at each boosting iteration',
+                'default': 0.1,
+                'range': [0.01, 2.0]
+            },
+            'loss': {
+                'description': 'The loss function to use when updating the weights \
+                    after each boosting iteration.',
+                'default': "linear",
+                'categorical': ["linear", "square", "exponential"]
             },
             'n_estimators': {
                 'description': 'Number of threes',
-                'default': 100,
-                'range': [1, float('inf')]
+                'default': 50,
+                'range': [1, 500]
             },
             'random_state': {
                 'description': 'random_state',
                 'default': 42
             }
         }
-        self.model:RandomForestClassifier = None
+        self.model:AdaBoostRegressor = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit Random forest on Candidate.dataset
+        Fit AdaBoost Regressor on Candidate.dataset
 
         Args:
             dataset (Dataset): Fit data
@@ -42,15 +48,14 @@ class ActRandomForest(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = RandomForestClassifier(**self.model_parameters())
+        self.model = AdaBoostRegressor(**self.model_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         
         return self
     
     def suitable(self, candidate) -> bool:
-        return candidate.dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
+        return candidate.dataset.type_of_target == 'continuous'
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

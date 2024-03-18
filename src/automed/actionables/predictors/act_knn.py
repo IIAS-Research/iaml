@@ -3,7 +3,6 @@
 [STEP] Learn :  KNN
 """
 from sklearn.neighbors import KNeighborsClassifier
-import pandas as pd
 from ...predictor import Predictor
 from ...candidate import Candidate
 from ...dataset import Dataset

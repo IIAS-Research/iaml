@@ -2,7 +2,6 @@
 [STEP] Learn :  SVM Classifier
 """
 from sklearn import svm
-import pandas as pd
 from ...predictor import Predictor
 from ...candidate import Candidate
 from ...dataset import Dataset
@@ -44,10 +43,8 @@ class ActSVMSVC(Predictor):
             Candidate: Transformed candidate
         """
         self.model = svm.SVC(
-            kernel = self.get_config('kernel'),
-            class_weight = self.get_config('class_weight'),
-            random_state = self.get_config('random_state'),
-            probability = True # Needed to predict_proba (thus MetaLearner)
+            probability = True, # Needed to predict_proba (thus MetaLearner)
+            **self.model_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

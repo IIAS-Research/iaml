@@ -10,6 +10,7 @@
         "iloc",
         "issubdtype",
         "kfold",
+        "metalearner",
         "metapredictor",
         "metastep",
         "multiclass",

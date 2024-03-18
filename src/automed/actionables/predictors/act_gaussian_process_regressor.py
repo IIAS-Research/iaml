@@ -1,26 +1,32 @@
 """
-[STEP] Learn : Gaussian NB
+[STEP] Learn : Gaussian Process Regressor
 """
 
-from sklearn.naive_bayes import GaussianNB
+from sklearn.gaussian_process import GaussianProcessRegressor
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
 @is_step('predictor', 'tabular')
-class ActGaussianNb(Predictor):
+class ActGaussianProcessRegressor(Predictor):
     """
-    [STEP] Learn : Gaussian NB
+    [STEP] Learn : Gaussian Process Regressor
     """
-    name = "Learn : Gaussian NB"
+    name = "Learn : Gaussian Process Regressor"
     def __init__(self):
-        self.configuration:dict = {}
-        self.model:GaussianNB = None
+        self.configuration:dict = {
+            'alpha': {
+                'description': 'Value added to the diagonal of the kernel matrix during fitting.',
+                'default': 1e-14,
+                'range': [1e-08, 1.0]
+                }
+            }
+        self.model:GaussianProcessRegressor = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit GaussianNB on Candidate.dataset
+        Fit GaussianProcessRegressor on Candidate.dataset
 
         Args:
             dataset (Candidate): Fit data
@@ -28,7 +34,7 @@ class ActGaussianNb(Predictor):
         Returns:
             Fitted step
         """
-        self.model = GaussianNB()
+        self.model = GaussianProcessRegressor(**self.model_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         
@@ -45,8 +51,7 @@ class ActGaussianNb(Predictor):
         Returns:
             bool: Suitable ?
         """
-        return candidate.dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
+        return candidate.dataset.type_of_target == 'continuous'
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

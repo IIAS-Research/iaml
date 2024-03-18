@@ -2,7 +2,6 @@
 [STEP] Learn :  Random Forest Regressor
 """
 from sklearn.ensemble import RandomForestRegressor
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -43,11 +42,7 @@ class ActRandomForestRegressor(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = RandomForestRegressor(
-            max_depth=self.get_config('max_depth'),
-            random_state=self.get_config('random_state'),
-            n_estimators=self.get_config('n_estimators')
-            )
+        self.model = RandomForestRegressor(**self.model_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

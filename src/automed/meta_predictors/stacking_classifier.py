@@ -8,9 +8,7 @@ from ..candidate import Candidate
 from ..auto_pipeline import AutoPipeline
 from ..dataset import Dataset
 
-# TODO Does not work, fix it
-# class StackingClassifier(MetaPredictor):
-class StackingClassifier():
+class StackingClassifier(MetaPredictor):
     """
     Ensemble based predict method
     """

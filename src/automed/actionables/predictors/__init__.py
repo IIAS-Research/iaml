@@ -14,3 +14,16 @@ from .act_knn import *
 from .act_knn_regressor import *
 from .act_logistic_regression import *
 from .act_linear_regression import *
+from .act_bernoulli_nb import *
+from .act_extra_trees_classifier import *
+from .act_extra_trees_regressor import *
+from .act_linear_discriminant_analysis import *
+from .act_mlp_classifier import *
+from .act_multinomial_nb import *
+from .act_quadratic_discriminant_analysis import *
+from .act_ard_regression import *
+from .act_ada_boost_regressor import *
+from .act_hist_gradient_boosting_regressor import *
+from .act_mlp_regressor import *
+from .act_sgd_regressor import *
+from .act_gaussian_process_regressor import *

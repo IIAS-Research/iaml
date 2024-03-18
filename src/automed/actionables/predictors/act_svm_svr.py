@@ -2,7 +2,6 @@
 [STEP] Learn :  SVM Regressor
 """
 from sklearn import svm
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -35,7 +34,7 @@ class ActSVMSVR(Predictor):
             Candidate: Transformed candidate
         """
         self.model = svm.SVR(
-            kernel = self.get_config('kernel')
+            **self.model_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

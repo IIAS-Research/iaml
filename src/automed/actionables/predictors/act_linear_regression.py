@@ -2,7 +2,6 @@
 [STEP] Learn :  Linear Regression
 """
 from sklearn.linear_model import LinearRegression
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
