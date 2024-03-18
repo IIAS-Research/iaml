@@ -50,13 +50,13 @@ class AutoMed:
                 max_stage_duration:int=None,
                 metalearner:bool=None,
                 splitter=None,
-                max_duration:int=math.inf):
+                max_duration:int=-1):
         
         Logger().set_quiet(quiet)
         
         # Enable / Disable Meta Learner
         if metalearner is None:
-            if max_duration < 500:
+            if max_duration < 500 and max_duration != -1:
                 Logger().log("Max duration under 500 seconds : \
                     Meta learner are disabled (you can enable it, \
                     with the parameter 'metalearner')")
@@ -300,14 +300,14 @@ class AutoMed:
         starting_time:int = time.time() # seconds
         
         # If there is not, define an arbitrary stop condition
-        if max_duration == math.inf and patience == -1:
+        if max_duration == -1 and patience == -1:
             Logger().log('You have not defined any stop condition. \
                 Patient has arbitrary set to 20')
             patience = 20
         
         while   not(optimizer.finished) \
                 and (patience == -1 or iterations_without_improvement < patience) \
-                and max_duration >= duration:
+                and (max_duration == -1 or max_duration >= duration):
             
             # Generate new candidates
             candidates = optimizer.run(candidates)
