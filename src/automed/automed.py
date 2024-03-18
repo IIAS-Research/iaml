@@ -3,7 +3,7 @@
 """
 
 import time
-import math
+import multiprocessing
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor
 from .step import Step
