@@ -49,7 +49,7 @@ class AutoMed:
                 max_stage_duration:int=None,
                 metalearner:bool=None,
                 splitter=None,
-                max_duration:int=None):
+                max_duration:int=-1):
         
         Logger().set_quiet(quiet)
         
