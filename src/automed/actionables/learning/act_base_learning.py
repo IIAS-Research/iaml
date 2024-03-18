@@ -46,6 +46,10 @@ class ActBaseLearning(Actionable, metaclass=ABCMeta):
         return self.model.predict(X)
     
     def predict_proba(self, X: pd.DataFrame) -> list[float]:
+        """
+        Calls the inner model's `predict_proba` method. Required for
+        `AutoPipeline` to work when calling its `predict_proba` method.
+        """
         return self.model.predict_proba(X)
 
     def priorize(self, input_data: Input = None) -> float:
