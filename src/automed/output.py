@@ -4,13 +4,9 @@ Output (and Input alias) is used to exchange data between Steps
 from typing import TYPE_CHECKING
 
 from copy import copy
-import numpy as np
-import pandas as pd
-import shap
 
 from .auto_pipeline import AutoPipeline
 from .dataset import Dataset
-from .explanation import Explanation
 
 
 if TYPE_CHECKING:
@@ -40,7 +36,8 @@ class Output:
 
         self.dataset = dataset
         self.metrics = copy(metrics) if metrics is not None else []
-        self.pipeline = auto_pipeline or AutoPipeline() # Pipeline
+
+        self.pipeline = auto_pipeline or AutoPipeline(original_dataset=dataset.X.copy()) # Pipeline
         
         if main_metric is None and dataset and dataset.type_of_target:
             if 'continuous' in dataset.type_of_target:
@@ -227,45 +224,6 @@ class Output:
             self.computed_metrics = current_compute
             
         return current_compute
-    
-    def explain_model(self, X: 'pd.DataFrame', nsamples: int = 20):
-        """
-        Explains the model by computing SHAP values on the fitted model.
-        Uses the train set as the masker, and the provided set as
-        prediction.
-
-        Args:
-            X (DataFrame): Prediction set to compute SHAP values for.
-            nsamples (int, optional): Number of samples to pick from
-                the masker to pick feature data from for each row in
-                the provided prediction dataset. More samples means
-                more accurate SHAP values and longer computing times.
-                Defaults to 20.
-
-        Returns:
-            Explanation: Model explanation, with an overview of the
-                most important features, and graphs.
-        """
-        if not self.pipeline.have_model:
-            raise RuntimeError('There is no model to explain.')
-
-        step = self.pipeline.model
-
-        def p(pred_data):
-            return self.pipeline.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
-
-        # explainer = shap.Explainer(lambda x: model.predict_proba(x)[:, 1], med)
-        explainer = shap.KernelExplainer(p, X)
-        shap_values = explainer.shap_values(X, nsamples=nsamples)
-
-        shap_explanation = shap.Explanation(
-            shap_values,
-            base_values=np.tile(explainer.expected_value, (shap_values.shape[0], 1)),
-            data=X.to_numpy(),
-            feature_names=X.columns.to_list(),
-            output_names=X.columns.to_list())
-
-        return Explanation(step, None, None, shap_explanation)
     
     def explain(self):
         """
