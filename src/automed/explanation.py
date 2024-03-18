@@ -22,8 +22,7 @@ class Explanation:
             step: 'Step',
             processings: list[str] = None,
             metrics: dict['Metric', float] = None,
-            shap_values: list[tuple[str, list[float]]] = None) -> None:
-        print(shap_values)
+            shap_values: shap.Explanation = None) -> None:
         if processings is None:
             processings = []
 
@@ -70,7 +69,7 @@ class Explanation:
             self,
             plot: str,
             ps: slice = None,
-            scatter_features: list[str] = None) -> None:
+            scatter_feature: list[str] = None) -> None:
         """
         Plot SHAP values.
 
@@ -83,8 +82,8 @@ class Explanation:
                 "force" or "waterfall", it will pick the first
                 prediction matching the provided slice (defaults to
                 first of all).
-            scatter_features (list[str], optional): Specify the
-                features to plot in the scatter plot (defaults to all).
+            scatter_feature (str, optional): Specify the feature to
+                plot in the scatter plot (defaults to first).
         """
         if self.shap_values is None:
             raise RuntimeError('Cannot generate plots for this explanation without SHAP values.')
@@ -98,11 +97,10 @@ class Explanation:
             case 'waterfall':
                 shap.plots.waterfall(self.shap_values[ps.start], show=False)
             case 'scatter':
-                if scatter_features is None:
-                    scatter_features = self.shap_values.feature_names
-                    print(scatter_features)
+                if scatter_feature is None:
+                    scatter_feature = self.shap_values.feature_names[0]
 
-                shap.plots.scatter(self.shap_values[ps, scatter_features], show=False)
+                shap.plots.scatter(self.shap_values[ps, scatter_feature], show=False)
             case 'beeswarm':
                 shap.plots.beeswarm(self.shap_values[ps], show=False)
             case 'heatmap':
@@ -130,7 +128,7 @@ class Explanation:
         Returns:
             str: Base64-encoded plot image.
         """
-        self.to_plot(plot, ps, scatter_features=['Age'])
+        self.to_plot(plot, ps)
 
         buffer = io.BytesIO()
         plt.savefig(buffer, bbox_inches='tight', **kw)
