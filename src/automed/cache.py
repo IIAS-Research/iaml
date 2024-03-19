@@ -19,6 +19,9 @@ class Cache(metaclass=MetaSingleton):
     def enable(self) -> None:
         self.__disable = False
         
+    def reset(self) -> None:
+        self.saved = []
+        
     def __get_from_fingerprint(self, fingerprint:str) -> list:
         return [item for item in self.saved if item[0] == fingerprint]
         
