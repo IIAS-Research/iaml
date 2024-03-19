@@ -77,7 +77,7 @@ class ActDateConverter(Actionable):
             pd.DataFrame: Transformed dataset
         """
         for column in self.columns:
-            X[column] = X[column].apply(self.__string_value_to_date)
+            X[column] = pd.to_datetime(X[column], errors='coerce')
 
         return X
         
