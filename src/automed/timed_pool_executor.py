@@ -26,11 +26,11 @@ def process_daemon(
                 to_run_queue.put("stop")
                 break
             
-            method, args, kwargs = value
+            method, args, kwargs, callback_id = value
             
             try:
                 result = method(*args, **kwargs)
-                queue.put(result)
+                queue.put((result, callback_id))
             except Exception:  # pylint: disable=broad-exception-caught
                 error_queue.put(traceback.format_exc())
             finally:
@@ -45,9 +45,10 @@ class TimedPoolExecutor:
         to run.
         Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
     """
-    def __init__(self, max_workers:int=None, callback:callable=None):
+    def __init__(self, max_workers:int=None, callback:callable=None, sliding_stages:bool=True):
         self.max_workers = min(max_workers, multiprocess.cpu_count())
         self.stop_flag:bool = False # Used to stop thread
+        self.sliding_stages = sliding_stages
         
         # Daemon THREAD (& not Process) with a infinite loop to catch results of sub process
         self.daemon = None
@@ -59,7 +60,7 @@ class TimedPoolExecutor:
         self.finally_queue = multiprocess.Queue()
         
         # Method to call after each run
-        self.callback = callback
+        self.callbacks = [callback]
         
         # List of all result since last reset
         self.results = []
@@ -108,9 +109,9 @@ class TimedPoolExecutor:
             Collect results from queues and run callback
         """
         while not self.result_queue.empty():
-            result = self.result_queue.get()
-            if self.callback:
-                self.callback(result)
+            result, callback_id = self.result_queue.get()
+            if callback_id and callable(self.callbacks[callback_id]):
+                self.callbacks[callback_id](result)
             self.results.append(result)
         
     def __print_errors(self) -> None:
@@ -150,7 +151,7 @@ class TimedPoolExecutor:
         Args:
             target (callable): Method to run
         """
-        self.to_run_queue.put((target, args, kwargs))
+        self.to_run_queue.put((target, args, kwargs, len(self.callbacks)-1))
         self.submit_count += 1
         
     def __finished(self) -> bool:
@@ -168,14 +169,16 @@ class TimedPoolExecutor:
         Reset all queues, callback, results, etc. 
         Allow to reuse this instance of TimedPoolExecutor without restarting subProcess
         """
-        for queue in [self.error_queue, self.finally_queue, self.to_run_queue, self.result_queue]:
-            while not queue.empty():
-                queue.get()
-                
-        self.callback = None
+        if not self.sliding_stages:
+            for queue in [self.error_queue, self.finally_queue, self.to_run_queue, self.result_queue]:
+                while not queue.empty():
+                    queue.get()
+                    
+            self.callbacks = [self.callbacks[-1]]
+            self.submit_count = 0
+            self.finished_run = 0
+            
         self.results = []
-        self.submit_count = 0
-        self.finished_run = 0
                 
     def set_callback(self, callback:callable) -> None:
         """
@@ -184,7 +187,7 @@ class TimedPoolExecutor:
         Args:
             callback (callable): callback method
         """
-        self.callback = callback
+        self.callbacks.append(callback)
         
     def join(self, timeout:int, reset:bool=True) -> list:
         """
@@ -202,7 +205,11 @@ class TimedPoolExecutor:
         def remain_time():
             return max(0, int(timeout - (time.time() - start_time)))
         
-        while not self.__finished() and remain_time():
+        def slide():
+            return self.sliding_stages and (self.to_run_queue.empty() and \
+                self.finished_run >= (self.submit_count - self.max_workers/2))
+        
+        while not self.__finished() and remain_time() and not slide():
             time.sleep(0.5)
         
         self.__collect_results()

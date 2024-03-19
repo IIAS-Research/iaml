@@ -21,6 +21,7 @@ class GeneticOptimizer(Optimizer):
         self.mutation_power:float = mutation_power
         self.initial_modifier:float = initial_modifier
         self.max_generations:int = 20
+        self.first_candidate_pool:list[Candidate] = None
         
     @property
     def finished(self) -> bool:
@@ -42,6 +43,11 @@ class GeneticOptimizer(Optimizer):
         Returns:
             list[Candidate]: Optimized candidates
         """
+        
+        # Will be used for random generation
+        if self.first_candidate_pool is None:
+            self.first_candidate_pool = candidates
+            
         nb_to_keep:int = round(self.number_of_candidate / 4)
         nb_to_mutate:int = round(self.number_of_candidate / 4)
         
@@ -54,7 +60,7 @@ class GeneticOptimizer(Optimizer):
         new_generation = [item for item in new_generation if item is not None] # remove None
         
         while len(new_generation) < self.number_of_candidate:
-            new_generation += [self.__random_configuration(random.choice(candidates))]
+            new_generation += [self.__random_configuration(random.choice(self.first_candidate_pool))]
 
         new_generation = [item for item in new_generation if item is not None] # remove None
         

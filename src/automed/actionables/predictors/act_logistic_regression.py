@@ -35,6 +35,7 @@ class ActLogisticRegression(Predictor):
         """
         self.model = LogisticRegression(
             n_jobs=-1,
+            max_iter=300,
             **self.model_parameters()
             )
         

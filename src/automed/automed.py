@@ -201,7 +201,7 @@ class AutoMed:
         ### INITIAL EVALUATION
         
         # Evaluate candidates
-        self.__run_evaluations(candidates,
+        candidates = self.__run_evaluations(candidates,
                         dataset,
                         timeout=self.max_duration - (time.time() - start_time))
             
@@ -483,6 +483,5 @@ class AutoMed:
 def process_executor(candidate:Candidate, *args, **kwargs):
     # Deepcopy -> Without it, process end is never detected. Strange...
     candidate = deepcopy(candidate)
-    
     candidate.training_evaluate(*args, **kwargs)
     return candidate
