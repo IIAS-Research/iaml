@@ -18,12 +18,12 @@ class ActRandomForestRegressor(Predictor):
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
-                'range': [1, float('inf')]
+                'range': [1, 100]
             },
             'n_estimators': {
                 'description': 'Number of threes',
                 'default': 100,
-                'range': [1, float('inf')]
+                'range': [1, 500]
             },
             'random_state': {
                 'description': 'random_state',

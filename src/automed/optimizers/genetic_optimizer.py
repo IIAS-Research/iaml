@@ -85,16 +85,19 @@ class GeneticOptimizer(Optimizer):
                 is_int = isinstance(config['value'], int)
                 
                 new_value = None
-                # Randomly choose a positive or negative editing
-                if bool(random.getrandbits(1)):
-                    # Negative -> Multiply value by something between 0.01 and 1
-                    change_rate = random.uniform(0.01, 1)
-                    new_value = config['value']*change_rate 
-                else:
-                    # Positive -> Multiply value by something between 1 
-                    # and the max modificator in configuration 
-                    change_rate = random.uniform(1, self.initial_modifier)
-                    new_value = config['value']*change_rate
+                if 'range' in config: # Random in range
+                    new_value = random.uniform(*config['range'])
+                else: # Kind of strong mutate
+                    # Randomly choose a positive or negative editing
+                    if bool(random.getrandbits(1)):
+                        # Negative -> Multiply value by something between 0.01 and 1
+                        change_rate = random.uniform(0.01, 1)
+                        new_value = config['value']*change_rate 
+                    else:
+                        # Positive -> Multiply value by something between 1 
+                        # and the max modificator in configuration 
+                        change_rate = random.uniform(1, self.initial_modifier)
+                        new_value = config['value']*change_rate
                 
                 # Value was a int ? Round it to keep it int 
                 if is_int: 

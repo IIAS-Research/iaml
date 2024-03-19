@@ -18,7 +18,7 @@ class ActExtraTreesRegressor(Predictor):
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
-                'range': [1, float('inf')]
+                'range': [1, 100]
             },
             'min_samples_leaf': {
                 'description': 'The minimum number of samples required to be at a leaf node.',
@@ -48,7 +48,7 @@ class ActExtraTreesRegressor(Predictor):
             'n_estimators': {
                 'description': 'Number of threes',
                 'default': 100,
-                'range': [1, float('inf')]
+                'range': [1, 500]
             },
             'random_state': {
                 'description': 'random_state',

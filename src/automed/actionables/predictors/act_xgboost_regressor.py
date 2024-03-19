@@ -19,7 +19,7 @@ class ActXGBoost(Predictor):
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
-                'range': [1, float('inf')]
+                'range': [1, 100]
             },
             'random_state': {
                 'description': 'random_state',
@@ -28,12 +28,12 @@ class ActXGBoost(Predictor):
             'learning_rate': {
                 'description': 'Learning rate',
                 'default': 1.0,
-                'range': [0.000000001, float('inf')]
+                'range': [0.000000001, 5]
             },
             'n_estimators': {
                 'description': 'Number of estimators',
                 'default': 100,
-                'range': [1, float("inf")]
+                'range': [1, 500]
             }
         }
         self.model:GradientBoostingRegressor = None
