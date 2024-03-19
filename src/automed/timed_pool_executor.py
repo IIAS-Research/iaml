@@ -94,15 +94,30 @@ class TimedPoolExecutor:
         """
             Shutdown TimedPoolExecutor : Kill subprocess and thread
         """
-        while not self.to_run_queue.empty():
-            self.to_run_queue.get()
-        self.to_run_queue.put("stop")
         self.stop_flag = True
         
         # Force stop if needed
-        for process in self.process:
-            if process.is_alive():
-                process.terminate()
+        
+        # # soft kill
+        # for process in self.process:
+        #     if process.is_alive():
+        #         process.terminate()
+                
+        # time.sleep(0.1) # Wait a bit for process turning off
+        
+        # # hard kill
+        # still_alive:bool = True
+        # while still_alive:
+        #     still_alive = False
+        #     for process in self.process:
+        #         if process.is_alive():
+        #             print('still not died')
+        #             still_alive = True
+        #             process.kill()
+        #             time.sleep(0.1)
+                    
+        # print("All died !")
+        
 
     def __collect_results(self) -> None:
         """
@@ -132,6 +147,14 @@ class TimedPoolExecutor:
             
             if self.stop_flag:
                 break
+        
+        # Kill process
+        while not self.to_run_queue.empty():
+            self.to_run_queue.get()
+        self.to_run_queue.put("stop")
+        for process in self.process:
+            if process.is_alive():
+                process.terminate()
             
     
     def __run_daemon(self) -> None:
