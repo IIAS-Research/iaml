@@ -12,7 +12,7 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, current_path+"/../")
 from automed import *
 
-DURATION = 60*30 # 30 minutes
+DURATION = 5*60 # 30 minutes
 
 def each_file(file):
     Logger.reset()
