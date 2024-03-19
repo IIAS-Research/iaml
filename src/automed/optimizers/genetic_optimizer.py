@@ -72,51 +72,56 @@ class GeneticOptimizer(Optimizer):
         """
         # Deepcopy to avoid editing other Steps of the same generation
         new_candidate:Candidate = deepcopy(candidate)
-        _, predictor = new_candidate.pipeline.predictor
         
-        if not self.__config_keys(predictor):
-            return None # Nothing to optimize
-        
-        # For each configuration key, we'll choose a random value
-        for key in self.__config_keys(predictor): 
-            config = predictor.configuration[key]
+        for current_step in new_candidate.pipeline.optimizable_step:
+            if not self.__config_keys(current_step):
+                continue # Nothing to optimize
             
-            if type(config['value']) in [int, float]: # Numeric value ? Let's apply multiplier
-                is_int = isinstance(config['value'], int)
+            # For each configuration key, we'll choose a random value
+            for key in self.__config_keys(current_step): 
                 
-                new_value = None
-                if 'range' in config: # Random in range
-                    new_value = random.uniform(*config['range'])
-                else: # Kind of strong mutate
-                    # Randomly choose a positive or negative editing
-                    if bool(random.getrandbits(1)):
-                        # Negative -> Multiply value by something between 0.01 and 1
-                        change_rate = random.uniform(0.01, 1)
-                        new_value = config['value']*change_rate 
-                    else:
-                        # Positive -> Multiply value by something between 1 
-                        # and the max modificator in configuration 
-                        change_rate = random.uniform(1, self.initial_modifier)
-                        new_value = config['value']*change_rate
+                # 1/2 chance to let the default value unchanged
+                if bool(random.getrandbits(1)):
+                    continue
                 
-                # Value was a int ? Round it to keep it int 
-                if is_int: 
-                    new_value = round(new_value)
+                config = current_step.configuration[key]
                 
-                if not self.__valide_config(config, new_value): 
-                    # Cancel is the new value is not correct.
+                if type(config['value']) in [int, float]: # Numeric value ? Let's apply multiplier
+                    is_int = isinstance(config['value'], int)
+                    
+                    new_value = None
+                    if 'range' in config: # Random in range
+                        new_value = random.uniform(*config['range'])
+                    else: # Kind of strong mutate
+                        # Randomly choose a positive or negative editing
+                        if bool(random.getrandbits(1)):
+                            # Negative -> Multiply value by something between 0.01 and 1
+                            change_rate = random.uniform(0.01, 1)
+                            new_value = config['value']*change_rate 
+                        else:
+                            # Positive -> Multiply value by something between 1 
+                            # and the max modificator in configuration 
+                            change_rate = random.uniform(1, self.initial_modifier)
+                            new_value = config['value']*change_rate
+                    
+                    # Value was a int ? Round it to keep it int 
+                    if is_int: 
+                        new_value = round(new_value)
+                    
+                    if not self.__valide_config(config, new_value): 
+                        # Cancel is the new value is not correct.
+                        new_value = config['value']
+                
+                # Categorical value, choose randomly one of them
+                elif 'categorical' in config.keys():
+                    new_value = random.choice(config['categorical'])
+                elif isinstance(config['value'], bool): 
+                    # Bool value, choose randomly beetwen True and False
+                    new_value = random.choice([True, False])
+                else: # Other value ? Just keep it
                     new_value = config['value']
-            
-            # Categorical value, choose randomly one of them
-            elif 'categorical' in config.keys():
-                new_value = random.choice(config['categorical'])
-            elif isinstance(config['value'], bool): 
-                # Bool value, choose randomly beetwen True and False
-                new_value = random.choice([True, False])
-            else: # Other value ? Just keep it
-                new_value = config['value']
-                
-            predictor.configure(key, new_value) # Set new configuration in the step
+                    
+                current_step.configure(key, new_value) # Set new configuration in the step
             
         return new_candidate
     
@@ -125,14 +130,14 @@ class GeneticOptimizer(Optimizer):
         Mutate a candidate into a new one 
         """
         new_candidate:Candidate = deepcopy(candidate)
-        _, predictor = new_candidate.pipeline.predictor
+        step_to_mutate = random.choice(new_candidate.pipeline.optimizable_step)
         
-        if not self.__config_keys(predictor):
+        if not self.__config_keys(step_to_mutate):
             return None # Nothing to optimize
         
         # Choose a random key to mutate
-        random_key:str = random.choice(self.__config_keys(predictor))
-        random_item:dict = predictor.configuration[random_key] # Get value of the random key
+        random_key:str = random.choice(self.__config_keys(step_to_mutate))
+        random_item:dict = step_to_mutate.configuration[random_key] # Get value of the random key
         new_value = None
         
         if type(random_item['value']) in [int, float]: # Numeric value ? Apply multiplier
@@ -160,7 +165,7 @@ class GeneticOptimizer(Optimizer):
         else: # Other -> Keep it
             new_value = random_item['value']
             
-        predictor.configure(random_key, new_value) # Apply configuration
+        step_to_mutate.configure(random_key, new_value) # Apply configuration
         
         return new_candidate
 

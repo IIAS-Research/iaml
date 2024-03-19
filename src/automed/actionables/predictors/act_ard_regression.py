@@ -64,7 +64,7 @@ class ActARDRegression(Predictor):
         Returns:
             Fitted step
         """
-        self.model = ARDRegression(**self.model_parameters())
+        self.model = ARDRegression(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

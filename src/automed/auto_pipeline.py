@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from .dataset import Dataset
+from .logger import Logger
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -125,16 +126,17 @@ class AutoPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         dataset = Dataset(X, y)
-        for _, step in [*self.transformers, *self.resamplers]:
+        for name, step in [*self.transformers, *self.resamplers]:
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
                 step.fit(dataset)
             else:
                 step.fit(dataset.X, dataset.y, **kwargs)
-                
+            
             if hasattr(step, 'transform'):
                 dataset = Dataset(step.transform(dataset.X), y)
             elif hasattr(step, 'resample'):
                 dataset = Dataset(*step.resample(dataset.X, dataset.y))
+            
         
         return dataset.X, dataset.y
         
@@ -257,6 +259,14 @@ class AutoPipeline(Pipeline):
         
         return self.predictor[1].predict(X)
     
+    @property
+    def optimizable_step(self) -> list['Step']:
+        """
+        Returns:
+            list[Step]: List of optimizable step
+        """
+        return [step for _, step in self.training_steps if step.optimizable]
+    
     def __eq__(self, other: 'AutoPipeline') -> bool:
         if isinstance(other, AutoPipeline):
             return self.fingerprint() == other.fingerprint()
@@ -274,7 +284,7 @@ class AutoPipeline(Pipeline):
             str: md5 sting
         """
         to_hash = "\n".join([str(step.__class__) + " = " \
-            + json.dumps(step.configuration, sort_keys=True) \
+            + json.dumps(step.serializable_resume_configuration(), sort_keys=True) \
                 for _, step in self.training_steps])
         
         return md5(to_hash.encode()).hexdigest()

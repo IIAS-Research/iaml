@@ -75,7 +75,7 @@ class ActSGDRegressor(Predictor):
         Returns:
             Fitted step
         """
-        self.model = SGDRegressor(**self.model_parameters())
+        self.model = SGDRegressor(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

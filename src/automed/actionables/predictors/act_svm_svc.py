@@ -28,6 +28,11 @@ class ActSVMSVC(Predictor):
                 'description': 'Can be set on "balenced" to improve results on unbalenced data',
                 'default': None,
                 'categorical': [None, 'balanced']
+            },
+            'tol': {
+                'description': 'The stopping criterion.',
+                'default': 0.001,
+                'range': [1e-05, 0.1]
             }
         }
         self.model:svm.SVC = None
@@ -44,7 +49,7 @@ class ActSVMSVC(Predictor):
         """
         self.model = svm.SVC(
             probability = True, # Needed to predict_proba (thus MetaLearner)
-            **self.model_parameters()
+            **self.passthrough_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

@@ -34,7 +34,7 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
         Returns:
             Fitted step
         """
-        self.model = QuadraticDiscriminantAnalysis(**self.model_parameters())
+        self.model = QuadraticDiscriminantAnalysis(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

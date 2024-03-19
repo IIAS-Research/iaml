@@ -48,7 +48,7 @@ class ActAdaBoostRegressor(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = AdaBoostRegressor(**self.model_parameters())
+        self.model = AdaBoostRegressor(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

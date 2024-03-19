@@ -22,6 +22,16 @@ class Cache(metaclass=MetaSingleton):
     def __get_from_fingerprint(self, fingerprint:str) -> list:
         return [item for item in self.saved if item[0] == fingerprint]
         
+    def __delete(self, fingerprint:str, dataset) -> None:
+        """Delete item from cache"""
+        for idx, item in enumerate(self.saved):
+            old_fingerprint, input_data, _ = item
+            if old_fingerprint == fingerprint and dataset.equals(input_data):
+                del self.saved[idx]
+                break
+                
+        return [item for item in self.saved if item[0] == fingerprint]
+        
     def from_cache(self, fingerprint:str, dataset:pd.DataFrame) -> any:
         """
         Get data from cache
@@ -49,6 +59,7 @@ class Cache(metaclass=MetaSingleton):
         if self.__disable:
             return None
         
+        self.__delete(fingerprint, dataset)
         self.saved.append((fingerprint, dataset, output))
         
         if len(self.saved) > self.max_cache_size:

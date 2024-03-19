@@ -41,7 +41,7 @@ class ActBernoulliNb(Predictor):
         Returns:
             Fitted step
         """
-        self.model = BernoulliNB(**self.model_parameters())
+        self.model = BernoulliNB(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

@@ -16,12 +16,6 @@ class ActLinearDiscriminantAnalysis(Predictor):
     name = "Learn : Linear Discriminant Analysis"
     def __init__(self):
         self.configuration:dict = {
-            # 'shrinkage': {
-            #     'description': 'This should be left to None if covariance_estimator is used. \
-            #         Note that shrinkage works only with ‘lsqr’ and ‘eigen’ solvers',
-            #     'default': None,
-            #     'categorical': [None, 'auto']
-            #     },
             'tol': {
                 'description': 'Absolute threshold for a singular value of X to be considered \
                     significant, used to estimate the rank of X. ',
@@ -41,7 +35,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
         Returns:
             Fitted step
         """
-        self.model = LinearDiscriminantAnalysis(**self.model_parameters())
+        self.model = LinearDiscriminantAnalysis(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

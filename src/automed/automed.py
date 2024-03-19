@@ -50,19 +50,21 @@ class AutoMed:
                 max_stage_duration:int=None,
                 metalearner:bool=None,
                 splitter=None,
-                max_duration:int=-1):
+                max_duration:int=-1,
+                preprocessor:bool=False):
         
         Logger().set_quiet(quiet)
         
+        self.preprocessor = preprocessor
+        
         # Enable / Disable Meta Learner
+        self.metalearner = metalearner
         if metalearner is None:
             if max_duration < 500 and max_duration != -1:
                 Logger().log("Max duration under 500 seconds : \
                     Meta learner are disabled (you can enable it, \
                     with the parameter 'metalearner')")
                 self.metalearner = False
-        else:
-            self.metalearner = metalearner
             
         # Set max duration of each stage
         if max_stage_duration is None:
@@ -133,10 +135,13 @@ class AutoMed:
         """
         self.first_step = MetaOrderedStep() # First step -> Contain all stages of the pipeline
 
-        self.first_step.add_step(MetaStep(tag='features_preprocessing'))
+        self.first_step.add_step(MetaStep(tag='features_precleaning'))
         self.first_step.add_step(MetaStep(tag='cleaning'))
         self.first_step.add_step(MetaStep(tag='features_selection'))
         self.first_step.add_step(MetaStep(tag='normalize'))
+        
+        if self.preprocessor:
+            self.first_step.add_step(MetaExplorerStep(tag='features_preprocessing', also_explore_without=True))
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
         
@@ -197,6 +202,7 @@ class AutoMed:
         # Remove candidate without predictor 
         candidates = [candidate for candidate in candidates \
             if candidate.pipeline.predictor is not None]
+        Logger().log(f"{len(candidates)} generated pipelines")
         
         ### INITIAL EVALUATION
         
@@ -204,7 +210,7 @@ class AutoMed:
         candidates = self.__run_evaluations(candidates,
                         dataset,
                         timeout=self.max_duration - (time.time() - start_time))
-            
+        
         ### FINETUNING
         candidates = self.__optimize(dataset,
                                     candidates,

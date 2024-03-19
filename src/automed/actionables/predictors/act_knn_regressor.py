@@ -25,7 +25,13 @@ class ActKNNRegressor(Predictor):
             'n_neighbors': {
                 'description': 'Number of neighbors',
                 'default': 5,
-                'range': [1, 200]
+                'range': [1, 200],
+                'passthrough': False
+            },
+            'weights': {
+                'description': 'Weight function used in prediction.',
+                'default': 'uniform',
+                'categorical': ['uniform', 'distance']
             }
         }
         self.model:KNeighborsRegressor = None
@@ -42,7 +48,7 @@ class ActKNNRegressor(Predictor):
         """
         self.model = KNeighborsRegressor(
             n_neighbors = min(self.get_config('n_neighbors'), dataset.X.shape[0]),
-            metric = self.get_config('metric')
+            **self.passthrough_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

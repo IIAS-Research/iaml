@@ -60,7 +60,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         Returns:
             Fitted step
         """
-        self.model = HistGradientBoostingRegressor(**self.model_parameters())
+        self.model = HistGradientBoostingRegressor(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

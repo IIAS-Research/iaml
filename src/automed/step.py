@@ -46,6 +46,8 @@ class Step: # pylint: disable=too-many-public-methods
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
         
+        self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
+        
         # Configuration of the Step. Each Step can have one configuration and will save it here.
         # Step give many method to help user to configure Steps
         self.configuration:dict = {}
@@ -177,6 +179,17 @@ class Step: # pylint: disable=too-many-public-methods
         for key, value in config.items():
             self.configure(key, value)
             
+    def passthrough_parameters(self, default:bool=True):
+        parameters = {}
+        for key, value in self.configuration.items():
+            if "passthrough" in value:
+                if value['passthrough']:
+                    parameters[key] = value['value']
+            elif default:
+                parameters[key] = value['value']
+                
+        return parameters
+            
     def all_configurations(self) -> list[dict]:
         """Recursive function (last one here) to get all configurations in a pipeline
 
@@ -196,6 +209,10 @@ class Step: # pylint: disable=too-many-public-methods
             dict: Configuration resume
         """
         return Step.__resume_a_configuration(self.configuration)
+    
+    def serializable_resume_configuration(self) -> dict:
+        """Used by fingerprint methods"""
+        return {key: value.__name__ if callable(value) else value for key, value in self.resume_configuration().items()}
     
     @classmethod
     def __resume_a_configuration(cls, config:dict):

@@ -41,16 +41,17 @@ class ActMultinomialNB(Predictor):
         Returns:
             Fitted step
         """
-        self.model = MultinomialNB(**self.model_parameters())
+        self.model = MultinomialNB(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         
         return self
     
     
-    def suitable(self, candidate:Candidate) -> bool:
+    def suitable(self, candidate: Candidate) -> bool:
         """
-        Does this step suitable for this candidate
+        Does this step suitable for this candidate ?
+        Dataset must contain only positive values
 
         Args:
             candidate (Candidate): Suitable for this candidate
@@ -58,8 +59,9 @@ class ActMultinomialNB(Predictor):
         Returns:
             bool: Suitable ?
         """
-        return candidate.dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
+        # Negative values are not supported
+        return not((candidate.dataset.X < 0).any().any() or (candidate.dataset.y < 0).any()) \
+            and candidate.dataset.type_of_target in ['binary', 'multiclass']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

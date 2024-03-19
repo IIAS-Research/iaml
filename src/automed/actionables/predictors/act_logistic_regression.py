@@ -19,6 +19,16 @@ class ActLogisticRegression(Predictor):
             'random_state': {
                 'description': 'random_state',
                 'default': 42
+            },
+            'penalty': {
+                'description': 'Specify the norm of the penalty',
+                'default': 'l2',
+                'categorical': ['l2', None]
+            },
+            'tol': {
+                'description': 'The stopping criterion.',
+                'default': 0.0001,
+                'range': [1e-05, 0.1]
             }
         }
         self.model:LogisticRegression = None
@@ -35,8 +45,9 @@ class ActLogisticRegression(Predictor):
         """
         self.model = LogisticRegression(
             n_jobs=-1,
-            max_iter=300,
-            **self.model_parameters()
+            max_iter=500,
+            class_weight='balanced',
+            **self.passthrough_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

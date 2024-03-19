@@ -12,6 +12,7 @@ class Predictor(Actionable):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.optimizable:bool = True
         self.model = None
     
     @runner
@@ -54,17 +55,6 @@ class Predictor(Actionable):
         if self.model and hasattr(self.model, 'predict'):
             return self.model.predict(X)
         return None
-    
-    def model_parameters(self, default:bool=True):
-        parameters = {}
-        for key, value in self.configuration.items():
-            if "model_parameter" in value:
-                if value['model_parameter']:
-                    parameters[key] = value['value']
-            elif default:
-                parameters[key] = value['value']
-                
-        return parameters
                 
     @property
     def classes_(self):

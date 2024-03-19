@@ -15,7 +15,14 @@ class ActGaussianNb(Predictor):
     """
     name = "Learn : Gaussian NB"
     def __init__(self):
-        self.configuration:dict = {}
+        self.configuration:dict = {
+            'var_smoothing': {
+                'description': 'Portion of the largest variance of all \
+                    features that is added to variances for calculation stability.',
+                'default': 1e-9,
+                'range': [1e-11, 1e-4]
+            },
+        }
         self.model:GaussianNB = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
@@ -28,7 +35,7 @@ class ActGaussianNb(Predictor):
         Returns:
             Fitted step
         """
-        self.model = GaussianNB()
+        self.model = GaussianNB(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

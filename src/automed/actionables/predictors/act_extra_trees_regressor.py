@@ -67,7 +67,7 @@ class ActExtraTreesRegressor(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = ExtraTreesRegressor(**self.model_parameters())
+        self.model = ExtraTreesRegressor(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

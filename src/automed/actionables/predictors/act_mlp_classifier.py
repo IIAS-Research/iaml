@@ -31,13 +31,13 @@ class ActMLPClassifier(Predictor):
                 'description': 'NUmber of hidden layer',
                 'default': 1,
                 'range': [1, 4],
-                'model_parameter': False
+                'passthrough': False
                 },
             'node_per_layer': {
                 'description': 'Number of node per layer',
                 'default': 32,
                 'range': [16, 256],
-                'model_parameter': False
+                'passthrough': False
                 },
             'learning_rate_init': {
                 'description': 'Learning rate schedule for weight updates',
@@ -61,7 +61,8 @@ class ActMLPClassifier(Predictor):
             hidden_layer_sizes=[self.get_config('node_per_layer') \
                 for i in range(self.get_config('hidden_layer_count'))],
             early_stopping=True,
-            **self.model_parameters())
+            max_iter=400,
+            **self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

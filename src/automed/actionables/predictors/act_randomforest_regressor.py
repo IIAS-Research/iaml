@@ -28,6 +28,31 @@ class ActRandomForestRegressor(Predictor):
             'random_state': {
                 'description': 'random_state',
                 'default': 42
+            },
+            'min_samples_leaf': {
+                'description': 'The minimum number of samples required to be at a leaf node.',
+                'default': 1,
+                'range': [1, 15]
+            },
+            'max_features': {
+                'description': 'The number of features to consider when looking for the best split',
+                'default': 1,
+                'range': [0.1, 1]
+            },
+            'min_samples_split': {
+                'description': 'The minimum number of samples required to split an internal node',
+                'default': 2,
+                'range': [2, 20]
+            },
+            'bootstrap': {
+                'description': 'Whether bootstrap samples are used when building trees. \
+                    If False, the whole dataset is used to build each tree.',
+                'default': False
+            },
+            'criterion': {
+                'description': 'The function to measure the quality of a split.',
+                'default': "squared_error",
+                'categorical': ["poisson", "friedman_mse", "absolute_error", "squared_error"]
             }
         }
         self.model:RandomForestRegressor = None
@@ -42,7 +67,7 @@ class ActRandomForestRegressor(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = RandomForestRegressor(**self.model_parameters())
+        self.model = RandomForestRegressor(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

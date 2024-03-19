@@ -2,12 +2,27 @@ import threading
 import time
 import traceback
 import multiprocess
+from .cache import Cache
+from .logger import Logger
+
+def sync_cache(cache_list, error):
+    while cache_list[0] or cache_list[0] is None: # is lock ?
+        time.sleep(0.05)
+        
+    cache_list[0] = True # Lock !
+    if len(cache_list) > 1:
+        for fingerprint, params, output in cache_list[1:]:
+            Cache().add_to_cache(fingerprint, params, output)
+    
+    cache_list[:] = [True, *Cache().saved]  
+    cache_list[0] = False # unlock !
 
 def process_daemon(
     to_run_queue:multiprocess.Queue,
     queue:multiprocess.Queue,
     error_queue:multiprocess.Queue,
-    finally_queue:multiprocess.Queue):
+    finally_queue:multiprocess.Queue,
+    cache_list):
     """
     Will be run by TimedPoolExecutor -> Daemon process able to handle actions
 
@@ -29,6 +44,7 @@ def process_daemon(
             method, args, kwargs, callback_id = value
             
             try:
+                sync_cache(cache_list, error_queue)
                 result = method(*args, **kwargs)
                 queue.put((result, callback_id))
             except Exception:  # pylint: disable=broad-exception-caught
@@ -45,8 +61,13 @@ class TimedPoolExecutor:
         to run.
         Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
     """
-    def __init__(self, max_workers:int=None, callback:callable=None, sliding_stages:bool=True):
+    def __init__(self,
+                max_workers:int=None,
+                callback:callable=None,
+                sliding_stages:bool=True,
+                debug:bool=False):
         self.max_workers = min(max_workers, multiprocess.cpu_count())
+        self.debug = debug # If true, task will be done without using any process.  Easier to debug
         self.stop_flag:bool = False # Used to stop thread
         self.sliding_stages = sliding_stages
         
@@ -58,6 +79,7 @@ class TimedPoolExecutor:
         self.error_queue = multiprocess.Queue()
         self.result_queue = multiprocess.Queue()
         self.finally_queue = multiprocess.Queue()
+        self.cache_list = multiprocess.Manager().list([False, *Cache().saved])
         
         # Method to call after each run
         self.callbacks = [callback]
@@ -77,7 +99,7 @@ class TimedPoolExecutor:
             self.process.append(
                 multiprocess.Process(
                     target=process_daemon,
-                    args=[self.to_run_queue, self.result_queue, self.error_queue, self.finally_queue]
+                    args=[self.to_run_queue, self.result_queue, self.error_queue, self.finally_queue, self.cache_list]
                 )
             )
             self.process[-1].start()
@@ -125,6 +147,7 @@ class TimedPoolExecutor:
         """
         while not self.result_queue.empty():
             result, callback_id = self.result_queue.get()
+            Logger().log(str(result))
             if callback_id and callable(self.callbacks[callback_id]):
                 self.callbacks[callback_id](result)
             self.results.append(result)
@@ -152,6 +175,7 @@ class TimedPoolExecutor:
         while not self.to_run_queue.empty():
             self.to_run_queue.get()
         self.to_run_queue.put("stop")
+        time.sleep(0.5)
         for process in self.process:
             if process.is_alive():
                 process.terminate()
@@ -174,8 +198,11 @@ class TimedPoolExecutor:
         Args:
             target (callable): Method to run
         """
-        self.to_run_queue.put((target, args, kwargs, len(self.callbacks)-1))
-        self.submit_count += 1
+        if self.debug:
+            self.result_queue.put((target(*args, **kwargs), len(self.callbacks)-1))
+        else:
+            self.to_run_queue.put((target, args, kwargs, len(self.callbacks)-1))
+            self.submit_count += 1
         
     def __finished(self) -> bool:
         """

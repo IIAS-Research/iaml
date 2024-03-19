@@ -24,7 +24,13 @@ class ActKNN(Predictor):
             'n_neighbors': {
                 'description': 'Number of neighbors',
                 'default': 5,
-                'range': [1, 200]
+                'range': [1, 200],
+                'passthrough': False
+            },
+            'weights': {
+                'description': 'Weight function used in prediction.',
+                'default': 'uniform',
+                'categorical': ['uniform', 'distance']
             }
         }
         self.model:KNeighborsClassifier = None
@@ -41,7 +47,7 @@ class ActKNN(Predictor):
         """
         self.model = KNeighborsClassifier(
             n_neighbors = min(self.get_config('n_neighbors'), dataset.X.shape[0]),
-            metric = self.get_config('metric')
+            **self.passthrough_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

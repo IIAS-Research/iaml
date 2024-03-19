@@ -34,7 +34,7 @@ class ActGaussianProcessRegressor(Predictor):
         Returns:
             Fitted step
         """
-        self.model = GaussianProcessRegressor(**self.model_parameters())
+        self.model = GaussianProcessRegressor(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

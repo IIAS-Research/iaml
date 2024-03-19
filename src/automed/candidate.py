@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
+from .logger import Logger
 from .splitter import random_splitter
-
 from .auto_pipeline import AutoPipeline
 
 
@@ -117,7 +117,7 @@ class Candidate:
             Candidate: New Candidate
         """
         return Candidate(
-            dataset or self.dataset,
+            dataset or deepcopy(self.dataset),
             metrics or copy(self.metrics),
             auto_pipeline or self.pipeline.copy(),
             stacked_path=self.stacked_path)
@@ -171,13 +171,11 @@ class Candidate:
         self.metrics.append(metric)
         
     def __str__(self) -> str:
-        str_out = "[INPUT/OUTPUT]"
-        if self.metrics:
-            str_out = str_out + str(self.metrics) + " "
-        if self.pipeline:
-            str_out = str_out + str(self.pipeline) + " "
-            
-        return str_out
+        name = [name for name, _ in self.pipeline.steps]
+        main_metric = self.get_main_metric_value()
+        if main_metric:
+            name = f"{main_metric} : {name}"
+        return name
     
     def training_evaluate(self, dataset:Dataset, \
                 splitter:callable=random_splitter) -> dict:
@@ -197,7 +195,7 @@ class Candidate:
         if not self.pipeline.have_model:
             return None
         metrics:list[dict] = []
-
+        
         # without cache !
         from_cache:bool = True
         splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
@@ -205,7 +203,7 @@ class Candidate:
             from_cache = False
             to_cache:list = []
             splitted_datasets:list[tuple[Dataset, Dataset]] = splitter(dataset)
-        
+
         for train_ds, test_ds in splitted_datasets:
             copied_pipe = deepcopy(self.pipeline)
             
@@ -216,7 +214,7 @@ class Candidate:
                 if not from_cache:
                     train_ds =  Dataset(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
                     test_ds =  Dataset(copied_pipe.transform(test_ds.X), test_ds.y)
-                
+                    
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
             y_pred = copied_pipe.predict(test_ds.X, model_only=(not self.is_meta))
@@ -267,7 +265,7 @@ class Candidate:
             str: String fingerprint
         """
         to_hash = "\n".join([str(step.__class__) + " = " \
-            + json.dumps(step.configuration, sort_keys=True) \
+            + json.dumps(step.serializable_resume_configuration(), sort_keys=True) \
                 for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]])
         
         return md5(to_hash.encode()).hexdigest()

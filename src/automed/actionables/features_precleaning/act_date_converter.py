@@ -9,7 +9,7 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
-@is_step('features_preprocessing')
+@is_step('features_precleaning')
 class ActDateConverter(Actionable):
     """
     [STEP] Convert Short text to date if possible
