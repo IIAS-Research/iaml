@@ -52,7 +52,7 @@ def each_file(file:str, duration) -> pd.DataFrame:
     print('FILE :', filename)
     X, y, X_test, y_test = load_file(file)
 
-    Cache().reset()
+    Cache.reset()
     estimator = AutoMed(quiet=True, max_workers=12, max_duration=duration)
     estimator.fit(X, y)
     
