@@ -1,13 +1,23 @@
+"""
+This implementation adds a level of abstraction to futures, allowing us to
+manage the worker queue with more control, and keep multithreading code
+within the steps as simple as possible.
+"""
 import math
 import os
+import traceback
 
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Any
+from .logger import Logger
 from .meta_singleton import MetaSingleton
 from .step import Step
 
 
 class WorkerFuture(Future):
+    """
+    Thread Step
+    """
     def __init__(self, step: Step, task: callable, *args, **kwargs) -> None:
         super().__init__()
 
@@ -18,7 +28,17 @@ class WorkerFuture(Future):
     
 
     def run(self) -> Any:
-        return self.task(*self.args, **self.kwargs)
+        """
+        Execute the thread
+        """
+        try:
+            return self.task(*self.args, **self.kwargs)
+        except:  # pylint: disable=bare-except
+            Logger().log(f'[red]A worker for [b]{self.step.__class__.__name__}[/b] \
+                has crashed.[/red]')
+            Logger().log(traceback.format_exc())
+
+            return []
 
 
 class WorkerManager(metaclass=MetaSingleton):
@@ -41,6 +61,7 @@ class WorkerManager(metaclass=MetaSingleton):
         self.running_futures: list[WorkerFuture] = []
         self.running_parents: list[list[int]] = []
         self.queue: list[WorkerFuture] = []
+        self.run_tree = {}
 
 
     def __done_callback(self, base_future: Future, worker_future: WorkerFuture) -> None:
@@ -82,7 +103,8 @@ class WorkerManager(metaclass=MetaSingleton):
         when a future is done running. If there is no sibling, start whatever
         is next in the queue.
         """
-        next_sibling_in_queue = next(( f for f in self.queue if current_step.parents_steps == f.step.parents_steps ), None)
+        next_sibling_in_queue = next(( f for f in self.queue \
+            if current_step.parents_steps == f.step.parents_steps ), None)
 
         if next_sibling_in_queue is not None:
             self.queue.remove(next_sibling_in_queue)
@@ -92,7 +114,8 @@ class WorkerManager(metaclass=MetaSingleton):
                 # all the children have completed: "unrelease" a worker
                 self.running_parents.remove(current_step.parents_steps)
 
-            if (self.active_workers_count - len(self.running_parents) + 1) < self.max_workers and len(self.queue) > 0:
+            if (self.active_workers_count - len(self.running_parents) + 1) < self.max_workers \
+                and len(self.queue) > 0:
                 self.run(self.queue.pop())
     
 
@@ -104,7 +127,8 @@ class WorkerManager(metaclass=MetaSingleton):
         """
         future = WorkerFuture(step, task, *args, **kwargs)
 
-        if (self.active_workers_count - len(self.running_parents) + 1) < self.max_workers or not self.is_sibling_running(step):
+        if (self.active_workers_count - len(self.running_parents) + 1) < self.max_workers \
+            or not self.is_sibling_running(step):
             self.run(future)
         else:
             self.queue.append(future)

@@ -1,267 +1,187 @@
-import pandas as pd
+"""
+Encapsulate X, y data to be used by Steps
+Add features like data type detection and splitting 
+"""
+import copy
+from typing import Iterator, TYPE_CHECKING
+from sklearn.utils.multiclass import type_of_target
 import numpy as np
+import pandas as pd
+
 from .data_type import DataType
-    
+
+if TYPE_CHECKING:
+    from .auto_pipeline import AutoPipeline
+
 class Dataset:
-    def __init__(self, train_data, test_data=None, label_name=None):
-        self.__data = {
-            'train': {
-                'features': pd.DataFrame(),
-                'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
-                },
-            'test': {
-                'features': pd.DataFrame(),
-                'disabled': pd.DataFrame(),
-                'labels': pd.DataFrame()
-            }
-        }
-        
-        self.__data['train']['features'] = train_data
-        
-        if type(test_data) != type(None):
-            self.__data['test']['features'] = test_data
-        else:
-            self.__data['test']['features'] = pd.DataFrame(columns=train_data.columns)
-            
-        self.columns_types = self.__detect_columns_types() 
-        
-        if label_name:
-            self.set_label(label_name)
-            
-    @classmethod
-    def from_splited_data(cls, X_train, y_train, X_test, y_test):
-        dataset = cls(train_data=X_train)
-        dataset.y_train = y_train
-        dataset.__X_test = X_test
-        dataset.__y_test = y_test
-        
-        return dataset
+    """
+    Encapsulate X, y data to be used by Steps
+    Add features like data type detection and splitting
+    """
     
-    def split(self, X_train, y_train, X_test, y_test):
-        self.X_train = X_train
-        self.y_train = y_train
-        self.__X_test = X_test
-        self.__y_test = y_test
+    def __init__(self, X:pd.DataFrame, y:list=None):
+        self.__X:pd.DataFrame = X
+        self.__y:np.array = np.array(y)
+        
+        self.columns_types:list[DataType] = self.__detect_columns_types()
+        self.type_of_target:str = type_of_target(self.__y)
     
+    @property
+    def features(self) -> list[str]:
+        """
+        List columns names of X data
 
-    def copy(self, deep=True):
-        return Dataset.from_splited_data(
-            self.X_train.copy(deep=deep),
-            self.y_train.copy(deep=deep),
-            self.__X_test.copy(deep=deep),
-            self.__y_test.copy(deep=deep)
-        )
+        Returns:
+            list[str]: columns names
+        """
+        return self.X.columns.to_list()
     
-    # Compute metrics
-    def compute_metric(self, model, metric):
-        # To avoid warninggs ( UserWarning: X has feature names, but GaussianNB was fitted without feature names)
-        y_pred = model.predict(self.__X_test, model_only = True)
-        if not isinstance(y_pred, np.ndarray):
-            y_pred = y_pred.toarray()
-        else:
-            return metric.compute(self.__y_test, y_pred)
+    @property
+    def X(self) -> pd.DataFrame:
+        """
+        X data getter
 
-    def apply(self, method, only_train=False, *args, **kw):
-        self.X_train, self.y_train = method(self.X_train, self.y_train, *args, **kw)
-        if not only_train:
-            self.__X_test, self.__y_test = method(self.__X_test, self.__y_test, *args, **kw)
-        # TODO find and document changes
-        # TODO With change compute again columns types 
-        
-    def __find_differencies(self, old_dataset):
-        return ['No diff']
-        
-    def _merge_df(self, main_df, add_df):
-        return main_df.join(add_df)
+        Returns:
+            pd.DataFrame: X data
+        """
+        return self.__X
+
+    @property
+    def y(self) -> pd.DataFrame:
+        """
+        y data getter
+
+        Returns:
+            pd.DataFrame: y data
+        """
+        return self.__y
+
+    def copy(self, deep:bool=True) -> 'Dataset':
+        """
+        Copy Dataset into a new instance
+
+        Args:
+            deep (bool, optional): Also copy sub-objects. Defaults to True.
+
+        Returns:
+            Dataset: Copied Dataset
+        """
+        if deep:
+            return copy.deepcopy(self)
+        return copy.copy(self)
+
+    # def transform(self, method:callable) -> None:
+    #     """
+    #     Apply transform method to X data
+
+    #     Args:
+    #         method (callable): Callable to apply. Will be call with X as parameter 
+    #     """
+    #     self.__X = method(self.X)
+    #     self.columns_types = self.__detect_columns_types()
     
-    def get_columns_names_by_type(self, types):
-        if type(types) != list:
+    def transform(self, method:callable) -> None:
+        """
+        Apply transform method to X or y data based on the method signature
+
+        Args:
+            method (callable): Callable to apply. Will be call with X or y as parameter
+
+        Returns:
+            Dataset: Transformed dataset
+        """
+        
+        if 'X' in method.__code__.co_varnames:
+            self.__X = method(self.__X)
+            self.columns_types = self.__detect_columns_types()
+        elif 'y' in method.__code__.co_varnames:
+            self.__y = method(self.__y)
+            self.type_of_target = type_of_target(self.__y)
+        # else:
+        #     raise ValueError('Unsupported method signature, should have X or y as parameters.')
+                     
+        
+    def split(self, splitter: callable) -> Iterator[tuple['Dataset', 'Dataset']]: 
+        """
+        Use splitter to split dataset into a list of tuple (train set, test set) 
+
+        Yields:
+            tuple['Dataset', 'Dataset']: Train set and Test set 
+        """
+        # Split the dataset as many times as the splitter requires it
+        for i_train, i_test in splitter(self.X, self.__y):
+            X_train = self.X.iloc[i_train].copy()
+            X_test = self.X.iloc[i_test].copy()
+            y_train = self.__y[i_train].copy()
+            y_test = self.__y[i_test].copy()
+
+            ds_train = Dataset(X_train, y_train)
+            ds_test = Dataset(X_test, y_test)
+
+            yield (ds_train, ds_test)
+        
+    def get_columns_names_by_type(self, types:list[DataType]) -> list[str]:
+        """
+        Get names of all the columns with DataType in types
+
+        Args:
+            types (list[DataType]): List of Datatype to search
+
+        Returns:
+            list[str]: columns names
+        """
+        if not isinstance(types, list):
             types = [types]
-            
-        return list(dict(filter(
-            lambda pair: pair[1] in types,
-            self.usable_columns_types.items())).keys())
-        
-    @property
-    def usable_columns_types(self):
-        return dict(filter(
-            lambda pair: pair[0] in self.X_train.columns,
-            self.columns_types.items()))
-        
-    def set_label(self, labels_names):
-        if type(labels_names) != list:
-            labels_names = [labels_names]
-            
-        for data_env in ['train', 'test']:
-            if set(labels_names).issubset(set(self.__data[data_env]['features'].columns) | set(self.__data[data_env]['labels'].columns)):
-                self.reset_label(env=[data_env])
-                for column in labels_names:
-                    self.__data[data_env]['labels'][column] = self.__data[data_env]['features'].pop(column)
-            else:
-                raise Exception("Columns must exist")
-                
-    def active_columns(self):
-        return self.__data['train']['features'].columns
-    
-    @property
-    def is_multilabel(self):
-        return len(self.labels_columns) > 1
-    
-    @property
-    def labels_columns(self):
-        return self.__data['train']['labels'].columns
-    @property      
-    def train_data(self):
-        return self.__data['train']['features'].copy(deep=True)
-    
-    @property
-    def X_train(self):
-        return self.train_data
-    
-    @X_train.setter
-    def X_train(self, value):
-        self.__data['train']['features'] = value
-    
-    @property      
-    def __test_data(self):
-        return self.__data['test']['features']
-    
-    
-    @property
-    def __X_test(self):
-        return self.__test_data
-    
-    @__X_test.setter
-    def __X_test(self, value):
-        self.__data['test']['features'] = value
-    
-    @property      
-    def train_labels(self):
-        return self.__data['train']['labels'].copy(deep=True)
-    
-    @property      
-    def y_train(self):
-        if self.is_multilabel:
-            return self.train_labels
-        else:
-            return self.train_labels[self.train_labels.columns[0]]
-    
-    @y_train.setter
-    def y_train(self, value):
-        self.__data['train']['labels'] = pd.DataFrame(value)
-    
-    @property     
-    def __test_labels(self):
-        return self.__data['test']['labels']
-    
-    @property      
-    def __y_test(self):
-        if self.is_multilabel:
-            return self.__test_labels
-        else:
-            return self.__test_labels[self.__test_labels.columns[0]]
-    
-    # TODO DEBUG purpose -> to remove
-    @property
-    def check_X_test(self):
-        return self.__test_data
-    
-    # TODO DEBUG purpose -> to remove
-    @property
-    def check_y_test(self):
-        return self.__y_test
-    
-    @__y_test.setter
-    def __y_test(self, value):
-        self.__data['test']['labels'] = pd.DataFrame(value)
-        
-    # Detect data types
-    def detect_data_type(self, column_name):
-        column_value = self.X_train[column_name]
-        if column_value.dtype == object:
-            if self.__string_column_to_date(column_name):
-                return DataType.DATE
-            else:
-                if (len(column_value.unique()) / len(column_value) < 0.05 or len(column_value.unique()) < 7):
-                    return DataType.CATEGORICAL
-                elif column_value.astype(str).apply(len).max() <= 85:
-                    return DataType.SHORT_TEXT
-                else:
-                    return DataType.TEXT
-        elif np.issubdtype(column_value.dtype, np.number):
-            return DataType.NUMERIC
-        elif np.issubdtype(column_value.dtype, np.datetime64):
-            return DataType.DATE
-    
-    # Return a dict of with column name as key and value as type of data
-    def __detect_columns_types(self):
-        types = {}
-        for column in self.X_train.columns:
-            types[column] = self.detect_data_type(column)
-            
-        return types  
 
-    # Disable a column with delete it
-    def disable_column(self, column): 
-        for data_env in ['train', 'test']:
-            if column in self.__data[data_env]['features'].columns:
-                self.__data[data_env]['disabled'][column] = self.__data[data_env]['features'].pop(column)
+        return [
+            column
+            for column, type in self.columns_types.items()
+            if type in types
+        ]
+
+    def __detect_data_type(self, column_name:str) -> DataType:
+        """
+        Detect data type of a column
+
+        Args:
+            column_name (str): Name of the column to analyse
+
+        Returns:
+            DataType: Type of the columns
+        """
+        column_value = self.X[column_name]
+        detected:DataType = None
+        if column_value.dtype == object:
+            if (len(column_value.unique()) / len(column_value) < 0.05 \
+                or len(column_value.unique()) < 7):
+                detected = DataType.CATEGORICAL
+            elif column_value.astype(str).apply(len).max() <= 85:
+                detected = DataType.SHORT_TEXT
             else:
-                raise Exception(f"Column '{column}' doesn't exist ! ")
+                detected = DataType.TEXT
+        elif np.issubdtype(column_value.dtype, np.number):
+            detected = DataType.NUMERIC
+        elif np.issubdtype(column_value.dtype, np.datetime64):
+            detected = DataType.DATE
+            
+        return detected
     
-    # Disable several columns
-    def disable_columns(self, columns):
-        for column in columns:
-            self.disable_column(column)
-            
-    # Enable column from disabled dataset
-    def enable_column(self, column):
-        for data_env in ['train', 'test']:
-            if column in self.__data[data_env]['disabled']:
-                self.__data[data_env]['features'][column] = self.__data[data_env]['disabled'].pop(column)
-            else:
-                raise Exception(f"Column '{column}' doesn't exist ! ")
-            
-    # Enable several columns
-    def enable_columns(self, columns):
-        for column in columns:
-            self.enable_column(column)
-                   
-    # Reset selected label           
-    def reset_label(self, env=['train', 'test']):
-        for data_env in env:
-            if any(self.__data[data_env]['labels']):
-                for column in self.__data[data_env]['labels']:
-                    column_name = self.__data[data_env]['labels'].name # Get column name
-                    self.__data[data_env]['features'][column_name] = self.__data[data_env]['labels'].pop(column) # Add label to dataset
-            self.__data[data_env]['labels'] = pd.DataFrame() # Set label empty
+    @property
+    def needed_estimator(self) -> str:
+        """
+        Kind of estimator needed for this dataset
+        """
+        return 'regressor' if self.type_of_target == 'continuous' else 'classifier'
     
-    def __string_column_to_date(self, column_name, env=['train', 'test']):
-        threshold_count = sum([self.__data[data_env]['features'][column_name].count() for data_env in env]) * 0.95
-        
-        new_columns = {
-            'train': None,
-            'test': None
-            }
-        
-        for data_env in env:
-            new_columns[data_env] = self.__data[data_env]['features'][column_name].apply(self.__string_value_to_date)
+    def __detect_columns_types(self) -> dict:
+        """
+        Detect column type of all features in X
+
+        Returns:
+            dict: column name as key, data type as value
+        """
+        types = {}
+        for column in self.features:
+            types[column] = self.__detect_data_type(column)
             
-        if sum([new_columns[data_env].count() for data_env in env]) >= threshold_count:
-            for data_env in env:
-                self.__data[data_env]['features'][column_name] = new_columns[data_env].replace(pd.NaT, None)
-            return True
-        else:
-            return False    
-            
-    def __string_value_to_date(self, value, date_formats = ['%Y-%M-%d', '%d-%M-%Y', '%Y/%M/%d', '%d/%M/%Y', None]):
-        if type(date_formats) != list:
-            date_formats = list(date_formats)
-        
-        for date_format in date_formats:
-            try:
-                return pd.to_datetime(value, format=date_format)
-            except ValueError:
-                pass
-        return pd.NaT
+        return types

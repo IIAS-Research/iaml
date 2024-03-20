@@ -1,25 +1,58 @@
-from ...actionable import *
-from ...automed import Output
+"""
+[STEP] Random Over Sampling
+"""
 from imblearn.over_sampling import RandomOverSampler
+import pandas as pd
+from ...actionable import Actionable
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
 
-def transform(x, y):
-    return RandomOverSampler(sampling_strategy='minority').fit_resample(x, y)
-
-
-@isStep('normalize')
+@is_step('normalize')
 class ActRandomOverSampling(Actionable):
+    """
+    [STEP] Random Over Sampling
+    """
     name = "Random Over Sampling"
     def __init__(self):
-        self.configurations = [{}]
+        self.configuration:dict = {}
+        self.resampler:RandomOverSampler = None
     
-    @runner
-    def run(self, input: Input, callback=None) -> Output:
-        return input.transform_dataset(transform, only_train=True)
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
+        """
+        Add resample random over sampling to Candidate
 
+        Args:
+            dataset (Dataset): Fit data
+
+        Returns:
+            Candidate: Transformed candidate
+        """
+        self.resampler = RandomOverSampler(sampling_strategy='minority')
+        self.resampler.fit(dataset.X, dataset.y)
+        return self
     
-    def priorize(self, input=None):
+    def resample(self, X:pd.DataFrame, y:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Apply Random Over Sampling
+
+        Args:
+            X (pd.DataFrame): Features to resample
+            y (pd.DataFrame): Labels to resample
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame]: _description_
+        """
+        return self.resampler.fit_resample(X, y)
+    
+    def priorize(self, candidate:Candidate=None) -> float:
+        """
+        Try to priorize himself
+
+        Return : continuous between 0 and 1
+        """
         return 1
     
-    def suitable(self, input):
-        return len(input.dataset.labels_columns) == 1
+    def suitable(self, candidate: Candidate) -> bool:
+        return candidate.dataset.type_of_target in ['binary', 'multiclass']

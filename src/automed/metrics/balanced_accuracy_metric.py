@@ -1,39 +1,50 @@
-from ..step import *
-from ..metric import Metric
-from sklearn.utils.multiclass import type_of_target
-from collections import Counter
+"""
+[METRIC] Balanced Accuracy
+"""
+from sklearn.metrics import balanced_accuracy_score
 import pandas as pd
-from sklearn.metrics import *
-import numpy as np
- 
+from ..metric import Metric
+
 class BalancedAccuracyMetric(Metric):
+    """
+    [METRIC] Balanced Accuracy
+    """
     
-    def explain(self):
+    def explain(self) -> str:
+        """Describe metric
+
+        Returns:
+            str: Metric description
+        """
         return 'Compute the balanced accuracy.'
     
     def __str__(self):
         return 'balanced_accuracy'
     
-    # Get one label (numpy.array or pd.series) and return false if classes is balanced
-    def __is_balanced(self, y):
-        class_count = Counter(y)
-        total_samples = y.shape[0]
-        ideal_count = total_samples/len(class_count)
-        threshold = 0.20 * ideal_count
-        return not(any(abs(count - ideal_count) > threshold for count in class_count.values()))
+    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
+        """
+        Does this metric is suitable for this candidate ?
+        Must be classification
+
+        Args:
+            X (pd.DataFrame): Features
+            y (pd.DataFrame): labels
+            type_of_target (str): Type of target
+
+        Returns:
+            bool: Suitable ?
+        """
+        return type_of_target in ['binary', 'multiclass']
     
-    def suitable(self, y):
-        if not isinstance(y, pd.DataFrame):
-            y = pd.DataFrame(y)
-        
-        for column in y.columns:
-            if not(type_of_target(y[column]) in ['binary', 'multiclass'] and self.__is_balanced(y[column])):
-                return True
-        
-        return False
-    
-    def compute(self, y, y_pred):
-        if type_of_target(y) in ['binary', 'multiclass']:
-            return balanced_accuracy_score(y, y_pred) 
-        elif type_of_target(y) in ['multilabel-indicator']:
-            return np.mean([balanced_accuracy_score(y[:, i], y_pred[:, i]) for i in range(y.shape[1])]) 
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+        """
+        Compute metric with predicted data
+
+        Args:
+            y (pd.DataFrame): Ground truth data
+            y_pred (pd.DataFrame): Predicted data
+
+        Returns:
+            float: computed value 
+        """
+        return balanced_accuracy_score(y, y_pred)

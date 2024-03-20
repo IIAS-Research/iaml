@@ -1,8 +1,9 @@
+"""
+All Step with transform, resample or predict function
+"""
 from .boosting import *
-from .learning import *
+from .predictors import *
 from .features_selection import *
 from .cleaning import *
-from .metric import *
 from .normalize import *
-
-from .random_split import *
+from .features_preprocessing import *

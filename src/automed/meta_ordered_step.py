@@ -1,18 +1,38 @@
-from .step import Step, isStep, runner
+"""
+    Group several Step and run them in list order
+"""
+from typing import TYPE_CHECKING
+
+from .decorators.all import is_step, runner
 from .metastep import MetaStep
 
+if TYPE_CHECKING:
+    from .candidate import Candidate
 
 #
 # Inherit from MetaStep but will execute all steps without priorize() method. 
 #
-@isStep('meta')
+@is_step('meta')
 class MetaOrderedStep(MetaStep):
+    """
+    Group several Step and run them in list order
+    """
     # Run steps self ordered by "priorize" function
     @runner
-    def run(self, input, callback=None):
-        current_input = input
+    def run(self, candidate:'Candidate', callback:callable=None) -> 'Candidate':
+        """
+        Run all step in order. Candidate will be transform successively by Steps
+
+        Args:
+            candidate (Candidate): Candidate to transform
+            callback (callable, optional): Method to call after each Step. Defaults to None.
+
+        Returns:
+            Candidate: transformed data
+        """
+        current_candidate:Candidate = candidate
         for step in self.steps:
-            current_input = step.run(current_input, callback=callback)
+            current_candidate = step.run(current_candidate, callback=callback)
         
-        return current_input
+        return current_candidate
             

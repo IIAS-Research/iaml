@@ -3,6 +3,8 @@ import glob
 from datetime import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import train_test_split
+
 
 import sys, os
 from os.path import exists
@@ -10,7 +12,11 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, current_path+"/../")
 from automed import *
 
+DURATION = 60*30 # 30 minutes
+
 def each_file(file):
+    Logger.reset()
+    Cache.reset()
     start_file = datetime.now()
     filename = file.split('/')[-1]
     print('FILE :', filename)
@@ -22,24 +28,26 @@ def each_file(file):
     if len(df.columns) < 2:
         df = pd.read_csv(file, sep=",")
         
-    auto = AutoMed(Dataset(df))
-    
+    train_df, test_df = train_test_split(df, test_size=0.2, random_state=43)
+
     labels = list(set(filter(lambda x: x[0:5] == 'label', df.columns)))
-    auto.dataset.set_label(labels) 
-    auto.debug_load()
-    auto.run()
+    y = np.array(train_df[labels[0]])
+    X = train_df.drop(columns=labels)
+
+    y_test = np.array(test_df[labels[0]])
+    X_test = test_df.drop(columns=labels)
+        
+
+    auto = AutoMed(quiet=True, max_workers=8)
+    auto.default_pipeline(fast=False)
+    local_results = auto.fit(X, y, max_duration=DURATION, patience=5)
     
     end_file = datetime.now()
     compute_time = (end_file - start_file).seconds
     
-    # Find best result
-    max_result = 0
-    for output in auto.output:
-        tmp = output.evaluate()
-        if tmp > max_result:
-            max_result = tmp
+    best_result = local_results[0].evaluate(X_test, y_test)[local_results[0].main_metric]
     
-    return pd.DataFrame([[commit_id, str(time), filename, max_result, compute_time]], columns=results.columns)
+    return pd.DataFrame([[commit_id, str(time), filename, best_result, compute_time]], columns=results.columns)
 
 commit_id = sys.argv[1]
 time = int(datetime.now().timestamp())
@@ -61,26 +69,20 @@ else:
 threads = []
         
 # Create one thread by File
-print("==", files)
-# files = [files[4]]
+# files = [files[5]]
 
 for file in files:
     print("->>>", file)
-    threads.append(ThreadWithReturnValue(target=each_file, args=(file,)))
-            
-# Run all threads
-for thread in threads:
-    thread.start()
+    print("TIME", str(datetime.now()))
+    output = each_file(file=file)
+    print("######")
+    print("RESULT", file, output)
+    print("######")
     
-# Wait end of all threads
-for thread in threads:
-    output = thread.join()
     results = pd.concat([output, results], ignore_index=True)
-
+    results.to_csv(history_path, index=False)
     
-results.to_csv(history_path, index=False)
-    
-# # Create graph
+# Create graph
 df_plot = results.iloc[::-1]
 plot = sns.lineplot(data=df_plot, x="commit_id", y="perf", hue="dataset_name")
 sns.move_legend(plot, "upper left", bbox_to_anchor=(1, 1))

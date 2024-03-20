@@ -1,22 +1,59 @@
-from ...actionable import *
+"""
+[STEP] Find and drop date column
+"""
+import pandas as pd
+from ...actionable import Actionable
 from ...data_type import DataType
-from ...automed import Output
+from ...candidate import Candidate
+from ...dataset import Dataset
+from ...decorators.all import is_step
 
-
-def transform(x, y, columns: list) -> Output:
-    return x.drop(columns, axis=1), y  
-
-
-@isStep('cleaning')
+@is_step('cleaning')
 class ActDropDateColumn(Actionable):
-    name = "Drop date column"
+    """
+    Find and drop data column
+    """
+    name = "Drop date columns"
+    description = 'Drop date columns.'
     
-    @runner
-    def run(self, input: Input, callback=None) -> Output:
-        columns_to_drop = input.dataset.get_columns_names_by_type(DataType.DATE)
+    def __init__(self):
+        self.columns_to_drop:list[str] = None
+    
+    def fit(self, dataset:Dataset) -> Actionable:
+        """
+        Find column to drop
 
-        return input.transform_dataset(transform, columns_to_drop)
+        Args:
+            dataset (Dataset): Data to fit on
+
+        Returns:
+            Candidate: Transformed candidate (with updated pipeline)
+        """
+        self.columns_to_drop = dataset.get_columns_names_by_type(DataType.DATE)
+
+        self.explanations = [
+            f'Dropped column **`{c}`**.' for c in self.columns_to_drop
+        ]
+        
+        return self
         
     
-    def priorize(self, input=None):
+    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+        """
+        Drop all date column of candidate dataset
+
+        Args:
+            x (pd.DataFrame): Dataset to transform
+
+        Returns:
+            pd.DataFrame: Transformed dataset
+        """
+        return X.drop(self.columns_to_drop, axis=1) 
+    
+    def priorize(self, candidate:Candidate=None) -> float:
+        """
+        Try to priorize himself
+
+        Return : continuous between 0 and 1
+        """
         return 0 # Last cleaning action

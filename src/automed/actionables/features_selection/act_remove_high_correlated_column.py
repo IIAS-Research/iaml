@@ -1,35 +1,77 @@
-from ...actionable import *
-from ...automed import Output
+"""
+[STEP] Remove High Correlated Column
+"""
 import numpy as np
+import pandas as pd
+from ...actionable import Actionable
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
-
-def transform(x, y, columns: list[str]):
-    return x.drop(columns, axis=1), y
-
-
-@isStep('features_selection')
+@is_step('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
-    name = "Remove High Correlated Column"
+    """
+    [STEP] Remove High Correlated Column
+    """
+    name = 'Remove High Correlated Column'
+    description = 'Remove columns which correlation with other columns is higher than {threshold}.'
+
     def __init__(self):
-        self.configurations = [{
+        self.configuration:dict = {
             'threshold': {
-                'description': 'If two columns is correlated over this value, only one will be kept',
+                'description': 'If two columns is correlated over this value, only one \
+                    will be kept',
                 'default': 0.9
             }
-        }]
+        }
+        self.to_drop:list[str] = None
     
-    @runner
-    def run(self, input, callback=None) -> Output:
+    def fit(self, dataset:Dataset) -> Actionable:
+        """
+        Find high correlated columns to drop
+
+        Args:
+            dataset (Dataset): Fit data
+
+        Returns:
+            Candidate: Transformed candidate
+        """
         # Compute correlation matrix 
-        corr_matrix = input.dataset.train_data.corr().abs()
+        corr_matrix = dataset.X.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
         
         # Find features with above-threshold correlation
-        to_drop = [column for column in upper.columns if any(upper[column] >= self.get_config('threshold'))]
+        # self.to_drop = list(to_drop.keys())
+        corr = { c: (upper[upper[c] >= self.get_config('threshold')].index) for c in upper.columns }
+        self.to_drop = [ c for c, v in corr.items() if len(v) > 0 ]
+
+        self.explanations = [
+            f"""Dropped column **`{c}`** because it was too correlated with
+                {", ".join([ f"**`{i}`**" for i in corr[c] ])}."""
+            for c in self.to_drop
+        ]
         
-        return input.transform_dataset(transform, to_drop)
+        return self
     
+    
+    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+        """
+        Drop high correlated column
+
+        Args:
+            x (pd.DataFrame): DataFrame to transform
+
+        Returns:
+            pd.DataFrame: Transformed dataset
+        """
+        return X.drop(self.to_drop, axis=1)
+
         
     
-    def priorize(self, input=None):
-        return 0.5 # TODO -> Do something better. This function have no sense for now. Only an example.
+    def priorize(self, candidate:Candidate=None) -> float:
+        """
+        Try to priorize himself
+
+        Return : continuous between 0 and 1
+        """
+        return 0.5

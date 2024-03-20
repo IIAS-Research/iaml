@@ -1,29 +1,62 @@
-from ...actionable import *
-from ...automed import Output
-from ...data_type import DataType
+"""
+[STEP] Min Max Scaler
+"""
 from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
+from ...actionable import Actionable
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
+from ...data_type import DataType
 
-        
-def transform(x, y, scaler, columns):
-    x[columns] = scaler.transform(x[columns])
-    return x, y
 
-
-@isStep('normalize')
+@is_step('normalize')
 class ActMinMaxScaler(Actionable):
+    """
+    [STEP] Min Max Scaler
+    """
     name = "Min Max Scaler"
     def __init__(self):
-        self.configurations = [{}]
+        self.configuration:dict = {}
+        self.columns:list[str] = None
+        self.scaler:MinMaxScaler = None
     
-    @runner
-    def run(self, input: Input, callback=None) -> Output:
-        columns = input.dataset.get_columns_names_by_type(DataType.NUMERIC)
-        values = input.dataset.X_train[columns]
-        scaler = MinMaxScaler()
-        scaler.fit(values)
+    
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
+        """
+        Find columns to scale and fit scaler
 
-        return input.transform_dataset(transform, scaler, columns)
+        Args:
+            dataset (Dataset): Fit data
+
+        Returns:
+            Candidate: Transformed candidate
+        """
+        self.columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
+        values = dataset.X[self.columns]
+        self.scaler = MinMaxScaler()
+        self.scaler.fit(values)
+
+        return self
         
+    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply min max scaler
+
+        Args:
+            x (pd.DataFrame): DataFrame to transform
+
+        Returns:
+            pd.DataFrame: Transformed dataset
+        """
+        X[self.columns] = self.scaler.transform(X[self.columns])
+        return X
+
     
-    def priorize(self, input=None):
-        return 0.5 # TODO -> Do something better. This function have no sense for now. Only an example.
+    def priorize(self, candidate:Candidate=None) -> float:
+        """
+        Try to priorize himself
+
+        Return : continuous between 0 and 1
+        """
+        return 0.5

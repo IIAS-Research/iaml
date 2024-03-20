@@ -1,0 +1,39 @@
+"""
+Ensemble based predict method
+"""
+from .candidate import Candidate
+from .auto_pipeline import AutoPipeline
+from .predictor import Predictor
+
+class MetaPredictor(Predictor):
+    """
+    Ensemble based predict method
+    """
+    def __init__(self, candidates:list[Candidate]):
+        self.configuration = {}
+        self.metrics:list = candidates[0].metrics
+        self.estimator_type:str = candidates[0].pipeline._estimator_type
+        self.model = None
+        self.estimators:list = [(f'{idx} - {candidate.pipeline.predictor[0]}', candidate.pipeline) \
+            for idx, candidate in enumerate(candidates)]
+        
+    def to_candidate(self) -> 'Candidate':
+        '''
+        Create a candidate for meta predictor
+        '''
+        candidate = Candidate(
+            auto_pipeline=AutoPipeline(
+                [("Voting classifier", self)],
+                estimator_type=self.estimator_type
+                ),
+            metrics=self.metrics
+            )
+        candidate.is_meta = True
+        
+        return candidate 
+    
+    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+        """
+        Does this meta predictor is usable given type of target ?
+        """
+        return False

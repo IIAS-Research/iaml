@@ -1,162 +1,132 @@
-from ...actionable import *
-from ...automed import Output
-from ...data_type import DataType
+
+"""
+[STEP] Vectorize textual columns with Word2Vec
+"""
+import string
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-import gensim
 from gensim.models import Word2Vec
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer, PorterStemmer
-import numpy as np
-import string
-
-import nltk
+from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
-import re
-
-
-def transform(x, y, columns: list[tuple[str, Word2Vec]]) -> Output:
-    for name, model in columns:
-        transformed = x[name].fillna('').apply(lambda doc: vectorize(preprocess(doc), model))
-        features_names = [f"{name}_vec_{i}" for i in range(model.vector_size)]
-        vector_df = pd.DataFrame(transformed.tolist(), columns=features_names)   
-        x = pd.concat([x, vector_df], axis = 1).drop([name], axis = 1)
-    return x, y
-
-
+import numpy as np
+from ...actionable import Actionable
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
+from ...data_type import DataType
 stop_words = set(stopwords.words('english'))
 stemmer = PorterStemmer()
-# Data preparation and cleaning
-def preprocess(text):
-    # Convert the text to lowercase
-    text = text.lower()
-    # Remove punctuation from the text
-    text = ''.join([word for word in text if word not in string.punctuation])
-    # Tokenize the text into words
-    tokens = word_tokenize(text)
-    # Remove stopwords from the tokenized words
-    tokens = [word for word in tokens if word not in stop_words]
-    # Apply stemming to the remaining tokens
-    tokens = [stemmer.stem(word) for word in tokens]
-    return ' '.join(tokens)   
 
-# Vectorize the preprocessed text data
-def vectorize(sentence, model):
-    ''' Convert the preprocessed text data to a vector representation using
-        the Word2Vec model by calculating the average of the word vectors
-        present in the sentence and returns this average vector. This gives
-        a vector representation of the whole sentence.'''
-    words = sentence.split()
-    vecteurs = [model.wv[word] for word in words if word in model.wv]
-    if len(vecteurs) > 0:
-        return np.mean(vecteurs, axis = 0)
-    else:
-        np.zeros(model.vector_size)
-
-@isStep('cleaning')
+@is_step('cleaning')
 class ActWord2Vec(Actionable):
-    name = 'Word2Vec Vectorization'
+    """
+    [STEP] Vectorize textual column with Word2Vec
+    """
+    name = "Word2Vec"
+    def __init__(self):
+        self.configuration:dict = {}
+        self.columns:list[tuple[str, Word2Vec]] = None
+            
+    def preprocess(self, text:str) -> str:
+        """
+        Preprocesses the input text for Word2Vec processing tasks.
+
+        Args:
+            text (str): The input text to be preprocessed.
+
+        Returns:
+            str: The preprocessed text.
+
+        Steps:
+        1. Convert the text to lowercase.
+        2. Remove punctuation and special characters from the text.
+        3. Tokenize the text into words.
+        4. Remove stopwords from the tokenized words.
+        5. Apply stemming to the remaining tokens.
+
+        """
+        text = text.lower()
+        text = ''.join([word for word in text if word not in string.punctuation])
+        tokens = word_tokenize(text)
+        tokens = [word for word in tokens if word not in stop_words]
+        tokens = [stemmer.stem(word) for word in tokens]
+        return ' '.join(tokens)
     
-    def __init__(self) :
-        self.configurations = [{}]
-      
-    @runner
-    def run(self, input: Input, callback=None) -> Output:
-        columns = []
-        for column in input.dataset.get_columns_names_by_type([DataType.TEXT]):
-            values = input.dataset.X_train[column].fillna('').apply(preprocess).apply(str.split)
-            model = Word2Vec(sentences = values, vector_size=100, window = 5, min_count=1, workers = 4)
-            columns.append((column, model))
-        return input.transform_dataset(transform, columns)
+    def vectorize(self, sentence:str, model):
+        """
+        Convert the preprocessed text data to a vector representation using
+        the Word2Vec model by calculating the aveerage of the word vectors
+        present in the sentence and returns this average vector. This gives 
+        a vector representation of the whole sentence.
         
-    def priorize(self, input=None):
-        return 0.5      
+        Args:
+        sentence (str): The preprocessed text data as a string.
+        model: The Word2Vec model used for vectorization.
+
+        Returns:
+            numpy.ndarray: The average vector representation of the input sentence.
+            
+        """
+        words = sentence.split()
+        vectors = [model.wv[word] for word in words if word in model.wv]
+        if len(vectors) > 0:
+            return np.mean(vectors, axis = 0)
+        else:
+            np.zeros(model.vector_size)
+            
+    def fit(self, dataset:Dataset) -> Actionable:
+        """
+        Find columns to vectorize and fit the vectorizer
+        
+        Args:
+           dataset (Dataset): Fit data
+        
+        Returns:
+            Candidate: Transformed candidate
+        """
+        
+        self.columns = []
+        for column in dataset.get_columns_names_by_type([DataType.TEXT]):
+            values = dataset.X[column].fillna('').apply(self.preprocess).apply(str.split)
+            #print('values fit word2vec:', values)
+            vectorizer = Word2Vec(sentences = values, vector_size = 100, window = 5, min_count = 1, workers = 4)
+            self.columns.append((column, vectorizer))   
+        
+        feature_names = {c: list(v.wv.index_to_key) for c, v in self.columns}
+        self.explanations = [
+            f'Encoded text column **`{c}`** into **{len(v)}** new columns.'
+            for c, v in feature_names.items() if len(v) > 0
+        ]
+        
+        return self
     
-# from ...actionable import Actionable
-# from ...dataset import Dataset
-# from ...candidate import Candidate
-# from ...decorators.all import is_step
-# from ...automed import Output
-# from ...data_type import DataType
-# import pandas as pd
-# from gensim.models import Word2Vec
-# import numpy as np
-
-# @is_step('cleaning')
-# class ActWord2Vec(Actionable):
-#     name = 'Word2Vec Vectorization'
-
-#     def __init__(self):
-#         self.configuration:dict = {}
-#         self.columns:list[tuple[str, TfidfVectorizer]] = None
-
-
-#     stop_words = set(stopwords.words('english'))
-#     stemmer = PorterStemmer()
-#     # Data preparation and cleaning
-#     def preprocess(self, text):
-#         # Convert the text to lowercase
-#         text = text.lower()
-#         # Remove punctuation from the text
-#         text = ''.join([word for word in text if word not in string.punctuation])
-#         # Tokenize the text into words
-#         tokens = word_tokenize(text)
-#         # Remove stopwords from the tokenized words
-#         tokens = [word for word in tokens if word not in stop_words]
-#         # Apply stemming to the remaining tokens
-#         tokens = [stemmer.stem(word) for word in tokens]
-#         return ' '.join(tokens)   
-
-#     # Vectorize the preprocessed text data
-#     def vectorize(self, sentence, model):
-#         ''' Convert the preprocessed text data to a vector representation using
-#             the Word2Vec model by calculating the average of the word vectors
-#             present in the sentence and returns this average vector. This gives
-#             a vector representation of the whole sentence.'''
-#         words = sentence.split()
-#         vecteurs = [model.wv[word] for word in words if word in model.wv]
-#         if len(vecteurs) > 0:
-#             return np.mean(vecteurs, axis = 0)
-#         else:
-#             np.zeros(model.vector_size)
+    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply Word2Vec vectorization to string data.
+        
+        Args:
+            X (pd.DataFrame): DataFrame to transform
+            
+        Returns:
+            pd.DataFrame: Transformed dataset
+        """
+        X = X.reset_index(drop=True)
+        #print('X, transform, Word2Vec:', X)
+        for name, vectorizer in self.columns:
+            transformed = X[name].fillna('').apply(lambda doc:self.vectorize(self.preprocess(doc), vectorizer))
+            #print("transformed, transfor, word2vec:", transformed)
+            features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
+            #print('feature_names, transform, word2vec:', features_names)
+            vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
+            X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
+            # print(X.columns)
+            #print(X)
+        return X
     
+    def priorize(self, candidate:Candidate=None) -> float:
+        """
+        Try to priorize himself
 
-
-#     def fit(self, dataset: Dataset) -> Actionable:
-#         """
-#         Find the columns to be vectorized and adjust the Word2Vec template.
-
-#         Args:
-#             dataset (Dataset): Data to be adjusted.
-
-#         Returns:
-#             Actionable: Transformed candidate
-#         """
-#         self.columns = []
-#         for column in dataset.get_columns_names_by_type([DataType.TEXT]):
-#             values = dataset.X_train[column].fillna('').apply(self.preprocess).apply(str.split)
-#             model = Word2Vec(sentences=values, vector_size=100, window=5, min_count=1, workers=4)
-#             self.columns.append((column, model))
-#         return self
-
-#     def transform(self, x: pd.DataFrame) -> pd.DataFrame:
-#         """
-#         Apply Word2Vec vectorization to string data.
-
-#         Args:
-#             x (pd.DataFrame): Data to be adjusted.
-#         
-
-#         Returns:
-#             pd.DataFrame: Transformed data.
-#         """
-#         for name, model in self.columns:
-#             transformed = x[name].fillna('').apply(lambda doc: self.vectorize(self.preprocess(doc), model))
-#             features_names = [f"{name}_vec_{i}" for i in range(model.vector_size)]
-#             vector_df = pd.DataFrame(transformed.tolist(), columns=features_names)
-#             x = pd.concat([x, vector_df], axis=1).drop([name], axis=1)
-#         return x
-
-#     def priorize(self, candidate: Candidate = None) -> float:
-# 
-#         return 0.5
+        Return : continuous between 0 and 1
+        """
+        return 0.4

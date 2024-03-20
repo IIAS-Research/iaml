@@ -1,6 +1,31 @@
 {
     "cSpell.words": [
-        "dset"
+        "actionables",
+        "adaboost",
+        "astype",
+        "automed",
+        "autosklearn",
+        "dset",
+        "dtype",
+        "iloc",
+        "issubdtype",
+        "kfold",
+        "metapredictor",
+        "metastep",
+        "multiclass",
+        "multimethod",
+        "multipledispatch",
+        "Onehot",
+        "priorize",
+        "resampler",
+        "resamplers",
+        "todense",
+        "tplot",
+        "vectorize",
+        "vectorizer"
     ],
-    "cSpell.language": "en,fr"
+    "cSpell.language": "en,fr",
+    "pylint.args": [
+        "--rcfile=.pylintrc"
+    ]
 }

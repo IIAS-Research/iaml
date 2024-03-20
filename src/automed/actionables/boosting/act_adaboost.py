@@ -1,16 +1,27 @@
-from ...actionable import *
-from ...automed import Output, Metric
+"""
+STEP
+Apply AdaBoost on models
+"""
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import RandomForestClassifier
 
-# TODO Adapt it two try all the compatible learning models
+from ...actionable import Actionable
+from ...decorators.all import runner
+from ...candidate import Candidate
 
-# @isStep('boosting', 'tabular')
-@assessable
+
+# @is_step('boosting', 'tabular')
 class ActAdaBoost(Actionable):
-    name = "Learn : AdaBoost"
+    """
+    Apply Adaboost on models
+    
+    Configuration:
+        random_state: Random seed. Default 42
+        n_estimator: Number of estimator. Default 2000
+    """
+    name:str = "Learn : AdaBoost"
+    
     def __init__(self):
-        self.configurations = [{
+        self.configuration:dict = {
             'random_state': {
                 'description': 'random_state',
                 'default': 42
@@ -19,23 +30,35 @@ class ActAdaBoost(Actionable):
                 'description': 'Number of estimators',
                 'default': 2000
             },
-        }]
+        }
         
     @runner
-    def run(self, input:Output, callback=None):
-        metric = input.metric or Metric()
-        
-        model = AdaBoostClassifier(
-            input.model,
+    def run(self, candidate: Candidate, callback:callable=None) -> Candidate: # pylint: disable=unused-argument
+        """_summary_
+
+        Args:
+            candidate (Candidate): Candidate data
+            callback (callable, optional): Call after each run. Defaults to None.
+
+        Returns:
+            Candidate: Transformed candidate
+        """
+        model:AdaBoostClassifier = AdaBoostClassifier(
+            candidate.model,
             n_estimators = self.get_config('n_estimator'),
             random_state= self.get_config('random_state')
             )
         
-        model.fit(input.dataset.X_train, input.dataset.y_train)
+        model.fit(candidate.dataset.X, candidate.dataset.y)
         
-        return input.to_output(None, metric, model)
+        return candidate.to_output(None, None, model)
 
         
     
-    def priorize(self, input=None):
+    def priorize(self, candidate:Candidate=None) -> float:
+        """
+        Try to priorize himself
+
+        Return : continuous between 0 and 1
+        """
         return 0.5 # neutral

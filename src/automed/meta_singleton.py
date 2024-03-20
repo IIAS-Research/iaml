@@ -1,8 +1,13 @@
-from threading import Lock, Thread
+"""
+Thread-safe implementation of Singleton
+"""
+from threading import Lock
 
-# Thread-safe implementation of Singleton
 # Inspired by : https://refactoring.guru/fr/design-patterns/singleton/python/example#example-1
 class MetaSingleton(type):
+    """
+    Thread-safe implementation of Singleton
+    """
     _instances = {}
     _lock: Lock = Lock() # Use to synchronize threads during first access
 
@@ -12,3 +17,7 @@ class MetaSingleton(type):
                 instance = super().__call__(*args, **kwargs)
                 cls._instances[cls] = instance
         return cls._instances[cls]
+    
+    @classmethod
+    def reset(cls):
+        cls._instances = {}
