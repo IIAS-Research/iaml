@@ -88,7 +88,6 @@ class ActWord2Vec(Actionable):
         self.columns = []
         for column in dataset.get_columns_names_by_type([DataType.TEXT]):
             values = dataset.X[column].fillna('').apply(self.preprocess).apply(str.split)
-            #print('values fit word2vec:', values)
             vectorizer = Word2Vec(sentences = values, vector_size = 100, window = 5, min_count = 1, workers = 4)
             self.columns.append((column, vectorizer))   
         
@@ -111,16 +110,11 @@ class ActWord2Vec(Actionable):
             pd.DataFrame: Transformed dataset
         """
         X = X.reset_index(drop=True)
-        #print('X, transform, Word2Vec:', X)
         for name, vectorizer in self.columns:
             transformed = X[name].fillna('').apply(lambda doc:self.vectorize(self.preprocess(doc), vectorizer))
-            #print("transformed, transfor, word2vec:", transformed)
             features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
-            #print('feature_names, transform, word2vec:', features_names)
             vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
             X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
-            # print(X.columns)
-            #print(X)
         return X
     
     def priorize(self, candidate:Candidate=None) -> float:

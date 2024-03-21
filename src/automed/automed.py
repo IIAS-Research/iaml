@@ -147,21 +147,18 @@ class AutoMed:
         
         if isinstance(y, pd.DataFrame):
             y = y.values.ravel()
-            
+  
         ### INITIAL GENERATE CANDIDATE 
         dataset:Dataset = Dataset(deepcopy(X), deepcopy(y))
         self.fit_candidate:Candidate = Candidate(dataset)
-
         # Select metrics used to evaluate performances
         for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
             self.fit_candidate.add_metric(metric)
-
         # Generate candidates
         candidates = self.__run(self.fit_candidate, *args, **kwargs)
         # Remove candidate without predictor 
         candidates = [candidate for candidate in candidates \
             if candidate.pipeline.predictor is not None]
-
         ### INITIAL EVALUATION
         # Evaluate candidates
         self.__run_evaluations(candidates,
@@ -218,7 +215,7 @@ class AutoMed:
                             )
                         )
                     
-                # Add callback to update progressbar
+                # Add callback to update progressbar   
                 for future in future_jobs:
                     future.add_done_callback(update_progressbar)
                 
@@ -230,7 +227,7 @@ class AutoMed:
                     for job in not_done:
                         job.cancel()      
             candidates.sort(reverse=True)
-
+            
             # Add results to progressbar
             progress.tasks[task].description = f'{progress.tasks[task].description} \
                 ({candidates[0].get_main_metric_value():.4f})'
@@ -368,7 +365,6 @@ class AutoMed:
             # RUN!
             self.candidates = self.first_step.run(candidate, callback=progress_callback)
             progress.update(task, completed=step_count)
-
         # Order ouputs according the first metric
         self.candidates.sort(reverse=True)
         return self.candidates
