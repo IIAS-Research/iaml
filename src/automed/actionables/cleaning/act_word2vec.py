@@ -1,4 +1,3 @@
-
 """
 [STEP] Vectorize textual columns with Word2Vec
 """
