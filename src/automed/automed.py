@@ -170,6 +170,7 @@ class AutoMed:
             X:pd.DataFrame,
             y:pd.DataFrame,
             *args,
+            groups:pd.DataFrame = None,
             patience:int=-1,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
@@ -181,7 +182,7 @@ class AutoMed:
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
-        start_time = time.time()
+        start_time = time.monotonic()
         
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
         
@@ -189,7 +190,7 @@ class AutoMed:
             y = y.values.ravel()
             
         ### INITIAL GENERATE CANDIDATE 
-        dataset:Dataset = Dataset(deepcopy(X), deepcopy(y))
+        dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
         self.fit_candidate:Candidate = Candidate(dataset)
 
         # Select metrics used to evaluate performances
@@ -209,13 +210,13 @@ class AutoMed:
         # Evaluate candidates
         candidates = self.__run_evaluations(candidates,
                         dataset,
-                        timeout=self.max_duration - (time.time() - start_time))
+                        timeout=self.max_duration - (time.monotonic() - start_time))
         
         ### FINETUNING
         candidates = self.__optimize(dataset,
                                     candidates,
                                     optimizer=GeneticOptimizer(),
-                                    max_duration=self.max_duration - (time.time() - start_time),
+                                    max_duration=self.max_duration - (time.monotonic() - start_time),
                                     patience=patience)
         ### FINAL FIT
         
@@ -303,7 +304,7 @@ class AutoMed:
         iterations_without_improvement:int = 0
         iterations_count:int = 0
         duration:int = 0
-        starting_time:int = time.time() # seconds
+        starting_time:int = time.monotonic() # seconds
         
         # If there is not, define an arbitrary stop condition
         if max_duration == -1 and patience == -1:
@@ -313,7 +314,10 @@ class AutoMed:
         
         while   not(optimizer.finished) \
                 and (patience == -1 or iterations_without_improvement < patience) \
-                and (max_duration == -1 or max_duration >= duration):
+                and (max_duration == -1 or max_duration > duration):
+            # Logger().log("max : ", max_duration, "duration : ", duration, "> ", max_duration > duration,
+            #             "starting_time : ", starting_time, "time : ", time.monotonic(),
+            #             force=True)
             
             # Generate new candidates
             candidates = optimizer.run(candidates)
@@ -337,7 +341,7 @@ class AutoMed:
             # Evaluate new candidates
             candidates = self.__run_evaluations(candidates,
                         dataset,
-                        timeout=max_duration - (time.time() - starting_time),
+                        timeout=max_duration - (time.monotonic() - starting_time),
                         stage_number=iterations_count)
             
             # Remove not computed (error or timeout)
@@ -357,7 +361,7 @@ class AutoMed:
                 iterations_without_improvement += 1
                 
             # Duration in seconds
-            duration = time.time() - starting_time
+            duration = time.monotonic() - starting_time
             
             # Increase Iteration count
             iterations_count += 1

@@ -10,6 +10,7 @@ class MetaPredictor(Predictor):
     Ensemble based predict method
     """
     def __init__(self, candidates:list[Candidate]):
+        super().__init__()
         self.configuration = {}
         self.metrics:list = candidates[0].metrics
         self.estimator_type:str = candidates[0].pipeline._estimator_type

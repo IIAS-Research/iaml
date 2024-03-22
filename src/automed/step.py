@@ -13,7 +13,6 @@ from copy import deepcopy
 from multipledispatch import dispatch
 from .candidate import Candidate
 from .dataset import Dataset
-from .stack import Stack
 from .decorators.runner import runner
 
 class Step: # pylint: disable=too-many-public-methods
@@ -41,7 +40,6 @@ class Step: # pylint: disable=too-many-public-methods
     __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
-        self.candidate:Candidate = None
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
@@ -434,42 +432,6 @@ class Step: # pylint: disable=too-many-public-methods
         """
         self.fit(candidate.dataset)
         return candidate.add_to_pipeline(self)
-    
-    ###########
-    ## STACK ##
-    ###########
-    # Stack all step ran to have a better understanding of pipeline execution. 
-    # Each Step will store data in the stack. 
-    # So we'll be able to unstack it and explain every data transformation in the pipeline
-    
-    def to_stack(self) -> Stack:
-        """
-        Transform a Step into Stack element 
-
-        Returns:
-            Stack: Stack representation of the step 
-        """
-        return Stack(
-            self.__class__,
-            self.configuration,
-            id(self)
-        )
-        
-    # Track candidate
-    def track_candidate(self, candidate:Candidate) -> None:
-        """
-        Automatically add Stack
-
-        Args:
-            candidate (Candidate): Candidate to track
-        """
-        if isinstance(self, Step):
-            if type(candidate) in [Candidate]:
-                candidate.add_stack(self.to_stack())
-            else:
-                for one_candidate in candidate:
-                    one_candidate.add_stack(self.to_stack())
-        
     
     @classmethod
     def find_steps_by_tag(cls, tag:str) -> list['Step']:

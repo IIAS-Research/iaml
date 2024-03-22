@@ -44,7 +44,7 @@ class ActLogisticRegression(Predictor):
             Candidate: Transformed candidate
         """
         self.model = LogisticRegression(
-            n_jobs=-1,
+            # n_jobs=-1,
             max_iter=500,
             class_weight='balanced',
             **self.passthrough_parameters()

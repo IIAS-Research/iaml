@@ -5,7 +5,7 @@ import multiprocess
 from .cache import Cache
 from .logger import Logger
 
-def sync_cache(cache_list, error):
+def sync_cache(cache_list):
     while cache_list[0] or cache_list[0] is None: # is lock ?
         time.sleep(0.05)
         
@@ -44,7 +44,7 @@ def process_daemon(
             method, args, kwargs, callback_id = value
             
             try:
-                sync_cache(cache_list, error_queue)
+                sync_cache(cache_list)
                 result = method(*args, **kwargs)
                 queue.put((result, callback_id))
             except Exception:  # pylint: disable=broad-exception-caught
@@ -251,9 +251,9 @@ class TimedPoolExecutor:
         Returns:
             list: All finished task results
         """
-        start_time = time.time()
+        start_time = time.monotonic()
         def remain_time():
-            return max(0, int(timeout - (time.time() - start_time)))
+            return max(0, int(timeout - (time.monotonic() - start_time)))
         
         def slide():
             return self.sliding_stages and (self.to_run_queue.empty() and \

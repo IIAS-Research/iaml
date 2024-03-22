@@ -19,9 +19,14 @@ class Dataset:
     Add features like data type detection and splitting
     """
     
-    def __init__(self, X:pd.DataFrame, y:list=None):
+    def __init__(self, X:pd.DataFrame, y:list=None, groups:pd.DataFrame=None):
         self.__X:pd.DataFrame = X
         self.__y:np.array = np.array(y)
+        
+        if type(groups) in [pd.Series, list, np.array]:
+            self.groups = pd.DataFrame(groups)
+        else:
+            self.groups = groups
         
         self.columns_types:list[DataType] = self.__detect_columns_types()
         self.type_of_target:str = type_of_target(self.__y)
@@ -79,16 +84,46 @@ class Dataset:
         """
         self.__X = method(self.X)
         self.columns_types = self.__detect_columns_types()
+    
+    @property
+    def has_groups(self) -> bool:
+        """
+        Groups exist ?
+        """
+        return self.groups is not None and not self.groups.empty
+    
+    def resample(self, resampler:callable) -> 'Dataset':
+        """
+        Apply a resampler on X, y and groups data. 
+
+        Args:
+            resampler (callable): Resampler method
+        """
         
-    def split(self, splitter: callable) -> Iterator[tuple['Dataset', 'Dataset']]: 
+        if self.has_groups:
+            # Merge groups with X
+            X = self.X.reset_index(drop=True).join(self.groups.reset_index(drop=True))
+    
+            # Resampler
+            X, y = resampler(X, self.y)
+            
+            # Split groups and X
+            return Dataset(X.drop(columns=self.groups.columns),
+                            y,
+                            groups=X[self.groups.columns])
+        else:
+            return Dataset(*resampler(self.X, self.y))
+        
+    def split(self, splitter: callable, *args, **kwargs) -> Iterator[tuple['Dataset', 'Dataset']]: 
         """
         Use splitter to split dataset into a list of tuple (train set, test set) 
 
         Yields:
             tuple['Dataset', 'Dataset']: Train set and Test set 
         """
+    
         # Split the dataset as many times as the splitter requires it
-        for i_train, i_test in splitter(self.X, self.__y):
+        for i_train, i_test in splitter(self.X, self.y, *args, **kwargs):
             X_train = self.X.iloc[i_train].copy()
             X_test = self.X.iloc[i_test].copy()
             y_train = self.__y[i_train].copy()
