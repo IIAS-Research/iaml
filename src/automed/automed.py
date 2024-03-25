@@ -90,6 +90,9 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         self.chosen_candidate:Candidate = None
         WorkerManager(max_workers=self.max_workers)
 
+    def __del__(self):
+        del self.executor
+
     def load_pipeline(self, pipeline:dict) -> None:
         """Load any kind of pipeline
 
@@ -162,49 +165,54 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
         
-        if isinstance(y, pd.DataFrame):
-            y = y.values.ravel()
+        try:
+            if isinstance(y, pd.DataFrame):
+                y = y.values.ravel()
+                
+            ### INITIAL GENERATE CANDIDATE 
+            dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
+            self.fit_candidate:Candidate = Candidate(dataset)
+
+            # Select metrics used to evaluate performances
+            for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                self.fit_candidate.add_metric(metric)
+
+            # Generate candidates
+            candidates = self.__run(self.fit_candidate, *args, **kwargs)
             
-        ### INITIAL GENERATE CANDIDATE 
-        dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
-        self.fit_candidate:Candidate = Candidate(dataset)
-
-        # Select metrics used to evaluate performances
-        for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-            self.fit_candidate.add_metric(metric)
-
-        # Generate candidates
-        candidates = self.__run(self.fit_candidate, *args, **kwargs)
-        
-        # Remove candidate without predictor 
-        candidates = [candidate for candidate in candidates \
-            if candidate.pipeline.predictor is not None]
-        Logger().log(f"{len(candidates)} generated pipelines")
-        
-        ### INITIAL EVALUATION
-        
-        # Evaluate candidates
-        candidates = self.__run_evaluations(candidates,
-                        dataset,
-                        timeout=self.max_duration - (time.monotonic() - start_time))
-        
-        ### FINETUNING
-        candidates = self.__optimize(dataset,
-                                    candidates,
-                                    optimizer=GeneticOptimizer(),
-                                    max_duration=self.max_duration - \
-                                        (time.monotonic() - start_time),
-                                    patience=patience)
-        ### FINAL FIT
-        
-        self.executor.shutdown()
-        
-        # Fit candidate with the whole dataset
-        Cache.reset()
-        self.chosen_candidate = deepcopy(candidates[0])
-        self.chosen_candidate.pipeline.fit(X, y)
-        
-        return candidates
+            # Remove candidate without predictor 
+            candidates = [candidate for candidate in candidates \
+                if candidate.pipeline.predictor is not None]
+            Logger().log(f"{len(candidates)} generated pipelines")
+            
+            ### INITIAL EVALUATION
+            
+            # Evaluate candidates
+            candidates = self.__run_evaluations(candidates,
+                            dataset,
+                            timeout=self.max_duration - (time.monotonic() - start_time))
+            
+            ### FINETUNING
+            candidates = self.__optimize(dataset,
+                                        candidates,
+                                        optimizer=GeneticOptimizer(),
+                                        max_duration=self.max_duration - \
+                                            (time.monotonic() - start_time),
+                                        patience=patience)
+            ### FINAL FIT
+            
+            self.executor.shutdown()
+            
+            # Fit candidate with the whole dataset
+            Cache.reset()
+            self.chosen_candidate = deepcopy(candidates[0])
+            self.chosen_candidate.pipeline.fit(X, y)
+            
+            return candidates
+        except Exception as e:
+            print("Error during fit")
+            self.executor.shutdown()
+            raise e
     
     @property
     def chosen_model(self):
@@ -262,8 +270,12 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             new_candidates.sort(reverse=True)
             
             # Add results to progressbar
-            progress.tasks[task].description = f'{progress.tasks[task].description} \
-                ({new_candidates[0].get_main_metric_value():.4f})'
+            if new_candidates:
+                progress.tasks[task].description = f'{progress.tasks[task].description} \
+                    ({new_candidates[0].get_main_metric_value():.4f})'
+            else:
+                progress.tasks[task].description = f'{progress.tasks[task].description} \
+                    (no result)'
                             
         # Add to cache
         for candidate in new_candidates:

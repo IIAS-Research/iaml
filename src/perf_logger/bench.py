@@ -1,7 +1,8 @@
 """
     Benchmark automl lib. Only NaiveAutoML for now
 """
-import sys, os
+import sys, os, time
+import traceback
 import glob
 from datetime import datetime
 from os.path import exists
@@ -54,23 +55,32 @@ def each_file(file:str, duration) -> pd.DataFrame:
 
     Cache.reset()
     estimator = AutoMed(quiet=True, max_workers=12, max_duration=duration)
-    estimator.fit(X, y)
     
-    end_file = datetime.now()
-    compute_time = (end_file - start_file).seconds
+    try:
+        estimator.fit(X, y)
+        
+        end_file = datetime.now()
+        compute_time = (end_file - start_file).seconds
+        
+        y_pred = estimator.chosen_model.predict(X_test)
+        if type_of_target(y_test) == 'continuous':
+            best_result = r2_score(y_test, y_pred)
+        else:
+            best_result = balanced_accuracy_score(y_test, y_pred) 
+        
+        return_df = pd.DataFrame([
+                [duration, str(estimator.chosen_model.predictor[1].__class__), str(start_time), filename, best_result, compute_time]
+            ]
+            , columns=['duration', 'model_name', 'date', 'dataset_name','perf', 'compute_time'])
+        
+        del estimator
+    except Exception as e:
+        del estimator
+        raise Exception(f"Error occurs during bench. {e}")
     
-    y_pred = estimator.chosen_model.predict(X_test)
-    if type_of_target(y_test) == 'continuous':
-        best_result = r2_score(y_test, y_pred)
-    else:
-        best_result = balanced_accuracy_score(y_test, y_pred) 
-    
-    return pd.DataFrame([
-            [duration, str(estimator.chosen_model.predictor[1].__class__), str(time), filename, best_result, compute_time]
-        ]
-        , columns=['duration', 'model_name', 'date', 'dataset_name','perf', 'compute_time'])
+    return return_df
 
-time = int(datetime.now().timestamp())
+start_time = int(datetime.now().timestamp())
 
 def main():
     durations = [30, 120, 300, 900, 1800]
@@ -106,7 +116,10 @@ def main():
                     results = pd.concat([output, results], ignore_index=True)
                     results.to_csv(history_path, index=False)
                 except Exception as e:
+                    print(traceback.format_exc())
                     print("FAIL : ", file)
+                    print(f"ERROR : {e}")
+                    time.sleep(30)
             
     print("FINISHED")
 
