@@ -147,24 +147,19 @@ class AutoMed:
         
         if isinstance(y, pd.DataFrame):
             y = y.values.ravel()
-            
+  
         ### INITIAL GENERATE CANDIDATE 
         dataset:Dataset = Dataset(deepcopy(X), deepcopy(y))
         self.fit_candidate:Candidate = Candidate(dataset)
-
         # Select metrics used to evaluate performances
         for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
             self.fit_candidate.add_metric(metric)
-
         # Generate candidates
         candidates = self.__run(self.fit_candidate, *args, **kwargs)
-        
         # Remove candidate without predictor 
         candidates = [candidate for candidate in candidates \
             if candidate.pipeline.predictor is not None]
-        
         ### INITIAL EVALUATION
-        
         # Evaluate candidates
         self.__run_evaluations(candidates,
                         dataset,
@@ -220,7 +215,7 @@ class AutoMed:
                             )
                         )
                     
-                # Add callback to update progressbar
+                # Add callback to update progressbar   
                 for future in future_jobs:
                     future.add_done_callback(update_progressbar)
                 
@@ -337,7 +332,6 @@ class AutoMed:
             # Verify if a subclass is suitable or not
             if metric.suitable(X, y, type_of_target):
                 metrics.append(metric)
-
         return metrics
     
     def __meta_predictor_iter(self, type_of_target:str):
@@ -362,7 +356,6 @@ class AutoMed:
         with Logger().progress as progress:
             step_count:int = self.first_step.count_steps()
             task = progress.add_task('Generate candidates', total=step_count)
-            
             # Override callback to handle progress bar
             def progress_callback(step: Step) -> None:
                 progress.update(task, advance=1)
@@ -371,9 +364,7 @@ class AutoMed:
                     
             # RUN!
             self.candidates = self.first_step.run(candidate, callback=progress_callback)
-
             progress.update(task, completed=step_count)
-
         # Order ouputs according the first metric
         self.candidates.sort(reverse=True)
         return self.candidates

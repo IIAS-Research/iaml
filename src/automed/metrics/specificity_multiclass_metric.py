@@ -12,7 +12,7 @@ class SpecificityMulticlassMetric(Metric):
     [METRIC] Specificity Multiclass
     """
     def __str__(self):
-        return 'specificity'    
+        return 'specificity_multiclass'    
     
     def explain(self) -> str:
         """Describe metric
