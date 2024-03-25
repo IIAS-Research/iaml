@@ -119,7 +119,6 @@ def main():
                     print(traceback.format_exc())
                     print("FAIL : ", file)
                     print(f"ERROR : {e}")
-                    time.sleep(30)
             
     print("FINISHED")
 
