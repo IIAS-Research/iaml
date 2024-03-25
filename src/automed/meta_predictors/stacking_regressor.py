@@ -6,8 +6,6 @@ from ..meta_predictor import MetaPredictor
 from ..candidate import Candidate
 from ..dataset import Dataset
 
-# TODO Does not work, fix it
-
 class StackingRegressor(MetaPredictor):
     """
     Ensemble based predict method
@@ -21,8 +19,8 @@ class StackingRegressor(MetaPredictor):
         return self        
         
     @classmethod
-    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=arguments-differ
         """
         Does this meta predictor is usable given type of target ?
         """
-        return type_of_target in ['binary', 'multiclass']
+        return type_of_target == 'continuous'

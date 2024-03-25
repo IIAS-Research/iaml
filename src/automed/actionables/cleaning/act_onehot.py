@@ -62,12 +62,13 @@ class ActOnehot(Actionable):
         
         transformed = self.encoder.transform(X[self.columns])
         ohe_df = pd.DataFrame(transformed, columns=self.encoder.get_feature_names_out(self.columns))
-        
         X = X.drop(self.columns, axis=1)
         df = X.join(ohe_df)
 
         return df
-        
+    
+    def suitable(self, candidate: Candidate) -> bool:
+        return bool(candidate.dataset.get_columns_names_by_type(DataType.CATEGORICAL))    
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

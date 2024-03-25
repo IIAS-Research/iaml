@@ -9,7 +9,7 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
-@is_step('features_preprocessing')
+@is_step('features_precleaning')
 class ActDateConverter(Actionable):
     """
     [STEP] Convert Short text to date if possible
@@ -77,7 +77,7 @@ class ActDateConverter(Actionable):
             pd.DataFrame: Transformed dataset
         """
         for column in self.columns:
-            X[column] = X[column].apply(self.__string_value_to_date)
+            X[column] = pd.to_datetime(X[column], errors='coerce')
 
         return X
         

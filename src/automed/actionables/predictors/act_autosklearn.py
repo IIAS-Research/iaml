@@ -2,7 +2,6 @@
 [STEP] Learn : AutoSkLearn
 """
 import autosklearn.classification # pylint: disable=import-error
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate

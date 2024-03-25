@@ -2,7 +2,6 @@
 [STEP] Learn :  Random Forest
 """
 from sklearn.ensemble import RandomForestClassifier
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -19,16 +18,41 @@ class ActRandomForest(Predictor):
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
-                'range': [1, float('inf')]
+                'range': [1, 100]
             },
             'n_estimators': {
                 'description': 'Number of threes',
                 'default': 100,
-                'range': [1, float('inf')]
+                'range': [1, 500]
             },
             'random_state': {
                 'description': 'random_state',
                 'default': 42
+            },
+            'min_samples_leaf': {
+                'description': 'The minimum number of samples required to be at a leaf node.',
+                'default': 1,
+                'range': [1, 15]
+            },
+            'max_features': {
+                'description': 'The number of features to consider when looking for the best split',
+                'default': 1,
+                'range': [0.1, 1]
+            },
+            'min_samples_split': {
+                'description': 'The minimum number of samples required to split an internal node',
+                'default': 2,
+                'range': [2, 20]
+            },
+            'bootstrap': {
+                'description': 'Whether bootstrap samples are used when building trees. \
+                    If False, the whole dataset is used to build each tree.',
+                'default': False
+            },
+            'criterion': {
+                'description': 'The function to measure the quality of a split.',
+                'default': "gini",
+                'categorical': ['gini', 'entropy', 'log_loss']
             }
         }
         self.model:RandomForestClassifier = None
@@ -43,9 +67,7 @@ class ActRandomForest(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
-        self.model = RandomForestClassifier(max_depth=self.get_config('max_depth'),
-                                            random_state=self.get_config('random_state'),
-                                            n_estimators=self.get_config('n_estimators'))
+        self.model = RandomForestClassifier(**self.passthrough_parameters())
         
         self.model.fit(dataset.X, dataset.y)
         

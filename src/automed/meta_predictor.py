@@ -10,6 +10,7 @@ class MetaPredictor(Predictor):
     Ensemble based predict method
     """
     def __init__(self, candidates:list[Candidate]):
+        super().__init__()
         self.configuration = {}
         self.metrics:list = candidates[0].metrics
         self.estimator_type:str = candidates[0].pipeline._estimator_type
@@ -32,7 +33,7 @@ class MetaPredictor(Predictor):
         
         return candidate 
     
-    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument, arguments-renamed
         """
         Does this meta predictor is usable given type of target ?
         """

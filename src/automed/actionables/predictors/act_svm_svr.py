@@ -2,7 +2,6 @@
 [STEP] Learn :  SVM Regressor
 """
 from sklearn import svm
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -20,6 +19,16 @@ class ActSVMSVR(Predictor):
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
                 'categorical': ['linear', 'poly', 'rbf', 'sigmoid']
+            },
+            'epsilon': {
+                'description': 'Epsilon in the epsilon-SVR model.',
+                'default': 0.1,
+                'range': [1e-05, 0.1]
+            },
+            'tol': {
+                'description': 'The stopping criterion.',
+                'default': 0.001,
+                'range': [1e-05, 0.1]
             }
         }
         self.model:svm.SVR = None
@@ -35,7 +44,7 @@ class ActSVMSVR(Predictor):
             Candidate: Transformed candidate
         """
         self.model = svm.SVR(
-            kernel = self.get_config('kernel')
+            **self.passthrough_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

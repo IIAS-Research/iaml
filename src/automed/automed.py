@@ -2,10 +2,10 @@
     AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
 """
 
-import concurrent.futures
-import multiprocessing
 import time
+import multiprocessing
 import pandas as pd
+from .timed_pool_executor import TimedPoolExecutor
 from .step import Step
 from .cache import Cache
 from .metastep import MetaStep
@@ -35,7 +35,7 @@ except ImportError as e:
 
 # Main class of the package
 # Useful to create & run pipeline
-class AutoMed:
+class AutoMed:  # pylint: disable=too-many-instance-attributes
     """ Main class of the module.
     AutoMed will load, configure and fit machine learning pipelines
 
@@ -43,16 +43,55 @@ class AutoMed:
         candidate (list): Candidates of the pipeline after run
         fit_candidate (Candidate): last Candidate sent to the first step 
     """
-    def __init__(self, max_workers:int=None, quiet:bool=False):
+    def __init__(self, # pylint: disable=too-many-arguments
+                max_workers:int=None,
+                quiet:bool=False,
+                max_stage_duration:int=None,
+                metalearner:bool=None,
+                splitter=None,
+                max_duration:int=-1,
+                preprocessor:bool=False):
+        
+        Logger().set_quiet(quiet)
+        
+        self.preprocessor = preprocessor
+        
+        # Enable / Disable Meta Learner
+        self.metalearner = metalearner
+        if metalearner is None:
+            if max_duration < 500 and max_duration != -1:
+                Logger().log("Max duration under 500 seconds : \
+                    Meta learner are disabled (you can enable it, \
+                    with the parameter 'metalearner')")
+                self.metalearner = False
+            
+        # Set max duration of each stage
+        if max_stage_duration is None:
+            self.max_stage_duration = max(max_duration / 5, 300)
+            Logger().log(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
+        else:
+            self.max_stage_duration = max_stage_duration
+
+        # Set splitter
+        self.splitter = splitter if splitter is not None else kfold_splitter
+        
+        
+        self.max_duration = max_duration
         self.candidates:list[Candidate] = None
         self.fit_candidate:Candidate = None
         self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep)
         
-        Logger().set_quiet(quiet)
-        self.default_pipeline() # Load default pipeline
-        self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) else multiprocessing.cpu_count()
+        self.executor = None
         
+        self.default_pipeline() # Load default pipeline
+        self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) \
+            else multiprocessing.cpu_count()
+        
+        self.chosen_candidate:Candidate = None
         WorkerManager(max_workers=self.max_workers)
+
+    def __del__(self):
+        del self.executor
 
     def load_pipeline(self, pipeline:dict) -> None:
         """Load any kind of pipeline
@@ -62,32 +101,6 @@ class AutoMed:
         """
         self.first_step = Step.from_pipeline(pipeline)
 
-    # DEBUG -> Testing purpose
-    def autosklearn_pipeline(self, timeout:int=30) -> None:
-        """DEBUG -> Testing purpose
-        Load a basic pipeline with AutoSkLearn as model 
-
-        Args:
-            timeout (int, optional): Max running timeout of AutoSKLearn model in seconds.
-            Defaults to 30.
-        """
-        self.first_step = MetaOrderedStep()
-        sklearn = ActAutoSKLearn() # pylint: disable=undefined-variable
-        sklearn.configure('running_time', timeout)
-
-        self.first_step.add_step(sklearn)
-
-    # DEBUG -> Testing purpose
-    def tplot_pipeline(self) -> None:
-        """DEBUG -> Testing purpose
-        Load a basic pipeline with AutoSkLearn as model 
-        """
-        self.first_step = MetaOrderedStep()
-        self.first_step.add_step(MetaStep(tag='cleaning'))
-        self.first_step.add_step(MetaStep(tag='normalize'))
-        self.first_step.add_step(ActTPLOT()) # pylint: disable=undefined-variable
-
-    # DEBUG -> Testing purpose.
     def default_pipeline(self, fast=False) -> None:
         """Load the default pipeline.
         Default pipeline is the recommended way to create classifier and regressor
@@ -99,10 +112,15 @@ class AutoMed:
         """
         self.first_step = MetaOrderedStep() # First step -> Contain all stages of the pipeline
 
-        self.first_step.add_step(MetaStep(tag='features_preprocessing'))
+        self.first_step.add_step(MetaStep(tag='features_precleaning'))
         self.first_step.add_step(MetaStep(tag='cleaning'))
         self.first_step.add_step(MetaStep(tag='features_selection'))
         self.first_step.add_step(MetaStep(tag='normalize'))
+        
+        if self.preprocessor:
+            self.first_step.add_step(
+                MetaExplorerStep(tag='features_preprocessing', also_explore_without=True)
+            )
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
         
@@ -131,7 +149,7 @@ class AutoMed:
             X:pd.DataFrame,
             y:pd.DataFrame,
             *args,
-            max_duration:int=-1,
+            groups:pd.DataFrame = None,
             patience:int=-1,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
@@ -143,50 +161,79 @@ class AutoMed:
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
-        start_time = time.time()
+        start_time = time.monotonic()
         
-        if isinstance(y, pd.DataFrame):
-            y = y.values.ravel()
-  
-        ### INITIAL GENERATE CANDIDATE 
-        dataset:Dataset = Dataset(deepcopy(X), deepcopy(y))
-        self.fit_candidate:Candidate = Candidate(dataset)
-        # Select metrics used to evaluate performances
-        for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-            self.fit_candidate.add_metric(metric)
-        # Generate candidates
-        candidates = self.__run(self.fit_candidate, *args, **kwargs)
-        # Remove candidate without predictor 
-        candidates = [candidate for candidate in candidates \
-            if candidate.pipeline.predictor is not None]
-        ### INITIAL EVALUATION
-        # Evaluate candidates
-        self.__run_evaluations(candidates,
-                        dataset,
-                        splitter=kfold_splitter,
-                        timeout=max_duration - (time.time() - start_time))
+        self.executor = TimedPoolExecutor(max_workers=self.max_workers)
+        
+        try:
+            if isinstance(y, pd.DataFrame):
+                y = y.values.ravel()
+                
+            ### INITIAL GENERATE CANDIDATE 
+            dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
+            self.fit_candidate:Candidate = Candidate(dataset)
+
+            # Select metrics used to evaluate performances
+            for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                self.fit_candidate.add_metric(metric)
+
+            # Generate candidates
+            candidates = self.__run(self.fit_candidate, *args, **kwargs)
+         
+            # Remove candidate without predictor 
+            candidates = [candidate for candidate in candidates \
+                if candidate.pipeline.predictor is not None]
+            Logger().log(f"{len(candidates)} generated pipelines")
             
-        ### FINETUNING
-        candidates = self.__optimize(dataset,
-                                    candidates,
-                                    optimizer=GeneticOptimizer(),
-                                    max_duration=max_duration - (time.time() - start_time),
-                                    patience=patience)
-        ### FINAL FIT
+            ### INITIAL EVALUATION
+            
+            # Evaluate candidates
+            candidates = self.__run_evaluations(candidates,
+                            dataset,
+                            timeout=self.max_duration - (time.monotonic() - start_time))
+            
+            ### FINETUNING
+            candidates = self.__optimize(dataset,
+                                        candidates,
+                                        optimizer=GeneticOptimizer(),
+                                        max_duration=self.max_duration - \
+                                            (time.monotonic() - start_time),
+                                        patience=patience)
+            ### FINAL FIT
+            
+            self.executor.shutdown()
+            
+            # Fit candidate with the whole dataset
+            Cache.reset()
+            self.chosen_candidate = deepcopy(candidates[0])
+            self.chosen_candidate.pipeline.fit(X, y)
+            
+            return candidates
+        except Exception as e:
+            print("Error during fit")
+            self.executor.shutdown()
+            raise e
+    
+    @property
+    def chosen_model(self):
+        """
+        Return the best model trained with fit
+
+        Returns:
+            AutoPipeline: Best predictor pipeline
+        """
+        if not self.chosen_candidate:
+            return None
         
-        # Fit candidate with the whole dataset
-        Cache.reset()
-        for candidate in candidates:
-            candidate.pipeline.fit(X, y)
-        
-        return candidates
+        return self.chosen_candidate.pipeline
     
     def __run_evaluations(self,
                         candidates:Candidate,
                         dataset:Dataset,
-                        splitter:callable=kfold_splitter,
                         timeout:int=None,
                         stage_number:int=None) -> None:
+        
+        new_candidates:list[Candidate] = []
 
         with Logger().progress as progress:
             task = progress.add_task(
@@ -195,54 +242,50 @@ class AutoMed:
             
             def update_progressbar(*args): # pylint: disable=unused-argument
                 progress.update(task, advance=1)
+            
+            self.executor.set_callback(update_progressbar)
+            for candidate in candidates:
+                from_cache = Cache().from_cache( \
+                    'automed_'+candidate.pipeline.fingerprint(), dataset.X)
                 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                future_jobs = []
-                for candidate in candidates:
-                    from_cache = Cache().from_cache( \
-                        'automed_'+candidate.pipeline.fingerprint(), dataset.X)
-                    
-                    if from_cache:
-                        candidate.computed_metrics = from_cache
-                        update_progressbar() # Update progressbar even if data come from cache
-                    else:
-                        candidate.computed_metrics = {}
-                        future_jobs.append(
-                            executor.submit(
-                                candidate.training_evaluate,
-                                dataset,
-                                splitter=splitter
-                            )
+                if from_cache:
+                    candidate.computed_metrics = from_cache
+                    new_candidates.append(candidate)
+                    update_progressbar() # Update progressbar even if data come from cache
+                else:
+                    self.executor.submit(
+                            process_executor,
+                            candidate,
+                            dataset,
+                            splitter=self.splitter
                         )
-                    
-                # Add callback to update progressbar   
-                for future in future_jobs:
-                    future.add_done_callback(update_progressbar)
-                
-                # Wait for all tasks to complete with a timeout
-                _, not_done = concurrent.futures.wait(future_jobs, timeout=timeout)
-                if not_done:
-                    # TODO -> Does not work help, we have to find a way to kill all running process
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    for job in not_done:
-                        job.cancel()      
-            candidates.sort(reverse=True)
+            
+            # Wait for all tasks to complete with a timeout
+            new_candidates += self.executor.join(min(timeout, self.max_stage_duration))
+            
+            new_candidates.sort(reverse=True)
             
             # Add results to progressbar
-            progress.tasks[task].description = f'{progress.tasks[task].description} \
-                ({candidates[0].get_main_metric_value():.4f})'
-            
+            if new_candidates:
+                progress.tasks[task].description = f'{progress.tasks[task].description} \
+                    ({new_candidates[0].get_main_metric_value():.4f})'
+            else:
+                progress.tasks[task].description = f'{progress.tasks[task].description} \
+                    (no result)'
+                            
         # Add to cache
-        for candidate in candidates:
+        for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()
             if not Cache().from_cache('automed_'+fingerprint, dataset.X):
                 Cache().add_to_cache('automed_'+fingerprint, dataset.X, candidate.computed_metrics)
+                
+        return new_candidates
+        
             
     
     def __optimize(self,
                     dataset:Dataset,
                     candidates:list[Candidate],
-                    splitter:callable=kfold_splitter,
                     optimizer:Optimizer=Optimizer(),
                     patience:int=5,
                     max_duration:int=-1) -> list[Candidate]:
@@ -252,26 +295,29 @@ class AutoMed:
         iterations_without_improvement:int = 0
         iterations_count:int = 0
         duration:int = 0
-        starting_time:int = time.time() # seconds
+        starting_time:int = time.monotonic() # seconds
         
         # If there is not, define an arbitrary stop condition
         if max_duration == -1 and patience == -1:
+            Logger().log('You have not defined any stop condition. \
+                Patient has arbitrary set to 20')
             patience = 20
         
         while   not(optimizer.finished) \
                 and (patience == -1 or iterations_without_improvement < patience) \
                 and (max_duration == -1 or max_duration > duration):
-            
             # Generate new candidates
             candidates = optimizer.run(candidates)
             
-            # Generate metapredictor
-            for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
-                meta_candidate:MetaPredictor = metapredictor(
-                    [candidate for candidate in candidates if not candidate.is_meta][0:5]
-                    ).to_candidate()
-                candidates.append(meta_candidate)
-            
+            if self.metalearner:
+                # Generate metapredictor
+                if len(candidates) > 1:
+                    for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
+                        meta_candidate:MetaPredictor = metapredictor(
+                            [candidate for candidate in candidates if not candidate.is_meta][0:5]
+                            ).to_candidate()
+                        candidates.append(meta_candidate)
+                
             Logger().log(f'Finetuning... \
                 stage={iterations_count} \
                 candidates={len(candidates)} \
@@ -280,19 +326,18 @@ class AutoMed:
                 best_result={best_result}')
             
             # Evaluate new candidates
-            self.__run_evaluations(candidates,
+            candidates = self.__run_evaluations(candidates,
                         dataset,
-                        splitter=splitter,
-                        timeout=max_duration - (time.time() - starting_time),
+                        timeout=max_duration - (time.monotonic() - starting_time),
                         stage_number=iterations_count)
             
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
             
-            Logger().log([(round(candidate.get_main_metric_value(), 5), \
-                candidate.pipeline.predictor[0], \
-                candidate.pipeline.predictor[1].resume_configuration()) \
-                    for candidate in candidates])
+            # Logger().log([(round(candidate.get_main_metric_value(), 5), \
+            #     candidate.pipeline.predictor[0], \
+            #     candidate.pipeline.predictor[1].resume_configuration()) \
+            #         for candidate in candidates])
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()
@@ -303,7 +348,7 @@ class AutoMed:
                 iterations_without_improvement += 1
                 
             # Duration in seconds
-            duration = time.time() - starting_time
+            duration = time.monotonic() - starting_time
             
             # Increase Iteration count
             iterations_count += 1
@@ -365,7 +410,8 @@ class AutoMed:
             # RUN!
             self.candidates = self.first_step.run(candidate, callback=progress_callback)
             progress.update(task, completed=step_count)
-        # Order ouputs according the first metric
+            
+        # Order candidate according the main metric
         self.candidates.sort(reverse=True)
         return self.candidates
 
@@ -426,3 +472,19 @@ class AutoMed:
             if id(step) == step_id:
                 return step
         return None
+
+
+def process_executor(candidate:Candidate, *args, **kwargs) -> 'Candidate':
+    """
+    Wrap candidate training to run it in subprocess
+
+    Args:
+        candidate (Candidate): Not trained candidate
+
+    Returns:
+        Candidate: Trained candidate
+    """
+    # Deepcopy -> Without it, process end is never detected. Strange...
+    candidate = deepcopy(candidate)
+    candidate.training_evaluate(*args, **kwargs)
+    return candidate

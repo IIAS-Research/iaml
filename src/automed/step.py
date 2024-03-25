@@ -13,7 +13,6 @@ from copy import deepcopy
 from multipledispatch import dispatch
 from .candidate import Candidate
 from .dataset import Dataset
-from .stack import Stack
 from .decorators.runner import runner
 
 class Step: # pylint: disable=too-many-public-methods
@@ -41,10 +40,11 @@ class Step: # pylint: disable=too-many-public-methods
     __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
-        self.candidate:Candidate = None
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
+        
+        self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
         
         # Configuration of the Step. Each Step can have one configuration and will save it here.
         # Step give many method to help user to configure Steps
@@ -177,6 +177,28 @@ class Step: # pylint: disable=too-many-public-methods
         for key, value in config.items():
             self.configure(key, value)
             
+    def passthrough_parameters(self, default:bool=True):
+        """
+        Get all configuration elements that have to be passed to the next step
+        or to the model
+
+        Args:
+            default (bool, optional): default behavior for configuration elements
+                without "passthrough" key. Defaults to True.
+
+        Returns:
+            dict: Configuration elements to pass through
+        """
+        parameters = {}
+        for key, value in self.configuration.items():
+            if "passthrough" in value:
+                if value['passthrough']:
+                    parameters[key] = value['value']
+            elif default:
+                parameters[key] = value['value']
+                
+        return parameters
+            
     def all_configurations(self) -> list[dict]:
         """Recursive function (last one here) to get all configurations in a pipeline
 
@@ -196,6 +218,11 @@ class Step: # pylint: disable=too-many-public-methods
             dict: Configuration resume
         """
         return Step.__resume_a_configuration(self.configuration)
+    
+    def serializable_resume_configuration(self) -> dict:
+        """Used by fingerprint methods"""
+        return {key: value.__name__ if callable(value) else value \
+            for key, value in self.resume_configuration().items()}
     
     @classmethod
     def __resume_a_configuration(cls, config:dict):
@@ -417,42 +444,6 @@ class Step: # pylint: disable=too-many-public-methods
         """
         self.fit(candidate.dataset)
         return candidate.add_to_pipeline(self)
-    
-    ###########
-    ## STACK ##
-    ###########
-    # Stack all step ran to have a better understanding of pipeline execution. 
-    # Each Step will store data in the stack. 
-    # So we'll be able to unstack it and explain every data transformation in the pipeline
-    
-    def to_stack(self) -> Stack:
-        """
-        Transform a Step into Stack element 
-
-        Returns:
-            Stack: Stack representation of the step 
-        """
-        return Stack(
-            self.__class__,
-            self.configuration,
-            id(self)
-        )
-        
-    # Track candidate
-    def track_candidate(self, candidate:Candidate) -> None:
-        """
-        Automatically add Stack
-
-        Args:
-            candidate (Candidate): Candidate to track
-        """
-        if isinstance(self, Step):
-            if type(candidate) in [Candidate]:
-                candidate.add_stack(self.to_stack())
-            else:
-                for one_candidate in candidate:
-                    one_candidate.add_stack(self.to_stack())
-        
     
     @classmethod
     def find_steps_by_tag(cls, tag:str) -> list['Step']:

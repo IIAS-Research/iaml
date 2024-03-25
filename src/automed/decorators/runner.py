@@ -10,7 +10,6 @@ def runner(func) -> callable:
         - Store results in cache
         - Send information to Destroyers
         - Put results in good shape
-        - Increment Stack data
         - Call callback method
         - And maybe more
 
@@ -46,8 +45,6 @@ def runner(func) -> callable:
                     self.add_cache(current_candidate, candidate)
                 else:
                     callback(self) # Call callback manually because we used cache
-                    
-                self.track_candidate(candidate)
             else:
                 candidate = current_candidate    
             

@@ -109,10 +109,10 @@ class AutoPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         if not only_predictor:
-            X, y = self.fit_transform(X, y)
+            X, y = self.fit_transform(X, y, **kwargs)
             
         dataset = Dataset(X, y)
-        self.predictor[1].fit(dataset)
+        self.predictor[1].fit(dataset, **kwargs)
         
         return self
     
@@ -130,11 +130,12 @@ class AutoPipeline(Pipeline):
                 step.fit(dataset)
             else:
                 step.fit(dataset.X, dataset.y, **kwargs)
-                
+            
             if hasattr(step, 'transform'):
                 dataset = Dataset(step.transform(dataset.X), y)
             elif hasattr(step, 'resample'):
                 dataset = Dataset(*step.resample(dataset.X, dataset.y))
+            
         
         return dataset.X, dataset.y
         
@@ -257,11 +258,18 @@ class AutoPipeline(Pipeline):
         
         return self.predictor[1].predict(X)
     
+    @property
+    def optimizable_step(self) -> list['Step']:
+        """
+        Returns:
+            list[Step]: List of optimizable step
+        """
+        return [step for _, step in self.training_steps if step.optimizable]
+    
     def __eq__(self, other: 'AutoPipeline') -> bool:
         if isinstance(other, AutoPipeline):
             return self.fingerprint() == other.fingerprint()
-        else:
-            return NotImplemented 
+        return NotImplemented 
         
     def __sklearn_clone__(self):
         return deepcopy(self)
@@ -274,7 +282,7 @@ class AutoPipeline(Pipeline):
             str: md5 sting
         """
         to_hash = "\n".join([str(step.__class__) + " = " \
-            + json.dumps(step.configuration, sort_keys=True) \
+            + json.dumps(step.serializable_resume_configuration(), sort_keys=True) \
                 for _, step in self.training_steps])
         
         return md5(to_hash.encode()).hexdigest()

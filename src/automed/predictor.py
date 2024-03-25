@@ -12,6 +12,7 @@ class Predictor(Actionable):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.optimizable:bool = True
         self.model = None
     
     @runner
@@ -28,6 +29,15 @@ class Predictor(Actionable):
         return candidate.add_to_pipeline(self)
     
     def predict_proba(self, X:pd.DataFrame) -> list[float]:
+        """ 
+        Apply prediction model on DataFrame with probability
+
+        Args:
+            X (pd.DataFrame): DataFrame use to predict
+
+        Returns:
+            list[float]: Predicted values
+        """
         if self.model and hasattr(self.model, 'predict_proba'):
             return self.model.predict_proba(X)
         return None
@@ -45,4 +55,9 @@ class Predictor(Actionable):
         if self.model and hasattr(self.model, 'predict'):
             return self.model.predict(X)
         return None
-    
+                
+    @property
+    def classes_(self) -> list:
+        """Return classes of the target in fit data
+        """
+        return self.model.classes_

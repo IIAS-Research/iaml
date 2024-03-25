@@ -17,8 +17,9 @@ class MetaExplorerStep(MetaStep):
     [METASTEP] Explore all sub steps in Thread and return one candidate by Sub Step
     """
     name = "MetaExplorerStep"
-    def __init__(self, *args, **kwargs):  # pylint: disable=unused-argument
+    def __init__(self, *args, also_explore_without:bool=False, **kwargs):  # pylint: disable=unused-argument
         self.candidate = []
+        self.also_explore_without = also_explore_without
     
     def json_pipeline(self) -> dict:
         """
@@ -46,6 +47,11 @@ class MetaExplorerStep(MetaStep):
             Candidate: Result candidate
         """
         output = []
+        
+        # Try a candidate without any of explored steps 
+        if self.also_explore_without:
+            output += [candidate.to_output()]
+            
         workers: list[WorkerFuture] = []
 
         for step in self.steps:
@@ -54,6 +60,6 @@ class MetaExplorerStep(MetaStep):
             
         # Wait end of all threads
         for worker in workers:
-            output = output + worker.result()
+            output += worker.result()
         
         return output

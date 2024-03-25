@@ -12,7 +12,7 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, current_path+"/../")
 from automed import *
 
-DURATION = 60*30 # 30 minutes
+DURATION = 5*60 # 30 minutes
 
 def each_file(file):
     Logger.reset()
@@ -38,9 +38,9 @@ def each_file(file):
     X_test = test_df.drop(columns=labels)
         
 
-    auto = AutoMed(quiet=True, max_workers=8)
+    auto = AutoMed(quiet=True, max_workers=8, max_duration=DURATION)
     auto.default_pipeline(fast=False)
-    local_results = auto.fit(X, y, max_duration=DURATION, patience=5)
+    local_results = auto.fit(X, y, patience=5)
     
     end_file = datetime.now()
     compute_time = (end_file - start_file).seconds

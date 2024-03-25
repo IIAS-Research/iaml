@@ -3,7 +3,6 @@
 """
 from tpot import TPOTClassifier
 from sklearn.model_selection import RepeatedStratifiedKFold
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate

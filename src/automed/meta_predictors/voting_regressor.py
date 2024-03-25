@@ -1,7 +1,6 @@
 """
 Ensemble based predict method
 """
-import pandas as pd
 from sklearn.ensemble import VotingRegressor as SKVotingRegressor
 from ..meta_predictor import MetaPredictor
 from ..candidate import Candidate
@@ -20,7 +19,7 @@ class VotingRegressor(MetaPredictor):
         return self
     
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=arguments-differ
         """
         Does this meta predictor is usable given type of target ?
         """

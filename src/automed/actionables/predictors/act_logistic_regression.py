@@ -2,7 +2,6 @@
 [STEP] Learn :  Logistic Regression Classifier
 """
 from sklearn.linear_model import LogisticRegression
-import pandas as pd
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -17,21 +16,26 @@ class ActLogisticRegression(Predictor):
     name = "Learn : Logistic Regression Classifier"
     def __init__(self):
         self.configuration:dict = {
-            'max_iterations': {
-                'description': 'Maximum number of iterations',
-                'default': 1000,
-                'range': [100, float('inf')]
-            },
             'random_state': {
                 'description': 'random_state',
                 'default': 42
+            },
+            'penalty': {
+                'description': 'Specify the norm of the penalty',
+                'default': 'l2',
+                'categorical': ['l2', None]
+            },
+            'tol': {
+                'description': 'The stopping criterion.',
+                'default': 0.0001,
+                'range': [1e-05, 0.1]
             }
         }
         self.model:LogisticRegression = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Fit LOgistic Regression on Candidate.dataset
+        Fit Logistic Regression on Candidate.dataset
 
         Args:
             dataset (Dataset): Fit data
@@ -40,9 +44,10 @@ class ActLogisticRegression(Predictor):
             Candidate: Transformed candidate
         """
         self.model = LogisticRegression(
-            max_iter = self.get_config('max_iterations'),
-            n_jobs = -1,
-            random_state = self.get_config('random_state')
+            # n_jobs=-1,
+            max_iter=500,
+            class_weight='balanced',
+            **self.passthrough_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)

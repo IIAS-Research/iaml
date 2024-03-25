@@ -2,7 +2,6 @@
 [STEP] Learn :  SVM Classifier
 """
 from sklearn import svm
-import pandas as pd
 from ...predictor import Predictor
 from ...candidate import Candidate
 from ...dataset import Dataset
@@ -29,6 +28,11 @@ class ActSVMSVC(Predictor):
                 'description': 'Can be set on "balenced" to improve results on unbalenced data',
                 'default': None,
                 'categorical': [None, 'balanced']
+            },
+            'tol': {
+                'description': 'The stopping criterion.',
+                'default': 0.001,
+                'range': [1e-05, 0.1]
             }
         }
         self.model:svm.SVC = None
@@ -44,10 +48,8 @@ class ActSVMSVC(Predictor):
             Candidate: Transformed candidate
         """
         self.model = svm.SVC(
-            kernel = self.get_config('kernel'),
-            class_weight = self.get_config('class_weight'),
-            random_state = self.get_config('random_state'),
-            probability = True # Needed to predict_proba (thus MetaLearner)
+            probability = True, # Needed to predict_proba (thus MetaLearner)
+            **self.passthrough_parameters()
             )
         
         self.model.fit(dataset.X, dataset.y)
