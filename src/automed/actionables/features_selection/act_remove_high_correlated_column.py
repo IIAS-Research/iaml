@@ -4,8 +4,9 @@
 import numpy as np
 import pandas as pd
 from ...actionable import Actionable
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
 @is_step('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
@@ -25,20 +26,18 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         }
         self.to_drop:list[str] = None
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find high correlated columns to drop
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         # Compute correlation matrix 
-        corr_matrix = input_data.dataset.X.corr().abs()
+        corr_matrix = dataset.X.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
         
         # Find features with above-threshold correlation
@@ -46,13 +45,13 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         corr = { c: (upper[upper[c] >= self.get_config('threshold')].index) for c in upper.columns }
         self.to_drop = [ c for c, v in corr.items() if len(v) > 0 ]
 
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f"""Dropped column **`{c}`** because it was too correlated with
                 {", ".join([ f"**`{i}`**" for i in corr[c] ])}."""
             for c in self.to_drop
-        ])
+        ]
         
-        return input_data.add_transform(self)
+        return self
     
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
@@ -69,7 +68,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
 
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

@@ -4,9 +4,10 @@
 import pandas as pd
 import numpy as np
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...data_type import DataType
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
 @is_step('cleaning')
 class ActSplitDate(Actionable):
@@ -18,26 +19,24 @@ class ActSplitDate(Actionable):
         self.configuration:dict = {}
         self.columns:list[str] = None
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find columns to split
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
-        self.columns = input_data.dataset.get_columns_names_by_type(DataType.DATE)
+        self.columns = dataset.get_columns_names_by_type(DataType.DATE)
 
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f'Split date column **`{c}`** into year, month, weekday, hour, minute and second.'
             for c in self.columns
-        ])
+        ]
 
-        return input_data.add_transform(self)
+        return self
             
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """
@@ -64,7 +63,7 @@ class ActSplitDate(Actionable):
 
     
         
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

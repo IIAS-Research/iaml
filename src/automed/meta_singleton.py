@@ -17,3 +17,10 @@ class MetaSingleton(type):
                 instance = super().__call__(*args, **kwargs)
                 cls._instances[cls] = instance
         return cls._instances[cls]
+    
+    @classmethod
+    def reset(mcs):
+        """
+        Delete saved instances -> Reset the singleton
+        """
+        mcs._instances = {}

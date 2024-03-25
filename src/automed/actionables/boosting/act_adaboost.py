@@ -5,8 +5,8 @@ Apply AdaBoost on models
 from sklearn.ensemble import AdaBoostClassifier
 
 from ...actionable import Actionable
-from ...step import runner
-from ...output import Input, Output
+from ...decorators.all import runner
+from ...candidate import Candidate
 
 
 # @is_step('boosting', 'tabular')
@@ -33,29 +33,29 @@ class ActAdaBoost(Actionable):
         }
         
     @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def run(self, candidate: Candidate, callback:callable=None) -> Candidate: # pylint: disable=unused-argument
         """_summary_
 
         Args:
-            input_data (Input): Input data
+            candidate (Candidate): Candidate data
             callback (callable, optional): Call after each run. Defaults to None.
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
         model:AdaBoostClassifier = AdaBoostClassifier(
-            input_data.model,
+            candidate.model,
             n_estimators = self.get_config('n_estimator'),
             random_state= self.get_config('random_state')
             )
         
-        model.fit(input_data.dataset.X, input_data.dataset.y)
+        model.fit(candidate.dataset.X, candidate.dataset.y)
         
-        return input_data.to_output(None, None, model)
+        return candidate.to_output(None, None, model)
 
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

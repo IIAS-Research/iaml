@@ -27,9 +27,9 @@ class Logger(metaclass=MetaSingleton):
         """
         self.quiet = value
 
-    def log(self, *text: list[str]) -> None:
+    def log(self, *text: list[str], force:bool=False) -> None:
         """
         Show text in console
         """
-        if not self.quiet:
+        if not(self.quiet) or force:
             self.console.log(*text)

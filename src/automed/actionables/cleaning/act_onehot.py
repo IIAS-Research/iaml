@@ -4,9 +4,10 @@
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from ...actionable import Actionable
+from ...dataset import Dataset
 from ...data_type import DataType
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
 
 @is_step('cleaning')
@@ -21,31 +22,29 @@ class ActOnehot(Actionable):
         self.encoder:OneHotEncoder = None
 
 
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset) -> Actionable:
         """
         Find columns to encode and fit encoder
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
-        self.columns = input_data.dataset.get_columns_names_by_type(DataType.CATEGORICAL)
-        values = input_data.dataset.X[self.columns]
+        self.columns = dataset.get_columns_names_by_type(DataType.CATEGORICAL)
+        values = dataset.X[self.columns]
         self.encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False).fit(values)
         
         # creates a dict with columns as keys and encoded categories as values
         features = dict(zip(self.columns, self.encoder.categories_))
         
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f'Encoded categorical column **`{c}`** into **{len(v)}** new columns.'
             for c, v in features.items() if len(v) > 0
-        ])
+        ]
 
-        return input_data.add_transform(self)
+        return self
     
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
@@ -63,14 +62,15 @@ class ActOnehot(Actionable):
         
         transformed = self.encoder.transform(X[self.columns])
         ohe_df = pd.DataFrame(transformed, columns=self.encoder.get_feature_names_out(self.columns))
-        
         X = X.drop(self.columns, axis=1)
         df = X.join(ohe_df)
 
         return df
-        
     
-    def priorize(self, input_data:Input=None) -> float:
+    def suitable(self, candidate: Candidate) -> bool:
+        return bool(candidate.dataset.get_columns_names_by_type(DataType.CATEGORICAL))    
+    
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 

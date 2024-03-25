@@ -20,4 +20,5 @@ class TestAutomed(unittest.TestCase):
         automed.default_pipeline(fast=True)
         outputs = automed.fit(X, y)
 
-        self.assertTrue(isinstance(outputs[0], Output))
+        self.assertTrue(isinstance(outputs[0], Candidate))
+        self.assertTrue(outputs[0].computed_metrics is not None)

@@ -24,7 +24,7 @@ class PrecisionMetric(Metric):
     
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
-        Does this metric is suitable for this input ?
+        Does this metric is suitable for this candidate ?
         Must be classification
 
         Args:
@@ -50,10 +50,10 @@ class PrecisionMetric(Metric):
         """
         if sk_type_of_target(y) == 'binary':
             # TODO Find something less arbitrary
-            return precision_score(y, y_pred, pos_label=y[0])
+            return precision_score(y, y_pred, pos_label=y[0], zero_division=0.0)
         if sk_type_of_target(y) == 'multiclass':
-            return precision_score(y, y_pred, average = 'weighted') 
+            return precision_score(y, y_pred, average = 'weighted', zero_division=0.0) 
         if sk_type_of_target(y) == 'multilabel-indicator':
-            return precision_score(y, y_pred, average= 'samples')
+            return precision_score(y, y_pred, average= 'samples', zero_division=0.0)
         
         raise ValueError('Metric not suitable') 

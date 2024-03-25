@@ -3,8 +3,9 @@
 """
 import pandas as pd
 from ...actionable import Actionable
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
 from ...data_type import DataType
 
 
@@ -21,34 +22,37 @@ class ActMeanColumn(Actionable):
         self.columns:list[str] = None
         self.configuration:dict = {
             'empty_threshold': {
-                'description': 'Column with less or equal proportion of empty row will \
-                    be fill with mean value. 1 will always fill void values',
-                'default': 0.5
+                'description': "Column with less or equal proportion of empty row will \
+                    be fill with mean value. 1 will always fill void values",
+                'default': 1 # TODO Review when adding new kind of imputer
             }
         }
     
-    @runner
-    def run(self, input_data: Input, callback: callable = None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset:Dataset) -> Actionable:
+        # threshold = self.get_config('empty_threshold')
+
         self.columns = []
         explain = []
 
-        for column in input_data.dataset.get_columns_names_by_type(DataType.NUMERIC):
-            values = input_data.dataset.X[column]
-            nan_count = values.isnull().sum()
+        for column in dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = dataset.X[column]
+            nan_values_count = values.isnull().sum()
 
-            threshold = self.get_config('empty_threshold')
-            if (nan_count > 0 and nan_count / len(values) <= threshold):
-                self.columns.append((column, values.mean()))
-                explain.append((nan_count, len(values)))
+            self.columns.append((column, values.mean()))
+            explain.append((
+                nan_values_count,
+                len(values),
+                nan_values_count / len(values) * 100,
+            ))
 
-        input_data.pipeline.add_explanation(self, [
+        self.explanations = [
             f"""Filled missing values of column **`{c}`** with **{mean:.2f}**
-                because **{v[0]}** out of **{v[1]}** values
-                (**{(v[0] / v[1] * 100):.2f}**%) were missing."""
+                (**{v[0]}** out of **{v[1]}** values (**{v[2]:.2f}**%)
+                were missing in train data)."""
             for (c, mean), v in zip(self.columns, explain)
-        ])
+        ]
         
-        return input_data.add_transform(self)
+        return self
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """
@@ -62,14 +66,14 @@ class ActMeanColumn(Actionable):
         """
         for name, mean in self.columns:
             X[name].fillna(mean, inplace=True)
-
+        
         return X
         
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 
         Return : continuous between 0 and 1
         """
-        return 1-(input_data.dataset.X.isnull().sum().min()/len(input_data.dataset.X))
+        return 1-(candidate.dataset.X.isnull().sum().min()/len(candidate.dataset.X))

@@ -99,6 +99,27 @@ job:perfs:compute:
       - docs
       - ./src/perf_logger/tests_data/history.log
 
+
+job:perfs:compute_stages:
+  stage: perfs
+  timeout: 24h
+  tags:
+    - unix
+    - calcul
+  only:
+    - rm-stages
+  script:
+    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
+    - cp -R /home/gitlab-runner/dont_push /home/gitlab-runner/builds/w-N4hyQH/0/DataScience/automl/src/perf_logger/tests_data/
+    - 'python3 src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
+    - 'python3 src/perf_logger/perf_comparator.py' # Compute perfs
+    - 'if [ -e "/home/gitlab-runner/automl_stage_history.log" ]; then rm /home/gitlab-runner/automl_stage_history.log ;fi'
+    - 'cp ./src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_stage_history.log'
+  artifacts:
+    expose_as: 'Compute performances of AutoMed Stages'
+    paths:
+      - ./src/perf_logger/tests_data/history.log
+
 ###################
 ## DOCUMENTATION ##
 ###################

@@ -4,8 +4,9 @@
 from imblearn.over_sampling import RandomOverSampler
 import pandas as pd
 from ...actionable import Actionable
-from ...output import Output, Input
-from ...step import is_step, runner
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
 
 
 @is_step('normalize')
@@ -16,20 +17,21 @@ class ActRandomOverSampling(Actionable):
     name = "Random Over Sampling"
     def __init__(self):
         self.configuration:dict = {}
+        self.resampler:RandomOverSampler = None
     
-    @runner
-    def run(self, input_data: Input, callback:callable=None) -> Output: # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
-        Add resample random over sampling to Input
+        Add resample random over sampling to Candidate
 
         Args:
-            input_data (Input): Fit data
-            callback (callable, optional): Call after each step. Defaults to None.
+            dataset (Dataset): Fit data
 
         Returns:
-            Output: Transformed input
+            Candidate: Transformed candidate
         """
-        return input_data.add_resample(self)
+        self.resampler = RandomOverSampler(sampling_strategy='minority')
+        self.resampler.fit(dataset.X, dataset.y)
+        return self
     
     def resample(self, X:pd.DataFrame, y:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -42,9 +44,9 @@ class ActRandomOverSampling(Actionable):
         Returns:
             tuple[pd.DataFrame, pd.DataFrame]: _description_
         """
-        return RandomOverSampler(sampling_strategy='minority').fit_resample(X, y)
+        return self.resampler.fit_resample(X, y)
     
-    def priorize(self, input_data:Input=None) -> float:
+    def priorize(self, candidate:Candidate=None) -> float:
         """
         Try to priorize himself
 
@@ -52,5 +54,5 @@ class ActRandomOverSampling(Actionable):
         """
         return 1
     
-    def suitable(self, input_data: Input) -> bool:
-        return input_data.dataset.type_of_target in ['binary', 'multiclass']
+    def suitable(self, candidate: Candidate) -> bool:
+        return candidate.dataset.type_of_target in ['binary', 'multiclass']
