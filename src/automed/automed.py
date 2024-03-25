@@ -98,32 +98,6 @@ class AutoMed:
         """
         self.first_step = Step.from_pipeline(pipeline)
 
-    # DEBUG -> Testing purpose
-    def autosklearn_pipeline(self, timeout:int=30) -> None:
-        """DEBUG -> Testing purpose
-        Load a basic pipeline with AutoSkLearn as model 
-
-        Args:
-            timeout (int, optional): Max running timeout of AutoSKLearn model in seconds.
-            Defaults to 30.
-        """
-        self.first_step = MetaOrderedStep()
-        sklearn = ActAutoSKLearn() # pylint: disable=undefined-variable
-        sklearn.configure('running_time', timeout)
-
-        self.first_step.add_step(sklearn)
-
-    # DEBUG -> Testing purpose
-    def tplot_pipeline(self) -> None:
-        """DEBUG -> Testing purpose
-        Load a basic pipeline with AutoSkLearn as model 
-        """
-        self.first_step = MetaOrderedStep()
-        self.first_step.add_step(MetaStep(tag='cleaning'))
-        self.first_step.add_step(MetaStep(tag='normalize'))
-        self.first_step.add_step(ActTPLOT()) # pylint: disable=undefined-variable
-
-    # DEBUG -> Testing purpose.
     def default_pipeline(self, fast=False) -> None:
         """Load the default pipeline.
         Default pipeline is the recommended way to create classifier and regressor
