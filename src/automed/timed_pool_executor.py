@@ -5,6 +5,7 @@
 """
 
 import threading
+import warnings
 import time
 import traceback
 import multiprocess
@@ -47,26 +48,29 @@ def process_daemon(
             Used to count number of ran actions
     """
     result = None
-    while True:
-        if not to_run_queue.empty():
-            value = to_run_queue.get()
-            if isinstance(value, str) and value == "stop":
-                to_run_queue.put("stop")
-                break
+    
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        while True:
+            if not to_run_queue.empty():
+                value = to_run_queue.get()
+                if isinstance(value, str) and value == "stop":
+                    to_run_queue.put("stop")
+                    break
+                
+                method, args, kwargs, callback_id = value
+                
+                try:
+                    sync_cache(cache_list)
+                    result = method(*args, **kwargs)
+                    queue.put((result, callback_id))
+                except Exception:  # pylint: disable=broad-exception-caught
+                    error_queue.put(traceback.format_exc())
+                finally:
+                    finally_queue.put(1)
+            else:
+                time.sleep(0.1)
             
-            method, args, kwargs, callback_id = value
-            
-            try:
-                sync_cache(cache_list)
-                result = method(*args, **kwargs)
-                queue.put((result, callback_id))
-            except Exception:  # pylint: disable=broad-exception-caught
-                error_queue.put(traceback.format_exc())
-            finally:
-                finally_queue.put(1)
-        else:
-            time.sleep(0.1)
-        
 
 class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
     """
