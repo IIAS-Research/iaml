@@ -1,9 +1,0 @@
-Metadata-Version: 2.1
-Name: pyrfr
-Version: 0.6.1
-Author: Stefan Falkner
-Author-email: sfalkner@cs.uni-freiburg.de
-License: Use as you wish. No guarantees whatsoever.
-Classifier: Development Status :: 3 - Alpha
-Requires-Python: >=3
-License-File: LICENSE_cereal-1.2.2
