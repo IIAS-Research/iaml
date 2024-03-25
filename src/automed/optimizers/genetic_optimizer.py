@@ -43,18 +43,17 @@ class GeneticOptimizer(Optimizer):
         Returns:
             list[Candidate]: Optimized candidates
         """
+        candidates.sort(reverse=True)
         
         # Will be used for random generation
         if self.first_candidate_pool is None:
-            self.first_candidate_pool = candidates
+            self.first_candidate_pool = candidates[0:6]
             
         nb_to_keep:int = round(self.number_of_candidate / 4)
         nb_to_mutate:int = round(self.number_of_candidate / 4)
         
         self.generation_count += 1
-        
-        candidates.sort(reverse=True)
-        
+                
         new_generation = [deepcopy(candidate) for candidate in candidates[0:nb_to_keep]]
         new_generation += [self.__mutate(candidate) for candidate in candidates[0:nb_to_mutate]]
         new_generation = [item for item in new_generation if item is not None] # remove None
