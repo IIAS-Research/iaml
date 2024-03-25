@@ -307,7 +307,10 @@ class AutoPipeline(Pipeline):
         def p(pred_data):
             return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
 
-        explainer = shap.KernelExplainer(p, self.original_dataset or X)
+        mask_dataset = self.original_dataset if self.original_dataset is not None and not self.original_dataset.empty \
+            else X
+
+        explainer = shap.KernelExplainer(p, mask_dataset)
         shap_values = explainer.shap_values(X, nsamples=nsamples)
 
         shap_explanation = shap.Explanation(
