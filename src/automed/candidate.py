@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
-from .logger import Logger
 from .splitter import random_splitter
 from .auto_pipeline import AutoPipeline
 
@@ -41,7 +40,8 @@ class Candidate:
 
         self.dataset = dataset
         self.metrics = copy(metrics) if metrics is not None else []
-        self.pipeline = auto_pipeline or AutoPipeline(estimator_type=dataset.needed_estimator) # Pipeline
+        self.pipeline = auto_pipeline \
+            or AutoPipeline(estimator_type=dataset.needed_estimator)
         
         if main_metric is None:
             if self.pipeline.estimator_type == "classifier":
@@ -157,7 +157,7 @@ class Candidate:
             elif hasattr(instance, 'resample') and callable(instance.resample):
                 self.pipeline.add_resample(instance)
                 # Resample in Dataset used in pipeline generation step
-                self.dataset = Dataset(*instance.resample(self.dataset.X, self.dataset.y))
+                self.dataset = self.dataset.resample(instance.resample)
                 
         return self.to_output()
         
@@ -217,7 +217,7 @@ class Candidate:
                     
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
-            y_pred = copied_pipe.predict(test_ds.X, model_only=(not self.is_meta))
+            y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
             metrics.append(self.__compute_metrics(test_ds.y, y_pred))
             if not from_cache:
                 to_cache.append((train_ds, test_ds))

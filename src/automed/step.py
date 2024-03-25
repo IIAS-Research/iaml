@@ -178,6 +178,17 @@ class Step: # pylint: disable=too-many-public-methods
             self.configure(key, value)
             
     def passthrough_parameters(self, default:bool=True):
+        """
+        Get all configuration elements that have to be passed to the next step
+        or to the model
+
+        Args:
+            default (bool, optional): default behavior for configuration elements
+                without "passthrough" key. Defaults to True.
+
+        Returns:
+            dict: Configuration elements to pass through
+        """
         parameters = {}
         for key, value in self.configuration.items():
             if "passthrough" in value:
@@ -210,7 +221,8 @@ class Step: # pylint: disable=too-many-public-methods
     
     def serializable_resume_configuration(self) -> dict:
         """Used by fingerprint methods"""
-        return {key: value.__name__ if callable(value) else value for key, value in self.resume_configuration().items()}
+        return {key: value.__name__ if callable(value) else value \
+            for key, value in self.resume_configuration().items()}
     
     @classmethod
     def __resume_a_configuration(cls, config:dict):

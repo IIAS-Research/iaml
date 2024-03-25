@@ -19,7 +19,7 @@ class StackingRegressor(MetaPredictor):
         return self        
         
     @classmethod
-    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=arguments-differ
         """
         Does this meta predictor is usable given type of target ?
         """

@@ -14,9 +14,15 @@ class Cache(metaclass=MetaSingleton):
         self.__disable = False
         
     def disable(self) -> None:
+        """
+        Disable cache everywhere
+        """
         self.__disable = True
         
     def enable(self) -> None:
+        """
+        Enable cache everywhere
+        """
         self.__disable = False
         
     def __get_from_fingerprint(self, fingerprint:str) -> list:
@@ -32,7 +38,7 @@ class Cache(metaclass=MetaSingleton):
                 
         return [item for item in self.saved if item[0] == fingerprint]
         
-    def from_cache(self, fingerprint:str, dataset:pd.DataFrame) -> any:
+    def from_cache(self, fingerprint:str, dataset:pd.DataFrame) -> any:  
         """
         Get data from cache
         
@@ -64,3 +70,5 @@ class Cache(metaclass=MetaSingleton):
         
         if len(self.saved) > self.max_cache_size:
             del self.saved[0]
+            
+        return None

@@ -19,5 +19,8 @@ class MetaSingleton(type):
         return cls._instances[cls]
     
     @classmethod
-    def reset(cls):
-        cls._instances = {}
+    def reset(mcs):
+        """
+        Delete saved instances -> Reset the singleton
+        """
+        mcs._instances = {}

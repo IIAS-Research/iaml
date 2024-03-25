@@ -111,8 +111,7 @@ class Dataset:
             return Dataset(X.drop(columns=self.groups.columns),
                             y,
                             groups=X[self.groups.columns])
-        else:
-            return Dataset(*resampler(self.X, self.y))
+        return Dataset(*resampler(self.X, self.y))
         
     def split(self, splitter: callable, *args, **kwargs) -> Iterator[tuple['Dataset', 'Dataset']]: 
         """

@@ -60,7 +60,8 @@ class GeneticOptimizer(Optimizer):
         new_generation = [item for item in new_generation if item is not None] # remove None
         
         while len(new_generation) < self.number_of_candidate:
-            new_generation += [self.__random_configuration(random.choice(self.first_candidate_pool))]
+            new_generation += \
+            [self.__random_configuration(random.choice(self.first_candidate_pool))]
 
         new_generation = [item for item in new_generation if item is not None] # remove None
         

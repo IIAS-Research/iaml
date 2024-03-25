@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from .dataset import Dataset
-from .logger import Logger
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -110,10 +109,10 @@ class AutoPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         if not only_predictor:
-            X, y = self.fit_transform(X, y)
+            X, y = self.fit_transform(X, y, **kwargs)
             
         dataset = Dataset(X, y)
-        self.predictor[1].fit(dataset)
+        self.predictor[1].fit(dataset, **kwargs)
         
         return self
     
@@ -126,7 +125,7 @@ class AutoPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         dataset = Dataset(X, y)
-        for name, step in [*self.transformers, *self.resamplers]:
+        for _, step in [*self.transformers, *self.resamplers]:
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
                 step.fit(dataset)
             else:
@@ -270,8 +269,7 @@ class AutoPipeline(Pipeline):
     def __eq__(self, other: 'AutoPipeline') -> bool:
         if isinstance(other, AutoPipeline):
             return self.fingerprint() == other.fingerprint()
-        else:
-            return NotImplemented 
+        return NotImplemented 
         
     def __sklearn_clone__(self):
         return deepcopy(self)

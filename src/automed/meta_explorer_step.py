@@ -1,7 +1,6 @@
 """
 [METASTEP] Explore all sub steps in Thread and return one candidate by Sub Step
 """
-from copy import deepcopy
 from .metastep import MetaStep
 from .candidate import Candidate
 from .step import Step

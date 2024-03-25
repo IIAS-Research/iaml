@@ -1,7 +1,6 @@
 """
 [STEP] Decompose features with PCA
 """
-from copy import deepcopy
 import pandas as pd
 from sklearn.decomposition import PCA
 from ...actionable import Actionable

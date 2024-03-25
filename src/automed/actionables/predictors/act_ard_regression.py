@@ -42,7 +42,8 @@ class ActARDRegression(Predictor):
                 'range': [0.001, 1e-06]
                 },
             'threshold_lambda': {
-                'description': 'Threshold for removing (pruning) weights with high precision from the computation.',
+                'description': 'Threshold for removing (pruning) weights with high \
+                    precision from the computation.',
                 'default': 10000.0,
                 'range': [1000.0, 100000.0]
                 },

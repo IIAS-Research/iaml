@@ -3,12 +3,11 @@
 """
 import pandas as pd
 import numpy as np
+from sklearn.cluster import FeatureAgglomeration
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-from sklearn.cluster import FeatureAgglomeration
-from ...logger import Logger
 
 
 @is_step('features_preprocessing')

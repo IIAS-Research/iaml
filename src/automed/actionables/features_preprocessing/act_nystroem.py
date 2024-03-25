@@ -2,7 +2,6 @@
 [STEP] Decompose features with Nystroem
 """
 import pandas as pd
-import numpy as np
 from sklearn.kernel_approximation import Nystroem
 from ...actionable import Actionable
 from ...dataset import Dataset

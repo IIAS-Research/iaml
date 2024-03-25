@@ -67,7 +67,8 @@ class ActSelectPercentile(Actionable):
     def suitable(self, candidate: Candidate) -> bool:
         # Negative values are not supported
         return not((candidate.dataset.X < 0).any().any() or (candidate.dataset.y < 0).any()) \
-            and candidate.dataset.type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+            and candidate.dataset.type_of_target in \
+                ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

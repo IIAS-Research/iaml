@@ -57,5 +57,7 @@ class Predictor(Actionable):
         return None
                 
     @property
-    def classes_(self):
+    def classes_(self) -> list:
+        """Return classes of the target in fit data
+        """
         return self.model.classes_

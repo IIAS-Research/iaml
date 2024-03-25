@@ -3,7 +3,6 @@
 """
 
 import time
-import math
 import multiprocessing
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor
@@ -14,7 +13,7 @@ from .candidate import Candidate
 from .dataset import Dataset
 from .metric import Metric
 from .worker_manager import WorkerManager
-from .splitter import kfold_splitter, random_splitter
+from .splitter import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer
@@ -36,7 +35,7 @@ except ImportError as e:
 
 # Main class of the package
 # Useful to create & run pipeline
-class AutoMed:
+class AutoMed:  # pylint: disable=too-many-instance-attributes
     """ Main class of the module.
     AutoMed will load, configure and fit machine learning pipelines
 
@@ -44,7 +43,7 @@ class AutoMed:
         candidate (list): Candidates of the pipeline after run
         fit_candidate (Candidate): last Candidate sent to the first step 
     """
-    def __init__(self,
+    def __init__(self, # pylint: disable=too-many-arguments
                 max_workers:int=None,
                 quiet:bool=False,
                 max_stage_duration:int=None,
@@ -85,7 +84,8 @@ class AutoMed:
         self.executor = None
         
         self.default_pipeline() # Load default pipeline
-        self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) else multiprocessing.cpu_count()
+        self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) \
+            else multiprocessing.cpu_count()
         
         self.chosen_candidate:Candidate = None
         WorkerManager(max_workers=self.max_workers)
@@ -115,7 +115,9 @@ class AutoMed:
         self.first_step.add_step(MetaStep(tag='normalize'))
         
         if self.preprocessor:
-            self.first_step.add_step(MetaExplorerStep(tag='features_preprocessing', also_explore_without=True))
+            self.first_step.add_step(
+                MetaExplorerStep(tag='features_preprocessing', also_explore_without=True)
+            )
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
         
@@ -190,7 +192,8 @@ class AutoMed:
         candidates = self.__optimize(dataset,
                                     candidates,
                                     optimizer=GeneticOptimizer(),
-                                    max_duration=self.max_duration - (time.monotonic() - start_time),
+                                    max_duration=self.max_duration - \
+                                        (time.monotonic() - start_time),
                                     patience=patience)
         ### FINAL FIT
         
@@ -205,6 +208,12 @@ class AutoMed:
     
     @property
     def chosen_model(self):
+        """
+        Return the best model trained with fit
+
+        Returns:
+            AutoPipeline: Best predictor pipeline
+        """
         if not self.chosen_candidate:
             return None
         
@@ -289,10 +298,6 @@ class AutoMed:
         while   not(optimizer.finished) \
                 and (patience == -1 or iterations_without_improvement < patience) \
                 and (max_duration == -1 or max_duration > duration):
-            # Logger().log("max : ", max_duration, "duration : ", duration, "> ", max_duration > duration,
-            #             "starting_time : ", starting_time, "time : ", time.monotonic(),
-            #             force=True)
-            
             # Generate new candidates
             candidates = optimizer.run(candidates)
             
@@ -401,7 +406,7 @@ class AutoMed:
 
             progress.update(task, completed=step_count)
 
-        # Order ouputs according the first metric
+        # Order candidate according the main metric
         self.candidates.sort(reverse=True)
         return self.candidates
 
@@ -464,7 +469,16 @@ class AutoMed:
         return None
 
 
-def process_executor(candidate:Candidate, *args, **kwargs):
+def process_executor(candidate:Candidate, *args, **kwargs) -> 'Candidate':
+    """
+    Wrap candidate training to run it in subprocess
+
+    Args:
+        candidate (Candidate): Not trained candidate
+
+    Returns:
+        Candidate: Trained candidate
+    """
     # Deepcopy -> Without it, process end is never detected. Strange...
     candidate = deepcopy(candidate)
     candidate.training_evaluate(*args, **kwargs)

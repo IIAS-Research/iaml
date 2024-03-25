@@ -33,7 +33,7 @@ class MetaPredictor(Predictor):
         
         return candidate 
     
-    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument, arguments-renamed
         """
         Does this meta predictor is usable given type of target ?
         """

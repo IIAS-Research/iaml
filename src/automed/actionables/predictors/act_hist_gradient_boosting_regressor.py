@@ -17,7 +17,8 @@ class ActHistGradientBoostingRegressor(Predictor):
     def __init__(self):
         self.configuration:dict = {
             'l2_regularization': {
-                'description': 'The L2 regularization parameter. Use 0 for no regularization (default).',
+                'description': 'The L2 regularization parameter. \
+                    Use 0 for no regularization (default).',
                 'default': 1e-10,
                 'range': [1e-10, 1.0]
                 },

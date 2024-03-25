@@ -55,7 +55,10 @@ class ActSGDRegressor(Predictor):
             'loss': {
                 'description': 'The loss function to be used.',
                 'default': "squared_error",
-                'categorical': ["squared_error", "huber", "epsilon_insensitive", "squared_epsilon_insensitive"]
+                'categorical': ["squared_error",
+                                "huber",
+                                "epsilon_insensitive",
+                                "squared_epsilon_insensitive"]
                 },
             'penalty': {
                 'description': 'The penalty (aka regularization term) to be used.',

@@ -1,3 +1,9 @@
+"""
+    TimedPoolExecutor will run *max_workers* new process and will send them actions
+    to run.
+    Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
+"""
+
 import threading
 import time
 import traceback
@@ -5,7 +11,14 @@ import multiprocess
 from .cache import Cache
 from .logger import Logger
 
-def sync_cache(cache_list):
+def sync_cache(cache_list) -> None:
+    """
+    Sync Cache() classe with others processes
+
+    Args:
+        cache_list (list): Processes shared cache list
+    """
+    # Lock mechanism to avoid simultaneous access
     while cache_list[0] or cache_list[0] is None: # is lock ?
         time.sleep(0.05)
         
@@ -55,7 +68,7 @@ def process_daemon(
             time.sleep(0.1)
         
 
-class TimedPoolExecutor:
+class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
     """
         TimedPoolExecutor will run *max_workers* new process and will send them actions
         to run.
@@ -97,9 +110,14 @@ class TimedPoolExecutor:
         # Create and start sub process (will only wait until first submit)
         for _ in range(max_workers):
             self.process.append(
-                multiprocess.Process(
+                multiprocess.Process( # pylint: disable=not-callable
                     target=process_daemon,
-                    args=[self.to_run_queue, self.result_queue, self.error_queue, self.finally_queue, self.cache_list]
+                    args=[self.to_run_queue,
+                        self.result_queue,
+                        self.error_queue,
+                        self.finally_queue,
+                        self.cache_list
+                    ]
                 )
             )
             self.process[-1].start()
@@ -116,29 +134,7 @@ class TimedPoolExecutor:
         """
             Shutdown TimedPoolExecutor : Kill subprocess and thread
         """
-        self.stop_flag = True
-        
-        # Force stop if needed
-        
-        # # soft kill
-        # for process in self.process:
-        #     if process.is_alive():
-        #         process.terminate()
-                
-        # time.sleep(0.1) # Wait a bit for process turning off
-        
-        # # hard kill
-        # still_alive:bool = True
-        # while still_alive:
-        #     still_alive = False
-        #     for process in self.process:
-        #         if process.is_alive():
-        #             print('still not died')
-        #             still_alive = True
-        #             process.kill()
-        #             time.sleep(0.1)
-                    
-        # print("All died !")
+        self.stop_flag = True # Main daemon thread will kill process
         
 
     def __collect_results(self) -> None:
@@ -173,11 +169,11 @@ class TimedPoolExecutor:
         
         # Kill process
         while not self.to_run_queue.empty():
-            self.to_run_queue.get()
-        self.to_run_queue.put("stop")
+            self.to_run_queue.get() # Empty task queue 
+        self.to_run_queue.put("stop") # Gentilly ask process to stop
         time.sleep(0.5)
         for process in self.process:
-            if process.is_alive():
+            if process.is_alive(): # If process still alive, force stop
                 process.terminate()
             
     
@@ -220,7 +216,8 @@ class TimedPoolExecutor:
         Allow to reuse this instance of TimedPoolExecutor without restarting subProcess
         """
         if not self.sliding_stages:
-            for queue in [self.error_queue, self.finally_queue, self.to_run_queue, self.result_queue]:
+            for queue in \
+                [self.error_queue, self.finally_queue, self.to_run_queue, self.result_queue]:
                 while not queue.empty():
                     queue.get()
                     
