@@ -39,7 +39,8 @@ class ActCategoryStringToNumeric(Actionable):
             Candidate: Transformed candidate (with updated pipeline)
         """
         self.column_to_encode = [dataset.y]
-        self.explanations = [f'Encoded column **`{np.unique(dataset.y)}`**. Mapping of categorical values to numerical values:\n'
+        self.explanations = [f'Encoded column **`{np.unique(dataset.y)}`**. \
+                            Mapping of categorical values to numerical values:\n'
                             f'- `{value}`: {i}' for i, value in enumerate(np.unique(dataset.y))]
         return self
 

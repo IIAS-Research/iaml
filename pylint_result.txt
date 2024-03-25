@@ -4,14 +4,18 @@ src/automed/metrics/recall_metric.py:54:13: W0511: TODO Find something less arbi
 src/automed/metrics/f1_score_metric.py:54:13: W0511: TODO Find something less arbitrary (about pos_label) (fixme)
 ************* Module automed.metrics.precision_metric
 src/automed/metrics/precision_metric.py:52:13: W0511: TODO Find something less arbitrary (fixme)
+************* Module automed.actionables.cleaning.act_word2vec
+src/automed/actionables/cleaning/act_word2vec.py:123:65: W0640: Cell variable vectorizer defined in loop (cell-var-from-loop)
+************* Module automed.actionables.cleaning.act_encode_target_column
+src/automed/actionables/cleaning/act_encode_target_column.py:6:1: W0511: TODO -> Rework. (fixme)
 ************* Module automed.actionables.cleaning.act_mean_column
 src/automed/actionables/cleaning/act_mean_column.py:27:30: W0511: TODO Review when adding new kind of imputer (fixme)
 ************* Module automed.wrapper.wrap_iterative_gridsearch
 src/automed/wrapper/wrap_iterative_gridsearch.py:152:70: W0511: TODO improve this (fixme)
 ************* Module automed.optimizers.genetic_optimizer
 src/automed/optimizers/genetic_optimizer.py:10:1: W0511: TODO -> Only optimize predictor for now. See if we can optimize cleaning stage (fixme)
-src/automed/optimizers/genetic_optimizer.py:70:4: R0912: Too many branches (13/12) (too-many-branches)
+src/automed/optimizers/genetic_optimizer.py:69:4: R0912: Too many branches (13/12) (too-many-branches)
 
 ------------------------------------------------------------------
-Your code has been rated at 9.98/10 (previous run: 9.96/10, +0.02)
+Your code has been rated at 9.97/10 (previous run: 9.95/10, +0.02)
 

@@ -56,6 +56,8 @@ scikit-multilearn==0.2.0
 scipy==1.11.4
 seaborn==0.13.1
 setuptools==69.1.0
+shap==0.45.0
+shiny==0.5.1
 six==1.16.0
 smart-open==7.0.1
 stack-data==0.6.3

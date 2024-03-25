@@ -22,8 +22,8 @@ class ActMeanColumn(Actionable):
         self.columns:list[str] = None
         self.configuration:dict = {
             'empty_threshold': {
-                'description': """Column with less or equal proportion of empty row will
-                    be fill with mean value. 1 will always fill void values""",
+                'description': "Column with less or equal proportion of empty row will \
+                    be fill with mean value. 1 will always fill void values",
                 'default': 1 # TODO Review when adding new kind of imputer
             }
         }

@@ -46,15 +46,11 @@ class ActDropNumericalColumn(Actionable):
 
             if nan_values_count / len(values) >= self.get_config('empty_threshold'):
                 self.columns_to_drop.append(column)
-                explain.append((
-                    nan_values_count,
-                    len(values),
-                    nan_values_count / len(values) * 100,
-                ))
+                explain.append((nan_values_count, len(values)))
 
         self.explanations = [
             f"""Dropped column **`{c}`** because **{v[0]}** values out of
-                **{v[1]}** (**{v[2]:.2f}%**) are empty."""
+                **{v[1]}** (**{(v[0] / v[1] * 100):.2f}%**) are empty."""
             for c, v in zip(self.columns_to_drop, explain)
         ]
 

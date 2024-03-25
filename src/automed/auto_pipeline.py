@@ -7,9 +7,12 @@ import json
 from copy import deepcopy
 from hashlib import md5
 from typing import TYPE_CHECKING
+import numpy as np
+import shap
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from .dataset import Dataset
+from .explanation import Explanation
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -23,18 +26,27 @@ class AutoPipeline(Pipeline):
     
     def __init__(
         self,
-        steps: list[tuple[str, object]] = None,
+        steps: list[tuple[str, 'Step']] = None,
+        original_dataset: pd.DataFrame = None,
         estimator_type:str = None
     ) -> None:
         """
         Args:
-            steps (list[tuple[str, object]], optional): Ordered list of Automed.Steps.
-                                                        Defaults to None.
+            steps (list[tuple[str, Step]], optional): Ordered list of Automed.Steps.
+                Defaults to None.
+            explanations (list[Explanation], optional): List of Explanation objects.
+                Defaults to None.
+            original_dataset (pd.DataFrame, optional): Untransformed
+                dataset to use as a masker for the SHAP explainer which
+                will be used to explain the model later on. Defaults to
+                None. If not provided, the prediction dataset will be
+                used as the masker, which may impact the accuracy of
+                the explanations.
         """
         if steps is None:
             steps = []
             
-        
+        self.original_dataset = original_dataset
         self.transformers:list[tuple[str, object]] = []
         self.resamplers:list[tuple[str, object]] = []
         self.predictor:tuple[str, object] = None
@@ -43,7 +55,7 @@ class AutoPipeline(Pipeline):
             raise ValueError(f"Estimator type ({estimator_type}) must be classifier or regressor")
         self.__estimator_type = estimator_type
         
-        super().__init__(steps)
+        super().__init__(steps) # split steps into transformers, resamplers and predictor
         
     @property
     def _estimator_type(self):
@@ -257,7 +269,7 @@ class AutoPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.predictor[1].predict(X)
-    
+
     @property
     def optimizable_step(self) -> list['Step']:
         """
@@ -270,9 +282,55 @@ class AutoPipeline(Pipeline):
         if isinstance(other, AutoPipeline):
             return self.fingerprint() == other.fingerprint()
         return NotImplemented 
+    
+    def explain_model(self, X: 'pd.DataFrame', nsamples: int = 20):
+        """
+        Explains the model by computing SHAP values on the fitted model.
+        Uses the train set as the masker, and the provided set as
+        prediction.
+
+        Args:
+            X (DataFrame): Prediction set to compute SHAP values for.
+            nsamples (int, optional): Number of samples to pick from
+                the masker to pick feature data from for each row in
+                the provided prediction dataset. More samples means
+                more accurate SHAP values and longer computing times.
+                Defaults to 20.
+
+        Returns:
+            Explanation: Model explanation, with an overview of the
+                most important features, and graphs.
+        """
+        if not self.have_model:
+            raise RuntimeError('There is no model to explain.')
+
+        def p(pred_data):
+            return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
+
+        mask_dataset = self.original_dataset if self.original_dataset is not None \
+            and not self.original_dataset.empty else X
+
+        explainer = shap.KernelExplainer(p, mask_dataset)
+        shap_values = explainer.shap_values(X, nsamples=nsamples)
+
+        shap_explanation = shap.Explanation(
+            shap_values,
+            base_values=np.tile(explainer.expected_value, (shap_values.shape[0], 1)),
+            data=X.to_numpy(),
+            feature_names=X.columns.to_list(),
+            output_names=X.columns.to_list())
+
+        return Explanation(self.model, None, None, shap_explanation)
+    
+    # Implement scikit-learn estimator's methods
         
+    def __sklearn_is_fitted__(self):
+        return self.have_model
+    
     def __sklearn_clone__(self):
         return deepcopy(self)
+    
+    # Fingerprint (used by cache)
     
     def fingerprint(self) -> str:
         """

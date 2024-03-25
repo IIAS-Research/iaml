@@ -1,15 +1,36 @@
 """
 Last step of a pipeline -> can make prediction
 """
+from abc import ABCMeta, abstractmethod
+from typing import Any
+import dataclasses
 import pandas as pd
 from .actionable import Actionable
 from .decorators.runner import runner
 from .candidate import Candidate
 
-class Predictor(Actionable):
+@dataclasses.dataclass
+class Model(metaclass=ABCMeta):
     """
-    Last step of a pipeline -> can make prediction
+    Model type (use for typing purposes only).
     """
+
+    @abstractmethod
+    def predict(self, X, *args, **kw) -> Any:
+        """
+        Any predict method implemented by most ML frameworks.
+        """
+
+class Predictor(Actionable, metaclass=ABCMeta):
+    """
+    [STEP] Learn : Abstract learning step
+    
+    Also acts as an interface with traditional scikit-learn models
+    for better integration with AutoPipeline.
+    """
+    
+    model: Model
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.optimizable:bool = True
