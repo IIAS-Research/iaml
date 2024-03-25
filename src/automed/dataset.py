@@ -74,16 +74,26 @@ class Dataset:
         if deep:
             return copy.deepcopy(self)
         return copy.copy(self)
-
+    
     def transform(self, method:callable) -> None:
         """
-        Apply transform method to X data
+        Apply transform method to X or y data based on the method signature
 
         Args:
-            method (callable): Callable to apply. Will be call with X as parameter 
+            method (callable): Callable to apply. Will be call with X or y as parameter
+
+        Returns:
+            Dataset: Transformed dataset
         """
-        self.__X = method(self.X)
-        self.columns_types = self.__detect_columns_types()
+        if 'X' in method.__code__.co_varnames:
+            self.__X = method(self.__X)
+            self.columns_types = self.__detect_columns_types()
+        elif 'y' in method.__code__.co_varnames:
+            self.__y = method(self.__y)
+            self.type_of_target = type_of_target(self.__y)
+        else:
+            raise ValueError('Unsupported method signature, should have X or y as parameters.')
+            
     
     @property
     def has_groups(self) -> bool:

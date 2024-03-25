@@ -179,7 +179,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
 
             # Generate candidates
             candidates = self.__run(self.fit_candidate, *args, **kwargs)
-            
+         
             # Remove candidate without predictor 
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
@@ -259,10 +259,6 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                             dataset,
                             splitter=self.splitter
                         )
-                
-            # # Add callback to update progressbar
-            # for future in future_jobs:
-            #     future.add_done_callback(update_progressbar)
             
             # Wait for all tasks to complete with a timeout
             new_candidates += self.executor.join(min(timeout, self.max_stage_duration))
@@ -381,7 +377,6 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             # Verify if a subclass is suitable or not
             if metric.suitable(X, y, type_of_target):
                 metrics.append(metric)
-
         return metrics
     
     def __meta_predictor_iter(self, type_of_target:str):
@@ -406,7 +401,6 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         with Logger().progress as progress:
             step_count:int = self.first_step.count_steps()
             task = progress.add_task('Generate candidates', total=step_count)
-            
             # Override callback to handle progress bar
             def progress_callback(step: Step) -> None:
                 progress.update(task, advance=1)
@@ -415,9 +409,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                     
             # RUN!
             self.candidates = self.first_step.run(candidate, callback=progress_callback)
-
             progress.update(task, completed=step_count)
-
+            
         # Order candidate according the main metric
         self.candidates.sort(reverse=True)
         return self.candidates
