@@ -340,7 +340,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             # Logger().log([(round(candidate.get_main_metric_value(), 5), \
             #     candidate.pipeline.predictor[0], \
             #     candidate.pipeline.predictor[1].resume_configuration()) \
-            #         for candidate in candidates])
+            #         for candidate in candidates], force=True)
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()
