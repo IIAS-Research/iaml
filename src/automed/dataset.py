@@ -85,15 +85,8 @@ class Dataset:
         Returns:
             Dataset: Transformed dataset
         """
-        if 'X' in method.__code__.co_varnames:
-            self.__X = method(self.__X)
-            self.columns_types = self.__detect_columns_types()
-        elif 'y' in method.__code__.co_varnames:
-            self.__y = method(self.__y)
-            self.type_of_target = type_of_target(self.__y)
-        else:
-            raise ValueError('Unsupported method signature, should have X or y as parameters.')
-            
+        self.__X = method(self.__X)
+        self.columns_types = self.__detect_columns_types()
     
     @property
     def has_groups(self) -> bool:

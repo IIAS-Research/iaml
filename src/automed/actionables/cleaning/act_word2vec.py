@@ -4,6 +4,11 @@
 import string
 import pandas as pd
 from gensim.models import Word2Vec
+
+from nltk import download
+download('stopwords')
+download('punkt')
+    
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -123,3 +128,6 @@ class ActWord2Vec(Actionable):
         Return : continuous between 0 and 1
         """
         return 0.4
+    
+    def suitable(self, candidate: Candidate) -> bool:
+        return bool(candidate.dataset.get_columns_names_by_type([DataType.TEXT]))

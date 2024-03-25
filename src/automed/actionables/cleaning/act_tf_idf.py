@@ -31,9 +31,7 @@ class ActTfIdf(Actionable):
         """
         
         self.columns = []
-        for column in dataset.get_columns_names_by_type(
-            [DataType.SHORT_TEXT, DataType.TEXT]
-            ):
+        for column in dataset.get_columns_names_by_type([DataType.SHORT_TEXT]):
             values = dataset.X[column].fillna('')
             vectorizer = TfidfVectorizer().fit(values)
             self.columns.append((column, vectorizer))

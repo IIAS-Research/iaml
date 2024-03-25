@@ -2,10 +2,17 @@
 [STEP] Encode string categorical target column to numeric
 """
 
+# Disabled for now
+# TODO -> Rework.
+# - We can't use 'y' in transform
+# - Probably must not be a step 
+# - Have a robust mapping
+# - AutoPipeline must be able to reverse the mapping after prediction
+#       (otherwise, outputs have no sense)
+
 import numpy as np
 from ...actionable import Actionable
 from ...dataset import Dataset
-from ...data_type import DataType
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
@@ -20,7 +27,7 @@ class ActCategoryStringToNumeric(Actionable):
     def __init__(self):
         self.configuration:dict = {}
         self.column_to_encode:list[str] = None     
-         
+        
     def fit(self, dataset:Dataset) -> Actionable:
         """
         Find column to encode and explain the transformation
@@ -33,7 +40,7 @@ class ActCategoryStringToNumeric(Actionable):
         """
         self.column_to_encode = [dataset.y]
         self.explanations = [f'Encoded column **`{np.unique(dataset.y)}`**. Mapping of categorical values to numerical values:\n'
-                             f'- `{value}`: {i}' for i, value in enumerate(np.unique(dataset.y))]
+                            f'- `{value}`: {i}' for i, value in enumerate(np.unique(dataset.y))]
         return self
 
     def transform(self, y: np.array) -> np.array:

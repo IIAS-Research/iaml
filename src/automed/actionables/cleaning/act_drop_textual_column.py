@@ -39,17 +39,17 @@ class ActDropTextualColumn(Actionable):
 
         return self    
 
-    def transform(self, x) -> pd.DataFrame:
+    def transform(self, X) -> pd.DataFrame:
         """
         Drop columns.
 
         Args:
-            x (pd.DataFrame): DataFrame to transform
+            X (pd.DataFrame): DataFrame to transform
 
         Returns:
             pd.DataFrame: Transformed dataset
         """
-        return x.drop(self.columns_to_drop, axis=1)
+        return X.drop(self.columns_to_drop, axis=1)
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

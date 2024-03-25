@@ -289,6 +289,9 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                     optimizer:Optimizer=Optimizer(),
                     patience:int=5,
                     max_duration:int=-1) -> list[Candidate]:
+        if not candidates:
+            return []
+        
         # init
         candidates.sort(reverse=True)
         best_result:float = candidates[0].get_main_metric_value()
