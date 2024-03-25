@@ -2,22 +2,22 @@
 [STEP] Vectorize textual columns with Word2Vec
 """
 import string
+import numpy as np
 import pandas as pd
 from gensim.models import Word2Vec
-
 from nltk import download
-download('stopwords')
-download('punkt')
-    
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
-import numpy as np
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
+
+download('stopwords')
+download('punkt')
+
 stop_words = set(stopwords.words('english'))
 stemmer = PorterStemmer()
 
@@ -75,15 +75,15 @@ class ActWord2Vec(Actionable):
         vectors = [model.wv[word] for word in words if word in model.wv]
         if len(vectors) > 0:
             return np.mean(vectors, axis = 0)
-        else:
-            np.zeros(model.vector_size)
+        
+        return np.zeros(model.vector_size)
             
     def fit(self, dataset:Dataset) -> Actionable:
         """
         Find columns to vectorize and fit the vectorizer
         
         Args:
-           dataset (Dataset): Fit data
+            dataset (Dataset): Fit data
         
         Returns:
             Candidate: Transformed candidate
@@ -92,7 +92,11 @@ class ActWord2Vec(Actionable):
         self.columns = []
         for column in dataset.get_columns_names_by_type([DataType.TEXT]):
             values = dataset.X[column].fillna('').apply(self.preprocess).apply(str.split)
-            vectorizer = Word2Vec(sentences = values, vector_size = 100, window = 5, min_count = 1, workers = 4)
+            vectorizer = Word2Vec(sentences = values,
+                                vector_size = 100,
+                                window = 5,
+                                min_count = 1,
+                                workers = 4)
             self.columns.append((column, vectorizer))   
         
         feature_names = {c: list(v.wv.index_to_key) for c, v in self.columns}
@@ -115,7 +119,9 @@ class ActWord2Vec(Actionable):
         """
         X = X.reset_index(drop=True)
         for name, vectorizer in self.columns:
-            transformed = X[name].fillna('').apply(lambda doc:self.vectorize(self.preprocess(doc), vectorizer))
+            transformed = X[name].fillna('').apply(
+                lambda doc: self.vectorize(self.preprocess(doc), vectorizer)
+            )
             features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
             vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
             X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)

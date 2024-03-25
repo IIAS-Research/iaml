@@ -41,7 +41,10 @@ class Candidate:
         self.dataset = dataset
         self.metrics = copy(metrics) if metrics is not None else []
         self.pipeline = auto_pipeline \
-            or AutoPipeline(estimator_type=dataset.needed_estimator, original_dataset=dataset.X.copy())
+            or AutoPipeline(
+                estimator_type=dataset.needed_estimator,
+                original_dataset=dataset.X.copy()
+            )
         
         if main_metric is None:
             if self.pipeline.estimator_type == "classifier":

@@ -26,6 +26,7 @@
         "progressbar",
         "resampler",
         "resamplers",
+        "shap",
         "todense",
         "tplot",
         "vectorize",
