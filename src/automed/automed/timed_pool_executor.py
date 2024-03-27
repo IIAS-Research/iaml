@@ -268,9 +268,10 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 self.finished_run >= (self.submit_count - self.max_workers/2))
         
         while not self.__finished() and remain_time() and not slide():
-            time.sleep(0.5)
+            time.sleep(0.3)
+            
+        time.sleep(0.2) # Wait result to by collected by thread daemon
         
-        self.__collect_results()
         self.__print_errors()
         
         results = self.results # Save before reset !
