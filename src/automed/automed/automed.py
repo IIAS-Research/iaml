@@ -17,6 +17,7 @@ from .worker_manager import WorkerManager
 from .splitter import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
+from .meta_partial_explorer_step import MetaPartialExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer
 from .meta_predictor import MetaPredictor
 
@@ -51,7 +52,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 metalearner:bool=None,
                 splitter=None,
                 max_duration:int=-1,
-                preprocessor:bool=False):
+                preprocessor:bool=False,
+                main_metric:Metric=None):
         
         Logger().set_quiet(quiet)
         
@@ -75,6 +77,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
 
         # Set splitter
         self.splitter = splitter if splitter is not None else kfold_splitter
+        
+        self.main_metric = main_metric
         
         
         self.max_duration = max_duration
@@ -121,6 +125,10 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         if self.preprocessor:
             self.first_step.add_step(
                 MetaExplorerStep(tag='features_preprocessing', also_explore_without=True)
+            )
+        else:
+            self.first_step.add_step(
+                MetaPartialExplorerStep(tag='features_preprocessing')
             )
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
@@ -175,7 +183,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                     
                 ### INITIAL GENERATE CANDIDATE 
                 dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
-                self.fit_candidate:Candidate = Candidate(dataset)
+                self.fit_candidate:Candidate = Candidate(dataset, main_metric=self.main_metric)
 
                 # Select metrics used to evaluate performances
                 for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):

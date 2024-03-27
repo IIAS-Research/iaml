@@ -6,6 +6,7 @@ import random
 from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
+from ..logger import Logger
 
 # TODO -> Only optimize predictor for now. See if we can optimize cleaning stage
 
@@ -55,7 +56,10 @@ class GeneticOptimizer(Optimizer):
         self.generation_count += 1
                 
         new_generation = [deepcopy(candidate) for candidate in candidates[0:nb_to_keep]]
-        new_generation += [self.__mutate(candidate) for candidate in candidates[0:nb_to_mutate]]
+        for candidate in candidates[0:nb_to_mutate]: # Mutate best candidates twice
+            new_generation.append(self.__mutate(candidate))
+            new_generation.append(self.__mutate(candidate))
+            
         new_generation = [item for item in new_generation if item is not None] # remove None
         
         while len(new_generation) < self.number_of_candidate:
@@ -130,13 +134,25 @@ class GeneticOptimizer(Optimizer):
         Mutate a candidate into a new one 
         """
         new_candidate:Candidate = deepcopy(candidate)
-        step_to_mutate = random.choice(new_candidate.pipeline.optimizable_step)
+        step_to_mutate:Step = random.choice(new_candidate.pipeline.optimizable_step)
         
-        if not self.__config_keys(step_to_mutate):
+        mutable_keys = self.__config_keys(step_to_mutate)
+        if step_to_mutate.is_interchangeable:
+            mutable_keys.append("interchange")
+        
+        if not mutable_keys:
             return None # Nothing to optimize
         
         # Choose a random key to mutate
-        random_key:str = random.choice(self.__config_keys(step_to_mutate))
+        random_key:str = random.choice(mutable_keys)
+        
+        if random_key == "interchange": # Mutate by interchanging the step with sibling
+            new_step:Step = random.choice(step_to_mutate.step_with_same_tags())()
+            new_step.is_interchangeable = True
+            candidate.pipeline.replace_step(step_to_mutate, new_step)
+            return candidate
+            
+        
         random_item:dict = step_to_mutate.configuration[random_key] # Get value of the random key
         new_value = None
         

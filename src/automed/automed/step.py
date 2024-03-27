@@ -40,9 +40,11 @@ class Step: # pylint: disable=too-many-public-methods
     __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
+        self.tags:set = None # Will be set by is_step
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
+        self.is_interchangeable:bool = False # Can be mutate into another step with the same tags
         
         self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
         
@@ -138,6 +140,16 @@ class Step: # pylint: disable=too-many-public-methods
         Backpropagates the parents to the children.
         """
         self.parents_steps.extend(map(id, parents))
+        
+    def step_with_same_tags(self):
+        """
+        Explore available steps and return step with the same tags as the current one
+
+        Returns:
+            list: list of step with the same tags
+        """
+        return [key for key, tags in Step.available_steps.items() if self.tags == set(tags)]
+            
     
     ################
     # Configurable #
@@ -360,7 +372,6 @@ class Step: # pylint: disable=too-many-public-methods
             'configuration': self.configuration,
             'children': []
         }
-    
 
     def conf_to_rich_str_list(self) -> list:
         """

@@ -52,7 +52,7 @@ class Candidate:
             else:
                 self.main_metric = 'r2_score'
         else:
-            self.main_metric = main_metric
+            self.main_metric = str(main_metric)
             
         self.computed_metrics = {}
         self.stacked_path = copy(stacked_path) if stacked_path is not None else []

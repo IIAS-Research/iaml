@@ -110,6 +110,21 @@ class AutoPipeline(Pipeline):
             self.transformers.append(step)
         elif hasattr(instance, 'resample') and callable(instance.resample):
             self.resamplers.append(step)
+    
+    def replace_step(self, old:'Step', new:'Step') -> bool:
+        for idx, step in enumerate(self.transformers):
+            if id(old) == id(step[1]):
+                self.transformers[idx] = (new.name, new)
+                return True
+        for idx, step in enumerate(self.resamplers):
+            if id(old) == id(step[1]):
+                self.resamplers[idx] = (new.name, new)
+                return True
+        if id(old) == id(self.predictor[1]):
+            self.predictor = (new.name, new)
+            return True
+        
+        return False
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
             only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
