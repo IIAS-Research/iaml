@@ -13,6 +13,7 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 from .dataset import Dataset
 from .explanation import Explanation
+from .cache import Cache
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -152,17 +153,28 @@ class AutoPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         dataset = Dataset(X, y)
+        
         for _, step in [*self.transformers, *self.resamplers]:
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
-                step.fit(dataset)
+                from_cache = Cache().from_cache(f"fit_{step.fingerprint()}", dataset.X)
+                if from_cache:
+                    self.replace_step(step, from_cache)
+                else:
+                    step.fit(dataset)
+                    Cache().add_to_cache(f"fit_{step.fingerprint()}", dataset.X, step)
             else:
                 step.fit(dataset.X, dataset.y, **kwargs)
-            
-            if hasattr(step, 'transform'):
-                dataset = Dataset(step.transform(dataset.X), y)
-            elif hasattr(step, 'resample'):
-                dataset = Dataset(*step.resample(dataset.X, dataset.y))
-            
+                
+            dataset_from_cache = Cache().from_cache(f"apply_{step.fingerprint()}", dataset.X)
+            if dataset_from_cache:
+                dataset = dataset_from_cache
+            else:
+                prev_X = dataset.X.copy()
+                if hasattr(step, 'transform'):
+                    dataset = Dataset(step.transform(dataset.X), y)
+                elif hasattr(step, 'resample'):
+                    dataset = Dataset(*step.resample(dataset.X, dataset.y))
+                Cache().add_to_cache(f"apply_{step.fingerprint()}", prev_X, dataset)
         
         return dataset.X, dataset.y
         
@@ -346,7 +358,6 @@ class AutoPipeline(Pipeline):
         return deepcopy(self)
     
     # Fingerprint (used by cache)
-    
     def fingerprint(self) -> str:
         """
         Return a md5 hash that can by use to compare Pipelines 
@@ -354,9 +365,7 @@ class AutoPipeline(Pipeline):
         Returns:
             str: md5 sting
         """
-        to_hash = "\n".join([str(step.__class__) + " = " \
-            + json.dumps(step.serializable_resume_configuration(), sort_keys=True) \
-                for _, step in self.training_steps])
+        to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
         
         return md5(to_hash.encode()).hexdigest()
             

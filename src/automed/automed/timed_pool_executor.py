@@ -9,34 +9,14 @@ import warnings
 import time
 import traceback
 import multiprocess
-from .cache import Cache
+from multiprocess.queues import Empty
 from .logger import Logger
-
-def sync_cache(cache_list) -> None:
-    """
-    Sync Cache() classe with others processes
-
-    Args:
-        cache_list (list): Processes shared cache list
-    """
-    # Lock mechanism to avoid simultaneous access
-    while cache_list[0] or cache_list[0] is None: # is lock ?
-        time.sleep(0.05)
-        
-    cache_list[0] = True # Lock !
-    if len(cache_list) > 1:
-        for fingerprint, params, output in cache_list[1:]:
-            Cache().add_to_cache(fingerprint, params, output)
-    
-    cache_list[:] = [True, *Cache().saved]  
-    cache_list[0] = False # unlock !
 
 def process_daemon(
     to_run_queue:multiprocess.Queue,
     queue:multiprocess.Queue,
     error_queue:multiprocess.Queue,
-    finally_queue:multiprocess.Queue,
-    cache_list):
+    finally_queue:multiprocess.Queue):
     """
     Will be run by TimedPoolExecutor -> Daemon process able to handle actions
 
@@ -52,8 +32,8 @@ def process_daemon(
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         while True:
-            if not to_run_queue.empty():
-                value = to_run_queue.get()
+            try:
+                value = to_run_queue.get(block=False)
                 if isinstance(value, str) and value == "stop":
                     to_run_queue.put("stop")
                     break
@@ -61,14 +41,14 @@ def process_daemon(
                 method, args, kwargs, callback_id = value
                 
                 try:
-                    sync_cache(cache_list)
                     result = method(*args, **kwargs)
                     queue.put((result, callback_id))
                 except Exception:  # pylint: disable=broad-exception-caught
+                    Logger().log("error", force=True)
                     error_queue.put(traceback.format_exc())
                 finally:
                     finally_queue.put(1)
-            else:
+            except Empty:
                 time.sleep(0.1)
             
 
@@ -96,7 +76,6 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.error_queue = multiprocess.Queue()
         self.result_queue = multiprocess.Queue()
         self.finally_queue = multiprocess.Queue()
-        self.cache_list = multiprocess.Manager().list([False, *Cache().saved])
         
         # Method to call after each run
         self.callbacks = [callback]
@@ -119,8 +98,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     args=[self.to_run_queue,
                         self.result_queue,
                         self.error_queue,
-                        self.finally_queue,
-                        self.cache_list
+                        self.finally_queue
                     ]
                 )
             )
@@ -146,18 +124,21 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             Collect results from queues and run callback
         """
         while not self.result_queue.empty():
-            result, callback_id = self.result_queue.get()
-            Logger().log(str(result))
-            if callback_id and callable(self.callbacks[callback_id]):
-                self.callbacks[callback_id](result)
-            self.results.append(result)
+            try:
+                result, callback_id = self.result_queue.get(block=False)
+                Logger().log(str(result))
+                if callback_id and callable(self.callbacks[callback_id]):
+                    self.callbacks[callback_id](result)
+                self.results.append(result)
+            except Empty:
+                pass
         
     def __print_errors(self) -> None:
         """
             Collect and print error from error_queue
         """
         while not self.error_queue.empty():
-            print("ERROR IN PROCESS", self.error_queue.get())
+            Logger().log("ERROR IN PROCESS", self.error_queue.get(), force=True)
     
     def __keep_running(self) -> None:
         """
@@ -166,6 +147,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         while True:
             self.__print_errors()
             self.__collect_results()
+            Logger().print_queue()
             time.sleep(0.1)
             
             if self.stop_flag:
@@ -173,7 +155,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         
         # Kill process
         while not self.to_run_queue.empty():
-            self.to_run_queue.get() # Empty task queue 
+            try:
+                self.to_run_queue.get(block=False) # Empty task queue 
+            except Empty:
+                pass
+            
         self.to_run_queue.put("stop") # Gentilly ask process to stop
         time.sleep(0.5)
         
@@ -230,7 +216,10 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             for queue in \
                 [self.error_queue, self.finally_queue, self.to_run_queue, self.result_queue]:
                 while not queue.empty():
-                    queue.get()
+                    try:
+                        queue.get(block=False)
+                    except Empty:
+                        pass
                     
             self.callbacks = [self.callbacks[-1]]
             self.submit_count = 0

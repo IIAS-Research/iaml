@@ -8,6 +8,8 @@ There is also decorators needed to create a Step. See it under Step class.
 """
 
 import sys
+import json
+from hashlib import md5
 from typing import Any
 from copy import deepcopy
 from multipledispatch import dispatch
@@ -469,6 +471,17 @@ class Step: # pylint: disable=too-many-public-methods
         """
         return set(filter(lambda key: tag in cls.available_steps[key], cls.available_steps.keys()))
     
+    
+    def fingerprint(self) -> str:
+        """
+        Return a md5 hash that can by use to compare Step 
+
+        Returns:
+            str: md5 sting
+        """
+        to_hash = f"{str(self.__class__)} = \
+            {json.dumps(self.serializable_resume_configuration(), sort_keys=True)}"
+        return md5(to_hash.encode()).hexdigest()
     
     ####################
     ### Explanations ###

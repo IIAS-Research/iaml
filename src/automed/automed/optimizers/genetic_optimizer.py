@@ -3,6 +3,7 @@ Pipeline optimizer based on genetic concepts
 """
 from copy import deepcopy
 import random
+import time
 from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
@@ -14,7 +15,7 @@ class GeneticOptimizer(Optimizer):
     """
     Pipeline optimizer based on genetic concepts
     """
-    def __init__(self, nb_candidate:int=25, mutation_power:float=0.1, initial_modifier:float=5):
+    def __init__(self, nb_candidate:int=25, mutation_power:float=0.1, initial_modifier:float=5, duration:int=None):
         super().__init__()
         self.number_of_candidate:int = max(nb_candidate, 4)
         self.generation_count:int = 0
@@ -23,6 +24,15 @@ class GeneticOptimizer(Optimizer):
         self.initial_modifier:float = initial_modifier
         self.max_generations:int = 200
         self.first_candidate_pool:list[Candidate] = None
+        self.duration = duration
+        self.start_time = time.time()
+    
+    @property
+    def __mutate_ratio(self):
+        if not self.duration:
+            return 0.5
+        else:
+            return (time.time() - self.start_time) / self.duration
         
     @property
     def finished(self) -> bool:
@@ -51,22 +61,26 @@ class GeneticOptimizer(Optimizer):
             self.first_candidate_pool = candidates[0:6]
             
         nb_to_keep:int = round(self.number_of_candidate / 4)
-        nb_to_mutate:int = round(self.number_of_candidate / 4)
-        
+        mutate_ratio = self.__mutate_ratio
         self.generation_count += 1
                 
+        # Keep best pipelines
         new_generation = [deepcopy(candidate) for candidate in candidates[0:nb_to_keep]]
-        for candidate in candidates[0:nb_to_mutate]: # Mutate best candidates twice
-            new_generation.append(self.__mutate(candidate))
-            new_generation.append(self.__mutate(candidate))
+        
+        for _ in range(int(self.number_of_candidate*mutate_ratio)):
+            new_generation.append(self.__mutate(random.choice(candidates[0:nb_to_keep])))
             
         new_generation = [item for item in new_generation if item is not None] # remove None
+        count_mutate = len(new_generation) - nb_to_keep
         
         while len(new_generation) < self.number_of_candidate:
-            new_generation += \
-            [self.__random_configuration(random.choice(self.first_candidate_pool))]
-
+            new_generation.append(
+                self.__random_configuration(random.choice(candidates))
+            )
+        
         new_generation = [item for item in new_generation if item is not None] # remove None
+        
+        Logger().log(f"gen{self.generation_count}, Nb mutation={count_mutate}, Nb random={len(new_generation)-count_mutate-nb_to_keep} ",force=True)
         
         return self.__unique(new_generation) # Remove duplicated
     
@@ -78,6 +92,13 @@ class GeneticOptimizer(Optimizer):
         new_candidate:Candidate = deepcopy(candidate)
         
         for current_step in new_candidate.pipeline.optimizable_step:
+            
+            # If interchangeable -> 1/2 to change the step
+            if current_step.is_interchangeable and bool(random.getrandbits(1)):
+                new_step:Step = random.choice(current_step.step_with_same_tags())()
+                new_step.is_interchangeable = True
+                new_candidate.pipeline.replace_step(current_step, new_step)
+                current_step = new_step
             if not self.__config_keys(current_step):
                 continue # Nothing to optimize
             
@@ -149,7 +170,7 @@ class GeneticOptimizer(Optimizer):
         if random_key == "interchange": # Mutate by interchanging the step with sibling
             new_step:Step = random.choice(step_to_mutate.step_with_same_tags())()
             new_step.is_interchangeable = True
-            candidate.pipeline.replace_step(step_to_mutate, new_step)
+            new_candidate.pipeline.replace_step(step_to_mutate, new_step)
             return candidate
             
         

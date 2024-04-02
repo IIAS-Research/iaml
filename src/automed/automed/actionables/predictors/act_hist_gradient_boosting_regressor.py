@@ -8,7 +8,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'regressor')
 class ActHistGradientBoostingRegressor(Predictor):
     """
     [STEP] Learn : HistGradient Boosting Regressor

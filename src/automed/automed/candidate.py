@@ -267,8 +267,7 @@ class Candidate:
         Returns:
             str: String fingerprint
         """
-        to_hash = "\n".join([str(step.__class__) + " = " \
-            + json.dumps(step.serializable_resume_configuration(), sort_keys=True) \
+        to_hash = "\n".join([step.fingerprint() \
                 for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]])
         
         return md5(to_hash.encode()).hexdigest()

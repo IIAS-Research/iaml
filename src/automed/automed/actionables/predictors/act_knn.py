@@ -8,7 +8,7 @@ from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'classifier')
 class ActKNN(Predictor):
     """
     [STEP] Learn :  KNN

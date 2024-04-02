@@ -195,7 +195,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 # Remove candidate without predictor 
                 candidates = [candidate for candidate in candidates \
                     if candidate.pipeline.predictor is not None]
-                Logger().log(f"{len(candidates)} generated pipelines")
+                Logger().log(f"{len(candidates)} generated pipelines", force=True)
                 
                 ### INITIAL EVALUATION
                 
@@ -205,11 +205,11 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                                 timeout=self.max_duration - (time.monotonic() - start_time))
                 
                 ### FINETUNING
+                remain_time = self.max_duration - (time.monotonic() - start_time)
                 candidates = self.__optimize(dataset,
                                             candidates,
-                                            optimizer=GeneticOptimizer(),
-                                            max_duration=self.max_duration - \
-                                                (time.monotonic() - start_time),
+                                            optimizer=GeneticOptimizer(duration=remain_time),
+                                            max_duration=remain_time,
                                             patience=patience)
                 ### FINAL FIT
                 
@@ -219,6 +219,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 Cache.reset()
                 self.chosen_candidate = deepcopy(candidates[0])
                 self.chosen_candidate.pipeline.fit(X, y)
+                
+                self.last_stage_candidates = candidates
                 
                 return candidates
         except Exception as ex:
@@ -369,7 +371,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             iterations_count += 1
             
             
-        return candidates[0:5]
+        return candidates
         
         
 

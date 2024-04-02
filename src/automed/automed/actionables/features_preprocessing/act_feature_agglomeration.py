@@ -27,12 +27,14 @@ class ActFeatureAgglomeration(Actionable):
             'metric': {
                 'description': 'Metric used to compute the linkage.',
                 'default': 'euclidean',
-                'categorical': ['euclidean', 'l1', 'l2', 'manhattan', 'cosine', 'precomputed']
+                'categorical': ['euclidean']
+                # 'categorical': ['euclidean', 'l1', 'l2', 'manhattan', 'cosine', 'precomputed']
                 },
             'linkage': {
                 'description': 'Which linkage criterion to use.',
                 'default': 'ward',
                 'categorical': ['ward', 'complete', 'average', 'single']
+                # 'categorical': ['ward', 'complete', 'average', 'single']
                 },
             'pooling_func': {
                 'description': 'Which linkage criterion to use.',

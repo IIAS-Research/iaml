@@ -8,7 +8,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'classifier')
 class ActBernoulliNb(Predictor):
     """
     [STEP] Learn : Bernoulli NB

@@ -9,7 +9,7 @@ from ...decorators.all import is_step
 
 
 
-@is_step('predictor', 'tabular', 'fast_predictor')
+@is_step('predictor', 'tabular', 'fast_predictor', 'regressor')
 class ActKNNRegressor(Predictor):
     """
     [STEP] Learn : KNN
