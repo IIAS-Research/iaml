@@ -348,6 +348,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                         timeout=max_duration - (time.monotonic() - starting_time),
                         stage_number=iterations_count)
             
+            
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
             
