@@ -8,7 +8,7 @@ from datetime import datetime
 from os.path import exists
 import pandas as pd 
 import numpy as np
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.utils.multiclass import type_of_target
 
 import naiveautoml
@@ -32,7 +32,11 @@ def file_to_fold(file_path:str):
     y = np.array(df['label'])
     X = df.drop(columns=['label'])
     
-    kfold = StratifiedKFold(5)
+    if type_of_target(y) in ['binary', 'multiclass']:
+        kfold = StratifiedKFold(5)
+    else:
+        kfold = KFold(5)
+    
     for idx_train, idx_test in kfold.split(X, y):
         X_train = X.iloc[idx_train].copy()
         X_test = X.iloc[idx_test].copy()
@@ -73,6 +77,7 @@ def each_file(file:str, trainer, duration) -> pd.DataFrame:
             
             folds_results.append(fold_dict)
     except Exception as ex:
+        print(traceback.format_exc())
         print('ERROR with', filename)
         print(ex)
         return []
@@ -100,7 +105,7 @@ def main():
         files = glob.glob(CURRENT_PATH+"/tests_data/*.csv")
         dont_push_csv = glob.glob(CURRENT_PATH+"/tests_data/dont_push/*.csv")
         files = files + dont_push_csv
-
+        
         history_path = CURRENT_PATH+"/tests_data/bench_v2.log"
 
         if not exists(history_path):
