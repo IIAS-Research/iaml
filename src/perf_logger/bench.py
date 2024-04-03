@@ -60,6 +60,8 @@ def each_file(file:str, trainer, duration) -> pd.DataFrame:
             # EVALUATE
             y_pred = model.predict(X_test)
             fold_dict = {"bench_date": start_time,
+                        "fold": idx,
+                        "max_duration": duration,
                         "compute_time": int(time.time() - start_fold),
                         "dataset": filename,
                         "model_name": model_name}
