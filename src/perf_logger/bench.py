@@ -112,7 +112,8 @@ def train_naive(X, y, duration):
     return estimator.chosen_model, f"{estimator.chosen_model}"
 
 packages = [
-    ('naive_autoML', train_naive)
+    ('naive_autoML', train_naive),
+    ('automed', train_automed)
 ]
 
 def main():
