@@ -45,17 +45,21 @@ def file_to_fold(file_path:str):
         
         yield (X_train, y_train, X_test, y_test)
 
-def each_file(file:str, trainer, duration) -> pd.DataFrame:
+def each_file(file:str, package, duration) -> pd.DataFrame:
     """
     Fit and evaluate automl model on a file
     """
-    
+    package_name, trainer = package
     filename = file.split('/')[-1]
     
     # TRAIN
     folds_results = []
     try:
         for idx, (X, y, X_test, y_test) in enumerate(file_to_fold(file)):
+            if already_computed(filename, duration, package_name):
+                print("Already computed -> next.")
+                continue
+            
             start_fold = time.time()
             
             print('FILE :', filename, 'fold', idx)
@@ -64,6 +68,7 @@ def each_file(file:str, trainer, duration) -> pd.DataFrame:
             # EVALUATE
             y_pred = model.predict(X_test)
             fold_dict = {"bench_date": start_time,
+                        "package": package_name,
                         "fold": idx,
                         "max_duration": duration,
                         "compute_time": int(time.time() - start_fold),
@@ -85,6 +90,15 @@ def each_file(file:str, trainer, duration) -> pd.DataFrame:
     return folds_results
 
 start_time = int(datetime.now().timestamp())
+results = []
+
+def already_computed(dataset, duration, package):
+    for result in results:
+        if result['dataset'] == dataset and result['max_duration'] == duration and result['package'] == package:
+            return True
+        
+    return False
+
 
 def train_automed(X, y, duration):
     Cache.reset()
@@ -92,41 +106,45 @@ def train_automed(X, y, duration):
     estimator.fit(X, y)
     return estimator.chosen_model, f"{estimator.chosen_model.transformers[-1][0]} -> {estimator.chosen_model.predictor[0]}"
 
-
 def train_naive(X, y, duration):
     estimator = naiveautoml.NaiveAutoML(timeout=duration)
     estimator.fit(X, y)
     return estimator.chosen_model, f"{estimator.chosen_model}"
 
+packages = [
+    ('naive_autoML', train_naive)
+]
 
 def main():
-    durations = [30, 120, 300, 900, 1800]
-    for duration in durations:
-        files = glob.glob(CURRENT_PATH+"/tests_data/*.csv")
-        dont_push_csv = glob.glob(CURRENT_PATH+"/tests_data/dont_push/*.csv")
-        files = files + dont_push_csv
-        
-        history_path = CURRENT_PATH+"/tests_data/bench_v2.log"
+    global results
+    for package in packages:
+        durations = [30, 120, 300, 900, 1800]
+        for duration in durations:
+            files = glob.glob(CURRENT_PATH+"/tests_data/*.csv")
+            dont_push_csv = glob.glob(CURRENT_PATH+"/tests_data/dont_push/*.csv")
+            files = files + dont_push_csv
+            
+            history_path = CURRENT_PATH+"/tests_data/bench_v2.log"
 
-        if not exists(history_path):
-            if not exists(CURRENT_PATH+"/tests_data/"):
-                os.mkdir(CURRENT_PATH+"/tests_data/")
-            results = []
-        else:
-            results = pd.read_csv(history_path).to_dict('records')
+            if not exists(history_path):
+                if not exists(CURRENT_PATH+"/tests_data/"):
+                    os.mkdir(CURRENT_PATH+"/tests_data/")
+                results = []
+            else:
+                results = pd.read_csv(history_path).to_dict('records')
 
 
-        for file in files:
-            print(str(datetime.now()), "->>>", file)
-            try:
-                outputs = each_file(file, train_naive, duration)
+            for file in files:
+                print(str(datetime.now()), "->>>", file)
+                try:
+                    outputs = each_file(file, package, duration)
 
-                results += outputs
-                pd.DataFrame(results).to_csv(history_path, index=False)
-            except Exception as e:
-                print(traceback.format_exc())
-                print("FAIL : ", file)
-                print(f"ERROR : {e}")
+                    results += outputs
+                    pd.DataFrame(results).to_csv(history_path, index=False)
+                except Exception as e:
+                    print(traceback.format_exc())
+                    print("FAIL : ", file)
+                    print(f"ERROR : {e}")
 
 if __name__ == "__main__":
     main()
