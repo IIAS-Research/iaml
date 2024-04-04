@@ -113,7 +113,8 @@ def train_naive(X, y, duration):
     return estimator.chosen_model, f"{estimator.chosen_model}"
 
 def train_fedot(X, y, duration):
-    estimator = Fedot(problem='classification', timeout=duration/60.0, preset='best_quality', n_jobs=-1)
+    problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
+    estimator = Fedot(problem=problem, timeout=duration/60.0, preset='best_quality', n_jobs=-1)
     estimator.fit(features=X, target=y)
     return estimator, f"{estimator}"
 
