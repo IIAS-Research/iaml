@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.utils.multiclass import type_of_target
 
+from fedot.api.main import Fedot
 import naiveautoml
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -111,8 +112,14 @@ def train_naive(X, y, duration):
     estimator.fit(X, y)
     return estimator.chosen_model, f"{estimator.chosen_model}"
 
+def train_fedot(X, y, duration):
+    estimator = Fedot(problem='classification', timeout=duration/60.0, preset='best_quality', n_jobs=-1)
+    estimator.fit(features=X, target=y)
+    return estimator, f"{estimator}"
+
 packages = [
     ('naive_autoML', train_naive),
+    ('FEDOT', train_fedot),
     ('automed', train_automed)
 ]
 
