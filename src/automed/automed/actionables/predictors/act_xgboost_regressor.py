@@ -9,7 +9,7 @@ from ...decorators.all import is_step
 
 
 @is_step('predictor', 'tabular', 'regressor')
-class ActXGBoost(Predictor):
+class ActXGBoostRegressor(Predictor):
     """
     [STEP] Learn :  XGBoost Regressor
     """
