@@ -128,7 +128,7 @@ def train_fedot(X, y, duration):
     problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
     estimator = Fedot(problem=problem, timeout=duration/60.0, preset='best_quality', n_jobs=12)
     estimator.fit(features=X, target=y)
-    return estimator, f"{estimator}"
+    return estimator, f"{estimator.current_pipeline}"
 
 def train_tplot2(X, y, duration):
     class_estimator = tpot2.TPOTClassifier if type_of_target(y) in ['binary', 'multiclass'] else tpot2.TPOTRegressor
