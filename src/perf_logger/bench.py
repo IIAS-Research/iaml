@@ -1,7 +1,7 @@
 """
     Benchmark automl lib. Only NaiveAutoML for now
 """
-import sys, os, time
+import sys, os, time, gc
 import pickle
 import traceback
 import glob
@@ -187,7 +187,8 @@ def main():
     durations = [30, 120, 300, 900, 1800]
     for duration in durations:
         for file in files:        
-            for package in packages:    
+            for package in packages:
+                gc.collect()
                 print(str(datetime.now()), "->>>", file)
                 try:
                     outputs = each_file(file, package, duration)
