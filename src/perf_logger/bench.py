@@ -70,10 +70,10 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
             print(f'##### {package} FOR {duration}s ON {filename} | fold {idx}')
             print('#####')
             
-            model, model_name = trainer(X, y, duration)
+            model, predict_method, model_name = trainer(X, y, duration)
 
             # EVALUATE
-            y_pred = model.predict(X_test)
+            y_pred = predict_method(X_test)
             fold_dict = {"bench_date": start_time,
                         "package": package_name,
                         "fold": idx,
@@ -117,30 +117,34 @@ def train_automed(X, y, duration):
     Cache.reset()
     estimator = AutoMed(quiet=True, max_workers=12, max_duration=duration)
     estimator.fit(X, y)
-    return estimator.chosen_model, f"{estimator.chosen_model.transformers[-1][0]} -> {estimator.chosen_model.predictor[0]}"
+    return estimator.chosen_model, estimator.chosen_model.predict, f"{estimator.chosen_model.transformers[-1][0]} -> {estimator.chosen_model.predictor[0]}"
 
 def train_naive(X, y, duration):
     estimator = naiveautoml.NaiveAutoML(timeout=duration)
     estimator.fit(X, y)
-    return estimator.chosen_model, f"{estimator.chosen_model}"
+    return estimator.chosen_model, estimator.chosen_model.predict, f"{estimator.chosen_model}"
 
 def train_fedot(X, y, duration):
     problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
     estimator = Fedot(problem=problem, timeout=duration/60.0, preset='best_quality', n_jobs=12)
     estimator.fit(features=X, target=y)
-    return estimator, f"{estimator.current_pipeline}"
+    return estimator, estimator.predict, f"{estimator.current_pipeline}"
 
 def train_tplot2(X, y, duration):
     class_estimator = tpot2.TPOTClassifier if type_of_target(y) in ['binary', 'multiclass'] else tpot2.TPOTRegressor
     estimator = class_estimator(max_time_seconds=duration, verbose=0, memory_limit="24GB", n_jobs=12)
+    X = X.drop(columns=X.select_dtypes(include=['object']).columns)
     estimator.fit(X, y)
-    return estimator, f"{estimator}"
+    def predict(X):
+        X = X.drop(columns=X.select_dtypes(include=['object']).columns)
+        return estimator.predict(X)
+    return estimator, predict, f"{estimator}"
 
 def train_flaml(X, y, duration):
     problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
     estimator = flamlAutoMl()
     estimator.fit(X, y, task=problem, time_budget=duration)
-    return estimator, f"{estimator}"
+    return estimator, estimator.predict, f"{estimator}"
 
 packages = [
     ('naive_autoML', train_naive),
@@ -166,7 +170,7 @@ def main():
     else:
         results = pd.read_csv(history_path).to_dict('records')
 
-    durations = [120, 300, 900, 1800]
+    durations = [30, 120, 300, 900, 1800]
     for duration in durations:
         for file in files:        
             for package in packages:    
