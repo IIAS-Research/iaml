@@ -11,10 +11,11 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.utils.multiclass import type_of_target
+from sklearn.preprocessing import LabelEncoder
 
 from fedot.api.main import Fedot
 import naiveautoml
-import tpot2
+import tpot
 from flaml import AutoML as flamlAutoMl
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -67,7 +68,7 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
             start_fold = time.time()
             
             print('#####')
-            print(f'##### {package} FOR {duration}s ON {filename} | fold {idx}')
+            print(f'##### {package_name} FOR {duration}s ON {filename} | fold {idx}')
             print('#####')
             
             model, predict_method, model_name = trainer(X, y, duration)
@@ -130,14 +131,27 @@ def train_fedot(X, y, duration):
     estimator.fit(features=X, target=y)
     return estimator, estimator.predict, f"{estimator.current_pipeline}"
 
-def train_tplot2(X, y, duration):
-    class_estimator = tpot2.TPOTClassifier if type_of_target(y) in ['binary', 'multiclass'] else tpot2.TPOTRegressor
-    estimator = class_estimator(max_time_seconds=duration, verbose=0, memory_limit="24GB", n_jobs=12)
+def train_tplot(X, y, duration):
+    encoder = None
+    if type_of_target(y) in ['binary', 'multiclass']:
+        class_estimator = tpot.TPOTClassifier
+        encoder = LabelEncoder()
+        encoder.fit(y)
+        y = encoder.transform(y)
+    else:
+        class_estimator = tpot.TPOTRegressor
+        
+    estimator = class_estimator(max_time_mins=duration/60, n_jobs=12)
     X = X.drop(columns=X.select_dtypes(include=['object']).columns)
     estimator.fit(X, y)
+    
     def predict(X):
         X = X.drop(columns=X.select_dtypes(include=['object']).columns)
-        return estimator.predict(X)
+        if not encoder:
+            return estimator.predict(X)
+        else:
+            return encoder.inverse_transform(estimator.predict(X))
+        
     return estimator, predict, f"{estimator}"
 
 def train_flaml(X, y, duration):
@@ -150,7 +164,7 @@ packages = [
     ('naive_autoML', train_naive),
     ('FEDOT', train_fedot),
     ('automed', train_automed),
-    ('tplot2', train_tplot2),
+    # ('tplot', train_tplot),
     ('flaml', train_flaml)
 ]
 
