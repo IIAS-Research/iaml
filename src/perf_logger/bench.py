@@ -2,6 +2,7 @@
     Benchmark automl lib. Only NaiveAutoML for now
 """
 import sys, os, time
+import pickle
 import traceback
 import glob
 from datetime import datetime
@@ -13,6 +14,8 @@ from sklearn.utils.multiclass import type_of_target
 
 from fedot.api.main import Fedot
 import naiveautoml
+import tpot2
+from flaml import AutoML as flamlAutoMl
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, CURRENT_PATH+"/../")
@@ -82,6 +85,7 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
                     fold_dict[str(metric)] = metric.compute(y_test, y_pred)
             
             folds_results.append(fold_dict)
+            save(model, f"{package_name}_{duration}_{idx}_{filename}.pickle")
     except Exception as ex:
         print(traceback.format_exc())
         print('ERROR with', filename)
@@ -89,6 +93,11 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
         return []
     
     return folds_results
+
+def save(estimator, name):
+    file = open(f"{CURRENT_PATH}/pickle_bench/{name}", 'wb')
+    pickle.dump(estimator, file)
+    file.close()
 
 start_time = int(datetime.now().timestamp())
 results = []
@@ -114,36 +123,50 @@ def train_naive(X, y, duration):
 
 def train_fedot(X, y, duration):
     problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
-    estimator = Fedot(problem=problem, timeout=duration/60.0, preset='best_quality', n_jobs=-1)
+    estimator = Fedot(problem=problem, timeout=duration/60.0, preset='best_quality', n_jobs=12)
     estimator.fit(features=X, target=y)
+    return estimator, f"{estimator}"
+
+def train_tplot2(X, y, duration):
+    class_estimator = tpot2.TPOTClassifier if type_of_target(y) in ['binary', 'multiclass'] else tpot2.TPOTRegressor
+    estimator = class_estimator(max_time_seconds=duration, verbose=0, memory_limit="24GB", n_jobs=12)
+    estimator.fit(X, y)
+    return estimator, f"{estimator}"
+
+def train_flaml(X, y, duration):
+    problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
+    estimator = flamlAutoMl()
+    estimator.fit(X, y, task=problem, time_budget=duration)
     return estimator, f"{estimator}"
 
 packages = [
     ('naive_autoML', train_naive),
     ('FEDOT', train_fedot),
-    ('automed', train_automed)
+    ('automed', train_automed),
+    ('tplot2', train_tplot2),
+    ('flaml', train_flaml)
 ]
 
 def main():
     global results
-    for package in packages:
-        durations = [30, 120, 300, 900, 1800]
-        for duration in durations:
-            files = glob.glob(CURRENT_PATH+"/tests_data/*.csv")
-            dont_push_csv = glob.glob(CURRENT_PATH+"/tests_data/dont_push/*.csv")
-            files = files + dont_push_csv
-            
-            history_path = CURRENT_PATH+"/tests_data/bench_v2.log"
+    
+    files = glob.glob(CURRENT_PATH+"/tests_data/*.csv")
+    dont_push_csv = glob.glob(CURRENT_PATH+"/tests_data/dont_push/*.csv")
+    files = files + dont_push_csv
+    
+    history_path = CURRENT_PATH+"/tests_data/bench_v2.log"
 
-            if not exists(history_path):
-                if not exists(CURRENT_PATH+"/tests_data/"):
-                    os.mkdir(CURRENT_PATH+"/tests_data/")
-                results = []
-            else:
-                results = pd.read_csv(history_path).to_dict('records')
+    if not exists(history_path):
+        if not exists(CURRENT_PATH+"/tests_data/"):
+            os.mkdir(CURRENT_PATH+"/tests_data/")
+        results = []
+    else:
+        results = pd.read_csv(history_path).to_dict('records')
 
-
-            for file in files:
+    durations = [120, 300, 900, 1800]
+    for duration in durations:
+        for file in files:        
+            for package in packages:    
                 print(str(datetime.now()), "->>>", file)
                 try:
                     outputs = each_file(file, package, duration)
