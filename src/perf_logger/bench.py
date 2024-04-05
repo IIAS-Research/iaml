@@ -66,7 +66,10 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
             
             start_fold = time.time()
             
-            print('FILE :', filename, 'fold', idx)
+            print('#####')
+            print(f'##### {package} FOR {duration}s ON {filename} | fold {idx}')
+            print('#####')
+            
             model, model_name = trainer(X, y, duration)
 
             # EVALUATE
