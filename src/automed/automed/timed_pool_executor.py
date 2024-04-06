@@ -131,14 +131,17 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     self.callbacks[callback_id](result)
                 self.results.append(result)
             except Empty:
-                pass
+                break
         
     def __print_errors(self) -> None:
         """
             Collect and print error from error_queue
         """
         while not self.error_queue.empty():
-            Logger().log("ERROR IN PROCESS", self.error_queue.get(), force=True)
+            try:
+                Logger().log("ERROR IN PROCESS", self.error_queue.get(block=False), force=True)
+            except Empty:
+                break
     
     def __keep_running(self) -> None:
         """
@@ -158,7 +161,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             try:
                 self.to_run_queue.get(block=False) # Empty task queue 
             except Empty:
-                pass
+                break
             
         self.to_run_queue.put("stop") # Gentilly ask process to stop
         time.sleep(0.5)
@@ -202,8 +205,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         Do all the submit task are finished ?
         """
         while not self.finally_queue.empty():
-            self.finally_queue.get()
-            self.finished_run += 1
+            try:
+                self.finally_queue.get(block=False)
+                self.finished_run += 1
+            except Empty:
+                break
             
         return self.finished_run >= self.submit_count
     
