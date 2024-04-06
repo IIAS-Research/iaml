@@ -267,6 +267,22 @@ class Step: # pylint: disable=too-many-public-methods
         """
         for param in self.configuration.values():
             param['value'] = param['default']
+            
+    def check_configuration(self, fix=True):
+        for key, config in self.configuration.items():
+            if 'categorical' in config:
+                if self.get_config(key) not in config['categorical']:
+                    if fix:
+                        self.configure(key, config['categorical'][0])
+                    else:
+                        return False
+            elif 'range' in config:
+                if self.get_config(key) < config['range'][0] or self.get_config(key) > config['range'][1]:
+                    if fix:
+                        self.configure(key, (config['range'][0]+config['range'][1])/2)
+                    else:
+                        return False
+        return True
     
     def all_step(self):
         """Recursive function (last one here) to get all steps in a pipeline

@@ -43,12 +43,12 @@ class ActCatBoost(Predictor):
             'loss_function': {
                 'description': 'The metric to use in training.',
                 'default': 'Logloss',
-                'categorical': ['Logloss', 'CrossEntropy', 'RMSE', 'MAE']
+                'categorical': ['Logloss', 'CrossEntropy', 'MultiClass', 'MultiClassOneVsAll']
             },
             'eval_metric': {
                 'description': 'The metric to be used for validation data.',
                 'default': 'AUC',
-                'categorical': ['AUC', 'Accuracy', 'F1', 'Logloss']
+                'categorical': ['AUC', 'Accuracy', 'Logloss']
             },
             'bootstrap_type': {
                 'description': 'The method for sampling the weights of objects.',
@@ -74,6 +74,13 @@ class ActCatBoost(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
+        if dataset.type_of_target == 'binary':
+            self.configuration['loss_function']['categorical'] = ['Logloss', 'CrossEntropy']
+        else:
+            self.configuration['loss_function']['categorical'] = ['MultiClass', 'MultiClassOneVsAll']
+        self.check_configuration()    
+        
+        
         self.model = CatBoostClassifier(verbose=0, **self.passthrough_parameters()) 
         self.model.fit(dataset.X, dataset.y)
         
