@@ -157,7 +157,7 @@ def train_tplot(X, y, duration):
 def train_flaml(X, y, duration):
     problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
     estimator = flamlAutoMl()
-    estimator.fit(X, y, task=problem, time_budget=duration, log_level='error')
+    estimator.fit(X, y, task=problem, time_budget=duration)
     return estimator, estimator.predict, f"{estimator}"
 
 packages = [
