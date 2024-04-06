@@ -1,8 +1,8 @@
 """
     Benchmark automl lib. Only NaiveAutoML for now
 """
-import sys, os, time, gc
-import pickle
+import sys, os, time
+import dill as pickle
 import traceback
 import glob
 from datetime import datetime
@@ -89,7 +89,7 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
                     fold_dict[str(metric)] = metric.compute(y_test, y_pred)
             
             folds_results.append(fold_dict)
-            save(model, f"{package_name}_{duration}_{idx}_{filename}.pickle")
+            save(model, f"{package_name}_{duration}_{idx}_{filename}")
     except Exception as ex:
         print(traceback.format_exc())
         print('ERROR with', filename)
@@ -99,7 +99,7 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
     return folds_results
 
 def save(estimator, name):
-    file = open(f"{CURRENT_PATH}/pickle_bench/{name}", 'wb')
+    file = open(f"{CURRENT_PATH}/pickle_bench/{name}.dill", 'wb')
     pickle.dump(estimator, file)
     file.close()
 
@@ -187,11 +187,13 @@ def main():
     durations = [30, 120, 300, 900, 1800]
     for duration in durations:
         for file in files:        
-            for package in packages:
-                gc.collect()
+            for current_package in packages:
+                if current_package[0] == 'FEDOT' and file.split('/')[-1] in ["IMDB-Dataset.csv", "bbc-text.csv"]:
+                    continue
+                
                 print(str(datetime.now()), "->>>", file)
                 try:
-                    outputs = each_file(file, package, duration)
+                    outputs = each_file(file, current_package, duration)
 
                     results += outputs
                     pd.DataFrame(results).to_csv(history_path, index=False)
@@ -199,6 +201,7 @@ def main():
                     print(traceback.format_exc())
                     print("FAIL : ", file)
                     print(f"ERROR : {e}")
+                    time.sleep(10)
 
 if __name__ == "__main__":
     main()
