@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.utils.multiclass import type_of_target
 from sklearn.preprocessing import LabelEncoder
+from sklearn.datasets import *
 
 from fedot.api.main import Fedot
 import naiveautoml
@@ -22,7 +23,7 @@ CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, CURRENT_PATH+"/../")
 from automed.automed import *
 
-def file_to_fold(file_path:str):
+def file_to_X_y(file_path:str):
     """
     Load a file and split it to X, y, X_test, y_test 
     """
@@ -37,6 +38,13 @@ def file_to_fold(file_path:str):
     y = np.array(df['label'])
     X = df.drop(columns=['label'])
     
+    return X, y
+    
+        
+def dataset_to_fold(X, y):
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+        
     if type_of_target(y) in ['binary', 'multiclass']:
         kfold = StratifiedKFold(5)
     else:
@@ -55,12 +63,18 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
     Fit and evaluate automl model on a file
     """
     package_name, trainer = package
-    filename = file.split('/')[-1]
+    
+    if not callable(file):
+        filename = file.split('/')[-1]
+        whole_X, whole_y = file_to_X_y(file)
+    else:
+        filename = "_".join(file.__name__.split('_')[1:])
+        whole_X, whole_y = file(return_X_y=True)
     
     # TRAIN
     folds_results = []
     try:
-        for idx, (X, y, X_test, y_test) in enumerate(file_to_fold(file)):
+        for idx, (X, y, X_test, y_test) in enumerate(dataset_to_fold(whole_X, whole_y)):
             if already_computed(filename, duration, package_name):
                 print("Already computed -> next.")
                 continue
@@ -168,12 +182,29 @@ packages = [
     ('flaml', train_flaml)
 ]
 
+scikit_dataset = [load_iris,
+                load_diabetes,
+                load_digits,
+                load_linnerud,
+                load_wine,
+                load_breast_cancer,
+                fetch_olivetti_faces,
+                fetch_20newsgroups,
+                fetch_20newsgroups_vectorized,
+                fetch_lfw_people,
+                fetch_lfw_pairs,
+                fetch_covtype,
+                fetch_rcv1,
+                fetch_kddcup99,
+                fetch_california_housing,
+                fetch_species_distributions]
+
 def main():
     global results
     
     files = glob.glob(CURRENT_PATH+"/tests_data/*.csv")
     dont_push_csv = glob.glob(CURRENT_PATH+"/tests_data/dont_push/*.csv")
-    files = files + dont_push_csv
+    files = scikit_dataset + files + dont_push_csv
     
     history_path = CURRENT_PATH+"/tests_data/bench_v2.log"
 
@@ -188,7 +219,7 @@ def main():
     for duration in durations:
         for file in files:        
             for current_package in packages:
-                if current_package[0] == 'FEDOT' and file.split('/')[-1] in ["IMDB-Dataset.csv", "bbc-text.csv"]:
+                if current_package[0] == 'FEDOT' and not callable(file) and file.split('/')[-1] in ["IMDB-Dataset.csv", "bbc-text.csv"]:
                     continue
                 
                 print(str(datetime.now()), "->>>", file)
