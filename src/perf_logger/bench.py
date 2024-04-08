@@ -1,7 +1,7 @@
 """
     Benchmark automl lib. Only NaiveAutoML for now
 """
-import sys, os, time, threading
+import sys, os, time
 import dill as pickle
 import traceback
 import glob
@@ -23,27 +23,6 @@ CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, CURRENT_PATH+"/../")
 from automed.automed import *
 
-
-class TimeoutException(Exception):
-    """Custom exception to signal timeout"""
-    pass
-
-def with_timeout(timeout, target, *args):
-    print("# Set timeout", timeout, 's')
-    start_timeout = time.time()
-    result_container = {}
-    
-    # Define a wrapper to call the target function and store its result
-    def target_wrapper(*args):
-        result_container['result'] = target(*args)
-        
-    thread = threading.Thread(target=target_wrapper, args=args)
-    thread.start()
-    thread.join(timeout)
-    end_timeout = time.time()
-    if thread.is_alive() or (end_timeout - start_timeout > timeout):
-        raise TimeoutException(f"Timeout exceeded ({timeout}s)")
-    return result_container['result']
 
 def file_to_X_y(file_path:str):
     """
@@ -106,7 +85,7 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
             print('#####')
             print(f'##### {package_name} FOR {duration}s ON {filename} | fold {idx}')
             print('#####')
-            model, predict_method, model_name = with_timeout(duration+30, trainer, X, y, duration)
+            model, predict_method, model_name = trainer(X, y, duration)
 
             # EVALUATE
             y_pred = predict_method(X_test)
@@ -212,9 +191,9 @@ scikit_dataset = [load_iris,
                 fetch_olivetti_faces,
                 fetch_20newsgroups,
                 fetch_20newsgroups_vectorized,
-                fetch_lfw_people,
-                fetch_lfw_pairs,
-                fetch_covtype,
+                # fetch_lfw_people,
+                # fetch_lfw_pairs,
+                # fetch_covtype,
                 fetch_rcv1,
                 fetch_kddcup99,
                 fetch_california_housing,
