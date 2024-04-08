@@ -18,6 +18,8 @@ from fedot.api.main import Fedot
 import naiveautoml
 import tpot
 from flaml import AutoML as flamlAutoMl
+import autosklearn.classification
+import autosklearn.regression
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, CURRENT_PATH+"/../")
@@ -174,8 +176,21 @@ def train_flaml(X, y, duration):
     estimator.fit(X, y, task=problem, time_budget=duration)
     return estimator, estimator.predict, f"{estimator}"
 
+def train_autosk(X, y, duration):
+    if type_of_target(y) in ['binary', 'multiclass']:
+        estimator = autosklearn.classification.AutoSklearnClassifier(
+                        time_left_for_this_task=duration
+                    )
+    else:
+        estimator = autosklearn.regression.AutoSklearnRegressor(
+                        time_left_for_this_task=duration
+                    )
+    estimator.fit(X, y)
+    return estimator, estimator.predict, f"{estimator}"
+
 packages = [
     ('naive_autoML', train_naive),
+    ('auto_sklearn', train_autosk),
     ('FEDOT', train_fedot),
     ('automed', train_automed),
     # ('tplot', train_tplot),
@@ -188,14 +203,14 @@ scikit_dataset = [load_iris,
                 load_linnerud,
                 load_wine,
                 load_breast_cancer,
-                fetch_olivetti_faces,
+                # fetch_olivetti_faces,
                 fetch_20newsgroups,
                 fetch_20newsgroups_vectorized,
                 # fetch_lfw_people,
                 # fetch_lfw_pairs,
                 # fetch_covtype,
-                fetch_rcv1,
-                fetch_kddcup99,
+                # fetch_rcv1,
+                # fetch_kddcup99,
                 fetch_california_housing,
                 fetch_species_distributions]
 
