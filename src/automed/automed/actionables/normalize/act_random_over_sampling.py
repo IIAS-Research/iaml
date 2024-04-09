@@ -54,5 +54,5 @@ class ActRandomOverSampling(Actionable):
         """
         return 1
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['binary', 'multiclass']
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in ['binary', 'multiclass']

@@ -10,12 +10,15 @@ There is also decorators needed to create a Step. See it under Step class.
 import sys
 import json
 from hashlib import md5
+from typing import TYPE_CHECKING
 from typing import Any
 from copy import deepcopy
 from multipledispatch import dispatch
-from .candidate import Candidate
 from .dataset import Dataset
 from .decorators.runner import runner
+
+if TYPE_CHECKING:
+    from .candidate import Candidate
 
 class Step: # pylint: disable=too-many-public-methods
     """
@@ -109,7 +112,7 @@ class Step: # pylint: disable=too-many-public-methods
     def __str__(self):
         return self.name
     
-    def suitable(self, candidate:Candidate) -> bool: # pylint: disable=unused-argument
+    def suitable(self, dataset:Dataset) -> bool: # pylint: disable=unused-argument
         """
         Have to be overwrote. Check if a step is suitable for a given Candidate
 
@@ -298,7 +301,7 @@ class Step: # pylint: disable=too-many-public-methods
     #####################
     # Results of run() can by stored in cache to avoid compute it several time
     
-    def from_cache(self, candidate:Candidate) -> Candidate:
+    def from_cache(self, candidate:'Candidate') -> 'Candidate':
         """
         If a previous run with same candidate & configuration was cached, return it
         Else return None
@@ -318,7 +321,7 @@ class Step: # pylint: disable=too-many-public-methods
                 return cache['output']
         return None
     
-    def add_cache(self, input_candidate:Candidate, output_candidate:Candidate) -> bool:
+    def add_cache(self, input_candidate:'Candidate', output_candidate:'Candidate') -> bool:
         """
         Add an candidate, candidate pair to cache
 
@@ -433,7 +436,7 @@ class Step: # pylint: disable=too-many-public-methods
     # Base on the dataset (or not) priorize usefulness of this actionable.
     # Result is a value between 0 and 1. 0 stand for not useful
     #
-    def priorize(self, candidate:Candidate=None) -> float: # pylint: disable=unused-argument
+    def priorize(self, candidate:'Candidate'=None) -> float: # pylint: disable=unused-argument
         """
         Try to evaluate the priorities level of himself on an candidate  
 
@@ -461,7 +464,7 @@ class Step: # pylint: disable=too-many-public-methods
         return self
     
     @runner  
-    def run(self, candidate:'Candidate', callback:callable=None) -> Candidate:
+    def run(self, candidate:'Candidate', callback:callable=None) -> 'Candidate':
         """
         Run the step on candidate data
 

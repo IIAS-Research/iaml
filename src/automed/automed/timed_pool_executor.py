@@ -6,7 +6,7 @@
 
 import threading
 import warnings
-import time
+import time, random
 import traceback
 import multiprocess
 from multiprocess.queues import Empty
@@ -29,25 +29,27 @@ def process_daemon(
     """
     result = None
     
+    time.sleep(random.random()) # Weird thing to un-sync the threads
+    
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         while True:
             try:
-                value = to_run_queue.get(block=False)
+                value = to_run_queue.get(block=False, timeout=1)
                 if isinstance(value, str) and value == "stop":
                     to_run_queue.put("stop")
                     break
                 
                 method, args, kwargs, callback_id = value
-                
                 try:
                     result = method(*args, **kwargs)
                     queue.put((result, callback_id))
                 except Exception:  # pylint: disable=broad-exception-caught
                     Logger().log("error", force=True)
-                    error_queue.put(traceback.format_exc())
+                    error_queue.put((traceback.format_exc(), callback_id))
                 finally:
                     finally_queue.put(1)
+                    
             except Empty:
                 time.sleep(0.1)
             
@@ -125,7 +127,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         while not self.result_queue.empty():
             try:
-                result, callback_id = self.result_queue.get(block=False)
+                result, callback_id = self.result_queue.get(block=False, timeout=1)
                 Logger().log(str(result))
                 if callback_id and callable(self.callbacks[callback_id]):
                     self.callbacks[callback_id](result)
@@ -139,7 +141,9 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         while not self.error_queue.empty():
             try:
-                Logger().log("ERROR IN PROCESS", self.error_queue.get(block=False), force=True)
+                error, callback_id = self.error_queue.get(block=False, timeout=1)
+                Logger().log("ERROR IN PROCESS", error, force=True)
+                self.callbacks[callback_id](None)
             except Empty:
                 break
     
@@ -159,7 +163,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         # Kill process
         while not self.to_run_queue.empty():
             try:
-                self.to_run_queue.get(block=False) # Empty task queue 
+                self.to_run_queue.get(block=False, timeout=1) # Empty task queue 
             except Empty:
                 break
             
@@ -206,7 +210,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         while not self.finally_queue.empty():
             try:
-                self.finally_queue.get(block=False)
+                self.finally_queue.get(block=False, timeout=1)
                 self.finished_run += 1
             except Empty:
                 break
@@ -223,7 +227,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 [self.error_queue, self.finally_queue, self.to_run_queue, self.result_queue]:
                 while not queue.empty():
                     try:
-                        queue.get(block=False)
+                        queue.get(block=False, timeout=0.05)
                     except Empty:
                         pass
                     
@@ -264,9 +268,9 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         
         while not self.__finished() and remain_time() and not slide():
             time.sleep(0.3)
-            
-        time.sleep(0.2) # Wait result to by collected by thread daemon
         
+            
+        self.__collect_results()
         self.__print_errors()
         
         results = self.results # Save before reset !

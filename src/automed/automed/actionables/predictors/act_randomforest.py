@@ -73,8 +73,8 @@ class ActRandomForest(Predictor):
         
         return self
     
-    def suitable(self, candidate) -> bool:
-        return candidate.dataset.type_of_target in \
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
     def priorize(self, candidate:Candidate=None) -> float:

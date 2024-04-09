@@ -1,7 +1,6 @@
 """
     Step.run() decorator.
 """
-from ..candidate import Candidate
 from ..logger import Logger
 
 def runner(func) -> callable:
@@ -19,26 +18,28 @@ def runner(func) -> callable:
     Returns:
         callable: edited method
     """
-    def runner_wrapper(self, candidates:list[Candidate],
+    def runner_wrapper(self, candidates:list['Candidate'],
                         callback:callable=None
-                        ) -> list[Candidate]:
+                        ) -> list['Candidate']:
         """Wrapping decorated method
 
         Returns:
             list[Candidate]: All generated candidates
         """
+        from ..candidate import Candidate # Avoid circular import
+        
         
         if candidates.__class__ in [Candidate]:
             candidates = [candidates]
         
-        result:list[Candidate] = []
+        result:list['Candidate'] = []
 
         # only print "parent" steps to reduce logs
         if hasattr(self, 'step') or hasattr(self, 'steps'):
             Logger().log(f'running step: {self.to_rich_str()}')
         
         for current_candidate in candidates:
-            if self.suitable(current_candidate):
+            if self.suitable(current_candidate.dataset):
                 candidate = self.from_cache(current_candidate)
                 if not candidate:
                     candidate = func(self, current_candidate, callback=callback)

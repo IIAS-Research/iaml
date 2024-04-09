@@ -15,7 +15,7 @@ class GeneticOptimizer(Optimizer):
     """
     Pipeline optimizer based on genetic concepts
     """
-    def __init__(self, nb_candidate:int=25, mutation_power:float=0.1, initial_modifier:float=5, duration:int=None):
+    def __init__(self, nb_candidate:int=35, mutation_power:float=0.1, initial_modifier:float=5, duration:int=None):
         super().__init__()
         self.number_of_candidate:int = max(nb_candidate, 4)
         self.generation_count:int = 0
@@ -32,7 +32,7 @@ class GeneticOptimizer(Optimizer):
         if not self.duration:
             return 0.5
         else:
-            return (time.time() - self.start_time) / self.duration
+            return min(0.9, max(0.1, ((time.time() - self.start_time) / self.duration)))
         
     @property
     def finished(self) -> bool:

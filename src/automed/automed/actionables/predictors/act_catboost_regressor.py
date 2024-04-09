@@ -44,12 +44,12 @@ class ActCatBoostRegressor(Predictor):
             'loss_function': {
                 'description': 'The metric to use in training.',
                 'default': 'RMSE',
-                'categorical': ['RMSE', 'MAE', 'Quantile', 'LogLinQuantile', 'Poisson', 'MAPE', 'Lq']
+                'categorical': ['RMSE', 'MAE', 'Quantile', 'LogLinQuantile', 'Poisson', 'MAPE'] #, 'Lq']
             },
             'eval_metric': {
                 'description': 'The metric to be used for validation data.',
                 'default': 'RMSE',
-                'categorical': ['RMSE', 'MAE', 'R2', 'Quantile', 'LogLinQuantile', 'Poisson', 'MAPE', 'Lq']
+                'categorical': ['RMSE', 'MAE', 'R2', 'Quantile', 'LogLinQuantile', 'Poisson', 'MAPE'] # , 'Lq']
             },
             'bootstrap_type': {
                 'description': 'The method for sampling the weights of objects.',
@@ -80,8 +80,8 @@ class ActCatBoostRegressor(Predictor):
         
         return self
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['continuous']
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in ['continuous']
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

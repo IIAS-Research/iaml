@@ -67,8 +67,8 @@ class ActOnehot(Actionable):
 
         return df
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return bool(candidate.dataset.get_columns_names_by_type(DataType.CATEGORICAL))    
+    def suitable(self, dataset:Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type(DataType.CATEGORICAL))    
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

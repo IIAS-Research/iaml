@@ -15,11 +15,11 @@ class ActRandomForestRegressor(Predictor):
     name = "Learn : Random Forest Regressor" 
     def __init__(self):
         self.configuration:dict = {
-            'max_depth': {
-                'description': 'Max depth of each tree',
-                'default': 15,
-                'range': [1, 100]
-            },
+            # 'max_depth': { # Disable before probably better with no limit in regression
+            #     'description': 'Max depth of each tree',
+            #     'default': 15,
+            #     'range': [1, 100]
+            # },
             'n_estimators': {
                 'description': 'Number of threes',
                 'default': 100,
@@ -73,8 +73,8 @@ class ActRandomForestRegressor(Predictor):
         
         return self
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['continuous']
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in ['continuous']
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

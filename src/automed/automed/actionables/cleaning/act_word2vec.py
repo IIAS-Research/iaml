@@ -135,5 +135,5 @@ class ActWord2Vec(Actionable):
         """
         return 0.4
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return bool(candidate.dataset.get_columns_names_by_type([DataType.TEXT]))
+    def suitable(self, dataset:Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type([DataType.TEXT]))

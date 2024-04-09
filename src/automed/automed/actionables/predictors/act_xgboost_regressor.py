@@ -79,8 +79,8 @@ class ActXGBoostRegressor(Predictor):
         
         return self
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['continuous']
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in ['continuous']
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

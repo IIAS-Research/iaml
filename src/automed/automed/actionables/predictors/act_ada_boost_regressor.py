@@ -54,8 +54,8 @@ class ActAdaBoostRegressor(Predictor):
         
         return self
     
-    def suitable(self, candidate) -> bool:
-        return candidate.dataset.type_of_target == 'continuous'
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target == 'continuous'
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

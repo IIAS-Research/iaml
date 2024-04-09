@@ -2,6 +2,7 @@
 [STEP] Decompose features with SelectPercentile
 """
 import pandas as pd
+from typing import Union
 from sklearn.feature_selection import SelectPercentile, chi2, f_classif
 from ...actionable import Actionable
 from ...dataset import Dataset
@@ -64,10 +65,10 @@ class ActSelectPercentile(Actionable):
         """
         return pd.DataFrame(self.preprocessor.transform(X))
         
-    def suitable(self, candidate: Candidate) -> bool:
+    def suitable(self, dataset:Dataset) -> bool:
         # Negative values are not supported
-        return not((candidate.dataset.X < 0).any().any() or (candidate.dataset.y < 0).any()) \
-            and candidate.dataset.type_of_target in \
+        return not((dataset.X < 0).any().any() or (dataset.y < 0).any()) \
+            and dataset.type_of_target in \
                 ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, candidate:Candidate=None) -> float:

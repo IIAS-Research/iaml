@@ -12,6 +12,7 @@ import shap
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from .dataset import Dataset
+from .void_step import VoidStep
 from .explanation import Explanation
 from .cache import Cache
 
@@ -127,6 +128,21 @@ class AutoPipeline(Pipeline):
         
         return False
         
+    def remove_step(self, to_remove:'Step') -> bool:
+        for idx, step in enumerate(self.transformers):
+            if id(to_remove) == id(step[1]):
+                del self.transformers[idx]
+                return True
+        for idx, step in enumerate(self.resamplers):
+            if id(to_remove) == id(step[1]):
+                del self.resamplers[idx]
+                return True
+        if id(to_remove) == id(self.predictor[1]):
+            self.predictor = None
+            return True
+        
+        return False
+        
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
             only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
         """
@@ -160,8 +176,17 @@ class AutoPipeline(Pipeline):
                 if from_cache:
                     self.replace_step(step, from_cache)
                 else:
-                    step.fit(dataset)
-                    Cache().add_to_cache(f"fit_{step.fingerprint()}", dataset.X, step)
+                    if step.suitable(dataset):
+                        step.fit(dataset)
+                        Cache().add_to_cache(f"fit_{step.fingerprint()}", dataset.X, step)
+                    else:
+                        if step.is_interchangeable:
+                            old_step = step
+                            step = VoidStep(step_to_mimic=step)
+                            self.replace_step(old_step, step)
+                        else:
+                            self.remove_step(step)
+                            continue
             else:
                 step.fit(dataset.X, dataset.y, **kwargs)
                 
