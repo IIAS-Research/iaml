@@ -11,6 +11,7 @@ from .dataset import Dataset
 from .cache import Cache
 from .splitter import random_splitter
 from .auto_pipeline import AutoPipeline
+from .logger import Logger
 
 
 if TYPE_CHECKING:
@@ -222,7 +223,8 @@ class Candidate:
                 
             try:
                 y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
-                metrics.append(self.__compute_metrics(test_ds.y, y_pred))
+                y_pred_proba = copied_pipe.predict_proba(test_ds.X, model_only = not self.is_meta)
+                metrics.append(self.__compute_metrics(test_ds.y, y_pred, y_pred_proba))
                 if not from_cache:
                     to_cache.append((train_ds, test_ds))
             except ValueError:
@@ -252,10 +254,11 @@ class Candidate:
             return None
         
         y_pred = self.pipeline.predict(X)
-        return self.__compute_metrics(np.array(y), y_pred)
+        y_pred_proba = self.pipeline.predict_proba(X)
+        return self.__compute_metrics(np.array(y), y_pred, y_pred_proba)
     
-    def __compute_metrics(self, y:np.array, y_pred:np.array) -> dict:
-        return {str(metric): metric.compute(y, y_pred) for metric in self.metrics}
+    def __compute_metrics(self, y:np.array, y_pred:np.array, y_pred_proba:np.array) -> dict:
+        return {str(metric): metric.compute(y, (y_pred_proba if metric.need_proba() else y_pred)) for metric in self.metrics}
     
     def __metric_value(self, metric) -> float:
         for key, value in self.computed_metrics.items():
