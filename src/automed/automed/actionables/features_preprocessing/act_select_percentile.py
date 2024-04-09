@@ -67,7 +67,7 @@ class ActSelectPercentile(Actionable):
         
     def suitable(self, dataset:Dataset) -> bool:
         # Negative values are not supported
-        return not((dataset.X < 0).any().any() or (dataset.y < 0).any()) \
+        return not((dataset.X < 0).any().any()) \
             and dataset.type_of_target in \
                 ['binary', 'multiclass',  'multilabel-indicator']
     

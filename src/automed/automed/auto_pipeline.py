@@ -156,7 +156,11 @@ class AutoPipeline(Pipeline):
             X, y = self.fit_transform(X, y, **kwargs)
             
         dataset = Dataset(X, y)
-        self.predictor[1].fit(dataset, **kwargs)
+        
+        if self.predictor[1].suitable(dataset):
+            self.predictor[1].fit(dataset, **kwargs)
+        else:
+            self.predictor = None
         
         return self
     
@@ -315,7 +319,7 @@ class AutoPipeline(Pipeline):
             list: Predicted values
         """
         if not self.have_model:
-            raise ValueError("Model need to be set before predict")
+            return None
         
         if not model_only:
             return super().predict(X, **kwargs)

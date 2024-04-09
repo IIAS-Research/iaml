@@ -60,7 +60,7 @@ class ActMultinomialNB(Predictor):
             bool: Suitable ?
         """
         # Negative values are not supported
-        return not((dataset.X < 0).any().any() or (dataset.y < 0).any()) \
+        return not((dataset.X < 0).any().any()) \
             and dataset.type_of_target in ['binary', 'multiclass']
     
     def priorize(self, candidate:Candidate=None) -> float:

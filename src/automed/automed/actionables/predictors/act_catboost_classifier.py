@@ -77,6 +77,7 @@ class ActCatBoost(Predictor):
         if dataset.type_of_target == 'binary':
             self.configuration['loss_function']['categorical'] = ['Logloss', 'CrossEntropy']
         else:
+            self.configuration['eval_metric']['categorical'] = ['AUC', 'Accuracy']
             self.configuration['loss_function']['categorical'] = ['MultiClass', 'MultiClassOneVsAll']
         self.check_configuration()    
         

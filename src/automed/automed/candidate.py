@@ -220,10 +220,13 @@ class Candidate:
                     
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
-            y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
-            metrics.append(self.__compute_metrics(test_ds.y, y_pred))
-            if not from_cache:
-                to_cache.append((train_ds, test_ds))
+            try:
+                y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
+                metrics.append(self.__compute_metrics(test_ds.y, y_pred))
+                if not from_cache:
+                    to_cache.append((train_ds, test_ds))
+            except ValueError:
+                return {}
         
         if not from_cache:
             Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)    
