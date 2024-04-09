@@ -29,6 +29,12 @@ class ActLogisticRegression(Predictor):
                 'description': 'The stopping criterion.',
                 'default': 0.0001,
                 'range': [1e-05, 0.1]
+            },
+            'class_weight': {
+                'description': 'The “balanced” mode uses the values of y to \
+                    automatically adjust weights inversely proportional to class frequencies ',
+                'default': None,
+                'categorical': [None, 'balanced']
             }
         }
         self.model:LogisticRegression = None
@@ -44,9 +50,6 @@ class ActLogisticRegression(Predictor):
             Candidate: Transformed candidate
         """
         self.model = LogisticRegression(
-            # n_jobs=-1,
-            max_iter=500,
-            class_weight='balanced',
             **self.passthrough_parameters()
             )
         
