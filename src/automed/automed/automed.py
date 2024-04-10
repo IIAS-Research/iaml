@@ -6,6 +6,7 @@ import time
 import multiprocessing
 import warnings
 import pandas as pd
+from sklearn.model_selection import StratifiedShuffleSplit
 from .timed_pool_executor import TimedPoolExecutor
 from .step import Step
 from .cache import Cache
@@ -160,6 +161,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             *args,
             groups:pd.DataFrame = None,
             patience:int=-1,
+            generation_sample_size=100,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
@@ -180,10 +182,14 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 
                 if isinstance(y, pd.DataFrame):
                     y = y.values.ravel()
-                    
-                ### INITIAL GENERATE CANDIDATE 
+                
                 dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
-                self.fit_candidate:Candidate = Candidate(dataset, main_metric=self.main_metric)
+                
+                ### INITIAL GENERATE CANDIDATE 
+                
+                _, test_idx = next(StratifiedShuffleSplit(n_splits=1, test_size=generation_sample_size, random_state=42).split(X, y))
+                generation_dataset:Dataset = Dataset(X.iloc[test_idx], y.iloc[test_idx])
+                self.fit_candidate:Candidate = Candidate(generation_dataset, main_metric=self.main_metric)
 
                 # Select metrics used to evaluate performances
                 for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
