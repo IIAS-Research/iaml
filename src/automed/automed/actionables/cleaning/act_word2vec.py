@@ -15,7 +15,6 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
-from ...logger import Logger
 
 download('stopwords')
 download('punkt')
@@ -61,7 +60,7 @@ class ActWord2Vec(Actionable):
         
         return tokens
     
-    def vectorize(self, sentence:str, model):
+    def vectorize(self, words:str, model):
         """
         Convert the preprocessed text data to a vector representation using
         the Word2Vec model by calculating the aveerage of the word vectors
@@ -76,7 +75,6 @@ class ActWord2Vec(Actionable):
             numpy.ndarray: The average vector representation of the input sentence.
             
         """
-        words = sentence.split()
         vectors = [model.wv[word] for word in words if word in model.wv]
         if len(vectors) > 0:
             return np.mean(vectors, axis = 0)
