@@ -5,6 +5,7 @@ import string
 import numpy as np
 import pandas as pd
 from gensim.models import Word2Vec
+from concurrent.futures import ProcessPoolExecutor
 from nltk import download
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
@@ -14,6 +15,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
+from ...logger import Logger
 
 download('stopwords')
 download('punkt')
@@ -50,11 +52,14 @@ class ActWord2Vec(Actionable):
 
         """
         text = text.lower()
-        text = ''.join([word for word in text if word not in string.punctuation])
+        
+        table = str.maketrans('', '', string.punctuation)
+        text = text.translate(table)
+        
         tokens = word_tokenize(text)
-        tokens = [word for word in tokens if word not in stop_words]
-        tokens = [stemmer.stem(word) for word in tokens]
-        return ' '.join(tokens)
+        tokens = [stemmer.stem(word) for word in tokens if word not in stop_words]
+        
+        return tokens
     
     def vectorize(self, sentence:str, model):
         """
@@ -88,10 +93,11 @@ class ActWord2Vec(Actionable):
         Returns:
             Candidate: Transformed candidate
         """
-        
         self.columns = []
         for column in dataset.get_columns_names_by_type([DataType.TEXT]):
-            values = dataset.X[column].fillna('').apply(self.preprocess).apply(str.split)
+            with ProcessPoolExecutor() as executor:
+                values = list(executor.map(self.preprocess, dataset.X[column].fillna('')))
+                
             vectorizer = Word2Vec(sentences = values,
                                 vector_size = 100,
                                 window = 5,
@@ -125,6 +131,7 @@ class ActWord2Vec(Actionable):
             features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
             vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
             X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
+            
         return X
     
     def priorize(self, candidate:Candidate=None) -> float:
