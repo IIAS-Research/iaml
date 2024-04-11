@@ -5,7 +5,6 @@ import string
 import numpy as np
 import pandas as pd
 from gensim.models import Word2Vec
-from concurrent.futures import ProcessPoolExecutor
 from nltk import download
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
@@ -19,9 +18,6 @@ from ...data_type import DataType
 download('stopwords')
 download('punkt')
 
-stop_words = set(stopwords.words('english'))
-stemmer = PorterStemmer()
-
 @is_step('cleaning')
 class ActWord2Vec(Actionable):
     """
@@ -31,6 +27,9 @@ class ActWord2Vec(Actionable):
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[tuple[str, Word2Vec]] = None
+        self.stop_words = set(stopwords.words('english'))
+        self.stemmer = PorterStemmer()
+            
             
     def preprocess(self, text:str) -> str:
         """
@@ -56,7 +55,7 @@ class ActWord2Vec(Actionable):
         text = text.translate(table)
         
         tokens = word_tokenize(text)
-        tokens = [stemmer.stem(word) for word in tokens if word not in stop_words]
+        tokens = [self.stemmer.stem(word) for word in tokens if word not in self.stop_words]
         
         return tokens
     
@@ -93,9 +92,7 @@ class ActWord2Vec(Actionable):
         """
         self.columns = []
         for column in dataset.get_columns_names_by_type([DataType.TEXT]):
-            with ProcessPoolExecutor() as executor:
-                values = list(executor.map(self.preprocess, dataset.X[column].fillna('')))
-                
+            values = dataset.X[column].fillna('').apply(self.preprocess)
             vectorizer = Word2Vec(sentences = values,
                                 vector_size = 100,
                                 window = 5,
@@ -109,6 +106,7 @@ class ActWord2Vec(Actionable):
             for c, v in feature_names.items() if len(v) > 0
         ]
         
+        
         return self
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
@@ -121,15 +119,18 @@ class ActWord2Vec(Actionable):
         Returns:
             pd.DataFrame: Transformed dataset
         """
-        X = X.reset_index(drop=True)
-        for name, vectorizer in self.columns:
-            transformed = X[name].fillna('').apply(
-                lambda doc: self.vectorize(self.preprocess(doc), vectorizer)
-            )
-            features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
-            vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
-            X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
-            
+        try:
+            X = X.reset_index(drop=True)
+            for name, vectorizer in self.columns:
+                transformed = X[name].fillna('').apply(
+                    lambda doc: self.vectorize(self.preprocess(doc), vectorizer)
+                )
+                features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
+                vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
+                X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
+        except Exception as ex:
+            Logger().log(ex, force=True)
+        
         return X
     
     def priorize(self, candidate:Candidate=None) -> float:

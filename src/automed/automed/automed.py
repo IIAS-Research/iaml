@@ -6,7 +6,6 @@ import time
 import multiprocessing
 import warnings
 import pandas as pd
-from sklearn.model_selection import StratifiedShuffleSplit
 from .timed_pool_executor import TimedPoolExecutor
 from .step import Step
 from .cache import Cache
@@ -53,6 +52,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 metalearner:bool=None,
                 splitter=None,
                 max_duration:int=-1,
+                time_before_sample_use:int=None,
                 preprocessor:bool=False,
                 main_metric:Metric=None):
         
@@ -71,10 +71,11 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             
         # Set max duration of each stage
         if max_stage_duration is None:
-            self.max_stage_duration = max(max_duration / 5, 300)
+            self.max_stage_duration = max(max_duration / 5, 900)
             Logger().log(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
         else:
             self.max_stage_duration = max_stage_duration
+            
 
         # Set splitter
         self.splitter = splitter if splitter is not None else kfold_splitter
@@ -83,6 +84,18 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         
         
         self.max_duration = max_duration
+        
+        if time_before_sample_use:
+            if max_duration:
+                self.time_before_sample_use = min(max_duration, time_before_sample_use)
+            else:
+                self.time_before_sample_use = time_before_sample_use
+        else:
+            if max_duration:
+                self.time_before_sample_use = max(max_duration / 5, 60)
+            else:
+                self.time_before_sample_use = None
+        
         self.candidates:list[Candidate] = None
         self.fit_candidate:Candidate = None
         self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep)
@@ -187,9 +200,9 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 
                 ### INITIAL GENERATE CANDIDATE 
                 
-                _, test_idx = next(StratifiedShuffleSplit(n_splits=1, test_size=generation_sample_size, random_state=42).split(X, y))
-                generation_dataset:Dataset = Dataset(X.iloc[test_idx], y.iloc[test_idx])
-                self.fit_candidate:Candidate = Candidate(generation_dataset, main_metric=self.main_metric)
+                self.fit_candidate:Candidate = Candidate(
+                    dataset.sample(generation_sample_size),
+                    main_metric=self.main_metric)
 
                 # Select metrics used to evaluate performances
                 for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
@@ -205,17 +218,27 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 
                 ### INITIAL EVALUATION
                 
+                def remain_time():
+                    return self.max_duration - (time.monotonic() - start_time)
                 # Evaluate candidates
-                candidates = self.__run_evaluations(candidates,
+                gen0_candidates = []
+                i = 0
+                while not gen0_candidates and remain_time() > 0:
+                    if i > 0:
+                        dataset = dataset.sample(0.1)
+                        Logger().log(f"Training is too time consuming. Let's try again with dataset sample. New features shape {dataset.X.shape}", force=True)
+                    i+= 1
+                    
+                    gen0_candidates = self.__run_evaluations(candidates,
                                 dataset,
-                                timeout=self.max_duration - (time.monotonic() - start_time))
+                                timeout=min(remain_time(), self.time_before_sample_use))
+
                 
                 ### FINETUNING
-                remain_time = self.max_duration - (time.monotonic() - start_time)
                 candidates = self.__optimize(dataset,
-                                            candidates,
-                                            optimizer=GeneticOptimizer(duration=remain_time),
-                                            max_duration=remain_time,
+                                            gen0_candidates,
+                                            optimizer=GeneticOptimizer(duration=remain_time()),
+                                            max_duration=remain_time(),
                                             patience=patience)
                 ### FINAL FIT
                 

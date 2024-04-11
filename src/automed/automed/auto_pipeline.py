@@ -204,7 +204,7 @@ class AutoPipeline(Pipeline):
                 elif hasattr(step, 'resample'):
                     dataset = Dataset(*step.resample(dataset.X, dataset.y))
                 Cache().add_to_cache(f"apply_{step.fingerprint()}", prev_X, dataset)
-        
+                
         return dataset.X, dataset.y
         
     @property
