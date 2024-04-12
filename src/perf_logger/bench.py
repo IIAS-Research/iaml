@@ -91,6 +91,7 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
 
             # EVALUATE
             y_pred = predict_method(X_test)
+            y_pred_proba = predict_proba_method(X_test)
             fold_dict = {"bench_date": start_time,
                         "package": package_name,
                         "fold": idx,
@@ -102,7 +103,10 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
             for metric_sub_class in Metric.__subclasses__():
                 metric = metric_sub_class()
                 if metric.suitable(X, y, type_of_target(y)):
-                    fold_dict[str(metric)] = metric.compute(y_test, y_pred)
+                    if metric.need_proba():
+                        fold_dict[str(metric)] = metric.compute(y_test, y_pred_proba)
+                    else:
+                        fold_dict[str(metric)] = metric.compute(y_test, y_pred)
             
             folds_results.append(fold_dict)
             save(model, f"{package_name}_{duration}_{idx}_{filename}")
@@ -134,18 +138,18 @@ def train_automed(X, y, duration):
     Cache.reset()
     estimator = AutoMed(quiet=True, max_workers=12, max_duration=duration)
     estimator.fit(X, y)
-    return estimator.chosen_model, estimator.chosen_model.predict, f"{estimator.chosen_model.transformers[-1][0]} -> {estimator.chosen_model.predictor[0]}"
+    return estimator.chosen_model, estimator.chosen_model.predict, estimator.chosen_model.predict_proba, f"{estimator.chosen_model.transformers[-1][0]} -> {estimator.chosen_model.predictor[0]}"
 
 def train_naive(X, y, duration):
     estimator = naiveautoml.NaiveAutoML(timeout=duration)
     estimator.fit(X, y)
-    return estimator.chosen_model, estimator.chosen_model.predict, f"{estimator.chosen_model}"
+    return estimator.chosen_model, estimator.chosen_model.predict, estimator.chosen_model.predict_proba, f"{estimator.chosen_model}"
 
 def train_fedot(X, y, duration):
     problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
     estimator = Fedot(problem=problem, timeout=duration/60.0, preset='best_quality', n_jobs=12)
     estimator.fit(features=X, target=y)
-    return estimator, estimator.predict, f"{estimator.current_pipeline}"
+    return estimator, estimator.predict, estimator.predict_proba, f"{estimator.current_pipeline}"
 
 def train_tplot(X, y, duration):
     encoder = None
@@ -168,13 +172,21 @@ def train_tplot(X, y, duration):
         else:
             return encoder.inverse_transform(estimator.predict(X))
         
-    return estimator, predict, f"{estimator}"
+    
+    def predict_proba(X):
+        X = X.drop(columns=X.select_dtypes(include=['object']).columns)
+        if not encoder:
+            return estimator.predict_proba(X)
+        else:
+            return encoder.inverse_transform(estimator.predict_proba(X))
+        
+    return estimator, predict, predict_proba, f"{estimator}"
 
 def train_flaml(X, y, duration):
     problem = 'classification' if type_of_target(y) in ['binary', 'multiclass'] else 'regression'
     estimator = flamlAutoMl()
     estimator.fit(X, y, task=problem, time_budget=duration)
-    return estimator, estimator.predict, f"{estimator}"
+    return estimator, estimator.predict, estimator.predict_proba, f"{estimator}"
 
 def train_autosk(X, y, duration):
     if type_of_target(y) in ['binary', 'multiclass']:
@@ -186,15 +198,15 @@ def train_autosk(X, y, duration):
                         time_left_for_this_task=duration
                     )
     estimator.fit(X, y)
-    return estimator, estimator.predict, f"{estimator}"
+    return estimator, estimator.predict, estimator.predict_proba, f"{estimator}"
 
 packages = [
-    ('naive_autoML', train_naive),
-    ('auto_sklearn', train_autosk),
-    ('FEDOT', train_fedot),
+    # ('naive_autoML', train_naive),
+    # ('auto_sklearn', train_naive),
+    # ('FEDOT', train_fedot),
     ('automed', train_automed),
     # ('tplot', train_tplot),
-    ('flaml', train_flaml)
+    # ('flaml', train_flaml)
 ]
 
 scikit_dataset = [load_iris,
@@ -212,7 +224,8 @@ scikit_dataset = [load_iris,
                 # fetch_rcv1,
                 # fetch_kddcup99,
                 fetch_california_housing,
-                fetch_species_distributions]
+                # fetch_species_distributions
+                ]
 
 def main():
     global results
