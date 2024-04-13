@@ -89,6 +89,7 @@ def each_file(file:str, package, duration) -> pd.DataFrame:
             print('#####')
             model, predict_method, predict_proba_method, model_name = trainer(X, y, duration)
 
+
             # EVALUATE
             y_pred = predict_method(X_test)
             y_pred_proba = predict_proba_method(X_test)
