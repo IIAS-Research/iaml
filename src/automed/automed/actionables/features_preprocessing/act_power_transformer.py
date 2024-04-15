@@ -24,7 +24,8 @@ class ActPowerTransformer(Actionable):
                 'categorical': ['yeo-johnson', 'box-cox']
                 },
             'standardize': {
-                'description': 'Set to True to apply zero-mean, unit-variance normalization to the transformed output.',
+                'description': 'Set to True to apply zero-mean, \
+                    unit-variance normalization to the transformed output.',
                 'default': True
                 }
             }
@@ -73,7 +74,7 @@ class ActPowerTransformer(Actionable):
         return 0.5
     
     def suitable(self, dataset: Dataset) -> bool:
-        if self.get_config('method') == 'box-cox' and not((dataset.X < 0).any().any()):
+        if self.get_config('method') == 'box-cox' and not(dataset.X < 0).any().any():
             self.configure('method', 'yeo-johnson')
         
         return True

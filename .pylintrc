@@ -193,6 +193,8 @@ good-names=i,
            __X,
            X_train,
            X_test,
+           prev_X,
+           prev_y,
            __y,
            y,
            _

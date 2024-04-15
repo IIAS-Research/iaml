@@ -1,8 +1,8 @@
 """
 [STEP] Decompose features with SelectPercentile
 """
+
 import pandas as pd
-from typing import Union
 from sklearn.feature_selection import SelectPercentile, chi2, f_classif
 from ...actionable import Actionable
 from ...dataset import Dataset

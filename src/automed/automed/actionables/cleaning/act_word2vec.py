@@ -119,17 +119,14 @@ class ActWord2Vec(Actionable):
         Returns:
             pd.DataFrame: Transformed dataset
         """
-        try:
-            X = X.reset_index(drop=True)
-            for name, vectorizer in self.columns:
-                transformed = X[name].fillna('').apply(
-                    lambda doc: self.vectorize(self.preprocess(doc), vectorizer)
-                )
-                features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
-                vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
-                X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
-        except Exception as ex:
-            Logger().log(ex, force=True)
+        X = X.reset_index(drop=True)
+        for name, vectorizer in self.columns:
+            transformed = X[name].fillna('').apply(
+                lambda doc: self.vectorize(self.preprocess(doc), vectorizer)
+            )
+            features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
+            vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
+            X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
         
         return X
     

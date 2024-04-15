@@ -4,7 +4,6 @@
 from sklearn.metrics import roc_auc_score
 import pandas as pd
 from ..metric import Metric
-from ..logger import Logger
 
 class RocAucMetric(Metric):
     """

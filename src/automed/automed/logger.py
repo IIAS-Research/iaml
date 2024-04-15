@@ -3,8 +3,8 @@ Singleton used by Automed to generate nice logs
 """
 import rich.console
 import rich.progress
-from .meta_singleton import MetaSingleton
 import multiprocess
+from .meta_singleton import MetaSingleton
 
 class Logger(metaclass=MetaSingleton):
     """

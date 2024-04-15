@@ -1,11 +1,11 @@
 """
-[METASTEP] Generate pipeline without any exploration but optimizer will be able to mutate into other steps
+[METASTEP] Generate pipeline without any exploration but optimizer 
+        will be able to mutate into other steps
 """
 from .meta_explorer_step import MetaExplorerStep
 from .void_step import VoidStep
 from .step import Step
 from .decorators.all import is_step
-from .logger import Logger
 
 #
 # Inherit from MetaStep but will execute all steps at the same time. 

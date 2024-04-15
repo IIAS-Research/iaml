@@ -20,6 +20,7 @@
         "multimethod",
         "multipledispatch",
         "multiprocess",
+        "nsamples",
         "Nystroem",
         "Onehot",
         "priorize",

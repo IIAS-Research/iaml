@@ -78,7 +78,10 @@ class ActCatBoost(Predictor):
             self.configuration['loss_function']['categorical'] = ['Logloss', 'CrossEntropy']
         else:
             self.configuration['eval_metric']['categorical'] = ['AUC', 'Accuracy']
-            self.configuration['loss_function']['categorical'] = ['MultiClass', 'MultiClassOneVsAll']
+            self.configuration['loss_function']['categorical'] = [
+                                                                'MultiClass', 
+                                                                'MultiClassOneVsAll'
+                                                                ]
         self.check_configuration()    
         
         

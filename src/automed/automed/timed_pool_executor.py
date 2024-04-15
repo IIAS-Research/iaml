@@ -6,7 +6,8 @@
 
 import threading
 import warnings
-import time, random
+import time
+import random
 import traceback
 import multiprocess
 from multiprocess.queues import Empty

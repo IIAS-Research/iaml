@@ -54,7 +54,8 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'range': [2, 15]
                 },
             'tol': {
-                'description': 'The absolute tolerance to use when comparing scores during early stopping',
+                'description': 'The absolute tolerance to use when comparing \
+                    scores during early stopping',
                 'default': 1e-4,
                 'range': [1e-8, 1e-2]
                 },
@@ -76,7 +77,8 @@ class ActHistGradientBoostingRegressor(Predictor):
         Returns:
             Fitted step
         """
-        self.model = HistGradientBoostingRegressor(early_stopping=True, **self.passthrough_parameters())
+        self.model = HistGradientBoostingRegressor(early_stopping=True,
+                                                   **self.passthrough_parameters())
         self.model.fit(dataset.X, dataset.y)
         
         return self

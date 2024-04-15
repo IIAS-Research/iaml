@@ -9,13 +9,15 @@ from .optimizer import Optimizer
 from ..step import Step
 from ..logger import Logger
 
-# TODO -> Only optimize predictor for now. See if we can optimize cleaning stage
-
 class GeneticOptimizer(Optimizer):
     """
     Pipeline optimizer based on genetic concepts
     """
-    def __init__(self, nb_candidate:int=35, mutation_power:float=0.1, initial_modifier:float=5, duration:int=None):
+    def __init__(self,
+                nb_candidate:int=35,
+                mutation_power:float=0.1,
+                initial_modifier:float=5,
+                duration:int=None):
         super().__init__()
         self.number_of_candidate:int = max(nb_candidate, 4)
         self.generation_count:int = 0
@@ -31,8 +33,7 @@ class GeneticOptimizer(Optimizer):
     def __mutate_ratio(self):
         if not self.duration:
             return 0.5
-        else:
-            return min(0.9, max(0.1, ((time.time() - self.start_time) / self.duration)))
+        return min(0.9, max(0.1, ((time.time() - self.start_time) / self.duration)))
         
     @property
     def finished(self) -> bool:
@@ -80,7 +81,9 @@ class GeneticOptimizer(Optimizer):
         
         new_generation = [item for item in new_generation if item is not None] # remove None
         
-        Logger().log(f"gen{self.generation_count}, Nb mutation={count_mutate}, Nb random={len(new_generation)-count_mutate-nb_to_keep} ",force=True)
+        Logger().log(f"gen{self.generation_count}, \
+            Nb mutation={count_mutate}, \
+            Nb random={len(new_generation)-count_mutate-nb_to_keep} ",force=True)
         
         return self.__unique(new_generation) # Remove duplicated
     

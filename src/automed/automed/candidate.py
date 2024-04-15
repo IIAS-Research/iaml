@@ -4,14 +4,12 @@ Candidate is used to exchange data between Steps
 from typing import TYPE_CHECKING
 from copy import copy, deepcopy
 from hashlib import md5
-import json
 import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
 from .splitter import random_splitter
 from .auto_pipeline import AutoPipeline
-from .logger import Logger
 
 
 if TYPE_CHECKING:
@@ -258,7 +256,8 @@ class Candidate:
         return self.__compute_metrics(np.array(y), y_pred, y_pred_proba)
     
     def __compute_metrics(self, y:np.array, y_pred:np.array, y_pred_proba:np.array) -> dict:
-        return {str(metric): metric.compute(y, (y_pred_proba if metric.need_proba() else y_pred)) for metric in self.metrics}
+        return {str(metric): metric.compute(y, (y_pred_proba if metric.need_proba() else y_pred)) \
+            for metric in self.metrics}
     
     def __metric_value(self, metric) -> float:
         for key, value in self.computed_metrics.items():

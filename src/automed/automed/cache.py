@@ -1,8 +1,8 @@
 """
 Singleton used by Automed to cache results
 """
-import pandas as pd
 from copy import deepcopy
+import pandas as pd
 from .meta_singleton import MetaSingleton
 
 class Cache(metaclass=MetaSingleton):

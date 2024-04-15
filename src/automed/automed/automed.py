@@ -98,7 +98,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         
         self.candidates:list[Candidate] = None
         self.fit_candidate:Candidate = None
-        self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep)
+        self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep
+        self.last_stage_candidates = []
         
         self.executor = None
         
@@ -205,7 +206,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                     main_metric=self.main_metric)
 
                 # Select metrics used to evaluate performances
-                for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                for metric \
+                    in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
                     self.fit_candidate.add_metric(metric)
 
                 # Generate candidates
@@ -226,7 +228,9 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 while not gen0_candidates and remain_time() > 0:
                     if i > 0:
                         dataset = dataset.sample(0.1)
-                        Logger().log(f"Training is too time consuming. Let's try again with dataset sample. New features shape {dataset.X.shape}", force=True)
+                        Logger().log(f"Training is too time consuming. \
+                            Let's try again with dataset sample. \
+                            New features shape {dataset.X.shape}", force=True)
                     i+= 1
                     
                     gen0_candidates = self.__run_evaluations(candidates,

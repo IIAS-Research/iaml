@@ -3,7 +3,6 @@ Based on Scikit-learn Pipeline but for AutoMed Pipelines !
 Transform, resample and then predict from Candidate instance 
 """
 import pickle
-import json
 from copy import deepcopy
 from hashlib import md5
 from typing import TYPE_CHECKING
@@ -114,6 +113,15 @@ class AutoPipeline(Pipeline):
             self.resamplers.append(step)
     
     def replace_step(self, old:'Step', new:'Step') -> bool:
+        """Replace a step in the pipeline by another (by id)
+
+        Args:
+            old (Step): Old step to replace
+            new (Step): New step
+
+        Returns:
+            bool: Was replaced ?
+        """
         for idx, step in enumerate(self.transformers):
             if id(old) == id(step[1]):
                 self.transformers[idx] = (new.name, new)
@@ -129,6 +137,14 @@ class AutoPipeline(Pipeline):
         return False
         
     def remove_step(self, to_remove:'Step') -> bool:
+        """Remove a step from the pipeline (by object id)
+
+        Args:
+            to_remove (Step): Step to remove
+
+        Returns:
+            bool: Step was removed ?
+        """
         for idx, step in enumerate(self.transformers):
             if id(to_remove) == id(step[1]):
                 del self.transformers[idx]
