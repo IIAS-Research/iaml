@@ -20,16 +20,17 @@ class Dataset:
     Add features like data type detection and splitting
     """
     
-    def __init__(self, X:pd.DataFrame, y:list=None, groups:pd.DataFrame=None):
+    def __init__(self, X:pd.DataFrame, y:list=None, groups:pd.DataFrame=None, columns_types:dict=None):
         self.__X:pd.DataFrame = X
         self.__y:np.array = np.array(y)
+        
         
         if type(groups) in [pd.Series, list, np.array]:
             self.groups = pd.DataFrame(groups)
         else:
             self.groups = groups
-        
-        self.columns_types:list[DataType] = self.__detect_columns_types()
+        self.columns_types:dict = columns_types if columns_types else {}
+        self.__detect_columns_types()
         self.type_of_target:str = type_of_target(self.__y)
     
     @property
@@ -76,6 +77,11 @@ class Dataset:
             return copy.deepcopy(self)
         return copy.copy(self)
     
+    def decline(self, X, y, groups=None) -> 'Dataset':
+        if not groups:
+            groups = self.groups
+        return Dataset(X, y, groups=groups, columns_types=self.columns_types)
+    
     def sample(self, n) -> 'Dataset':
         """
         Return a dataset with a sample of data
@@ -97,8 +103,8 @@ class Dataset:
             _, test_idx = next(
                 StratifiedShuffleSplit(n_splits=1, test_size=n, random_state=42
                 ).split(self.X, self.y))
-            
-        return Dataset(self.X.iloc[test_idx], self.y[test_idx])
+        
+        return self.decline(self.X.iloc[test_idx], self.y[test_idx])
     
     def transform(self, method:callable) -> None:
         """
@@ -111,7 +117,7 @@ class Dataset:
             Dataset: Transformed dataset
         """
         self.__X = method(self.__X)
-        self.columns_types = self.__detect_columns_types()
+        self.__detect_columns_types()
     
     @property
     def has_groups(self) -> bool:
@@ -136,10 +142,10 @@ class Dataset:
             X, y = resampler(X, self.y)
             
             # Split groups and X
-            return Dataset(X.drop(columns=self.groups.columns),
+            return self.decline(X.drop(columns=self.groups.columns),
                             y,
                             groups=X[self.groups.columns])
-        return Dataset(*resampler(self.X, self.y))
+        return self.decline(*resampler(self.X, self.y))
         
     def split(self, splitter: callable, *args, **kwargs) -> Iterator[tuple['Dataset', 'Dataset']]: 
         """
@@ -156,8 +162,8 @@ class Dataset:
             y_train = self.__y[i_train].copy()
             y_test = self.__y[i_test].copy()
 
-            ds_train = Dataset(X_train, y_train)
-            ds_test = Dataset(X_test, y_test)
+            ds_train = self.decline(X_train, y_train)
+            ds_test = self.decline(X_test, y_test)
 
             yield (ds_train, ds_test)
         
@@ -176,7 +182,7 @@ class Dataset:
 
         return [
             column
-            for column, type in self.columns_types.items()
+            for column, (dtype, type) in self.columns_types.items()
             if type in types
         ]
 
@@ -205,7 +211,7 @@ class Dataset:
         elif np.issubdtype(column_value.dtype, np.datetime64):
             detected = DataType.DATE
             
-        return detected
+        return column_value.dtype, detected
     
     @property
     def needed_estimator(self) -> str:
@@ -214,15 +220,19 @@ class Dataset:
         """
         return 'regressor' if self.type_of_target == 'continuous' else 'classifier'
     
-    def __detect_columns_types(self) -> dict:
+    def __detect_columns_types(self) -> None:
         """
         Detect column type of all features in X
 
         Returns:
             dict: column name as key, data type as value
         """
-        types = {}
+        new_types = {}
         for column in self.features:
-            types[column] = self.__detect_data_type(column)
-            
-        return types
+            if column not in self.columns_types \
+                or self.columns_types[column][0] != self.X[column].dtype:
+                new_types[column] = self.__detect_data_type(column)
+            else:
+                new_types[column] = self.columns_types[column]
+                
+        self.columns_types = new_types

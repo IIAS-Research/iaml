@@ -214,8 +214,8 @@ class Candidate:
             else:
                 # Fit in two step to allow caching
                 if not from_cache:
-                    train_ds =  Dataset(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
-                    test_ds =  Dataset(copied_pipe.transform(test_ds.X), test_ds.y)
+                    train_ds =  train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
+                    test_ds =  test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
                     
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
