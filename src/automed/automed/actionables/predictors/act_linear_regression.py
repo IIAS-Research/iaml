@@ -8,7 +8,7 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
-@is_step('predictor', 'tabular', 'fast_predictor')
+@is_step('predictor', 'tabular', 'fast_predictor', 'regressor')
 class ActLinearRegression(Predictor):
     """
     [STEP] Learn :  Linear Regression
@@ -34,8 +34,8 @@ class ActLinearRegression(Predictor):
         return self
     
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['continuous']
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in ['continuous']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

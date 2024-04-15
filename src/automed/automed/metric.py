@@ -24,3 +24,11 @@ class Metric:
         Does this metric is usable given X and y ?
         """
         return False
+    
+    def need_proba(self) -> bool:
+        """Does this metric need probabilities to by computed
+
+        Returns:
+            bool: Need probabilities ? 
+        """
+        return False

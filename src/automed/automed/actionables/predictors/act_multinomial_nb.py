@@ -8,7 +8,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'classifier')
 class ActMultinomialNB(Predictor):
     """
     [STEP] Learn : Multinomial NB
@@ -48,7 +48,7 @@ class ActMultinomialNB(Predictor):
         return self
     
     
-    def suitable(self, candidate: Candidate) -> bool:
+    def suitable(self, dataset:Dataset) -> bool:
         """
         Does this step suitable for this candidate ?
         Dataset must contain only positive values
@@ -60,8 +60,8 @@ class ActMultinomialNB(Predictor):
             bool: Suitable ?
         """
         # Negative values are not supported
-        return not((candidate.dataset.X < 0).any().any() or (candidate.dataset.y < 0).any()) \
-            and candidate.dataset.type_of_target in ['binary', 'multiclass']
+        return not((dataset.X < 0).any().any()) \
+            and dataset.type_of_target in ['binary', 'multiclass']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

@@ -18,9 +18,6 @@ from ...data_type import DataType
 download('stopwords')
 download('punkt')
 
-stop_words = set(stopwords.words('english'))
-stemmer = PorterStemmer()
-
 @is_step('cleaning')
 class ActWord2Vec(Actionable):
     """
@@ -30,6 +27,9 @@ class ActWord2Vec(Actionable):
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[tuple[str, Word2Vec]] = None
+        self.stop_words = set(stopwords.words('english'))
+        self.stemmer = PorterStemmer()
+            
             
     def preprocess(self, text:str) -> str:
         """
@@ -50,13 +50,16 @@ class ActWord2Vec(Actionable):
 
         """
         text = text.lower()
-        text = ''.join([word for word in text if word not in string.punctuation])
+        
+        table = str.maketrans('', '', string.punctuation)
+        text = text.translate(table)
+        
         tokens = word_tokenize(text)
-        tokens = [word for word in tokens if word not in stop_words]
-        tokens = [stemmer.stem(word) for word in tokens]
-        return ' '.join(tokens)
+        tokens = [self.stemmer.stem(word) for word in tokens if word not in self.stop_words]
+        
+        return tokens
     
-    def vectorize(self, sentence:str, model):
+    def vectorize(self, words:str, model):
         """
         Convert the preprocessed text data to a vector representation using
         the Word2Vec model by calculating the aveerage of the word vectors
@@ -71,7 +74,6 @@ class ActWord2Vec(Actionable):
             numpy.ndarray: The average vector representation of the input sentence.
             
         """
-        words = sentence.split()
         vectors = [model.wv[word] for word in words if word in model.wv]
         if len(vectors) > 0:
             return np.mean(vectors, axis = 0)
@@ -88,10 +90,9 @@ class ActWord2Vec(Actionable):
         Returns:
             Candidate: Transformed candidate
         """
-        
         self.columns = []
         for column in dataset.get_columns_names_by_type([DataType.TEXT]):
-            values = dataset.X[column].fillna('').apply(self.preprocess).apply(str.split)
+            values = dataset.X[column].fillna('').apply(self.preprocess)
             vectorizer = Word2Vec(sentences = values,
                                 vector_size = 100,
                                 window = 5,
@@ -104,6 +105,7 @@ class ActWord2Vec(Actionable):
             f'Encoded text column **`{c}`** into **{len(v)}** new columns.'
             for c, v in feature_names.items() if len(v) > 0
         ]
+        
         
         return self
     
@@ -125,6 +127,7 @@ class ActWord2Vec(Actionable):
             features_names = [f"{name}_vec_{i}" for i in range(vectorizer.vector_size)]
             vector_df = pd.DataFrame(transformed.tolist(), columns = features_names)
             X = pd.concat([X, vector_df], axis = 1).drop([name], axis = 1)
+        
         return X
     
     def priorize(self, candidate:Candidate=None) -> float:
@@ -135,5 +138,5 @@ class ActWord2Vec(Actionable):
         """
         return 0.4
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return bool(candidate.dataset.get_columns_names_by_type([DataType.TEXT]))
+    def suitable(self, dataset:Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type([DataType.TEXT]))

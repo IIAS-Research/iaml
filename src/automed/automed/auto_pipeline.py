@@ -3,7 +3,6 @@ Based on Scikit-learn Pipeline but for AutoMed Pipelines !
 Transform, resample and then predict from Candidate instance 
 """
 import pickle
-import json
 from copy import deepcopy
 from hashlib import md5
 from typing import TYPE_CHECKING
@@ -12,7 +11,9 @@ import shap
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from .dataset import Dataset
+from .void_step import VoidStep
 from .explanation import Explanation
+from .cache import Cache
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -110,6 +111,53 @@ class AutoPipeline(Pipeline):
             self.transformers.append(step)
         elif hasattr(instance, 'resample') and callable(instance.resample):
             self.resamplers.append(step)
+    
+    def replace_step(self, old:'Step', new:'Step') -> bool:
+        """Replace a step in the pipeline by another (by id)
+
+        Args:
+            old (Step): Old step to replace
+            new (Step): New step
+
+        Returns:
+            bool: Was replaced ?
+        """
+        for idx, step in enumerate(self.transformers):
+            if id(old) == id(step[1]):
+                self.transformers[idx] = (new.name, new)
+                return True
+        for idx, step in enumerate(self.resamplers):
+            if id(old) == id(step[1]):
+                self.resamplers[idx] = (new.name, new)
+                return True
+        if id(old) == id(self.predictor[1]):
+            self.predictor = (new.name, new)
+            return True
+        
+        return False
+        
+    def remove_step(self, to_remove:'Step') -> bool:
+        """Remove a step from the pipeline (by object id)
+
+        Args:
+            to_remove (Step): Step to remove
+
+        Returns:
+            bool: Step was removed ?
+        """
+        for idx, step in enumerate(self.transformers):
+            if id(to_remove) == id(step[1]):
+                del self.transformers[idx]
+                return True
+        for idx, step in enumerate(self.resamplers):
+            if id(to_remove) == id(step[1]):
+                del self.resamplers[idx]
+                return True
+        if id(to_remove) == id(self.predictor[1]):
+            self.predictor = None
+            return True
+        
+        return False
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
             only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
@@ -124,7 +172,11 @@ class AutoPipeline(Pipeline):
             X, y = self.fit_transform(X, y, **kwargs)
             
         dataset = Dataset(X, y)
-        self.predictor[1].fit(dataset, **kwargs)
+        
+        if self.predictor[1].suitable(dataset):
+            self.predictor[1].fit(dataset, **kwargs)
+        else:
+            self.predictor = None
         
         return self
     
@@ -137,18 +189,38 @@ class AutoPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         dataset = Dataset(X, y)
+        
         for _, step in [*self.transformers, *self.resamplers]:
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
-                step.fit(dataset)
+                from_cache = Cache().from_cache(f"fit_{step.fingerprint()}", dataset.X)
+                if from_cache:
+                    self.replace_step(step, from_cache)
+                else:
+                    if step.suitable(dataset):
+                        step.fit(dataset)
+                        Cache().add_to_cache(f"fit_{step.fingerprint()}", dataset.X, step)
+                    else:
+                        if step.is_interchangeable:
+                            old_step = step
+                            step = VoidStep(step_to_mimic=step)
+                            self.replace_step(old_step, step)
+                        else:
+                            self.remove_step(step)
+                            continue
             else:
                 step.fit(dataset.X, dataset.y, **kwargs)
-            
-            if hasattr(step, 'transform'):
-                dataset = Dataset(step.transform(dataset.X), y)
-            elif hasattr(step, 'resample'):
-                dataset = Dataset(*step.resample(dataset.X, dataset.y))
-            
-        
+                
+            dataset_from_cache = Cache().from_cache(f"apply_{step.fingerprint()}", dataset.X)
+            if dataset_from_cache:
+                dataset = dataset_from_cache
+            else:
+                prev_X = dataset.X.copy()
+                if hasattr(step, 'transform'):
+                    dataset = Dataset(step.transform(dataset.X), y)
+                elif hasattr(step, 'resample'):
+                    dataset = Dataset(*step.resample(dataset.X, dataset.y))
+                Cache().add_to_cache(f"apply_{step.fingerprint()}", prev_X, dataset)
+                
         return dataset.X, dataset.y
         
     @property
@@ -269,6 +341,29 @@ class AutoPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.predictor[1].predict(X)
+    
+    def predict_proba(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
+        """
+        Run all the steps to predict labels from candidate data
+
+        Args:
+            X (pd.DataFrame): Features used as candidate of the pipeline
+            model_only (bool, optional): True to execute only the model with already
+                                        transformed data. Defaults to False.
+
+        Raises:
+            ValueError: Model must have been set before call predict
+
+        Returns:
+            list: Predicted values
+        """
+        if not self.have_model:
+            raise ValueError("Model need to be set before predict")
+        
+        if not model_only:
+            return super().predict_proba(X, **kwargs)
+        
+        return self.predictor[1].predict_proba(X)
 
     @property
     def optimizable_step(self) -> list['Step']:
@@ -331,7 +426,6 @@ class AutoPipeline(Pipeline):
         return deepcopy(self)
     
     # Fingerprint (used by cache)
-    
     def fingerprint(self) -> str:
         """
         Return a md5 hash that can by use to compare Pipelines 
@@ -339,9 +433,7 @@ class AutoPipeline(Pipeline):
         Returns:
             str: md5 sting
         """
-        to_hash = "\n".join([str(step.__class__) + " = " \
-            + json.dumps(step.serializable_resume_configuration(), sort_keys=True) \
-                for _, step in self.training_steps])
+        to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
         
         return md5(to_hash.encode()).hexdigest()
             

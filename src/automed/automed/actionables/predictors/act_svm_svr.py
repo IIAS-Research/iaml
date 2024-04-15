@@ -7,7 +7,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'regressor')
 class ActSVMSVR(Predictor):
     """
     [STEP] Learn :  SVM Regressor
@@ -52,8 +52,8 @@ class ActSVMSVR(Predictor):
         return self
     
     
-    def suitable(self, candidate: Candidate) -> bool:
-        return candidate.dataset.type_of_target in ['continuous']
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in ['continuous']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """

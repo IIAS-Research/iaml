@@ -28,6 +28,7 @@ def is_step(*tags) -> callable:
             if cls != Step:
                 super().__init__(*args, **kw) # All parent constructor 
             
+            self.tags = set(tags)
             initial_init(self, *args, **kw) # Run your __init__
             self.default_configuration() # Setup default configuration
             

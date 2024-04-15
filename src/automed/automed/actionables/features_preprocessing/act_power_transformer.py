@@ -1,9 +1,8 @@
 """
-[STEP] Decompose features with SelectPercentile
+[STEP] Preprocess with PowerTransformer
 """
-
 import pandas as pd
-from sklearn.feature_selection import SelectPercentile, chi2, f_classif
+from sklearn.preprocessing import PowerTransformer
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -11,24 +10,23 @@ from ...decorators.all import is_step
 
 
 @is_step('features_preprocessing')
-class ActSelectPercentile(Actionable):
+class ActPowerTransformer(Actionable):
     """
-    [STEP] Preprocess with SelectPercentile
+    [STEP] Preprocess with PowerTransformer
     """
-    name="Preprocess with SelectPercentile"
+    name="Preprocess with PowerTransformer"
     
     def __init__(self):
         self.configuration:dict = {
-            'score_func': {
-                'description': 'unction taking two arrays X and y, \
-                    and returning a pair of arrays',
-                'default': chi2,
-                'categorical': [chi2, f_classif]
+            'method': {
+                'description': 'The power transform method.',
+                'default': 'yeo-johnson',
+                'categorical': ['yeo-johnson', 'box-cox']
                 },
-            'percentile': {
-                'description': 'Percent of features to keep.',
-                'default': 50.0,
-                'range': [1.0, 99.0]
+            'standardize': {
+                'description': 'Set to True to apply zero-mean, \
+                    unit-variance normalization to the transformed output.',
+                'default': True
                 }
             }
         
@@ -38,7 +36,7 @@ class ActSelectPercentile(Actionable):
 
     def fit(self, dataset:Dataset) -> Actionable:
         """
-        Fit Features agglomerations
+        Find columns to convert
 
         Args:
             dataset (Dataset): Fit data
@@ -47,15 +45,15 @@ class ActSelectPercentile(Actionable):
             Candidate: Transformed candidate
         """
         
-        self.preprocessor = SelectPercentile(**self.passthrough_parameters())
-        self.preprocessor.fit(dataset.X, dataset.y)
+        self.preprocessor = PowerTransformer(**self.passthrough_parameters())
+        self.preprocessor.fit(dataset.X)
         
         return self
     
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """
-        Apply SelectPercentile
+        Apply PowerTransformer
 
         Args:
             x (pd.DataFrame): DataFrame to transform
@@ -63,13 +61,9 @@ class ActSelectPercentile(Actionable):
         Returns:
             pd.DataFrame: Transformed dataset
         """
+        
         return pd.DataFrame(self.preprocessor.transform(X))
         
-    def suitable(self, dataset:Dataset) -> bool:
-        # Negative values are not supported
-        return not((dataset.X < 0).any().any()) \
-            and dataset.type_of_target in \
-                ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, candidate:Candidate=None) -> float:
         """
@@ -78,3 +72,9 @@ class ActSelectPercentile(Actionable):
         Return : continuous between 0 and 1
         """
         return 0.5
+    
+    def suitable(self, dataset: Dataset) -> bool:
+        if self.get_config('method') == 'box-cox' and not(dataset.X < 0).any().any():
+            self.configure('method', 'yeo-johnson')
+        
+        return True

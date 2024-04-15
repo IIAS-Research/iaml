@@ -17,6 +17,7 @@ from .worker_manager import WorkerManager
 from .splitter import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
+from .meta_partial_explorer_step import MetaPartialExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer
 from .meta_predictor import MetaPredictor
 
@@ -51,7 +52,9 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 metalearner:bool=None,
                 splitter=None,
                 max_duration:int=-1,
-                preprocessor:bool=False):
+                time_before_sample_use:int=None,
+                preprocessor:bool=False,
+                main_metric:Metric=None):
         
         Logger().set_quiet(quiet)
         
@@ -68,19 +71,35 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             
         # Set max duration of each stage
         if max_stage_duration is None:
-            self.max_stage_duration = max(max_duration / 5, 300)
+            self.max_stage_duration = max(max_duration / 5, 900)
             Logger().log(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
         else:
             self.max_stage_duration = max_stage_duration
+            
 
         # Set splitter
         self.splitter = splitter if splitter is not None else kfold_splitter
         
+        self.main_metric = main_metric
+        
         
         self.max_duration = max_duration
+        
+        if time_before_sample_use:
+            if max_duration:
+                self.time_before_sample_use = min(max_duration, time_before_sample_use)
+            else:
+                self.time_before_sample_use = time_before_sample_use
+        else:
+            if max_duration:
+                self.time_before_sample_use = max(max_duration / 5, 60)
+            else:
+                self.time_before_sample_use = None
+        
         self.candidates:list[Candidate] = None
         self.fit_candidate:Candidate = None
-        self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep)
+        self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep
+        self.last_stage_candidates = []
         
         self.executor = None
         
@@ -122,6 +141,10 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             self.first_step.add_step(
                 MetaExplorerStep(tag='features_preprocessing', also_explore_without=True)
             )
+        else:
+            self.first_step.add_step(
+                MetaPartialExplorerStep(tag='features_preprocessing')
+            )
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
         
@@ -152,6 +175,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             *args,
             groups:pd.DataFrame = None,
             patience:int=-1,
+            generation_sample_size=100,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
@@ -172,13 +196,18 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 
                 if isinstance(y, pd.DataFrame):
                     y = y.values.ravel()
-                    
-                ### INITIAL GENERATE CANDIDATE 
+                
                 dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
-                self.fit_candidate:Candidate = Candidate(dataset)
+                
+                ### INITIAL GENERATE CANDIDATE 
+                
+                self.fit_candidate:Candidate = Candidate(
+                    dataset.sample(generation_sample_size),
+                    main_metric=self.main_metric)
 
                 # Select metrics used to evaluate performances
-                for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                for metric \
+                    in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
                     self.fit_candidate.add_metric(metric)
 
                 # Generate candidates
@@ -187,21 +216,33 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 # Remove candidate without predictor 
                 candidates = [candidate for candidate in candidates \
                     if candidate.pipeline.predictor is not None]
-                Logger().log(f"{len(candidates)} generated pipelines")
+                Logger().log(f"{len(candidates)} generated pipelines", force=True)
                 
                 ### INITIAL EVALUATION
                 
+                def remain_time():
+                    return self.max_duration - (time.monotonic() - start_time)
                 # Evaluate candidates
-                candidates = self.__run_evaluations(candidates,
+                gen0_candidates = []
+                i = 0
+                while not gen0_candidates and remain_time() > 0:
+                    if i > 0:
+                        dataset = dataset.sample(0.1)
+                        Logger().log(f"Training is too time consuming. \
+                            Let's try again with dataset sample. \
+                            New features shape {dataset.X.shape}", force=True)
+                    i+= 1
+                    
+                    gen0_candidates = self.__run_evaluations(candidates,
                                 dataset,
-                                timeout=self.max_duration - (time.monotonic() - start_time))
+                                timeout=min(remain_time(), self.time_before_sample_use))
+
                 
                 ### FINETUNING
                 candidates = self.__optimize(dataset,
-                                            candidates,
-                                            optimizer=GeneticOptimizer(),
-                                            max_duration=self.max_duration - \
-                                                (time.monotonic() - start_time),
+                                            gen0_candidates,
+                                            optimizer=GeneticOptimizer(duration=remain_time()),
+                                            max_duration=remain_time(),
                                             patience=patience)
                 ### FINAL FIT
                 
@@ -211,6 +252,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                 Cache.reset()
                 self.chosen_candidate = deepcopy(candidates[0])
                 self.chosen_candidate.pipeline.fit(X, y)
+                
+                self.last_stage_candidates = candidates
                 
                 return candidates
         except Exception as ex:
@@ -338,6 +381,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
                         timeout=max_duration - (time.monotonic() - starting_time),
                         stage_number=iterations_count)
             
+            
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
             
@@ -361,7 +405,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             iterations_count += 1
             
             
-        return candidates[0:5]
+        return candidates
         
         
 

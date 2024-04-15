@@ -5,6 +5,7 @@ Wrap with StepWrapper is useless, use children classes
 from .step import Step
 from .decorators.all import is_step, runner
 from .candidate import Candidate
+from .dataset import Dataset
 
 
 @is_step('wrapper')
@@ -63,7 +64,7 @@ class StepWrapper(Step):
         else:
             raise ValueError("Step must be an occurrence of step (or inherited classes)")
         
-    def suitable(self, candidate:Candidate) -> bool:
+    def suitable(self, dataset:Dataset) -> bool:
         """
         Is suitable if the wrapped step is
 
@@ -73,7 +74,7 @@ class StepWrapper(Step):
         Returns:
             bool: Suitable?
         """
-        return self.step.suitable(candidate)
+        return self.step.suitable(dataset)
     
     def all_configurations(self) -> list[dict]:
         """

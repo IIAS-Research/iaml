@@ -8,7 +8,7 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
-@is_step('predictor', 'tabular', 'fast_predictor')
+@is_step('predictor', 'tabular', 'fast_predictor', 'classifier')
 class ActLogisticRegression(Predictor):
     """
     [STEP] Learn :  Logistic Regression Classifier
@@ -29,6 +29,12 @@ class ActLogisticRegression(Predictor):
                 'description': 'The stopping criterion.',
                 'default': 0.0001,
                 'range': [1e-05, 0.1]
+            },
+            'class_weight': {
+                'description': 'The “balanced” mode uses the values of y to \
+                    automatically adjust weights inversely proportional to class frequencies ',
+                'default': None,
+                'categorical': [None, 'balanced']
             }
         }
         self.model:LogisticRegression = None
@@ -44,9 +50,6 @@ class ActLogisticRegression(Predictor):
             Candidate: Transformed candidate
         """
         self.model = LogisticRegression(
-            # n_jobs=-1,
-            max_iter=500,
-            class_weight='balanced',
             **self.passthrough_parameters()
             )
         
@@ -54,8 +57,8 @@ class ActLogisticRegression(Predictor):
         
         return self
     
-    def suitable(self, candidate) -> bool:
-        return candidate.dataset.type_of_target in \
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, candidate:Candidate=None) -> float:

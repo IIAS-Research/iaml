@@ -14,6 +14,7 @@ from .meta_predictor import MetaPredictor
 
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
+from .meta_partial_explorer_step import MetaPartialExplorerStep
 
 # Default Actionables
 from .actionables import *

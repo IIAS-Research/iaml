@@ -7,7 +7,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'classifier')
 class ActXGBoost(Predictor):
     """
     [STEP] Learn :  XGBoost
@@ -78,14 +78,19 @@ class ActXGBoost(Predictor):
         Returns:
             Candidate: Transformed candidate
         """
+        if dataset.type_of_target == 'binary':
+            self.configuration['loss']['categorical'] = ['log_loss']
+        else:
+            self.configuration['loss']['categorical'] = ['log_loss', 'exponential']
+        self.check_configuration()
+        
         self.model = GradientBoostingClassifier(**self.passthrough_parameters())
-            
         self.model.fit(dataset.X, dataset.y)
         
         return self
     
-    def suitable(self, candidate) -> bool:
-        return candidate.dataset.type_of_target in \
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
     def priorize(self, candidate:Candidate=None) -> float:
@@ -95,3 +100,4 @@ class ActXGBoost(Predictor):
         Return : continuous between 0 and 1
         """
         return 0.5 # neutral
+    

@@ -9,6 +9,8 @@ from .act_randomforest import *
 from .act_randomforest_regressor import *
 from .act_xgboost import *
 from .act_xgboost_regressor import *
+from .act_catboost_regressor import *
+from .act_catboost_classifier import *
 from .act_gaussian_nb import *
 from .act_knn import *
 from .act_knn_regressor import *

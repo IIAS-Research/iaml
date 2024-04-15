@@ -60,9 +60,15 @@ class ActKernelPCA(Actionable):
             Candidate: Transformed candidate
         """
         
-        self.preprocessor = KernelPCA(**self.passthrough_parameters())
-        self.preprocessor.fit(dataset.X)
         
+        try:
+            self.preprocessor = KernelPCA(**self.passthrough_parameters())
+            self.preprocessor.fit(dataset.X)
+        except ValueError: 
+            higher_gamma = 1/dataset.X.shape[1] + 0.05
+            self.preprocessor = KernelPCA(gamma=higher_gamma, **self.passthrough_parameters())
+            self.preprocessor.fit(dataset.X)
+            
         return self
     
     

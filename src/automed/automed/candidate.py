@@ -4,7 +4,6 @@ Candidate is used to exchange data between Steps
 from typing import TYPE_CHECKING
 from copy import copy, deepcopy
 from hashlib import md5
-import json
 import numpy as np
 import pandas as pd
 from .dataset import Dataset
@@ -52,7 +51,7 @@ class Candidate:
             else:
                 self.main_metric = 'r2_score'
         else:
-            self.main_metric = main_metric
+            self.main_metric = str(main_metric)
             
         self.computed_metrics = {}
         self.stacked_path = copy(stacked_path) if stacked_path is not None else []
@@ -220,10 +219,14 @@ class Candidate:
                     
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
-            y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
-            metrics.append(self.__compute_metrics(test_ds.y, y_pred))
-            if not from_cache:
-                to_cache.append((train_ds, test_ds))
+            try:
+                y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
+                y_pred_proba = copied_pipe.predict_proba(test_ds.X, model_only = not self.is_meta)
+                metrics.append(self.__compute_metrics(test_ds.y, y_pred, y_pred_proba))
+                if not from_cache:
+                    to_cache.append((train_ds, test_ds))
+            except ValueError:
+                return {}
         
         if not from_cache:
             Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)    
@@ -249,10 +252,12 @@ class Candidate:
             return None
         
         y_pred = self.pipeline.predict(X)
-        return self.__compute_metrics(np.array(y), y_pred)
+        y_pred_proba = self.pipeline.predict_proba(X)
+        return self.__compute_metrics(np.array(y), y_pred, y_pred_proba)
     
-    def __compute_metrics(self, y:np.array, y_pred:np.array) -> dict:
-        return {str(metric): metric.compute(y, y_pred) for metric in self.metrics}
+    def __compute_metrics(self, y:np.array, y_pred:np.array, y_pred_proba:np.array) -> dict:
+        return {str(metric): metric.compute(y, (y_pred_proba if metric.need_proba() else y_pred)) \
+            for metric in self.metrics}
     
     def __metric_value(self, metric) -> float:
         for key, value in self.computed_metrics.items():
@@ -267,8 +272,7 @@ class Candidate:
         Returns:
             str: String fingerprint
         """
-        to_hash = "\n".join([str(step.__class__) + " = " \
-            + json.dumps(step.serializable_resume_configuration(), sort_keys=True) \
+        to_hash = "\n".join([step.fingerprint() \
                 for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]])
         
         return md5(to_hash.encode()).hexdigest()

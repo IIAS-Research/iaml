@@ -8,7 +8,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'classifier')
 class ActQuadraticDiscriminantAnalysis(Predictor):
     """
     [STEP] Learn : Quadratic Discriminant Analysis
@@ -41,7 +41,7 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
         return self
     
     
-    def suitable(self, candidate:Candidate) -> bool:
+    def suitable(self, dataset:Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -51,7 +51,7 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
         Returns:
             bool: Suitable ?
         """
-        return candidate.dataset.type_of_target in \
+        return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
     def priorize(self, candidate:Candidate=None) -> float:

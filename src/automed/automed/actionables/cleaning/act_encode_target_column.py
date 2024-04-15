@@ -16,7 +16,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('cleaning')
+# @is_step('cleaning')
 class ActCategoryStringToNumeric(Actionable):
     """
     Encode categorical target column to numeric

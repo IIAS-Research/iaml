@@ -1,6 +1,7 @@
 """
 Singleton used by Automed to cache results
 """
+from copy import deepcopy
 import pandas as pd
 from .meta_singleton import MetaSingleton
 
@@ -8,8 +9,9 @@ class Cache(metaclass=MetaSingleton):
     """
     Singleton used by Automed to cache results
     """
+    
     def __init__(self) -> None:
-        self.saved:list = []
+        self.saved = []
         self.max_cache_size = 100
         self.__disable = False
         
@@ -35,8 +37,6 @@ class Cache(metaclass=MetaSingleton):
             if old_fingerprint == fingerprint and dataset.equals(input_data):
                 del self.saved[idx]
                 break
-                
-        return [item for item in self.saved if item[0] == fingerprint]
         
     def from_cache(self, fingerprint:str, dataset:pd.DataFrame) -> any:  
         """
@@ -56,6 +56,7 @@ class Cache(metaclass=MetaSingleton):
                 self.saved.append(item)
                 # Return cached data
                 return output
+        
         return None
 
     def add_to_cache(self, fingerprint:str, dataset:pd.DataFrame, output:any) -> None:
@@ -66,7 +67,7 @@ class Cache(metaclass=MetaSingleton):
             return None
         
         self.__delete(fingerprint, dataset)
-        self.saved.append((fingerprint, dataset, output))
+        self.saved.append((fingerprint, dataset, deepcopy(output)))
         
         if len(self.saved) > self.max_cache_size:
             del self.saved[0]

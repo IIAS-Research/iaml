@@ -91,3 +91,11 @@ class ActNystroem(Actionable):
         Return : continuous between 0 and 1
         """
         return 0.5
+
+
+    def suitable(self, dataset: Dataset) -> bool:
+        if self.get_config('kernel') == 'chi2' and \
+            not((dataset.X < 0).any().any() or (dataset.y < 0).any()):
+            self.configure('kernel', 'rbf')
+        
+        return True

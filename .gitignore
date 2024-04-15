@@ -17,6 +17,8 @@ notebooks/temp-plot.html
 */time_fig.png
 */compare_perf_fig.png
 */compare_perf_tplot_fig.png
+src/perf_logger/bench/*
+src/perf_logger/tests_data/dont_push/*
 
 # Python
 __pycache__

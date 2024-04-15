@@ -33,6 +33,23 @@ class MetaExplorerStep(MetaStep):
         return json
         
     
+    def add_step(self, step:Step) -> None:
+        """
+        Add one step to the MetaStep. 
+        step must be a Step inherited class
+
+        Args:
+            step (Step): Step to add
+
+        Raises:
+            ValueError: step must be an occurrence of step (or inherited classes)
+        """
+        if Step in step.__class__.__mro__:
+            step.is_interchangeable = True
+            self.steps.append(self.configure_child(step))
+        else:
+            raise ValueError("step must be an occurrence of step (or inherited classes)")
+        
     # Explore all steps
     @runner
     def run(self, candidate:Candidate, callback:callable=None) -> Candidate:

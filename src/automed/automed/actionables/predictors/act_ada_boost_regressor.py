@@ -7,7 +7,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular')
+@is_step('predictor', 'tabular', 'regressor')
 class ActAdaBoostRegressor(Predictor):
     """
     [STEP] Learn :  AdaBoost Regressor
@@ -54,8 +54,8 @@ class ActAdaBoostRegressor(Predictor):
         
         return self
     
-    def suitable(self, candidate) -> bool:
-        return candidate.dataset.type_of_target == 'continuous'
+    def suitable(self, dataset:Dataset) -> bool:
+        return dataset.type_of_target == 'continuous'
 
     def priorize(self, candidate:Candidate=None) -> float:
         """

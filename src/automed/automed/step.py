@@ -8,12 +8,17 @@ There is also decorators needed to create a Step. See it under Step class.
 """
 
 import sys
+import json
+from hashlib import md5
+from typing import TYPE_CHECKING
 from typing import Any
 from copy import deepcopy
 from multipledispatch import dispatch
-from .candidate import Candidate
 from .dataset import Dataset
 from .decorators.runner import runner
+
+if TYPE_CHECKING:
+    from .candidate import Candidate
 
 class Step: # pylint: disable=too-many-public-methods
     """
@@ -40,9 +45,11 @@ class Step: # pylint: disable=too-many-public-methods
     __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
+        self.tags:set = None # Will be set by is_step
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
+        self.is_interchangeable:bool = False # Can be mutate into another step with the same tags
         
         self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
         
@@ -105,7 +112,7 @@ class Step: # pylint: disable=too-many-public-methods
     def __str__(self):
         return self.name
     
-    def suitable(self, candidate:Candidate) -> bool: # pylint: disable=unused-argument
+    def suitable(self, dataset:Dataset) -> bool: # pylint: disable=unused-argument
         """
         Have to be overwrote. Check if a step is suitable for a given Candidate
 
@@ -138,6 +145,16 @@ class Step: # pylint: disable=too-many-public-methods
         Backpropagates the parents to the children.
         """
         self.parents_steps.extend(map(id, parents))
+        
+    def step_with_same_tags(self):
+        """
+        Explore available steps and return step with the same tags as the current one
+
+        Returns:
+            list: list of step with the same tags
+        """
+        return [key for key, tags in Step.available_steps.items() if self.tags == set(tags)]
+            
     
     ################
     # Configurable #
@@ -253,6 +270,31 @@ class Step: # pylint: disable=too-many-public-methods
         """
         for param in self.configuration.values():
             param['value'] = param['default']
+            
+    def check_configuration(self, fix=True) -> bool:
+        """Check if configuration is valid
+
+        Args:
+            fix (bool, optional): If True, invalide configuration will be fix. Defaults to True.
+
+        Returns:
+            bool: Is configuration valid ?
+        """
+        for key, config in self.configuration.items():
+            if 'categorical' in config:
+                if self.get_config(key) not in config['categorical']:
+                    if fix:
+                        self.configure(key, config['categorical'][0])
+                    else:
+                        return False
+            elif 'range' in config:
+                if self.get_config(key) < config['range'][0] \
+                    or self.get_config(key) > config['range'][1]:
+                    if fix:
+                        self.configure(key, (config['range'][0]+config['range'][1])/2)
+                    else:
+                        return False
+        return True
     
     def all_step(self):
         """Recursive function (last one here) to get all steps in a pipeline
@@ -268,7 +310,7 @@ class Step: # pylint: disable=too-many-public-methods
     #####################
     # Results of run() can by stored in cache to avoid compute it several time
     
-    def from_cache(self, candidate:Candidate) -> Candidate:
+    def from_cache(self, candidate:'Candidate') -> 'Candidate':
         """
         If a previous run with same candidate & configuration was cached, return it
         Else return None
@@ -288,7 +330,7 @@ class Step: # pylint: disable=too-many-public-methods
                 return cache['output']
         return None
     
-    def add_cache(self, input_candidate:Candidate, output_candidate:Candidate) -> bool:
+    def add_cache(self, input_candidate:'Candidate', output_candidate:'Candidate') -> bool:
         """
         Add an candidate, candidate pair to cache
 
@@ -360,7 +402,6 @@ class Step: # pylint: disable=too-many-public-methods
             'configuration': self.configuration,
             'children': []
         }
-    
 
     def conf_to_rich_str_list(self) -> list:
         """
@@ -404,7 +445,7 @@ class Step: # pylint: disable=too-many-public-methods
     # Base on the dataset (or not) priorize usefulness of this actionable.
     # Result is a value between 0 and 1. 0 stand for not useful
     #
-    def priorize(self, candidate:Candidate=None) -> float: # pylint: disable=unused-argument
+    def priorize(self, candidate:'Candidate'=None) -> float: # pylint: disable=unused-argument
         """
         Try to evaluate the priorities level of himself on an candidate  
 
@@ -432,7 +473,7 @@ class Step: # pylint: disable=too-many-public-methods
         return self
     
     @runner  
-    def run(self, candidate:'Candidate', callback:callable=None) -> Candidate:
+    def run(self, candidate:'Candidate', callback:callable=None) -> 'Candidate':
         """
         Run the step on candidate data
 
@@ -458,6 +499,17 @@ class Step: # pylint: disable=too-many-public-methods
         """
         return set(filter(lambda key: tag in cls.available_steps[key], cls.available_steps.keys()))
     
+    
+    def fingerprint(self) -> str:
+        """
+        Return a md5 hash that can by use to compare Step 
+
+        Returns:
+            str: md5 sting
+        """
+        to_hash = f"{str(self.__class__)} = \
+            {json.dumps(self.serializable_resume_configuration(), sort_keys=True)}"
+        return md5(to_hash.encode()).hexdigest()
     
     ####################
     ### Explanations ###
