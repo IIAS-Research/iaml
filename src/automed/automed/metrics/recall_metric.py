@@ -2,9 +2,9 @@
 [METRIC] Recall
 """
 import pandas as pd
-from sklearn.utils.multiclass import type_of_target as sk_type_of_target
 from sklearn.metrics import recall_score
 from ..metric import Metric
+from ..type_of_target import type_of_target  as get_type_of_target
 
 class RecallMetric(Metric):
     """
@@ -50,12 +50,12 @@ class RecallMetric(Metric):
         Returns:
             float: computed value 
         """
-        if sk_type_of_target(y) == 'binary':
+        if get_type_of_target(y) == 'binary':
             # TODO Find something less arbitrary
             return recall_score(y, y_pred, pos_label=y[0], zero_division=0.0)
-        if sk_type_of_target(y) == 'multiclass':
+        if get_type_of_target(y) == 'multiclass':
             return recall_score(y, y_pred, average = 'weighted', zero_division=0.0) 
-        if sk_type_of_target(y) == 'multilabel-indicator':
+        if get_type_of_target(y) == 'multilabel-indicator':
             return recall_score(y, y_pred, average= 'samples', zero_division=0.0)
         
         raise ValueError('Metric not suitable')

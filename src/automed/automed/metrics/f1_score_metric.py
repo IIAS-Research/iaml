@@ -2,9 +2,9 @@
 [METRIC] F1 Score
 """
 import pandas as pd
-from sklearn.utils.multiclass import type_of_target as sk_type_of_target
 from sklearn.metrics import f1_score
 from ..metric import Metric
+from ..type_of_target import type_of_target as get_type_of_target
 
 class F1ScoreMetric(Metric):
     """
@@ -50,12 +50,12 @@ class F1ScoreMetric(Metric):
         Returns:
             float: computed value 
         """
-        if sk_type_of_target(y) == 'binary':
+        if get_type_of_target(y) == 'binary':
             # TODO Find something less arbitrary (about pos_label)
             return f1_score(y, y_pred, pos_label=y[0])
-        if sk_type_of_target(y) == 'multiclass':
+        if get_type_of_target(y) == 'multiclass':
             return f1_score(y, y_pred, average ='weighted')
-        if sk_type_of_target(y) == 'multilabel-indicator':
+        if get_type_of_target(y) == 'multilabel-indicator':
             return f1_score(y, y_pred, average ='samples')
         
         raise ValueError('Metric not suitable') 

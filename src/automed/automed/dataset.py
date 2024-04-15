@@ -5,11 +5,12 @@ Add features like data type detection and splitting
 import copy
 from typing import Iterator, TYPE_CHECKING
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
-from sklearn.utils.multiclass import type_of_target
 import numpy as np
 import pandas as pd
 
 from .data_type import DataType
+from .type_of_target import type_of_target
+
 
 if TYPE_CHECKING:
     from .auto_pipeline import AutoPipeline

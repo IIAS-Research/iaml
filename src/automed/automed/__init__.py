@@ -33,3 +33,6 @@ from .optimizers import *
 
 # Meta predictors
 from .meta_predictors import *
+
+# Type of target
+from .type_of_target import type_of_target
