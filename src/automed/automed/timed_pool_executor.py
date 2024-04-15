@@ -265,7 +265,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         
         def slide():
             return self.sliding_stages and (self.to_run_queue.empty() and \
-                self.finished_run >= (self.submit_count - self.max_workers/2))
+                self.finished_run >= (self.submit_count - self.max_workers/2) \
+                and self.results)
         
         while not self.__finished() and remain_time() and not slide():
             time.sleep(0.3)
