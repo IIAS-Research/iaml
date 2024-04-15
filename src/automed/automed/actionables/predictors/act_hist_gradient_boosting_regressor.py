@@ -8,7 +8,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'regressor')
+# @is_step('predictor', 'tabular', 'regressor')
 class ActHistGradientBoostingRegressor(Predictor):
     """
     [STEP] Learn : HistGradient Boosting Regressor
@@ -47,6 +47,21 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'description': 'The loss function to use in the boosting process.',
                 'default': "squared_error",
                 'categorical': ["absolute_error", "poisson", "quantile", "squared_error"]
+                },
+            'n_iter_no_change': {
+                'description': 'Used to determine when to “early stop”.',
+                'default': 4,
+                'range': [2, 15]
+                },
+            'tol': {
+                'description': 'The absolute tolerance to use when comparing scores during early stopping',
+                'default': 1e-4,
+                'range': [1e-8, 1e-2]
+                },
+            'max_depth': {
+                'description': 'The maximum depth of each tree',
+                'default': 10,
+                'range': [8, 25]
                 }
             }
         self.model:HistGradientBoostingRegressor = None
@@ -62,7 +77,6 @@ class ActHistGradientBoostingRegressor(Predictor):
             Fitted step
         """
         self.model = HistGradientBoostingRegressor(early_stopping=True, **self.passthrough_parameters())
-        
         self.model.fit(dataset.X, dataset.y)
         
         return self
