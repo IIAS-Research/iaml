@@ -97,7 +97,7 @@ class Dataset:
             n = int(self.X.shape[0]*n)
             
         if n >= self.X.shape[0]:
-            return self.decline(X, y)
+            return self.decline(self.X, self.y)
         
         if self.type_of_target == 'continuous':
             _, test_idx = next(
