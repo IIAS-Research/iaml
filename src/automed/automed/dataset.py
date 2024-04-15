@@ -94,16 +94,23 @@ class Dataset:
         """
         if isinstance(n, float):
             n = int(self.X.shape[0]*n)
+            
+        n = min(n, self.X.shape[0])
         
         if self.type_of_target == 'continuous':
             _, test_idx = next(
                 ShuffleSplit(n_splits=1, test_size=n, random_state=42
                 ).split(self.X, self.y))
         else:
-            _, test_idx = next(
-                StratifiedShuffleSplit(n_splits=1, test_size=n, random_state=42
-                ).split(self.X, self.y))
-        
+            try: 
+                _, test_idx = next(
+                    StratifiedShuffleSplit(n_splits=1, test_size=n, random_state=42
+                    ).split(self.X, self.y))
+            except ValueError:
+                _, test_idx = next(
+                    ShuffleSplit(n_splits=1, test_size=n, random_state=42
+                    ).split(self.X, self.y))
+                
         return self.decline(self.X.iloc[test_idx], self.y[test_idx])
     
     def transform(self, method:callable) -> None:
