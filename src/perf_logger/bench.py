@@ -231,7 +231,7 @@ packages = [
 scikit_dataset = [load_iris,
                 load_diabetes,
                 load_digits,
-                load_linnerud,
+                # load_linnerud,
                 load_wine,
                 load_breast_cancer,
                 # fetch_olivetti_faces,
