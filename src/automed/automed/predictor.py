@@ -74,7 +74,10 @@ class Predictor(Actionable, metaclass=ABCMeta):
             list[float]: Predicted values
         """
         if self.model and hasattr(self.model, 'predict'):
-            return self.model.predict(X)
+            results = self.model.predict(X)
+            if hasattr(self, 'label_encoder'):
+                return self.label_encoder.inverse_transform(results)
+            return results
         return None
                 
     @property

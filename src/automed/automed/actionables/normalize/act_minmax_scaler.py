@@ -33,10 +33,12 @@ class ActMinMaxScaler(Actionable):
             Candidate: Transformed candidate
         """
         self.columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
-        values = dataset.X[self.columns]
-        self.scaler = MinMaxScaler()
-        self.scaler.fit(values)
-
+        if self.columns:
+            values = dataset.X[self.columns]
+            self.scaler = MinMaxScaler()
+            self.scaler.fit(values)
+        else: 
+            self.scaler = None
         return self
         
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
@@ -49,7 +51,8 @@ class ActMinMaxScaler(Actionable):
         Returns:
             pd.DataFrame: Transformed dataset
         """
-        X[self.columns] = self.scaler.transform(X[self.columns])
+        if self.scaler:
+            X[self.columns] = self.scaler.transform(X[self.columns])
         return X
 
     

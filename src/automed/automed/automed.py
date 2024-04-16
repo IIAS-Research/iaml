@@ -3,6 +3,7 @@
 """
 
 import time
+import math
 import multiprocessing
 import warnings
 import pandas as pd
@@ -85,16 +86,12 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         
         self.max_duration = max_duration
         
-        if time_before_sample_use:
-            if max_duration:
-                self.time_before_sample_use = min(max_duration, time_before_sample_use)
-            else:
-                self.time_before_sample_use = time_before_sample_use
+        if time_before_sample_use == 'auto' and max_duration:
+            self.time_before_sample_use = max(max_duration / 5, 60)
+        elif time_before_sample_use:
+            self.time_before_sample_use = time_before_sample_use
         else:
-            if max_duration:
-                self.time_before_sample_use = max(max_duration / 5, 60)
-            else:
-                self.time_before_sample_use = None
+            self.time_before_sample_use = math.inf
         
         self.candidates:list[Candidate] = None
         self.fit_candidate:Candidate = None
@@ -175,7 +172,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             *args,
             groups:pd.DataFrame = None,
             patience:int=-1,
-            generation_sample_size=100,
+            generation_sample_size=200,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         

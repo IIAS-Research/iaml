@@ -79,9 +79,9 @@ class ActXGBoost(Predictor):
             Candidate: Transformed candidate
         """
         if dataset.type_of_target == 'binary':
-            self.configuration['loss']['categorical'] = ['log_loss']
-        else:
             self.configuration['loss']['categorical'] = ['log_loss', 'exponential']
+        else:
+            self.configuration['loss']['categorical'] = ['log_loss']
         self.check_configuration()
         
         self.model = GradientBoostingClassifier(**self.passthrough_parameters())

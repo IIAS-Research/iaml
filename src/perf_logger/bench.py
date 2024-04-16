@@ -18,8 +18,10 @@ from fedot.api.main import Fedot
 import naiveautoml
 import tpot
 from flaml import AutoML as flamlAutoMl
-import autosklearn.classification
-import autosklearn.regression
+# import autosklearn.classification
+# import autosklearn.regression
+from sklearn.dummy import DummyRegressor
+from sklearn.dummy import DummyClassifier
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, CURRENT_PATH+"/../")
@@ -194,18 +196,34 @@ def train_autosk(X, y, duration):
         estimator = autosklearn.classification.AutoSklearnClassifier(
                         time_left_for_this_task=duration
                     )
+        predict_proba = estimator.predict_proba
     else:
         estimator = autosklearn.regression.AutoSklearnRegressor(
                         time_left_for_this_task=duration
                     )
+        predict_proba = estimator.predict
+        
     estimator.fit(X, y)
-    return estimator, estimator.predict, estimator.predict_proba, f"{estimator}"
+    return estimator, estimator.predict, predict_proba, f"{estimator}"
+
+
+def train_dummy(X, y, duration):
+    if type_of_target(y) in ['binary', 'multiclass']:
+        estimator = DummyClassifier(strategy='most_frequent', random_state=42)
+        predict_proba = estimator.predict_proba
+    else:
+        estimator = DummyRegressor(strategy='mean')
+        predict_proba = estimator.predict
+        
+    estimator.fit(X, y)
+    return estimator, estimator.predict, predict_proba, f"{estimator}"
 
 packages = [
+    ('dummy', train_dummy),
     # ('naive_autoML', train_naive),
     # ('auto_sklearn', train_naive),
     # ('FEDOT', train_fedot),
-    ('automed', train_automed),
+    ('IAML', train_automed),
     # ('tplot', train_tplot),
     # ('flaml', train_flaml)
 ]
@@ -213,12 +231,12 @@ packages = [
 scikit_dataset = [load_iris,
                 load_diabetes,
                 load_digits,
-                load_linnerud,
+                # load_linnerud,
                 load_wine,
                 load_breast_cancer,
                 # fetch_olivetti_faces,
                 fetch_20newsgroups,
-                fetch_20newsgroups_vectorized,
+                # fetch_20newsgroups_vectorized,
                 # fetch_lfw_people,
                 # fetch_lfw_pairs,
                 # fetch_covtype,

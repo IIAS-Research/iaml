@@ -2,6 +2,7 @@
 [STEP] Learn :  CatBoost
 """
 from catboost import CatBoostClassifier
+from sklearn.preprocessing import LabelEncoder
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -63,6 +64,7 @@ class ActCatBoost(Predictor):
         }
 
         self.model:CatBoostClassifier = None
+        self.label_encoder:LabelEncoder = LabelEncoder()
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -86,7 +88,9 @@ class ActCatBoost(Predictor):
         
         
         self.model = CatBoostClassifier(verbose=0, **self.passthrough_parameters()) 
-        self.model.fit(dataset.X, dataset.y)
+        
+        self.label_encoder.fit(dataset.y)
+        self.model.fit(dataset.X, self.label_encoder.transform(dataset.y))
         
         return self
     
