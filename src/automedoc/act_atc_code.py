@@ -1,7 +1,7 @@
-# from ..actionable.automed import *
+# from ..actionable.iaml import *
 import sys
 sys.path.insert(0, '../python_project/src/')
-from automed.automed import *
+from iaml.iaml import *
 
 from pandas.api.types import is_string_dtype
 import re

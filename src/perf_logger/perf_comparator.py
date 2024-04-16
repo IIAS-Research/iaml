@@ -23,20 +23,20 @@ def pick_color():
 # fig.savefig(current_path+"/../../../docs/perf_fig.png",dpi=300, bbox_inches = "tight") 
 
 history_path = current_path+"/tests_data/history.log"
-automed_result = pd.read_csv(current_path+"/tests_data/history.log").iloc[::-1]
+iaml_result = pd.read_csv(current_path+"/tests_data/history.log").iloc[::-1]
 autosklearn_results = pd.read_csv(current_path+"/tests_data/autosklearn_perf.log")
 
-datasets = list(automed_result['dataset_name'].unique())
+datasets = list(iaml_result['dataset_name'].unique())
 sns.set()
 fig, axes = plt.subplots(len(datasets), 1, figsize=(8, len(datasets)*5))
 plt.subplots_adjust(hspace = 0.8)
 for index, dataset in enumerate(datasets):
-    plot = sns.lineplot(data=automed_result[automed_result['dataset_name'] == dataset], x="commit_id", y="perf", hue="dataset_name", ax=axes[index]) 
+    plot = sns.lineplot(data=iaml_result[iaml_result['dataset_name'] == dataset], x="commit_id", y="perf", hue="dataset_name", ax=axes[index]) 
     plot.set(title=dataset)
     # plot.set(ylim = (.5,1.1))
     plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
     
-    labels = ['AutoMed']
+    labels = ['IAML']
 
     for ind, value in autosklearn_results[autosklearn_results['dataset_name'] == dataset].iterrows():
         plot.axhline(y=value['perf'], linestyle='dashed', label="AutoSKLearn "+str(value['time']), color=pick_color())
@@ -54,17 +54,17 @@ fig.savefig(current_path+"/../../docs/compare_perf_fig.png", dpi=300, bbox_inche
 
 tplot_results = pd.read_csv(current_path+"/tests_data/tplot_perf.log")
 
-datasets = list(automed_result['dataset_name'].unique())
+datasets = list(iaml_result['dataset_name'].unique())
 sns.set()
 fig, axes = plt.subplots(len(datasets), 1, figsize=(8, len(datasets)*5))
 plt.subplots_adjust(hspace = 0.8)
 for index, dataset in enumerate(datasets):
-    plot = sns.lineplot(data=automed_result[automed_result['dataset_name'] == dataset], x="commit_id", y="perf", hue="dataset_name", ax=axes[index]) 
+    plot = sns.lineplot(data=iaml_result[iaml_result['dataset_name'] == dataset], x="commit_id", y="perf", hue="dataset_name", ax=axes[index]) 
     plot.set(title=dataset)
     # plot.set(ylim = (.5,1.1))
     plot.set_xticklabels(plot.get_xticklabels(), rotation=90)
     
-    labels = ['AutoMed']
+    labels = ['IAML']
 
     for ind, value in tplot_results[tplot_results['dataset_name'] == dataset].iterrows():
         plot.axhline(y=value['perf'], linestyle='dashed', label="TPLOT "+str(value['time']), color=pick_color())

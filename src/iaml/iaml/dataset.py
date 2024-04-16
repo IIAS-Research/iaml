@@ -13,7 +13,7 @@ from .type_of_target import type_of_target
 
 
 if TYPE_CHECKING:
-    from .auto_pipeline import AutoPipeline
+    from .iaml_pipeline import IAMLPipeline
 
 class Dataset:
     """

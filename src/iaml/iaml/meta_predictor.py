@@ -2,7 +2,7 @@
 Ensemble based predict method
 """
 from .candidate import Candidate
-from .auto_pipeline import AutoPipeline
+from .iaml_pipeline import IAMLPipeline
 from .predictor import Predictor
 
 class MetaPredictor(Predictor):
@@ -23,7 +23,7 @@ class MetaPredictor(Predictor):
         Create a candidate for meta predictor
         '''
         candidate = Candidate(
-            auto_pipeline=AutoPipeline(
+            iaml_pipeline=IAMLPipeline(
                 [("Voting classifier", self)],
                 estimator_type=self.estimator_type
                 ),

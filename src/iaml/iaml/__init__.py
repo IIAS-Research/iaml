@@ -1,7 +1,7 @@
 """
-    AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
+    IAML is an autoML tools focusing on Medical Dataset with explainable models  
 """
-from .automed import AutoMed
+from .iaml import IAML
 from .step import *
 from .metastep import MetaStep
 from .actionable import Actionable

@@ -9,7 +9,7 @@ import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
 from .splitter import random_splitter
-from .auto_pipeline import AutoPipeline
+from .iaml_pipeline import IAMLPipeline
 
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ class Candidate:
         dataset(Dataset): Dataset being built
         metrics(list[Metric]): List of metrics used to evaluate models
         main_metric(Metric): Main metric to evaluate model
-        pipeline(AutoPipeline): Pipeline being built
+        pipeline(IAMLPipeline): Pipeline being built
         computed_metrics(dict): Results of metrics computation
         stacked_path(list): Stack of all steps used to build this Candidate
     """
@@ -33,14 +33,14 @@ class Candidate:
     def __init__(self,
                 dataset:Dataset=None,
                 metrics:list['Metric']=None,
-                auto_pipeline:'AutoPipeline'=None,
+                iaml_pipeline:'IAMLPipeline'=None,
                 stacked_path:list=None,
                 main_metric:'Metric'=None):
 
         self.dataset = dataset
         self.metrics = copy(metrics) if metrics is not None else []
-        self.pipeline = auto_pipeline \
-            or AutoPipeline(
+        self.pipeline = iaml_pipeline \
+            or IAMLPipeline(
                 estimator_type=dataset.needed_estimator,
                 original_dataset=dataset.X.copy()
             )
@@ -106,14 +106,14 @@ class Candidate:
     def to_output(self,
                 dataset:Dataset=None,
                 metrics:'Metric'=None,
-                auto_pipeline:'AutoPipeline'=None) -> 'Candidate':
+                iaml_pipeline:'IAMLPipeline'=None) -> 'Candidate':
         """
         Create a copy of current instance and assign parameters values to attributes 
 
         Args:
             dataset (Dataset, optional): Replace current dataset. Defaults to None.
             metrics (Metric, optional): Replace current metrics. Defaults to None.
-            auto_pipeline (AutoPipeline, optional): Replace current pipeline. Defaults to None.
+            iaml_pipeline (IAMLPipeline, optional): Replace current pipeline. Defaults to None.
 
         Returns:
             Candidate: New Candidate
@@ -121,25 +121,25 @@ class Candidate:
         return Candidate(
             dataset or deepcopy(self.dataset),
             metrics or copy(self.metrics),
-            auto_pipeline or self.pipeline.copy(),
+            iaml_pipeline or self.pipeline.copy(),
             stacked_path=self.stacked_path)
         
     def to_input(self,
                 dataset:Dataset=None,
                 metrics:'Metric'=None,
-                auto_pipeline:'AutoPipeline'=None) -> 'Candidate':
+                iaml_pipeline:'IAMLPipeline'=None) -> 'Candidate':
         """
         Create a copy of current instance and assign parameters values to attributes 
 
         Args:
             dataset (Dataset, optional): Replace current dataset. Defaults to None.
             metrics (Metric, optional): Replace current metrics. Defaults to None.
-            auto_pipeline (AutoPipeline, optional): Replace current pipeline. Defaults to None.
+            iaml_pipeline (IAMLPipeline, optional): Replace current pipeline. Defaults to None.
 
         Returns:
             Candidate: New Candidate
         """
-        return self.to_output(dataset, metrics, auto_pipeline)
+        return self.to_output(dataset, metrics, iaml_pipeline)
         
     def add_to_pipeline(self, instance:'Step') -> 'Candidate':
         """

@@ -25,7 +25,7 @@ from sklearn.dummy import DummyClassifier
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, CURRENT_PATH+"/../")
-from automed.automed import *
+from iaml.iaml import *
 
 
 def file_to_X_y(file_path:str):
@@ -137,9 +137,9 @@ def already_computed(dataset, duration, package):
     return False
 
 
-def train_automed(X, y, duration):
+def train_iaml(X, y, duration):
     Cache.reset()
-    estimator = AutoMed(quiet=True, max_workers=12, max_duration=duration)
+    estimator = IAML(quiet=True, max_workers=12, max_duration=duration)
     estimator.fit(X, y)
     return estimator.chosen_model, estimator.chosen_model.predict, estimator.chosen_model.predict_proba, f"{estimator.chosen_model.transformers[-1][0]} -> {estimator.chosen_model.predictor[0]}"
 
@@ -223,7 +223,7 @@ packages = [
     # ('naive_autoML', train_naive),
     # ('auto_sklearn', train_naive),
     # ('FEDOT', train_fedot),
-    ('IAML', train_automed),
+    ('IAML', train_iaml),
     # ('tplot', train_tplot),
     # ('flaml', train_flaml)
 ]

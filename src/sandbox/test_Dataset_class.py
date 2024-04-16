@@ -3,7 +3,7 @@ import numpy as np
 import inspect
 import os, sys
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-from automed import Dataset
+from iaml import Dataset
 
 # Lecture Base de données
 df = pd.read_csv('automl/python_project/src/perf_logger/tests_data/test.csv', sep=';')
