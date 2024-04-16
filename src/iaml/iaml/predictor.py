@@ -26,7 +26,7 @@ class Predictor(Actionable, metaclass=ABCMeta):
     [STEP] Learn : Abstract learning step
     
     Also acts as an interface with traditional scikit-learn models
-    for better integration with AutoPipeline.
+    for better integration with IAMLPipeline.
     """
     
     model: Model

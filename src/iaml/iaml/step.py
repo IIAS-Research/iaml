@@ -81,7 +81,7 @@ class Step: # pylint: disable=too-many-public-methods
         if 'step' not in pipeline:
             raise TypeError("invalid pipeline: missing step attribute")
         
-        step_class = getattr(sys.modules['automed'], pipeline['step']) # Get class from string
+        step_class = getattr(sys.modules['iaml'], pipeline['step']) # Get class from string
         if Step in step_class.__mro__:
             if step_class == cls:
                 step = cls(*args)  
@@ -105,9 +105,9 @@ class Step: # pylint: disable=too-many-public-methods
     #         y (pd.DataFrame): Y data
 
     #     Raises:
-    #         NotImplementedError: AutoMed Step can't be fit this way. You have to use AutoMed.run()
+    #         NotImplementedError: IAML Step can't be fit this way. You have to use IAML.run()
     #     """
-    #     raise NotImplementedError("AutoMed Step can't be fit. You have to use AutoMed.run()")
+    #     raise NotImplementedError("IAML Step can't be fit. You have to use IAML.run()")
         
     def __str__(self):
         return self.name

@@ -10,7 +10,7 @@ import sys, os
 from os.path import exists
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, current_path+"/../")
-from automed import *
+from iaml import *
 
 DURATION = 5*60 # 30 minutes
 
@@ -38,7 +38,7 @@ def each_file(file):
     X_test = test_df.drop(columns=labels)
         
 
-    auto = AutoMed(quiet=True, max_workers=8, max_duration=DURATION)
+    auto = IAML(quiet=True, max_workers=8, max_duration=DURATION)
     auto.default_pipeline(fast=False)
     local_results = auto.fit(X, y, patience=5)
     

@@ -1,5 +1,5 @@
 """
-All automed decorators
+All IAML decorators
 """
 # pylint: disable=unused-import,import-error
 from .runner import runner

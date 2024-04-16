@@ -8,7 +8,7 @@ import sys, os
 from os.path import exists
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, current_path+"/../")
-from automed import *
+from iaml import *
 
 
 files = glob.glob(current_path+"/tests_data/dont_push/*.csv") + glob.glob(current_path+"/tests_data/*.csv")
@@ -31,7 +31,7 @@ for time in [60]: #[30, 60, 60*5, 60*20]:
         if len(df.columns) < 2:
             df = pd.read_csv(file, sep=",")
             
-        auto = AutoMed(Dataset(df))
+        auto = IAML(Dataset(df))
         auto.dataset.set_label('label') 
         auto.tplot_load()
         auto.run()

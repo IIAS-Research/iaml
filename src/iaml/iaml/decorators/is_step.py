@@ -17,7 +17,7 @@ def is_step(*tags) -> callable:
         Returns:
             Step: Edited class
         """
-        Step.available_steps[cls] = tags # Declare your Step to AutoMed
+        Step.available_steps[cls] = tags # Declare your Step to IAML
         
         # Help Python to find parent class
         __class__ = cls # pylint: disable=unused-variable

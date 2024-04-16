@@ -7,7 +7,7 @@
 # - We can't use 'y' in transform
 # - Probably must not be a step 
 # - Have a robust mapping
-# - AutoPipeline must be able to reverse the mapping after prediction
+# - IAMLPipeline must be able to reverse the mapping after prediction
 #       (otherwise, outputs have no sense)
 
 import numpy as np

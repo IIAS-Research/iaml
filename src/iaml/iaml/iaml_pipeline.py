@@ -1,5 +1,5 @@
 """
-Based on Scikit-learn Pipeline but for AutoMed Pipelines !
+Based on Scikit-learn Pipeline but for IAML Pipelines !
 Transform, resample and then predict from Candidate instance 
 """
 import pickle
@@ -19,9 +19,9 @@ if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
 
-class AutoPipeline(Pipeline):
+class IAMLPipeline(Pipeline):
     """
-    Based on Scikit-learn Pipeline but for AutoMed Pipelines !
+    Based on Scikit-learn Pipeline but for IAML Pipelines !
     Transform, resample and then predict from Candidate instance 
     """
     
@@ -160,7 +160,7 @@ class AutoPipeline(Pipeline):
         return False
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
-            only_predictor:bool=False, **kwargs) -> 'AutoPipeline':
+            only_predictor:bool=False, **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
         
@@ -180,7 +180,7 @@ class AutoPipeline(Pipeline):
         
         return self
     
-    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, **kwargs) -> 'AutoPipeline':
+    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline and transform data 
         
@@ -235,7 +235,7 @@ class AutoPipeline(Pipeline):
     
     @property
     def model(self) -> 'Step':
-        """Shortcut to get the prediction model of AutoPipeline 
+        """Shortcut to get the prediction model of IAMLPipeline 
 
         Returns:
             Step: Prediction model of the pipeline (or None)
@@ -275,30 +275,30 @@ class AutoPipeline(Pipeline):
         """
         self.predictor = (str(instance), instance)
 
-    def copy(self) -> 'AutoPipeline':
+    def copy(self) -> 'IAMLPipeline':
         """
-        Return a copied AutoPipeline
+        Return a copied IAMLPipeline
 
         Returns:
-            AutoPipeline: Copied AutoPipeline instance
+            IAMLPipeline: Copied IAMLPipeline instance
         """
         return deepcopy(self)
     
 
     def pickle(self) -> bytes:
         """
-        Serialize AutoPipeline to bytes.
+        Serialize IAMLPipeline to bytes.
         Can be save into a file and reload with pickle.
 
         Returns:
-            bytes: Serialized AutoPipeline
+            bytes: Serialized IAMLPipeline
         """
         return pickle.dumps(self)
     
     @property
     def have_model(self) -> bool:
         """
-        Does the AutoPipeline have a model set ?
+        Does the IAMLPipeline have a model set ?
 
         Returns:
             bool: True a model have been set
@@ -373,8 +373,8 @@ class AutoPipeline(Pipeline):
         """
         return [step for _, step in self.training_steps if step.optimizable]
     
-    def __eq__(self, other: 'AutoPipeline') -> bool:
-        if isinstance(other, AutoPipeline):
+    def __eq__(self, other: 'IAMLPipeline') -> bool:
+        if isinstance(other, IAMLPipeline):
             return self.fingerprint() == other.fingerprint()
         return NotImplemented 
     

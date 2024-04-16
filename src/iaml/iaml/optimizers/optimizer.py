@@ -1,13 +1,13 @@
 
 """
-Base class of AutoMed Optimizer. Optimizer receive a pool of Candidates, 
+Base class of IAML Optimizer. Optimizer receive a pool of Candidates, 
 optimize parameters and return a new pool of candidate
 """
 from ..candidate import Candidate
 
 class Optimizer():
     """
-    Base class of AutoMed Optimizer. Optimizer receive a pool of Candidates, 
+    Base class of IAML Optimizer. Optimizer receive a pool of Candidates, 
     optimize parameters and return a new pool of candidate
     """
     def __init__(self):

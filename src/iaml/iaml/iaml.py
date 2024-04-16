@@ -1,5 +1,5 @@
 """
-    AutoMed is an autoML tools focusing on Medical Dataset with explainable models  
+    IAML is an autoML tools focusing on Medical Dataset with explainable models  
 """
 
 import time
@@ -22,10 +22,10 @@ from .meta_partial_explorer_step import MetaPartialExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer
 from .meta_predictor import MetaPredictor
 
-# Default Actionables -> Must be a wildcard import to help AutoMed to know all available the steps 
+# Default Actionables -> Must be a wildcard import to help IAML to know all available the steps 
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
 
-# Default Wrappers -> Must be a wildcard import to help AutoMed to know all available the steps 
+# Default Wrappers -> Must be a wildcard import to help IAML to know all available the steps 
 from .wrapper import * # pylint: disable=unused-wildcard-import,wildcard-import
 
 # cuDF pandas acceleration
@@ -38,9 +38,9 @@ except ImportError as e:
 
 # Main class of the package
 # Useful to create & run pipeline
-class AutoMed:  # pylint: disable=too-many-instance-attributes
+class IAML:  # pylint: disable=too-many-instance-attributes
     """ Main class of the module.
-    AutoMed will load, configure and fit machine learning pipelines
+    IAML will load, configure and fit machine learning pipelines
 
     Attributes:
         candidate (list): Candidates of the pipeline after run
@@ -264,7 +264,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         Return the best model trained with fit
 
         Returns:
-            AutoPipeline: Best predictor pipeline
+            IAMLPipeline: Best predictor pipeline
         """
         if not self.chosen_candidate:
             return None
@@ -290,7 +290,7 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
             self.executor.set_callback(update_progressbar)
             for candidate in candidates:
                 from_cache = Cache().from_cache( \
-                    'automed_'+candidate.pipeline.fingerprint(), dataset.X)
+                    'IAML_'+candidate.pipeline.fingerprint(), dataset.X)
                 
                 if from_cache:
                     candidate.computed_metrics = from_cache
@@ -320,8 +320,8 @@ class AutoMed:  # pylint: disable=too-many-instance-attributes
         # Add to cache
         for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()
-            if not Cache().from_cache('automed_'+fingerprint, dataset.X):
-                Cache().add_to_cache('automed_'+fingerprint, dataset.X, candidate.computed_metrics)
+            if not Cache().from_cache('IAML_'+fingerprint, dataset.X):
+                Cache().add_to_cache('IAML_'+fingerprint, dataset.X, candidate.computed_metrics)
                 
         return new_candidates
         
