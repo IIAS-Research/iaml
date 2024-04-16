@@ -1,4 +1,4 @@
-files: ^src/automed/
+files: ^src/iaml/
 repos:
   - repo: local
     hooks:
