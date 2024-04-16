@@ -171,15 +171,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.to_run_queue.put("stop") # Gentilly ask process to stop
         time.sleep(0.5)
         
-        is_alive = True
-        while is_alive:
-            is_alive = False
-            for process in self.process:
-                if process.is_alive(): # If process still alive, force stop
-                    is_alive = True
-                    process.kill()
+        for process in self.process:
+            if process.is_alive(): # If process still alive, force stop
+                process.kill()
                     
-            time.sleep(1)
+        time.sleep(1)
             
     
     def __run_daemon(self) -> None:

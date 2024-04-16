@@ -4,6 +4,8 @@ Singleton used by Automed to generate nice logs
 import rich.console
 import rich.progress
 import multiprocess
+from multiprocess.queues import Empty
+
 from .meta_singleton import MetaSingleton
 
 class Logger(metaclass=MetaSingleton):
@@ -45,4 +47,7 @@ class Logger(metaclass=MetaSingleton):
         """
         if multiprocess.current_process().name == 'MainProcess':
             while not self.log_queue.empty():
-                self.log(*self.log_queue.get(), force=True)
+                try:
+                    self.log(*self.log_queue.get(block=False), force=True)
+                except Empty:
+                    break
