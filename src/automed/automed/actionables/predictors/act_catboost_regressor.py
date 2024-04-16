@@ -2,6 +2,7 @@
 [STEP] Learn :  CatBoost Regressor
 """
 from catboost import CatBoostRegressor
+from sklearn.preprocessing import LabelEncoder
 from ...predictor import Predictor
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -76,6 +77,7 @@ class ActCatBoostRegressor(Predictor):
             }
         }
         self.model:CatBoostRegressor = None
+        self.label_encoder:LabelEncoder = LabelEncoder()
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -89,7 +91,9 @@ class ActCatBoostRegressor(Predictor):
         """
         self.model = CatBoostRegressor(verbose=0, **self.passthrough_parameters())
         
-        self.model.fit(dataset.X, dataset.y)
+        
+        self.label_encoder.fit(dataset.y)
+        self.model.fit(dataset.X, self.label_encoder.transform(dataset.y))
         
         return self
     
