@@ -27,7 +27,7 @@ class ActCatBoostRegressor(Predictor):
                 'Andrey Gulin'
             ],
             'doi': 'https://doi.org/10.48550/arXiv.1706.09516',
-            'publisher': 'Advances in Neural Information Processing Systems'
+            'publisher': 'Advances in Neural Information Processing Systems 31 (NeurIPS 2018)'
         }
     ]
     def __init__(self):
