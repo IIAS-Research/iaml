@@ -16,6 +16,22 @@ class ActPowerTransformer(Actionable):
     """
     name="Preprocess with PowerTransformer"
     
+    properties = [
+        {
+            'year': 1995,
+            'name': (
+                'A desicion-theoretic generalization of on-line learning '
+                'and an application to boosting'
+            ),
+            'authors': [
+                'Yoav Freund',
+                'Robert E. Schapire'
+            ],
+            'doi': 'https://doi.org/10.1007/3-540-59119-2_166',
+            'publisher': 'Springer, Berlin, Heidelberg'
+        }
+    ]
+    
     def __init__(self):
         self.configuration:dict = {
             'method': {
@@ -32,6 +48,10 @@ class ActPowerTransformer(Actionable):
         
         self.optimizable = True
         self.preprocessor = None
+        
+        
+        # Initialize reference for this step
+        self._build_references(ActPowerTransformer.properties)
 
 
     def fit(self, dataset:Dataset) -> Actionable:

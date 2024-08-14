@@ -97,6 +97,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         n_fmtref: int = len(str(n_ref))
         if total is None:
             total = n_fmtref
+        print(f"{n_ref=}, {n_fmtref=}, {total=}")
     
         ret: str = ''
         for i, reference in enumerate(self.references):

@@ -98,6 +98,7 @@ class IAMLPipeline(Pipeline):
         self.transformers = []
         self.resamplers = []
         self.predictor = None
+        print(f"{values=}")
         for value in values:
             self.__add_step(value)
             
@@ -436,4 +437,18 @@ class IAMLPipeline(Pipeline):
         to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
         
         return md5(to_hash.encode()).hexdigest()
-            
+
+    def citation(self) -> str:
+        """
+        Return a string listing all step's references  
+        """
+        print(f"{self.steps}")
+        # for step in self.steps:
+        #     print(step)
+        ret = ""
+        n_totalref: int = len(str(sum(len(step[1].references) for step in self.steps)))
+        count: int = 0
+        for step in self.steps:
+            r, count = step[-1].citation(count, n_totalref)
+            ret = ret + r
+        return ret

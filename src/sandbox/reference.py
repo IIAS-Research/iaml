@@ -1,6 +1,10 @@
 from src.iaml.iaml.reference import Reference
 from src.iaml.iaml.actionables.predictors.act_ada_boost_regressor import ActAdaBoostRegressor
 from src.iaml.iaml.actionables.predictors.act_catboost_regressor import ActCatBoostRegressor
+from src.iaml.iaml.actionables.predictors.act_ard_regression import ActARDRegression
+from src.iaml.iaml.actionables.features_preprocessing.act_power_transformer import ActPowerTransformer
+from src.iaml.iaml.actionables.features_preprocessing.act_rbf_sampler import ActRBFSampler
+from src.iaml.iaml.iaml_pipeline import IAMLPipeline
 
 # properties = {
 #     'year': 1995,
@@ -39,8 +43,26 @@ from src.iaml.iaml.actionables.predictors.act_catboost_regressor import ActCatBo
 #     print(f"[{i+1:>{len(str(len(references)))}}]  {refe}")
 
 
-a = ActAdaBoostRegressor()
-c = ActCatBoostRegressor()
-print(a.citation()[0])
+# a = ActAdaBoostRegressor()
+# # c = ActCatBoostRegressor()
+# # b = ActARDRegression()
 
-print(c.citation()[0])
+# print(a.citation()[0])
+
+# print(c.citation()[0])
+# print(b.citation()[0])
+
+pipeline = IAMLPipeline(
+    steps=[
+        ('1', ActAdaBoostRegressor()),
+        ('2', ActPowerTransformer()),
+        ('3', ActRBFSampler()),
+    ],
+    estimator_type='regressor'
+)
+
+
+print("----------")
+# print(pipeline.last_stage_candidates)
+
+print(pipeline.citation())
