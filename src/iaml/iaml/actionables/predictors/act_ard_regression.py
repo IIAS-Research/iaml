@@ -14,16 +14,6 @@ class ActARDRegression(Predictor):
     [STEP] Learn : ARD Regression
     """
     name = "Learn : ARD Regression"
-
-    properties = [
-        {
-            'year': 1996,
-            'name': 'Bayesian Non-Linear Modeling for the Prediction Competition',
-            'authors': ['David J. C. MacKay'],
-            'doi': 'https://doi.org/10.1007/978-94-015-8729-7_18',
-            'publisher': 'Springer, Dordrecht'
-        }
-    ]
     def __init__(self):
         self.configuration:dict = {
             'alpha_1': {
@@ -64,10 +54,7 @@ class ActARDRegression(Predictor):
                 }
             }
         self.model:ARDRegression = None
-        
-        # Initialize reference for this step
-        self._build_references(ActARDRegression.properties)
-    
+  
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit ARDRegression on Candidate.dataset

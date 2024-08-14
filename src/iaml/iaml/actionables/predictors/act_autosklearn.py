@@ -15,37 +15,6 @@ class ActAutoSKLearn(Predictor):
     [STEP] Learn : AutoSkLearn
     """
     name="Learn : AutoSkLearn"
-    
-    properties = [
-        {
-            'year': 2015,
-            'name': 'Efficient and Robust Automated Machine Learning',
-            'authors': [
-                'Matthias Feurer',
-                'Aaron Klein',
-                'Katharina Eggensperger',
-                'Jost Tobias Springenberg',
-                'Manuel Blum',
-                'Frank Hutter'
-            ],
-            'doi': 'https://doi.org/10.1007/978-3-030-05318-5_6 (V2)',
-            # Store pages for book ? (2962--2970), Not always present in NeurIPS doc'
-            'publisher': 'Advances in Neural Information Processing Systems 28 (NeurIPS 2015)'
-        },
-        {
-            'year': 2020,
-            'name': 'Auto-Sklearn 2.0: Hands-free AutoML via Meta-Learning',
-            'authors': [
-                'Matthias Feurer',
-                'Katharina Eggensperger',
-                'Stefan Falkner',
-                'Marius Lindauer',
-                'Frank Hutter'
-            ],
-            'doi': 'https://doi.org/10.48550/arXiv.2007.04074',
-            'publisher': 'Journal of Machine Learning Research 23(261), 2022'
-        }
-    ]
     def __init__(self):
         self.configuration:dict = {
             'running_time': {
@@ -56,9 +25,6 @@ class ActAutoSKLearn(Predictor):
         }
         self.model:autosklearn.classification.AutoSklearnClassifier = None
 
-        # Initialize reference for this step
-        self._build_references(ActAutoSKLearn.properties)
-    
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit AutoSkLearn on Candidate.dataset

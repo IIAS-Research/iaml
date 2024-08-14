@@ -65,4 +65,12 @@ pipeline = IAMLPipeline(
 print("----------")
 # print(pipeline.last_stage_candidates)
 
+
+
 print(pipeline.citation())
+
+
+# a = ActAdaBoostRegressor()
+# print(a.citation()[0])
+# b = ActPowerTransformer()
+# print(b.citation()[0])

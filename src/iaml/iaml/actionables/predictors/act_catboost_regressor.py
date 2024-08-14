@@ -15,21 +15,6 @@ class ActCatBoostRegressor(Predictor):
     [STEP] Learn :  CatBoost Regressor
     """
     name = "Learn : CatBoost Regressor"
-    properties = [
-        {
-            'year': 2017,
-            'name': 'CatBoost: unbiased boosting with categorical features',
-            'authors': [
-                'Liudmila Prokhorenkova',
-                'Gleb Gusev',
-                'Aleksandr Vorobev',
-                'Anna Veronika Dorogush',
-                'Andrey Gulin'
-            ],
-            'doi': 'https://doi.org/10.48550/arXiv.1706.09516',
-            'publisher': 'Advances in Neural Information Processing Systems 31 (NeurIPS 2018)'
-        }
-    ]
     def __init__(self):
         self.configuration:dict = {
             'iterations': {
@@ -93,11 +78,7 @@ class ActCatBoostRegressor(Predictor):
         }
         self.model:CatBoostRegressor = None
         self.label_encoder:LabelEncoder = LabelEncoder()
-        
-        
-        # Initialize reference for this step
-        self._build_references(ActCatBoostRegressor.properties)
-        
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
         Fit XgBoost regressor on Candidate.dataset

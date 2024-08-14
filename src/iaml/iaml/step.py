@@ -17,6 +17,7 @@ from multipledispatch import dispatch
 from .dataset import Dataset
 from .decorators.runner import runner
 from .reference import Reference
+from .reference_dict import REF
 
 if TYPE_CHECKING:
     from .candidate import Candidate
@@ -66,8 +67,13 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.default_configuration() # Load default configuration 
         
         self.references:List[Reference] = []
-        
-    def _build_references(self, properties: List[Dict]) -> None:
+        try:
+            self.__build_references(REF[type(self).__name__])
+        except KeyError:
+            # We do not have reference defined in REF for this class
+            pass
+            
+    def __build_references(self, properties: List[Dict]) -> None:
         '''
         Build a list of reference for this step
 
@@ -97,8 +103,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         n_fmtref: int = len(str(n_ref))
         if total is None:
             total = n_fmtref
-        print(f"{n_ref=}, {n_fmtref=}, {total=}")
-    
+  
         ret: str = ''
         for i, reference in enumerate(self.references):
             ret = ret + f"[{counter + i + 1:>{total}}]  {reference}\n"
