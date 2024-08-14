@@ -11,16 +11,18 @@ import sys
 import json
 from hashlib import md5
 from typing import TYPE_CHECKING
-from typing import Any
+from typing import Any, Dict, List, Tuple
 from copy import deepcopy
 from multipledispatch import dispatch
 from .dataset import Dataset
 from .decorators.runner import runner
+from .reference import Reference
 
 if TYPE_CHECKING:
     from .candidate import Candidate
+    from ..iaml.reference import Reference
 
-class Step: # pylint: disable=too-many-public-methods
+class Step: # pylint: disable=too-many-public-methods, too-many-instance-attributes
     """
     Step class is use to create new kinds of steps by inheritance and give all needed
     attributes and methods to children classes. 
@@ -34,6 +36,8 @@ class Step: # pylint: disable=too-many-public-methods
         self.__use_cache (bool) : Enable / Disable caching
         caches (list) : Cached result 
         explanations (list[str]) : String explanation of step actions
+        references (Reference) : List of references for this step
+        citation (int, int) : String citations of step's references
     """
     # Available steps. This will be filled be all the new Step loaded in Python environments
     # It will be a reference of all available Steps to create pipeline
@@ -61,7 +65,46 @@ class Step: # pylint: disable=too-many-public-methods
         
         self.default_configuration() # Load default configuration 
         
+        self.references:List[Reference] = []
         
+    def _build_references(self, properties: List[Dict]) -> None:
+        '''
+        Build a list of reference for this step
+
+        Args:
+            properties (List[Dict]): List of dictionnary containing reference attributes
+        
+        Returns:
+            None
+        '''
+        for prop in properties:
+            self.references.append(Reference(prop))
+    
+    def citation(self, counter: int = 0, total: int = None) -> Tuple[str, int]:
+        '''
+        Print references of this step in a formatted paper style
+        
+        Args:
+            counter (int): The current reference position (for '[1]' style in front of reference)
+            total (int): The total number of references
+                         (for '[1]' right alignment in case of multiple digits)
+        
+        Returns:
+            Tuple[str, int]: The formatted references for this step
+                             and the next counter to be passed to the next step
+        '''
+        n_ref: int = len(self.references)
+        n_fmtref: int = len(str(n_ref))
+        if total is None:
+            total = n_fmtref
+    
+        ret: str = ''
+        for i, reference in enumerate(self.references):
+            ret = ret + f"[{counter + i + 1:>{total}}]  {reference}\n"
+        
+        counter += n_ref
+        return ret, counter
+
     @classmethod
     def from_pipeline(cls, pipeline:dict, *args) -> 'Step':
         """
