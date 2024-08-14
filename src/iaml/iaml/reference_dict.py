@@ -126,7 +126,7 @@ REF = {
             'authors': [
                 'Pierre Geurts',
                 'Damien Ernst',
-                'Wehenkel'
+                'Louis Wehenkel'
             ],
             'doi': 'https://doi.org/10.1007/s10994-006-6226-1',
             'publisher': 'Machine Learning Vol. 63 page 3--42'
@@ -139,7 +139,7 @@ REF = {
             'authors': [
                 'Pierre Geurts',
                 'Damien Ernst',
-                'Wehenkel'
+                'Louis Wehenkel'
             ],
             'doi': 'https://doi.org/10.1007/s10994-006-6226-1',
             'publisher': 'Machine Learning Vol. 63 page 3--42'
@@ -148,7 +148,7 @@ REF = {
     'ActGaussianNb': [
         {
             'year': 1763,
-            'name': 'No info provided',
+            'name': 'No information provided',
             'authors': [
             ],
             'doi': '',
@@ -221,6 +221,28 @@ REF = {
             ],
             'doi': 'https://doi.org/10.1109/TIT.1967.1053964',
             'publisher': 'IEEE Transactions on Information Theory. 13: page 21--27'
+        }
+    ],
+    'ActLinearDiscriminantAnalysis': [
+        {
+            'year': 1936,
+            'name': 'The Use of Multiple Measurements in Taxonomic Problems',
+            'authors': [
+                'Sir Ronald Aylmer Fisher'
+            ],
+            'doi': '',
+            'publisher': 'Annals of Eugenics Vol.7 page 179--188'
+        }
+    ],
+    'ActLinearRegression' : [
+        {
+            'year': 1875,
+            'name': 'No information provided',
+            'authors': [
+                'Sir Francis Galton'
+            ],
+            'doi': '',
+            'publisher': ''
         }
     ]
 }
