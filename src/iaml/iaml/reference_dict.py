@@ -244,5 +244,102 @@ REF = {
             'doi': '',
             'publisher': ''
         }
+    ],
+    'ActLogisticRegression': [
+        {
+            'year': 1944,
+            'name': 'Application of the Logistic Function to Bio-Essay',
+            'authors': [
+                'Joseph Berkson'
+            ],
+            'doi': 'https://doi.org/10.2307/2280041',
+            'publisher': (
+                'Journal of the American Statistical Association '
+                'Vol. 39, No. 227, page 357--365'
+            )
+        },
+        {
+            'year': 1951,
+            'name': 'Why I Prefer Logits to Probits',
+            'authors': [
+                'Joseph Berkson'
+            ],
+            'doi': 'https://doi.org/10.2307/3001655',
+            'publisher': (
+                'Biometrics '
+                'Vol. 7, No. 4, page 327--339'
+            )
+        }
+    ],
+    'ActMLPClassifier': [
+        {
+            'year': 1989,
+            'name': 'Connectionist Learning Procedures',
+            'authors': [
+                'Geoffrey E. Hinton'
+            ],
+            'doi': 'https://doi.org/10.1016/0004-3702(89)90049-0',
+            'publisher': 'Artificial intelligence Vol. 40.1 page 185--234'
+        },
+        {
+            'year': 2010,
+            'name': 'Understanding the difficulty of training deep feedforward neural networks',
+            'authors': [
+                'Xavier Glorot',
+                'Yoshua Bengio'
+            ],
+            'doi': '',
+            'publisher': (
+                'Proceedings of the Thirteenth International Conference on '
+                'Artificial Intelligence and Statistics page 249--256'
+            )
+        }
+    ],
+    'ActMLPRegressor': [
+        {
+            'year': 1989,
+            'name': 'Connectionist Learning Procedures',
+            'authors': [
+                'Geoffrey E. Hinton'
+            ],
+            'doi': 'https://doi.org/10.1016/0004-3702(89)90049-0',
+            'publisher': 'Artificial intelligence Vol. 40.1 page 185--234'
+        },
+        {
+            'year': 2010,
+            'name': 'Understanding the difficulty of training deep feedforward neural networks',
+            'authors': [
+                'Xavier Glorot',
+                'Yoshua Bengio'
+            ],
+            'doi': '',
+            'publisher': (
+                'Proceedings of the Thirteenth International Conference on '
+                'Artificial Intelligence and Statistics page 249--256'
+            )
+        }
+    ],
+    'ActMultinomialNB': [
+        {
+            'year': 2008,
+            'name': 'Introduction to Information Retrieval',
+            'authors': [
+                'Christopher D. Manning',
+                'Prabhakar Raghaban',
+                'Hinrich Schütze'
+            ],
+            'doi': '',
+            'publisher': 'Cambridge University Press'
+        }
     ]
 }
+
+
+# {
+#             'year': 1763,
+#             'name': 'No information provided',
+#             'authors': [
+#             ],
+#             'doi': '',
+#             'publisher': ''
+#         }
