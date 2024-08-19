@@ -332,16 +332,104 @@ REF = {
             'publisher': 'Cambridge University Press'
         }
     ],
-    'ActPowerTransformer': [
+    'ActQuadraticDiscriminantAnalysis': [
         {
-            'year': None,
-            'name': None,
-            'authors': [],
-            'doi': None,
-            'publisher': None
+            'year': 1965,
+            'name': 'Geometrical and Statistical Properties of Systems of Linear Inequalities with Applications in Pattern Recognition',
+            'authors': ['Thomas M. Cover'],
+            'doi': 'https://doi.org/10.1109/PGEC.1965.264137',
+            'publisher': 'IEEE Transactions on Electronic Computers Vol.EC-14 page 326--334'
+            
+        },
+        {
+            'year': 2016,
+            'name': 'Linear vs. quadratic discriminant analysis classifier: a tutorial',
+            'authors': ['Alaa Tharwat'],
+            'doi': 'https://www.inderscienceonline.com/doi/abs/10.1504/IJAPR.2016.079050',
+            'publisher': 'International Journal of Applied Pattern Recognition Vol.3, No.2 page 145--180'
         }
+    ],
+    'ActRandomForestRegressor': [
+        {
+            'year': 2001,
+            'name': 'Random Forests',
+            'authors': ['Leo Breiman'],
+            'doi': 'https://doi.org/10.1023/A:1010933404324',
+            'publisher': 'Machine Learning Vol.45 page 5--32'
+        },
+        {
+            'year': 2006,
+            'name': 'Extremely Randomized Trees',
+            'authors': ['Pierre Geurts', 'Damien Ernst', 'Lous Wehenkel'],
+            'doi': 'https://doi.org/10.1007/s10994-006-6226-1',
+            'publisher': 'Machine Learning Vol.63 page 5--42'
+        }
+    ],
+    'ActRandomForestRegressor': [
+        {
+            'year': 2001,
+            'name': 'Random Forests',
+            'authors': ['Leo Breiman'],
+            'doi': 'https://doi.org/10.1023/A:1010933404324',
+            'publisher': 'Machine Learning Vol.45 page 5--32'
+        }
+    ],
+    'ActSGDRegressor': [
+        {
+            'year': 1951,
+            'name': 'A Stochastic Approximation Method',
+            'authors': [
+                'Herbert Robbins',
+                'Sutton Monro'    
+            ],
+            'doi': 'https://doi.org/10.1214/aoms/1177729586',
+            'publisher': 'The annals of Mathematical Statistics Vol.22 No.3 page 400--407'
+        }
+    ],
+    'ActSVMSVC': [
+        {
+            'year': 1999,
+            'name': 'Probabilistic Outputs for Support Vector Machines and Comparisons to Regularized Likelihood Methods',
+            'authors': [
+                'John C. Platt'
+            ],
+            'doi': None,
+            'publisher': 'Microsoft Research'
+        },
+        {
+            'year': 2001,
+            'name': 'LIBSVM: A Library for Support Vector Machines',
+            'authors': [
+                'Chih-Chung Chang',
+                'Chih-Jen Lin'
+            ],
+            'doi': 'https://doi.org/10.1145/1961189.1961199',
+            'publisher': 'ACM Transactions on Intelligen Systems and Technology Vol.2 page 1--27'
+        },
+    ],
+    'ActSVMSVR': [
+        {
+            'year': 1999,
+            'name': 'Probabilistic Outputs for Support Vector Machines and Comparisons to Regularized Likelihood Methods',
+            'authors': [
+                'John C. Platt'
+            ],
+            'doi': None,
+            'publisher': 'Microsoft Research'
+        },
+        {
+            'year': 2001,
+            'name': 'LIBSVM: A Library for Support Vector Machines',
+            'authors': [
+                'Chih-Chung Chang',
+                'Chih-Jen Lin'
+            ],
+            'doi': 'https://doi.org/10.1145/1961189.1961199',
+            'publisher': 'ACM Transactions on Intelligen Systems and Technology Vol.2 page 1--27'
+        },
     ]
 }
+
 
 
 # {
