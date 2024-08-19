@@ -11,11 +11,12 @@ class Reference:  # pylint: disable=too-few-public-methods
     Contain all needed data to provide a reference for a step
     """
     
-    def __init__(self, properties: Dict) -> None:
+    def __init__(self, properties: Dict, step_name: str) -> None:
         """
         Instantiate all properties provided to the specific reference
         such as year of publication, authors, doi ...
         """
+        setattr(self, 'step', step_name)
         for k, v in properties.items():
             setattr(self, k, v)
     
@@ -24,21 +25,21 @@ class Reference:  # pylint: disable=too-few-public-methods
         Return a simple string containing reference information
         """
         # return ' | '.join(f"[{k.capitalize()}] {v}" for k,v in self.__dict__.items())
-        ret = ''
+        ret = f'({self.step}) '
         try:
             ret = ret + ', '.join(self.authors) + '. '
         except AttributeError:
             pass
         try:
-            ret = ret + self.name + '\n'
+            ret = ret + str(self.name) + '\n'
         except AttributeError:
             pass
         try:
-            ret = ret + self.publisher + ', '
+            ret = ret + str(self.publisher) + ', '
         except AttributeError:
             pass
         try:
-            ret = ret + self.doi + ', '
+            ret = ret + str(self.doi) + ', '
         except AttributeError:
             pass
         try:

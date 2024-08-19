@@ -442,9 +442,6 @@ class IAMLPipeline(Pipeline):
         """
         Return a string listing all step's references  
         """
-        print(f"{self.steps}")
-        # for step in self.steps:
-        #     print(step)
         ret = ""
         n_totalref: int = len(str(sum(len(step[1].references) for step in self.steps)))
         count: int = 0

@@ -69,7 +69,7 @@ REF = {
                 'Andrew McCallum',
                 'Kamal Nigam'
             ],
-            'doi': '',
+            'doi': None,
             'publisher': (
                 'AAAI-98 workshop on learning for text categorization, '
                 '752, page 41--48. (1998)'
@@ -148,7 +148,7 @@ REF = {
     'ActGaussianNb': [
         {
             'year': 1763,
-            'name': 'No information provided',
+            'name': None,
             'authors': [
             ],
             'doi': '',
@@ -330,6 +330,15 @@ REF = {
             ],
             'doi': '',
             'publisher': 'Cambridge University Press'
+        }
+    ],
+    'ActPowerTransformer': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
         }
     ]
 }

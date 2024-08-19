@@ -68,12 +68,12 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         
         self.references:List[Reference] = []
         try:
-            self.__build_references(REF[type(self).__name__])
+            self.__build_references(REF[type(self).__name__], type(self).__name__)
         except KeyError:
             # We do not have reference defined in REF for this class
             pass
             
-    def __build_references(self, properties: List[Dict]) -> None:
+    def __build_references(self, properties: List[Dict], step_name: str) -> None:
         '''
         Build a list of reference for this step
 
@@ -84,7 +84,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             None
         '''
         for prop in properties:
-            self.references.append(Reference(prop))
+            self.references.append(Reference(prop, step_name))
     
     def citation(self, counter: int = 0, total: int = None) -> Tuple[str, int]:
         '''
