@@ -513,6 +513,27 @@ REF = {
             'doi': 'https://doi.org/10.1007/978-0-387-84858-7'
             'publisher': 'Springer New York'
         }
+    ],
+    'ActMinMaxScaler': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActRandomOverSampling': [
+        {
+            'year': 2012,
+            'name': 'Training and assessing classification rules with imbalanced data',
+            'authors': [
+                'Giovanna Menardi',
+                'Nicola Torelli'
+            ],
+            'doi': 'https://doi.org/10.1007/s10618-012-0295-5',
+            'publisher': 'Data Mining and Knowledge Discovery Vol.28 page 92--122' 
+        }
     ]
 }
 
