@@ -661,6 +661,96 @@ REF = {
             'publisher': None
         }
     ],
+    'ActDropDateColumn': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActDropNumericalColumn': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActDropTextualColumn': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActCategoryStringToNumeric': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActMeanColumn': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActOnehot': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActSplitDate': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActTfIdf': [
+        {
+            'year': 1972,
+            'name': 'A STATISTICAL INTERPRETATION OF TERM SPECIFICITY AND ITS APPLICATION IN RETRIEVAL',
+            'authors': [
+                'Karen Sparck Jones'    
+            ],
+            'doi': 'https://doi.org/10.1108/eb026526',
+            'publisher': 'Journal of Documentation Vol.21, No.1, page 11--21'
+        }
+    ],
+    'ActWord2Vec': [
+        {
+            'year': 2023,
+            'name': 'Efficient Estimation of Word Representations in Vector Space',
+            'authors': [
+                'Thomas Mikolov',
+                'Kai Chen',
+                'Greg Corrado',
+                'Jeffrey Dean'    
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.1301.3781',
+            'publisher': 'International Conference on Learning Representations'
+        }
+    ]
+    
+    
 }
 
 
