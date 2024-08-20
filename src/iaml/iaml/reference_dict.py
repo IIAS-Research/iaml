@@ -380,7 +380,7 @@ REF = {
             'publisher': 'Machine Learning Vol.63 page 5--42'
         }
     ],
-    'ActRandomForestRegressor': [
+    'ActRandomForest': [
         {
             'year': 2001,
             'name': 'Random Forests',
@@ -767,13 +767,3 @@ REF = {
     
     
 }
-
-
-
-# {
-#             'year': None,
-#             'name': None,
-#             'authors': [],
-#             'doi': None,
-#             'publisher': None
-#         }
