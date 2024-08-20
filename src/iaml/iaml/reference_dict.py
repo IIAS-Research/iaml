@@ -20,6 +20,21 @@ REF = {
             'publisher': 'Springer, Berlin, Heidelberg'
         }
     ],
+    'ActAdaBoost': [
+        {
+            'year': 1995,
+            'name': (
+                'A desicion-theoretic generalization of on-line learning '
+                'and an application to boosting'
+            ),
+            'authors': [
+                'Yoav Freund',
+                'Robert E. Schapire'
+            ],
+            'doi': 'https://doi.org/10.1007/3-540-59119-2_166',
+            'publisher': 'Springer, Berlin, Heidelberg'
+        }
+    ],
     'ActARDRegression': [
         {
             'year': 1996,
