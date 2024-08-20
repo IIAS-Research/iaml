@@ -651,7 +651,16 @@ REF = {
             'doi': None,
             'publisher': None
         }
-    ]
+    ],
+    'ActDateConverter': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
 }
 
 
