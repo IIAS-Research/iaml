@@ -427,6 +427,92 @@ REF = {
             'doi': 'https://doi.org/10.1145/1961189.1961199',
             'publisher': 'ACM Transactions on Intelligen Systems and Technology Vol.2 page 1--27'
         },
+    ],
+    'ActTPLOT': [
+        {
+            'year': 2015,
+            'name': 'TPOT: A Tree-based Pipeline Optimization Tool for Automating Machine Learning',
+            'authors': [
+                'Randal S. Olson',
+                'Jason H. Moore'
+            ],
+            'doi': 'https://doi.org/10.1007/978-3-030-05318-5_8',
+            'publisher': 'JMLR: Workshop and Conference Proceedings page 66--74'
+        },
+        {
+            'year': 2016,
+            'name': 'Evaluation of a Tree-based Pipeline Optimization Tool for Automating Data Science',
+            'authors': [
+                'Randal S. Olson',
+                'Nathan Bartley',
+                'Ryan J. Urbanowicz'
+                'Jason H. Moore'
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.1603.06212',
+            'publisher': 'GECCO 2016'
+        }
+    ],
+    'ActXGBoostRegressor': [
+        {
+            'name': 'Stochastic Gradient Boosting',
+            'year': 1999,
+            'authors': [
+              'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2'
+            'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
+        },
+        {
+            'year': 2001,
+            'name': 'Greedy Function Approximation: A Gradient Boosting Machine',
+            'authors': [
+              'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1214/aos/1013203451'
+            'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'
+        },
+        {
+            'year': 2009,
+            'name': 'The Elements of Statistical Learning',
+            'authors': [
+                'Trevor Hastie',
+                'Robert Tibshirani',
+                'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1007/978-0-387-84858-7'
+            'publisher': 'Springer New York'
+        }
+    ],
+    'ActXGBoost': [
+        {
+            'name': 'Stochastic Gradient Boosting',
+            'year': 1999,
+            'authors': [
+              'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2'
+            'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
+        },
+        {
+            'year': 2001,
+            'name': 'Greedy Function Approximation: A Gradient Boosting Machine',
+            'authors': [
+              'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1214/aos/1013203451'
+            'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'
+        },
+        {
+            'year': 2009,
+            'name': 'The Elements of Statistical Learning',
+            'authors': [
+                'Trevor Hastie',
+                'Robert Tibshirani',
+                'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1007/978-0-387-84858-7'
+            'publisher': 'Springer New York'
+        }
     ]
 }
 
