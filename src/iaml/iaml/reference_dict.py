@@ -459,7 +459,7 @@ REF = {
             'authors': [
               'Jerome H. Friedman'  
             ],
-            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2'
+            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2',
             'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
         },
         {
@@ -468,7 +468,7 @@ REF = {
             'authors': [
               'Jerome H. Friedman'  
             ],
-            'doi': 'https://doi.org/10.1214/aos/1013203451'
+            'doi': 'https://doi.org/10.1214/aos/1013203451',
             'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'
         },
         {
@@ -479,7 +479,7 @@ REF = {
                 'Robert Tibshirani',
                 'Jerome H. Friedman'  
             ],
-            'doi': 'https://doi.org/10.1007/978-0-387-84858-7'
+            'doi': 'https://doi.org/10.1007/978-0-387-84858-7',
             'publisher': 'Springer New York'
         }
     ],
@@ -490,7 +490,7 @@ REF = {
             'authors': [
               'Jerome H. Friedman'  
             ],
-            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2'
+            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2',
             'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
         },
         {
@@ -499,7 +499,7 @@ REF = {
             'authors': [
               'Jerome H. Friedman'  
             ],
-            'doi': 'https://doi.org/10.1214/aos/1013203451'
+            'doi': 'https://doi.org/10.1214/aos/1013203451',
             'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'
         },
         {
@@ -510,7 +510,7 @@ REF = {
                 'Robert Tibshirani',
                 'Jerome H. Friedman'  
             ],
-            'doi': 'https://doi.org/10.1007/978-0-387-84858-7'
+            'doi': 'https://doi.org/10.1007/978-0-387-84858-7',
             'publisher': 'Springer New York'
         }
     ],
@@ -534,16 +534,132 @@ REF = {
             'doi': 'https://doi.org/10.1007/s10618-012-0295-5',
             'publisher': 'Data Mining and Knowledge Discovery Vol.28 page 92--122' 
         }
+    ],
+    'ActRemoveHighCorrelatedColumn': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActFeatureAgglomeration': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActKernelPCA': [
+        {
+            'year': 1997,
+            'name': 'Kernel principal component analysis',
+            'authors': [
+                'Bernhard Schölkopf',
+                'Alexander Smola',
+                'Klaus-Robert Müller'    
+            ],
+            'doi': 'https://doi.org/10.1007/BFb0020217',
+            'publisher': 'Springer, Berlin, Heidelberg'
+        },
+        {
+            'year': 2003,
+            'name': 'Learning to find pre-images',
+            'authors': [
+                'Jason Weston',
+                'Bernhard Schölkopf',
+                'Gökhan Bakir'
+            ],
+            'doi': None,
+            'publisher': 'Advances in neural information processing systems 16 (2004) page 449--456'
+        },
+        {
+            'year': 2009,
+            'name': 'Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions',
+            'authors': [
+                'Nathan Halko',
+                'Per-Gunnar Martinsson',
+                'Joel A. Tropp'
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.0909.4061',
+            'publisher': 'SIAM Rev., Survey and Review section, Vol.53, No.2 page 217--288'
+        },
+        {
+            'year': 2011,
+            'name': 'A randomized algorithm for the decomposition of matrices',
+            'authors': [
+                'Per-Gunnar Martinsson',
+                'Vladimir Rokhlin',
+                'Mark Tygert'
+            ],
+            'doi': 'https://doi.org/10.1016/j.acha.2010.02.003',
+            'publisher': 'Applied and Computational Harmonic Analysis, Vol.30, No.1 page 47--68'
+        }
+    ],
+    'ActPolynomialFeatures': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
+    ],
+    'ActPowerTransformer': [
+        {
+            'year': 1964,
+            'name': 'An Analysis of Transformations',
+            'authors': [
+                'G. E. P. Box',
+                'D. R. Cox'
+            ],
+            'doi': 'https://doi.org/10.1111/j.2517-6161.1964.tb00553.x',
+            'publisher': 'Journal of the Royal Statistical Society: Series B (Methodological), Vol.26, No.2 page 211--243'
+        },
+        {
+            'year': 2000,
+            'name': 'A New Family of Power Transformations to Improve Normality or Symmetry',
+            'authors': [
+                'In-Kwon Yeo',
+                'Richard A. Johnson'
+            ],
+            'doi': 'https://doi.org/10.1093/biomet/87.4.954',
+            'publisher': 'Oxford University Press, Biometrika Vol.87 No.4 page 954--959'
+        },
+        
+    ],
+    'ActRBFSampler': [
+        {
+            'year': 2008,
+            'name': 'Weighted Sums of Random Kitchen Sinks: Replacing minimization with randomization in learning',
+            'authors': [
+                'Ali Rahimi',
+                'Benjamin Recht'
+            ],
+            'doi': None,
+            'publisher': 'Advances in Neural Information Processing Systems 21 page 1313--1320'
+        }
+    ],
+    'ActSelectPercentile': [
+        {
+            'year': None,
+            'name': None,
+            'authors': [],
+            'doi': None,
+            'publisher': None
+        }
     ]
 }
 
 
 
 # {
-#             'year': 1763,
-#             'name': 'No information provided',
-#             'authors': [
-#             ],
-#             'doi': '',
-#             'publisher': ''
+#             'year': None,
+#             'name': None,
+#             'authors': [],
+#             'doi': None,
+#             'publisher': None
 #         }
