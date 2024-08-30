@@ -184,9 +184,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
         start_time = time.monotonic()
-        
+
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
-        
+
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
@@ -229,29 +229,28 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                             Let's try again with dataset sample. \
                             New features shape {dataset.X.shape}", force=True)
                     i+= 1
-                    
+
                     gen0_candidates = self.__run_evaluations(candidates,
                                 dataset,
                                 timeout=min(remain_time(), self.time_before_sample_use))
 
-                
                 ### FINETUNING
                 candidates = self.__optimize(dataset,
                                             gen0_candidates,
                                             optimizer=GeneticOptimizer(duration=remain_time()),
                                             max_duration=remain_time(),
                                             patience=patience)
+
                 ### FINAL FIT
-                
                 self.executor.shutdown()
-                
+
                 # Fit candidate with the whole dataset
                 Cache.reset()
                 self.chosen_candidate = deepcopy(candidates[0])
                 self.chosen_candidate.pipeline.fit(X, y)
-                
+
                 self.last_stage_candidates = candidates
-                
+
                 return candidates
         except Exception as ex:
             print("Error during fit")
