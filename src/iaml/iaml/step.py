@@ -47,6 +47,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     
     # Name and description of the Step. Useful to explain pipeline to users
     name = "Step" 
+    refs = None
     __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
@@ -67,11 +68,14 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.default_configuration() # Load default configuration 
         
         self.references:List[Reference] = []
-        try:
-            self.__build_references(REF[type(self).__name__], type(self).__name__)
-        except KeyError:
-            # We do not have reference defined in REF for this class
-            pass
+        # try:
+        #     # self.__build_references(REF[type(self).__name__], type(self).__name__)
+        #     self.__build_references(self.refs, type(self).__name__)
+        # except KeyError:
+        #     # We do not have reference defined in REF for this class
+        #     pass
+        if self.refs is not None:
+            self.__build_references(self.refs, type(self).__name__)
             
     def __build_references(self, properties: List[Dict], step_name: str) -> None:
         '''

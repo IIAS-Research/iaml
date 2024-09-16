@@ -14,6 +14,19 @@ class ActMultinomialNB(Predictor):
     [STEP] Learn : Multinomial NB
     """
     name = "Learn : Multinomial NB"
+    refs = [
+        {
+            'year': 2008,
+            'name': 'Introduction to Information Retrieval',
+            'authors': [
+                'Christopher D. Manning',
+                'Prabhakar Raghaban',
+                'Hinrich Schütze'
+            ],
+            'doi': '',
+            'publisher': 'Cambridge University Press'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'alpha': {

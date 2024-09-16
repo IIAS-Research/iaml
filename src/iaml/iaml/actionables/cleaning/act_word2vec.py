@@ -24,6 +24,20 @@ class ActWord2Vec(Actionable):
     [STEP] Vectorize textual column with Word2Vec
     """
     name = "Word2Vec"
+    refs = [
+        {
+            'year': 2023,
+            'name': 'Efficient Estimation of Word Representations in Vector Space',
+            'authors': [
+                'Thomas Mikolov',
+                'Kai Chen',
+                'Greg Corrado',
+                'Jeffrey Dean'    
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.1301.3781',
+            'publisher': 'International Conference on Learning Representations'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[tuple[str, Word2Vec]] = None

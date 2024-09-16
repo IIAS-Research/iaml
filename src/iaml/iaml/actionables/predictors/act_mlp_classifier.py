@@ -14,6 +14,30 @@ class ActMLPClassifier(Predictor):
     [STEP] Learn : MLP Classifier
     """
     name = "Learn : MLP Classifier"
+    refs = [
+        {
+            'year': 1989,
+            'name': 'Connectionist Learning Procedures',
+            'authors': [
+                'Geoffrey E. Hinton'
+            ],
+            'doi': 'https://doi.org/10.1016/0004-3702(89)90049-0',
+            'publisher': 'Artificial intelligence Vol. 40.1 page 185--234'
+        },
+        {
+            'year': 2010,
+            'name': 'Understanding the difficulty of training deep feedforward neural networks',
+            'authors': [
+                'Xavier Glorot',
+                'Yoshua Bengio'
+            ],
+            'doi': '',
+            'publisher': (
+                'Proceedings of the Thirteenth International Conference on '
+                'Artificial Intelligence and Statistics page 249--256'
+            )
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'activation': {

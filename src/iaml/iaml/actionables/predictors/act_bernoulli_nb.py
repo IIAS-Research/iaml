@@ -14,6 +14,34 @@ class ActBernoulliNb(Predictor):
     [STEP] Learn : Bernoulli NB
     """
     name = "Learn : Bernoulli NB"
+    refs = [
+        {
+            'year': 1998,
+            'name': 'A Comparison of Event Models for Naive Bayes Text Classification',
+            'authors': [
+                'Andrew McCallum',
+                'Kamal Nigam'
+            ],
+            'doi': None,
+            'publisher': (
+                'AAAI-98 workshop on learning for text categorization, '
+                '752, page 41--48. (1998)'
+            )
+        },
+        {
+            'year': 2006,
+            'name': 'Spam Filtering with Naive Bayes - Which Naive Bayes?',
+            'authors': [
+                'Vangelis Metsis',
+                'Ion Androutsopoulos',
+                'Georgios Paliouras'
+            ],
+            'doi': '',
+            'publisher': (
+                'The Third Conference on Email and Anti-Spam 2006 (CEAS)'
+            )
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'alpha': {

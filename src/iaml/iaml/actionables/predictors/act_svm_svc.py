@@ -13,6 +13,27 @@ class ActSVMSVC(Predictor):
     [STEP] Learn :  SVM Classifier
     """
     name = "Learn : SVM Classification"
+    refs = [
+        {
+            'year': 1999,
+            'name': 'Probabilistic Outputs for Support Vector Machines and Comparisons to Regularized Likelihood Methods',
+            'authors': [
+                'John C. Platt'
+            ],
+            'doi': None,
+            'publisher': 'Microsoft Research'
+        },
+        {
+            'year': 2001,
+            'name': 'LIBSVM: A Library for Support Vector Machines',
+            'authors': [
+                'Chih-Chung Chang',
+                'Chih-Jen Lin'
+            ],
+            'doi': 'https://doi.org/10.1145/1961189.1961199',
+            'publisher': 'ACM Transactions on Intelligen Systems and Technology Vol.2 page 1--27'
+        },
+    ]
     def __init__(self):
         self.configuration:dict = {
             'kernel': {

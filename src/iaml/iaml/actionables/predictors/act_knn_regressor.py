@@ -15,6 +15,28 @@ class ActKNNRegressor(Predictor):
     [STEP] Learn : KNN
     """
     name = "Learn : KNN"
+    refs = [
+        {
+            'year': 1951,
+            'name': 'Discriminatory Analysis, Nonparametric Discrimination: Consistency Properties',
+            'authors': [
+                'Evelyn Fix',
+                'Joseph Lawson Hodges Jr.'
+            ],
+            'doi': '',
+            'publisher': 'Technical Report 4, USAF School of Aviation Medicine, Randolph Field'
+        },
+        {
+            'year': 1967,
+            'name': 'Nearest neighbor pattern classification',
+            'authors': [
+                'Thomas M. Cover',
+                'Peter E. Hart'
+            ],
+            'doi': 'https://doi.org/10.1109/TIT.1967.1053964',
+            'publisher': 'IEEE Transactions on Information Theory. 13: page 21--27'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'metric': {

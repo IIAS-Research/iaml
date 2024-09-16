@@ -15,6 +15,18 @@ class ActRBFSampler(Actionable):
     [STEP] Approximate with RBFSampler
     """
     name="Approximate with RBFSampler"
+    refs=[
+        {
+            'year': 2008,
+            'name': 'Weighted Sums of Random Kitchen Sinks: Replacing minimization with randomization in learning',
+            'authors': [
+                'Ali Rahimi',
+                'Benjamin Recht'
+            ],
+            'doi': None,
+            'publisher': 'Advances in Neural Information Processing Systems 21 page 1313--1320'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'n_components': {

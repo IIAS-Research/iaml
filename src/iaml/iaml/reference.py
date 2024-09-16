@@ -25,7 +25,8 @@ class Reference:  # pylint: disable=too-few-public-methods
         Return a simple string containing reference information
         """
         # return ' | '.join(f"[{k.capitalize()}] {v}" for k,v in self.__dict__.items())
-        ret = f'({self.step}) '
+        # ret = f'({self.step}) '
+        ret = ''
         try:
             ret = ret + ', '.join(self.authors) + '. '
         except AttributeError:

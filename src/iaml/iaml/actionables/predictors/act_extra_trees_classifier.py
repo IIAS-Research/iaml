@@ -12,7 +12,20 @@ class ActExtraTreesClassifier(Predictor):
     """
     [STEP] Learn :  Extra Trees Classifier
     """
-    name = "Learn : Extra Trees Classifier" 
+    name = "Learn : Extra Trees Classifier"
+    refs = [
+        {
+            'year': 2006,
+            'name': 'Extremely randomized trees',
+            'authors': [
+                'Pierre Geurts',
+                'Damien Ernst',
+                'Louis Wehenkel'
+            ],
+            'doi': 'https://doi.org/10.1007/s10994-006-6226-1',
+            'publisher': 'Machine Learning Vol. 63 page 3--42'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'max_depth': {

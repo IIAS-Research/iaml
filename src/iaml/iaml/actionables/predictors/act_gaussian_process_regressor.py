@@ -14,6 +14,18 @@ class ActGaussianProcessRegressor(Predictor):
     [STEP] Learn : Gaussian Process Regressor
     """
     name = "Learn : Gaussian Process Regressor"
+    refs = [
+        {
+            'year': 2006,
+            'name': 'Gaussian Processes for Machine Learning',
+            'authors': [
+                'Carl Edward Rasmussen',
+                'Christopher K. I. Williams'
+            ],
+            'doi': '',
+            'publisher': 'MIT Press 2006'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'alpha': {

@@ -14,6 +14,17 @@ class ActLinearDiscriminantAnalysis(Predictor):
     [STEP] Learn : Linear Discriminant Analysis
     """
     name = "Learn : Linear Discriminant Analysis"
+    refs = [
+        {
+            'year': 1936,
+            'name': 'The Use of Multiple Measurements in Taxonomic Problems',
+            'authors': [
+                'Sir Ronald Aylmer Fisher'
+            ],
+            'doi': '',
+            'publisher': 'Annals of Eugenics Vol.7 page 179--188'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'tol': {

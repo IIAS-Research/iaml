@@ -14,7 +14,30 @@ class ActPowerTransformer(Actionable):
     """
     [STEP] Preprocess with PowerTransformer
     """
-    name="Preprocess with PowerTransformer"    
+    name="Preprocess with PowerTransformer"
+    refs = [
+        {
+            'year': 1964,
+            'name': 'An Analysis of Transformations',
+            'authors': [
+                'G. E. P. Box',
+                'D. R. Cox'
+            ],
+            'doi': 'https://doi.org/10.1111/j.2517-6161.1964.tb00553.x',
+            'publisher': 'Journal of the Royal Statistical Society: Series B (Methodological), Vol.26, No.2 page 211--243'
+        },
+        {
+            'year': 2000,
+            'name': 'A New Family of Power Transformations to Improve Normality or Symmetry',
+            'authors': [
+                'In-Kwon Yeo',
+                'Richard A. Johnson'
+            ],
+            'doi': 'https://doi.org/10.1093/biomet/87.4.954',
+            'publisher': 'Oxford University Press, Biometrika Vol.87 No.4 page 954--959'
+        },
+        
+    ]
     def __init__(self):
         self.configuration:dict = {
             'method': {
