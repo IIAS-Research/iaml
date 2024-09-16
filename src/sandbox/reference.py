@@ -1,10 +1,13 @@
-from src.iaml.iaml.reference import Reference
-from src.iaml.iaml.actionables.predictors.act_ada_boost_regressor import ActAdaBoostRegressor
-from src.iaml.iaml.actionables.predictors.act_catboost_regressor import ActCatBoostRegressor
-from src.iaml.iaml.actionables.predictors.act_ard_regression import ActARDRegression
-from src.iaml.iaml.actionables.features_preprocessing.act_power_transformer import ActPowerTransformer
-from src.iaml.iaml.actionables.features_preprocessing.act_rbf_sampler import ActRBFSampler
-from src.iaml.iaml.iaml_pipeline import IAMLPipeline
+import sys
+sys.path.insert(0, '../')
+
+from iaml.iaml.reference import Reference
+from iaml.iaml.actionables.predictors.act_ada_boost_regressor import ActAdaBoostRegressor
+from iaml.iaml.actionables.predictors.act_catboost_regressor import ActCatBoostRegressor
+from iaml.iaml.actionables.predictors.act_ard_regression import ActARDRegression
+from iaml.iaml.actionables.features_preprocessing.act_power_transformer import ActPowerTransformer
+from iaml.iaml.actionables.features_preprocessing.act_rbf_sampler import ActRBFSampler
+from iaml.iaml.iaml_pipeline import IAMLPipeline
 
 # properties = {
 #     'year': 1995,
@@ -47,10 +50,10 @@ from src.iaml.iaml.iaml_pipeline import IAMLPipeline
 # # c = ActCatBoostRegressor()
 # # b = ActARDRegression()
 
-# print(a.citation()[0])
+# print(a.references[0])
 
-# print(c.citation()[0])
-# print(b.citation()[0])
+# print(c.references[0])
+# print(b.references[0])
 
 pipeline = IAMLPipeline(
     steps=[
@@ -67,10 +70,10 @@ print("----------")
 
 
 
-print(pipeline.citation())
+print(pipeline.bibliography())
 
 
 # a = ActAdaBoostRegressor()
-# print(a.citation()[0])
+# print(a.bibliography()[0])
 # b = ActPowerTransformer()
-# print(b.citation()[0])
+# print(b.bibliography()[0])

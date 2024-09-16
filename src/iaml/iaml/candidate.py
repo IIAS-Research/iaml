@@ -264,6 +264,14 @@ class Candidate:
             if key == str(metric):
                 return value
         return None
+    
+    def bibliography(self) -> str:
+        """Format a string with all step's referencies
+
+        Returns:
+            str: formatted bibliography
+        """
+        return self.pipeline.bibliography()
         
     def fingerprint(self) -> str:
         """

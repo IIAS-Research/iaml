@@ -68,52 +68,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.default_configuration() # Load default configuration 
         
         self.references:List[Reference] = []
-        # try:
-        #     # self.__build_references(REF[type(self).__name__], type(self).__name__)
-        #     self.__build_references(self.refs, type(self).__name__)
-        # except KeyError:
-        #     # We do not have reference defined in REF for this class
-        #     pass
+        
+        # Build a list of References from Step's references list
         if self.refs is not None:
-            self.__build_references(self.refs, type(self).__name__)
-            
-    def __build_references(self, properties: List[Dict], step_name: str) -> None:
-        '''
-        Build a list of reference for this step
-
-        Args:
-            properties (List[Dict]): List of dictionnary containing reference attributes
-        
-        Returns:
-            None
-        '''
-        for prop in properties:
-            self.references.append(Reference(prop, step_name))
-    
-    def citation(self, counter: int = 0, total: int = None) -> Tuple[str, int]:
-        '''
-        Print references of this step in a formatted paper style
-        
-        Args:
-            counter (int): The current reference position (for '[1]' style in front of reference)
-            total (int): The total number of references
-                         (for '[1]' right alignment in case of multiple digits)
-        
-        Returns:
-            Tuple[str, int]: The formatted references for this step
-                             and the next counter to be passed to the next step
-        '''
-        n_ref: int = len(self.references)
-        n_fmtref: int = len(str(n_ref))
-        if total is None:
-            total = n_fmtref
-  
-        ret: str = ''
-        for i, reference in enumerate(self.references):
-            ret = ret + f"[{counter + i + 1:>{total}}]  {reference}\n"
-        
-        counter += n_ref
-        return ret, counter
+            self.references = [Reference(ref, type(self).__name__) for ref in self.refs]
 
     @classmethod
     def from_pipeline(cls, pipeline:dict, *args) -> 'Step':

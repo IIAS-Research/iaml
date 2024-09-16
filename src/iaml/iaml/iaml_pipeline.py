@@ -14,6 +14,7 @@ from .dataset import Dataset
 from .void_step import VoidStep
 from .explanation import Explanation
 from .cache import Cache
+from .reference import Reference
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -98,7 +99,7 @@ class IAMLPipeline(Pipeline):
         self.transformers = []
         self.resamplers = []
         self.predictor = None
-        print(f"{values=}")
+        
         for value in values:
             self.__add_step(value)
             
@@ -438,14 +439,10 @@ class IAMLPipeline(Pipeline):
         
         return md5(to_hash.encode()).hexdigest()
 
-    def citation(self) -> str:
+    def bibliography(self) -> str:
         """
         Return a string listing all step's references  
         """
-        ret = ""
-        n_totalref: int = len(str(sum(len(step[1].references) for step in self.steps)))
-        count: int = 0
-        for step in self.steps:
-            r, count = step[-1].citation(count, n_totalref)
-            ret = ret + r
-        return ret
+        references = [reference for step in self.steps for reference in step[1].references]
+        
+        return Reference.bibliography(references)

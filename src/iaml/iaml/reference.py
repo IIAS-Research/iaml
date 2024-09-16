@@ -20,31 +20,43 @@ class Reference:  # pylint: disable=too-few-public-methods
         for k, v in properties.items():
             setattr(self, k, v)
     
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """
         Return a simple string containing reference information
         """
-        # return ' | '.join(f"[{k.capitalize()}] {v}" for k,v in self.__dict__.items())
-        # ret = f'({self.step}) '
-        ret = ''
+        structured = ''
         try:
-            ret = ret + ', '.join(self.authors) + '. '
+            structured = structured + ', '.join(self.authors) + '. '
         except AttributeError:
             pass
         try:
-            ret = ret + str(self.name) + '\n'
+            structured = structured + str(self.name) + '\n'
         except AttributeError:
             pass
         try:
-            ret = ret + str(self.publisher) + ', '
+            structured = structured + str(self.publisher) + ', '
         except AttributeError:
             pass
         try:
-            ret = ret + str(self.doi) + ', '
+            structured = structured + str(self.doi) + ', '
         except AttributeError:
             pass
         try:
-            ret = ret + str(self.year) +'.'
+            structured = structured + str(self.year) +'.'
         except AttributeError:
             pass
-        return ret
+        return structured
+    
+    @classmethod
+    def bibliography(cls, references: list):
+        """
+        Format a bibliography in a string from a list of references
+
+        Params:
+            references : List of References
+        Returns:
+            str: Formatted bibliography
+        """
+        spacing = len(str(len(references)))
+        return '\n'.join([f"[{i+1:>{spacing}}]  {str(reference)}\n" \
+            for i, reference in enumerate(references)])
