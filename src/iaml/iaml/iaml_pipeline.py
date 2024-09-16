@@ -14,6 +14,7 @@ from .dataset import Dataset
 from .void_step import VoidStep
 from .explanation import Explanation
 from .cache import Cache
+from .reference import Reference
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -98,6 +99,7 @@ class IAMLPipeline(Pipeline):
         self.transformers = []
         self.resamplers = []
         self.predictor = None
+        
         for value in values:
             self.__add_step(value)
             
@@ -436,4 +438,11 @@ class IAMLPipeline(Pipeline):
         to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
         
         return md5(to_hash.encode()).hexdigest()
-            
+
+    def bibliography(self) -> str:
+        """
+        Return a string listing all step's references  
+        """
+        references = [reference for step in self.steps for reference in step[1].references]
+        
+        return Reference.bibliography(references)

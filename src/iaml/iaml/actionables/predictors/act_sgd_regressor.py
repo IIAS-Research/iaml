@@ -14,6 +14,18 @@ class ActSGDRegressor(Predictor):
     [STEP] Learn : SGD Regressor
     """
     name = "Learn : SGD Regressor"
+    refs = [
+        {
+            'year': 1951,
+            'name': 'A Stochastic Approximation Method',
+            'authors': [
+                'Herbert Robbins',
+                'Sutton Monro'    
+            ],
+            'doi': 'https://doi.org/10.1214/aoms/1177729586',
+            'publisher': 'The annals of Mathematical Statistics Vol.22 No.3 page 400--407'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'alpha': {

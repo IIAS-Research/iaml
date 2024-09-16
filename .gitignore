@@ -19,6 +19,7 @@ notebooks/temp-plot.html
 */compare_perf_tplot_fig.png
 src/perf_logger/bench/*
 src/perf_logger/tests_data/dont_push/*
+src/sandbox/catboost_info/*
 
 # Python
 __pycache__

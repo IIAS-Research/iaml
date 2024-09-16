@@ -14,6 +14,17 @@ class ActLinearRegression(Predictor):
     [STEP] Learn :  Linear Regression
     """
     name = "Learn : Linear Regression"
+    refs = [
+        {
+            'year': 1875,
+            'name': 'No information provided',
+            'authors': [
+                'Sir Francis Galton'
+            ],
+            'doi': '',
+            'publisher': ''
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {}
         self.model:LinearRegression = None

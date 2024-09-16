@@ -15,6 +15,18 @@ class ActRandomOverSampling(Actionable):
     [STEP] Random Over Sampling
     """
     name = "Random Over Sampling"
+    refs = [
+        {
+            'year': 2012,
+            'name': 'Training and assessing classification rules with imbalanced data',
+            'authors': [
+                'Giovanna Menardi',
+                'Nicola Torelli'
+            ],
+            'doi': 'https://doi.org/10.1007/s10618-012-0295-5',
+            'publisher': 'Data Mining and Knowledge Discovery Vol.28 page 92--122' 
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {}
         self.resampler:RandomOverSampler = None

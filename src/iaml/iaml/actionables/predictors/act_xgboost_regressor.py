@@ -14,6 +14,37 @@ class ActXGBoostRegressor(Predictor):
     [STEP] Learn :  XGBoost Regressor
     """
     name = "Learn : XGBoost Regressor"
+    refs = [
+        {
+            'name': 'Stochastic Gradient Boosting',
+            'year': 1999,
+            'authors': [
+              'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2',
+            'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
+        },
+        {
+            'year': 2001,
+            'name': 'Greedy Function Approximation: A Gradient Boosting Machine',
+            'authors': [
+              'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1214/aos/1013203451',
+            'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'
+        },
+        {
+            'year': 2009,
+            'name': 'The Elements of Statistical Learning',
+            'authors': [
+                'Trevor Hastie',
+                'Robert Tibshirani',
+                'Jerome H. Friedman'  
+            ],
+            'doi': 'https://doi.org/10.1007/978-0-387-84858-7',
+            'publisher': 'Springer New York'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'max_depth': {

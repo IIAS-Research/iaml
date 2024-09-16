@@ -15,7 +15,52 @@ class ActKernelPCA(Actionable):
     [STEP] Decompose features with KernelPCA
     """
     name="Decompose features with KernelPCA"
-    
+    refs = [
+        {
+            'year': 1997,
+            'name': 'Kernel principal component analysis',
+            'authors': [
+                'Bernhard Schölkopf',
+                'Alexander Smola',
+                'Klaus-Robert Müller'    
+            ],
+            'doi': 'https://doi.org/10.1007/BFb0020217',
+            'publisher': 'Springer, Berlin, Heidelberg'
+        },
+        {
+            'year': 2003,
+            'name': 'Learning to find pre-images',
+            'authors': [
+                'Jason Weston',
+                'Bernhard Schölkopf',
+                'Gökhan Bakir'
+            ],
+            'doi': None,
+            'publisher': 'Advances in neural information processing systems 16 (2004) page 449--456'
+        },
+        {
+            'year': 2009,
+            'name': 'Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions',
+            'authors': [
+                'Nathan Halko',
+                'Per-Gunnar Martinsson',
+                'Joel A. Tropp'
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.0909.4061',
+            'publisher': 'SIAM Rev., Survey and Review section, Vol.53, No.2 page 217--288'
+        },
+        {
+            'year': 2011,
+            'name': 'A randomized algorithm for the decomposition of matrices',
+            'authors': [
+                'Per-Gunnar Martinsson',
+                'Vladimir Rokhlin',
+                'Mark Tygert'
+            ],
+            'doi': 'https://doi.org/10.1016/j.acha.2010.02.003',
+            'publisher': 'Applied and Computational Harmonic Analysis, Vol.30, No.1 page 47--68'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'kernel': {
