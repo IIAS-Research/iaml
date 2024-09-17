@@ -70,8 +70,9 @@ print("----------")
 
 
 
-print(pipeline.bibliography())
+print(pipeline.bibliography(structured=False))
 
+print(pipeline.bibliography(structured=True))
 
 # a = ActAdaBoostRegressor()
 # print(a.bibliography()[0])

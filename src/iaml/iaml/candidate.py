@@ -1,7 +1,7 @@
 """
 Candidate is used to exchange data between Steps  
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict
 from copy import copy, deepcopy
 from hashlib import md5
 import numpy as np
@@ -265,13 +265,14 @@ class Candidate:
                 return value
         return None
     
-    def bibliography(self) -> str:
+    def bibliography(self, structured: bool=False) -> str | List[Dict]:
         """Format a string with all step's referencies
 
         Returns:
-            str: formatted bibliography
+            str | List[Didct]: formatted bibliography or structured bibliography
         """
-        return self.pipeline.bibliography()
+        return self.pipeline.bibliography(structured)
+    
         
     def fingerprint(self) -> str:
         """

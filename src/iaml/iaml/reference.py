@@ -2,7 +2,7 @@
 Reference class.
 Contain all needed data to provide a reference for a step
 """
-from typing import Dict
+from typing import List, Dict
 
 
 class Reference:  # pylint: disable=too-few-public-methods
@@ -48,7 +48,7 @@ class Reference:  # pylint: disable=too-few-public-methods
         return structured
     
     @classmethod
-    def bibliography(cls, references: list):
+    def bibliography(cls, references: list, structured: bool) -> str | List[Dict]:
         """
         Format a bibliography in a string from a list of references
 
@@ -57,6 +57,9 @@ class Reference:  # pylint: disable=too-few-public-methods
         Returns:
             str: Formatted bibliography
         """
+        if structured:
+            return [vars(r) for r in references]
         spacing = len(str(len(references)))
         return '\n'.join([f"[{i+1:>{spacing}}]  {str(reference)}\n" \
             for i, reference in enumerate(references)])
+        
