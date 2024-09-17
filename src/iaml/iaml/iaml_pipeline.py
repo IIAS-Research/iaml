@@ -5,7 +5,7 @@ Transform, resample and then predict from Candidate instance
 import pickle
 from copy import deepcopy
 from hashlib import md5
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict
 import numpy as np
 import shap
 import pandas as pd
@@ -446,3 +446,9 @@ class IAMLPipeline(Pipeline):
         references = [reference for step in self.steps for reference in step[1].references]
         
         return Reference.bibliography(references)
+
+    def bibliography_structured(self) -> List[Dict]:
+        """
+        Return a list of Dict listing all step's references
+        """
+        
