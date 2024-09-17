@@ -1,24 +1,52 @@
-[tool.setuptools]
-package-dir = { "" = "src" }
-
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
-optional-dependencies.cudf = { file = ["requirements.cudf.txt"] }
-
 [project]
-name = "automed"
-version = "0.0.1"
+name = "iaml"
+version = "0.1.0"
 authors = [
-  { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
+    { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
+    { name="Robin BOURACHOT", email="rbourachot@chu-reims.fr" },
+    { name="Hugo RUELLET", email="hruellet@chu-reims.fr" },
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Operating System :: OS Independent",
 ]
-dynamic = ["dependencies", "optional-dependencies"]
+dependencies = [
+    "catboost>=1.2.7",
+    "gensim>=4.3.3",
+    "imbalanced-learn>=0.12.3",
+    "matplotlib>=3.9.2",
+    "multipledispatch>=1.0.0",
+    "multiprocess>=0.70.16",
+    "nltk>=3.9.1",
+    "numpy>=1.26.4",
+    "pandas>=2.2.2",
+    "rich>=13.8.1",
+    "scikit-learn>=1.5.2",
+    "shap>=0.46.0",
+    "tpot>=0.12.2",
+]
+
+[project.optional-dependencies]
+cudf = [
+    "cudf-cu11>=24.8.1",
+]
 
 [project.urls]
 "Homepage" = "http://docs.example.invalid/automl/main/"
-"Bug Tracker" = "https://gitlab.example.invalid/"
+"Bug Tracker" = "https://gitlab.example.invalid/DataScience/automl/-/issues"
+
+[tool.setuptools]
+package-dir = { "iaml" = "src/iaml/iaml" }
+
+[tool.uv]
+dev-dependencies = [
+    "ipykernel>=6.29.5",
+    "mkdocs>=1.6.1",
+    "pylint>=3.2.7",
+]

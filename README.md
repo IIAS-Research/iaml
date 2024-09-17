@@ -1,21 +1,32 @@
-# AutoMed
+# IAML
+
 Plateforme d'AutoML développée par l'IIAS. L'objectif est de simplifier la réalisation des projets de DS par la génération et l'execution automatique de PipeLines.
 L'aspect Data est traité par le développement package Python. Une interface web sera également développée pour que l'outil puisse être utilisé par tous.
 
-**Complet documentation here** : [Documentation](http://docs.example.invalid/poc_automl/main)
-or here for others branches : http://docs.example.invalid/poc_automl/[BRANCH_NAME]
+- **Documentation complète** : [http://docs.example.invalid/automl/main](http://docs.example.invalid/automl/main)
+- Autres branches : [http://docs.example.invalid/automl/[BRANCH_NAME]](http://docs.example.invalid/automl/[BRANCH_NAME])
 
 ***
 ## 🔧 1 - Installation
 
-Pour installer ce projet, suivez les étapes suivantes
+### En tant que projet
+
+Pour installer ce projet, suivez les étapes suivantes :
 
 1. Installer Python 3 ([télécharger](https://www.python.org/downloads/))
-2. Exécuter `source ./.venv/bin/python3`
-3. Installer les dépendances
-    - Avec support pour notebooks Jupyter et mkDocs, exécuter `pip install -r requirements.dev.txt`
-    - Autrement, exécuter `pip install -r requirements.dev.txt`
+2. Installer `uv` (le plus simple est de l'installer en global, hors d'un environnement virtuel)
+3. Installer les dépendances (la création de l'environnement virtuel est automatique) :
+    - Avec support pour notebooks Jupyter et mkDocs, exécuter `uv sync`
+    - Autrement, exécuter `uv sync --no-dev`
 
+### En tant que bibliothèque
+
+Insérer une des lignes suivantes dans votre `requirements.txt` :
+
+```bash
+iaml @ git+ssh://git@gitlab.example.invalid/DataScience/automl
+iaml[cudf] @ git+ssh://git@gitlab.example.invalid/DataScience/automl # Avec cuDF
+```
 
 ***
 ## 🚀 2 - Lancement
@@ -44,4 +55,5 @@ Structures des fichiers :
 ## 💪 5 -  Crédits
 
 - Rudy MERIEUX
-
+- Robin BOURACHOT
+- Hugo RUELLET
