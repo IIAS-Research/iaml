@@ -9,15 +9,24 @@ L'aspect Data est traité par le développement package Python. Une interface we
 ***
 ## 🔧 1 - Installation
 
+### En tant que projet
+
 Pour installer ce projet, suivez les étapes suivantes :
 
 1. Installer Python 3 ([télécharger](https://www.python.org/downloads/))
 2. Installer `uv` (le plus simple est de l'installer en global, hors d'un environnement virtuel)
-3. Exécuter `source ./.venv/bin/python3`
-4. Installer les dépendances
-    - Avec support pour notebooks Jupyter et mkDocs, exécuter `pip install -r requirements.dev.txt`
-    - Autrement, exécuter `pip install -r requirements.dev.txt`
+3. Installer les dépendances (la création de l'environnement virtuel est automatique) :
+    - Avec support pour notebooks Jupyter et mkDocs, exécuter `uv sync`
+    - Autrement, exécuter `uv sync --no-dev`
 
+### En tant que bibliothèque
+
+Insérer une des lignes suivantes dans votre `requirements.txt` :
+
+```bash
+iaml @ git+ssh://git@gitlab.example.invalid/DataScience/automl
+iaml[cudf] @ git+ssh://git@gitlab.example.invalid/DataScience/automl # Avec cuDF
+```
 
 ***
 ## 🚀 2 - Lancement
