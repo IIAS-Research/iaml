@@ -30,7 +30,7 @@ class MetaStep(Step):
             self.add_step_by_tag(tag, wrap=wrap) 
         
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args) -> Step:
+    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
         """
         Load any MetaStep from json pipeline
 

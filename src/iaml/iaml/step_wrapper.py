@@ -19,7 +19,7 @@ class StepWrapper(Step):
         
     
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args) -> Step:
+    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
         """
         Load any kind of StepWrapper
 

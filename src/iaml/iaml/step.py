@@ -74,7 +74,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             self.references = [Reference(ref, type(self).__name__) for ref in self.refs]
 
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args) -> 'Step':
+    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> 'Step':
         """
         Load any kind of Step (Step, MetaStep, Wrapper, etc) from json pipeline
 
@@ -95,7 +95,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         step_class = getattr(sys.modules['iaml'], pipeline['step']) # Get class from string
         if Step in step_class.__mro__:
             if step_class == cls:
-                step = cls(*args)
+                step = cls(*args, **kwargs)
                 
                 if 'enable' in pipeline:
                     step.enable = pipeline['enable']
