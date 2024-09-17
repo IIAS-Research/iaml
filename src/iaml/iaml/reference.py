@@ -48,7 +48,7 @@ class Reference:  # pylint: disable=too-few-public-methods
         return structured
     
     @classmethod
-    def bibliography(cls, references: list):
+    def bibliography(cls, references: list, structured: bool) -> str | List[Dict]:
         """
         Format a bibliography in a string from a list of references
 
@@ -57,19 +57,9 @@ class Reference:  # pylint: disable=too-few-public-methods
         Returns:
             str: Formatted bibliography
         """
+        if structured:
+            return [vars(r) for r in references]
         spacing = len(str(len(references)))
         return '\n'.join([f"[{i+1:>{spacing}}]  {str(reference)}\n" \
             for i, reference in enumerate(references)])
-
-    @classmethod
-    def bibliography_structured(cls, references: list) -> List[Dict]:
-        """
-        Return a bibliography as a list of dictionnary
-
-        Params:
-            references : List of References
-        Returns:
-            List[Dict]: list of references dictionnary
-        """
-        return [vars(r) for r in references]
         

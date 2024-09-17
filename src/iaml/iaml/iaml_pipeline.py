@@ -439,20 +439,9 @@ class IAMLPipeline(Pipeline):
         
         return md5(to_hash.encode()).hexdigest()
 
-    def bibliography(self) -> str:
+    def bibliography(self, structured: bool) -> str | List[Dict]:
         """
-        Return a string listing all step's references  
-        """
-        references = [reference for step in self.steps for reference in step[1].references]
-        
-        return Reference.bibliography(references)
-
-    def bibliography_structured(self) -> List[Dict]:
-        """
-        Return a list of Dict listing all step's references
+        Return a string listing all step's references or a structured list of dict
         """
         references = [reference for step in self.steps for reference in step[1].references]
-        
-        return Reference.bibliography_structured(references)
-        
-        
+        return Reference.bibliography(references, structured)

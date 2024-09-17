@@ -265,21 +265,14 @@ class Candidate:
                 return value
         return None
     
-    def bibliography(self) -> str:
+    def bibliography(self, structured: bool=False) -> str | List[Dict]:
         """Format a string with all step's referencies
 
         Returns:
-            str: formatted bibliography
+            str | List[Didct]: formatted bibliography or structured bibliography
         """
-        return self.pipeline.bibliography()
+        return self.pipeline.bibliography(structured)
     
-    def bibliography_structured(self) -> List[Dict]:
-        """Return a list of Dictionnary for each step's referencies
-        
-        Returns:
-            List[Dict]: List of Dictionnary reference
-        """
-        return self.pipeline.bibliography_structured()
         
     def fingerprint(self) -> str:
         """
