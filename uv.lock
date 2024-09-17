@@ -557,6 +557,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "catboost" },
     { name = "gensim" },
+    { name = "imbalanced-learn" },
     { name = "matplotlib" },
     { name = "multipledispatch" },
     { name = "multiprocess" },
@@ -584,6 +585,7 @@ requires-dist = [
     { name = "catboost", specifier = ">=1.2.7" },
     { name = "cudf-cu11", marker = "extra == 'cudf'", specifier = ">=24.8.1" },
     { name = "gensim", specifier = ">=4.3.3" },
+    { name = "imbalanced-learn", specifier = ">=0.12.3" },
     { name = "matplotlib", specifier = ">=3.9.2" },
     { name = "multipledispatch", specifier = ">=1.0.0" },
     { name = "multiprocess", specifier = ">=0.70.16" },
@@ -606,6 +608,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f1/70/7703c29685631f5a7590aa73f1f1d3fa9a380e654b86af429e0934a32f7d/idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9", size = 190490 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3", size = 70442 },
+]
+
+[[package]]
+name = "imbalanced-learn"
+version = "0.12.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "joblib" },
+    { name = "numpy" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "threadpoolctl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/14/4819e33a4e1740309697514ff575bca967987d6b1da6ad34b849e7bc76b8/imbalanced-learn-0.12.3.tar.gz", hash = "sha256:5b00796a01419e9102bd425e27c319d58d1f6cf2dfa751e02ed7f4edf67c3c1b", size = 456082 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/fa/267de06c95210580f4b82b45cec1ce1e9ce1f21a01a684367db89e7da70d/imbalanced_learn-0.12.3-py3-none-any.whl", hash = "sha256:0e83e8226cb27dd567dff6aef0136bde0f54922ea1bd9d5f38f62701dc51a152", size = 258320 },
 ]
 
 [[package]]
