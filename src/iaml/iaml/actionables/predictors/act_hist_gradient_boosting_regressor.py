@@ -14,6 +14,18 @@ class ActHistGradientBoostingRegressor(Predictor):
     [STEP] Learn : HistGradient Boosting Regressor
     """
     name = "Learn : HistGradient Boosting Regressor"
+    refs = [
+        {
+            'year': 2006,
+            'name': 'Gaussian Processes for Machine Learning',
+            'authors': [
+                'Carl Edward Rasmussen',
+                'Christopher K. I. Williams'
+            ],
+            'doi': '',
+            'publisher': 'MIT Press 2006'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'l2_regularization': {

@@ -11,16 +11,19 @@ import sys
 import json
 from hashlib import md5
 from typing import TYPE_CHECKING
-from typing import Any
+from typing import Any, Dict, List, Tuple
 from copy import deepcopy
 from multipledispatch import dispatch
 from .dataset import Dataset
 from .decorators.runner import runner
+from .reference import Reference
+from .reference_dict import REF
 
 if TYPE_CHECKING:
     from .candidate import Candidate
+    from ..iaml.reference import Reference
 
-class Step: # pylint: disable=too-many-public-methods
+class Step: # pylint: disable=too-many-public-methods, too-many-instance-attributes
     """
     Step class is use to create new kinds of steps by inheritance and give all needed
     attributes and methods to children classes. 
@@ -34,6 +37,8 @@ class Step: # pylint: disable=too-many-public-methods
         self.__use_cache (bool) : Enable / Disable caching
         caches (list) : Cached result 
         explanations (list[str]) : String explanation of step actions
+        references (Reference) : List of references for this step
+        citation (int, int) : String citations of step's references
     """
     # Available steps. This will be filled be all the new Step loaded in Python environments
     # It will be a reference of all available Steps to create pipeline
@@ -42,6 +47,7 @@ class Step: # pylint: disable=too-many-public-methods
     
     # Name and description of the Step. Useful to explain pipeline to users
     name = "Step" 
+    refs = None
     __description = "Step description..."
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
@@ -61,7 +67,12 @@ class Step: # pylint: disable=too-many-public-methods
         
         self.default_configuration() # Load default configuration 
         
+        self.references:List[Reference] = []
         
+        # Build a list of References from Step's references list
+        if self.refs is not None:
+            self.references = [Reference(ref, type(self).__name__) for ref in self.refs]
+
     @classmethod
     def from_pipeline(cls, pipeline:dict, *args) -> 'Step':
         """

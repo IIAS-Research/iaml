@@ -16,6 +16,30 @@ class ActTPLOT(Predictor):
     [STEP] Learn :  TPLOT
     """
     name="Learn : TPLOT"
+    refs = [
+        {
+            'year': 2015,
+            'name': 'TPOT: A Tree-based Pipeline Optimization Tool for Automating Machine Learning',
+            'authors': [
+                'Randal S. Olson',
+                'Jason H. Moore'
+            ],
+            'doi': 'https://doi.org/10.1007/978-3-030-05318-5_8',
+            'publisher': 'JMLR: Workshop and Conference Proceedings page 66--74'
+        },
+        {
+            'year': 2016,
+            'name': 'Evaluation of a Tree-based Pipeline Optimization Tool for Automating Data Science',
+            'authors': [
+                'Randal S. Olson',
+                'Nathan Bartley',
+                'Ryan J. Urbanowicz'
+                'Jason H. Moore'
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.1603.06212',
+            'publisher': 'GECCO 2016'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'random_state': {

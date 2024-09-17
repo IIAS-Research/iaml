@@ -12,7 +12,16 @@ class ActRandomForest(Predictor):
     """
     [STEP] Learn :  Random Forest
     """
-    name = "Learn : Random Forest" 
+    name = "Learn : Random Forest"
+    refs = [
+        {
+            'year': 2001,
+            'name': 'Random Forests',
+            'authors': ['Leo Breiman'],
+            'doi': 'https://doi.org/10.1023/A:1010933404324',
+            'publisher': 'Machine Learning Vol.45 page 5--32'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'max_depth': {

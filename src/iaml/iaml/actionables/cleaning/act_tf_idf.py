@@ -16,6 +16,17 @@ class ActTfIdf(Actionable):
     [STEP] Vectorize textual columns with TF-IDF
     """
     name="TF-IDF"
+    refs = [
+        {
+            'year': 1972,
+            'name': 'A STATISTICAL INTERPRETATION OF TERM SPECIFICITY AND ITS APPLICATION IN RETRIEVAL',
+            'authors': [
+                'Karen Sparck Jones'    
+            ],
+            'doi': 'https://doi.org/10.1108/eb026526',
+            'publisher': 'Journal of Documentation Vol.21, No.1, page 11--21'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[tuple[str, TfidfVectorizer]] = None

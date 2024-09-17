@@ -12,7 +12,23 @@ class ActRandomForestRegressor(Predictor):
     """
     [STEP] Learn :  Random Forest Regressor
     """
-    name = "Learn : Random Forest Regressor" 
+    name = "Learn : Random Forest Regressor"
+    refs = [
+        {
+            'year': 2001,
+            'name': 'Random Forests',
+            'authors': ['Leo Breiman'],
+            'doi': 'https://doi.org/10.1023/A:1010933404324',
+            'publisher': 'Machine Learning Vol.45 page 5--32'
+        },
+        {
+            'year': 2006,
+            'name': 'Extremely Randomized Trees',
+            'authors': ['Pierre Geurts', 'Damien Ernst', 'Lous Wehenkel'],
+            'doi': 'https://doi.org/10.1007/s10994-006-6226-1',
+            'publisher': 'Machine Learning Vol.63 page 5--42'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             # 'max_depth': { # Disable before probably better with no limit in regression
