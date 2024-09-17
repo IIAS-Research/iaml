@@ -222,7 +222,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 # Evaluate candidates
                 gen0_candidates = []
                 i = 0
-                while not gen0_candidates and remain_time() > 0:
+                while not gen0_candidates and remain_time() >= 1:
+                    # If process is too long and dataset big enough, 
+                    # we can downsize it to get quicker training
                     if i > 0:
                         dataset = dataset.sample(0.1)
                         Logger().log(f"Training is too time consuming. \
@@ -230,9 +232,19 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                             New features shape {dataset.X.shape}", force=True)
                     i+= 1
                     
+                    can_be_downsize = dataset.X.shape[0] >= 500
+                    timeout = min(remain_time(), self.time_before_sample_use) \
+                        if can_be_downsize else remain_time()
+                        
                     gen0_candidates = self.__run_evaluations(candidates,
-                                dataset,
-                                timeout=min(remain_time(), self.time_before_sample_use))
+                                dataset, timeout=timeout)
+
+                if not gen0_candidates:
+                    if remain_time() < 1:
+                        raise TimeoutError('IAML was unable to generate a model within the \
+                            imposed time limit. Try increasing the processing time')
+                    raise RuntimeError('Undefined error. IAML was unable to create pipeline \
+                        based on your data')
 
                 
                 ### FINETUNING
