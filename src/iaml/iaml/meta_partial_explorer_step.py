@@ -20,4 +20,5 @@ class MetaPartialExplorerStep(MetaExplorerStep):
     name = "MetaPartialExplorerStep"
     
     def __init__(self, *args, tag:set=None, **kwargs):  # pylint: disable=unused-argument
-        self.steps = [VoidStep(step_to_mimic=list(Step.find_steps_by_tag(tag))[0]())]
+        if steps := Step.find_steps_by_tag(tag):
+            self.steps = [VoidStep(step_to_mimic=list(steps)[0]())]
