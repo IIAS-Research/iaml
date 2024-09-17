@@ -39,14 +39,14 @@ def runner(func) -> callable:
             Logger().log(f'running step: {self.to_rich_str()}')
         
         for current_candidate in candidates:
-            if self.suitable(current_candidate.dataset):
+            if self.suitable(current_candidate.dataset) and self.enable:
                 candidate = self.from_cache(current_candidate)
                 if not candidate:
                     candidate = func(self, current_candidate, callback=callback)
                     self.add_cache(current_candidate, candidate)
                 else:
                     callback(self) # Call callback manually because we used cache
-            else:
+            else: # If the step is disable or not suitable for the dataset, do nothing
                 candidate = current_candidate    
             
                 

@@ -56,7 +56,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
         self.is_interchangeable:bool = False # Can be mutate into another step with the same tags
-        
+        self.enable:bool = True # A disable step, only take input and push it into output
         self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
         
         # Configuration of the Step. Each Step can have one configuration and will save it here.
@@ -95,7 +95,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         step_class = getattr(sys.modules['iaml'], pipeline['step']) # Get class from string
         if Step in step_class.__mro__:
             if step_class == cls:
-                step = cls(*args)  
+                step = cls(*args)
+                
+                if 'enable' in pipeline:
+                    step.enable = pipeline['enable']
             
                 if 'configuration' in pipeline:
                     for name, value in pipeline['configuration'].items():
@@ -410,6 +413,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             'step': self.__class__.__name__,
             'name': self.name,
             'description': self.description,
+            'enable': self.enable,
             'configuration': self.configuration,
             'children': []
         }
