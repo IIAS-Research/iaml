@@ -28,7 +28,7 @@ job:linting:PyLint:
     - calcul
   allow_failure: true
   script:
-    - 'uv run pylint --rcfile=.pylintrc ./src/automed'
+    - 'uv run pylint --rcfile=.pylintrc ./src/iaml/iaml'
 
 job:test:unit:
   stage: perfs
