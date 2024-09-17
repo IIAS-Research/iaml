@@ -97,10 +97,7 @@ class StepWrapper(Step):
             dict: JSON pipeline
         """
         return {
-            'step': self.__class__.__name__,
-            'name': self.name,
-            'description': self.description,
-            'configuration': self.configuration,
+            **Step.json_pipeline(self),
             'children': [self.step.json_pipeline()]
         }
     
