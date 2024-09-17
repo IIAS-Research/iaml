@@ -451,4 +451,8 @@ class IAMLPipeline(Pipeline):
         """
         Return a list of Dict listing all step's references
         """
+        references = [reference for step in self.steps for reference in step[1].references]
+        
+        return Reference.bibliography_structured(references)
+        
         
