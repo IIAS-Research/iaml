@@ -43,19 +43,19 @@ class MetaStep(Step):
         Returns:
             Step: Step created from Json pipeline
         """
-        step = super().from_pipeline(pipeline)
+        metastep = super().from_pipeline(pipeline)
         
         if 'children' in pipeline:
             for child in pipeline['children']:
-                step.add_step(Step.from_pipeline(child))
+                metastep.add_step(Step.from_pipeline(child))
                 
         if 'tag' in pipeline:
-            step.add_step_by_tag(pipeline['tag'])
+            metastep.add_step_by_tag(pipeline['tag'])
             
-        if not step.steps:
+        if not metastep.steps:
             raise TypeError('invalid pipeline: MetaStep must have at least one child')
         
-        return step
+        return metastep
     
     def configure_parents(self, *parents) -> None:
         """
@@ -78,7 +78,14 @@ class MetaStep(Step):
             ValueError: step must be an occurrence of step (or inherited classes)
         """
         if Step in step.__class__.__mro__:
-            self.steps.append(self.configure_child(step))
+            step = self.configure_child(step)
+            
+            # Define enable only if False because True can generate strange behavior. 
+            # True is default value anyway
+            if not self._enable:
+                step.enable = self._enable
+                
+            self.steps.append(step)
         else:
             raise ValueError("step must be an occurrence of step (or inherited classes)")
         
@@ -218,3 +225,21 @@ class MetaStep(Step):
         pipeline.
         """
         return 1 + sum(map(lambda child: child.count_steps(), self.steps))
+    
+    
+    @property
+    def enable(self) -> bool:
+        """
+        Does the step is enabled ? -> Enable if at least a child is enabled
+        """
+        return any(step.enable for step in self.steps) if hasattr(self, 'steps') else False
+    
+    @enable.setter
+    def enable(self, value: bool) -> bool:
+        if hasattr(self, 'steps'):
+            for step in self.steps:
+                step.enable = value
+            
+        self._enable = value # Only used has default value for new children
+            
+        return self.enable
