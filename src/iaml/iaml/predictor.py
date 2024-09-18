@@ -62,7 +62,7 @@ class Predictor(Actionable, metaclass=ABCMeta):
         if self.model and hasattr(self.model, 'predict_proba'):
             return self.model.predict_proba(X)
         
-        raise AttributeError("Enable to predict probabilities with this model")
+        raise AttributeError("Unable to predict probabilities with this model")
     
     def __getattribute__(self, attr: str) -> bool:
         """Overload getattr to allow accurate hasattr on predict_proba
