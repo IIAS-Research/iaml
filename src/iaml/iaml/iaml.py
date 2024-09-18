@@ -21,6 +21,7 @@ from .meta_explorer_step import MetaExplorerStep
 from .meta_partial_explorer_step import MetaPartialExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer
 from .meta_predictor import MetaPredictor
+from .predictor import Predictor
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps 
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
@@ -183,8 +184,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
-        start_time = time.monotonic()
+        self.check_pipeline() # Raise error if the pipeline is not valid
         
+        start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
         
         try:
@@ -270,6 +272,20 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return None
         
         return self.chosen_candidate.pipeline
+    
+    def check_pipeline(self):
+        """
+        Raise Exception if pipeline is not valid
+        """
+        steps = self.__all_steps()
+        
+        # Pipeline must have at least one predictor
+        if not any((Predictor in s.__class__.__mro__) for s in steps if s.enable):
+            raise AttributeError('Step Pipeline must contains at least one predictor')
+        
+        # TODO Others tests ?
+        
+        
     
     def __run_evaluations(self,
                         candidates:Candidate,
@@ -504,7 +520,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Returns:
             list[Step]: All flatten pipelines's steps
         """
-        return self.first_step + self.first_step.all_steps()
+        return self.first_step.all_steps()
 
     def __find_step_by_id(self, step_list:list[Step], step_id:int) -> Step:
         """_summary_

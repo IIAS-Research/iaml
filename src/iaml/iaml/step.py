@@ -314,13 +314,13 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
                         return False
         return True
     
-    def all_step(self):
+    def all_steps(self):
         """Recursive function (last one here) to get all steps in a pipeline
 
         Returns:
             list: always empty
         """
-        return []
+        return [self]
         
         
     #####################

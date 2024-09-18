@@ -83,8 +83,8 @@ class MetaStep(Step):
             # Define enable only if False because True can generate strange behavior. 
             # True is default value anyway
             if not self._enable:
-                step.enable = self._enable
-                
+                step.enable = False
+            
             self.steps.append(step)
         else:
             raise ValueError("step must be an occurrence of step (or inherited classes)")
@@ -146,14 +146,18 @@ class MetaStep(Step):
         }
 
     
-    def all_step(self) -> Step:
+    def all_steps(self) -> Step:
         """
         Recursive function to get all steps in a pipeline
 
         Returns:
             list[Step]: Children steps
         """
-        return self.steps
+        children = []
+        for step in self.steps:
+            children += step.all_steps()
+            
+        return [self, *children]
     
     @runner
     def run(self, candidate:Candidate, callback:callable=None) -> Candidate:

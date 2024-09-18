@@ -102,14 +102,14 @@ class StepWrapper(Step):
         }
     
     
-    def all_step(self) -> list[Step]:
+    def all_steps(self) -> list[Step]:
         """
         Recursive function to get all steps in a pipeline
 
         Returns:
             list[Step]: All children Step
         """
-        return [self.step, *self.step.all_step()]
+        return [self.step, *self.step.all_steps()]
         
 
     @runner
