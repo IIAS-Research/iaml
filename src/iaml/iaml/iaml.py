@@ -222,7 +222,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 # Evaluate candidates
                 gen0_candidates = []
                 i = 0
-                while not gen0_candidates and remain_time() >= 1:
+                can_be_downsize = True
+                while can_be_downsize and not gen0_candidates and remain_time() >= 1:
                     # If process is too long and dataset big enough, 
                     # we can downsize it to get quicker training
                     if i > 0:
@@ -233,6 +234,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     i+= 1
                     
                     can_be_downsize = dataset.X.shape[0] >= 500
+
                     timeout = min(remain_time(), self.time_before_sample_use) \
                         if can_be_downsize else remain_time()
                         
