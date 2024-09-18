@@ -5,7 +5,7 @@ Transform, resample and then predict from Candidate instance
 import pickle
 from copy import deepcopy
 from hashlib import md5
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict
 import numpy as np
 import shap
 import pandas as pd
@@ -366,6 +366,23 @@ class IAMLPipeline(Pipeline):
             return super().predict_proba(X, **kwargs)
         
         return self.predictor[1].predict_proba(X)
+    
+    def __getattribute__(self, attr: str) -> bool:
+        """Overload getattr to allow accurate hasattr on predict_proba
+
+        Args:
+            attr (str): Attribute to test
+
+        Returns:
+            bool: does attribute is implemented
+        """
+        if attr == 'predict_proba' \
+            and not( \
+                self.have_model and hasattr(self.predictor[1], 'predict_proba') \
+            ):
+            raise AttributeError("predict_proba not implemented in this model")
+        
+        return super().__getattribute__(attr)
 
     @property
     def optimizable_step(self) -> list['Step']:
@@ -402,7 +419,11 @@ class IAMLPipeline(Pipeline):
             raise RuntimeError('There is no model to explain.')
 
         def p(pred_data):
-            return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
+            if hasattr(self, 'predict_proba'):
+                return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
+            
+            # Regressor does not implement predict_proba
+            return self.predict(pd.DataFrame(pred_data, columns=X.columns))
 
         mask_dataset = self.original_dataset if self.original_dataset is not None \
             and not self.original_dataset.empty else X
@@ -417,7 +438,7 @@ class IAMLPipeline(Pipeline):
             feature_names=X.columns.to_list(),
             output_names=X.columns.to_list())
 
-        return Explanation(self.model, None, None, shap_explanation)
+        return Explanation(self.model[1], None, None, shap_explanation)
     
     # Implement scikit-learn estimator's methods
         
@@ -439,10 +460,9 @@ class IAMLPipeline(Pipeline):
         
         return md5(to_hash.encode()).hexdigest()
 
-    def bibliography(self) -> str:
+    def bibliography(self, structured: bool) -> str | List[Dict]:
         """
-        Return a string listing all step's references  
+        Return a string listing all step's references or a structured list of dict
         """
         references = [reference for step in self.steps for reference in step[1].references]
-        
-        return Reference.bibliography(references)
+        return Reference.bibliography(references, structured)
