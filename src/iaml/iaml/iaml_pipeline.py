@@ -366,6 +366,23 @@ class IAMLPipeline(Pipeline):
             return super().predict_proba(X, **kwargs)
         
         return self.predictor[1].predict_proba(X)
+    
+    def __getattribute__(self, attr: str) -> bool:
+        """Overload getattr to allow accurate hasattr on predict_proba
+
+        Args:
+            attr (str): Attribute to test
+
+        Returns:
+            bool: does attribute is implemented
+        """
+        if attr == 'predict_proba' \
+            and not( \
+                self.have_model and hasattr(self.predictor[1], 'predict_proba') \
+            ):
+            raise AttributeError("predict_proba not implemented in this model")
+        
+        return super().__getattribute__(attr)
 
     @property
     def optimizable_step(self) -> list['Step']:
@@ -402,7 +419,11 @@ class IAMLPipeline(Pipeline):
             raise RuntimeError('There is no model to explain.')
 
         def p(pred_data):
-            return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
+            if hasattr(self, 'predict_proba'):
+                return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
+            
+            # Regressor does not implement predict_proba
+            return self.predict(pd.DataFrame(pred_data, columns=X.columns))
 
         mask_dataset = self.original_dataset if self.original_dataset is not None \
             and not self.original_dataset.empty else X
