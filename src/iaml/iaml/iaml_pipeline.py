@@ -417,7 +417,7 @@ class IAMLPipeline(Pipeline):
             feature_names=X.columns.to_list(),
             output_names=X.columns.to_list())
 
-        return Explanation(self.model, None, None, shap_explanation)
+        return Explanation(self.model[1], None, None, shap_explanation)
     
     # Implement scikit-learn estimator's methods
         
