@@ -173,6 +173,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             groups:pd.DataFrame = None,
             patience:int=-1,
             generation_sample_size=200,
+            n_candidates=1,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
@@ -244,14 +245,18 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 ### FINAL FIT
                 self.executor.shutdown()
 
-                # Fit candidate with the whole dataset
-                Cache.reset()
-                self.chosen_candidate = deepcopy(candidates[0])
-                self.chosen_candidate.pipeline.fit(X, y)
+                # Fit candidates with the whole dataset
+                fit_candidates = []
+                for i in range(min(n_candidates, len(candidates))):
+                    Cache.reset()
+                    current_candidate = deepcopy(candidates[i])
+                    current_candidate.pipeline.fit(X, y)
+                    fit_candidates.append(current_candidate)
 
+                self.chosen_candidate = fit_candidates[0]
                 self.last_stage_candidates = candidates
 
-                return candidates
+                return fit_candidates
         except Exception as ex:
             print("Error during fit")
             self.executor.shutdown()
