@@ -8,6 +8,9 @@ stages:
   - docs
   - deploy
 
+variables:
+  UV_PROJECT_ENVIRONMENT: /home/gitlab-runner/.automl_venv
+
 job:build:pythonEnv:
   stage: build
   tags:
@@ -15,14 +18,7 @@ job:build:pythonEnv:
     - test
     - calcul
   script:
-    - '/usr/bin/python3 -m venv /home/gitlab-runner/.automl_venv'
-    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
-    - 'pip install -r requirements.txt'
-  # artifacts:
-  #   expose_as: 'Python virtual env'
-  #   expire_in: 2h
-  #   paths: 
-  #     - .venv
+    - 'uv sync'
 
 job:linting:PyLint:
   stage: linting
@@ -32,8 +28,7 @@ job:linting:PyLint:
     - calcul
   allow_failure: true
   script:
-    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
-    - 'pylint --rcfile=.pylintrc ./src/automed'
+    - 'uv run pylint --rcfile=.pylintrc ./src/iaml/iaml'
 
 job:test:unit:
   stage: perfs
@@ -44,9 +39,7 @@ job:test:unit:
   except:
     - main
   script:
-    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
-    - 'pip install -r requirements.txt'
-    - 'python3 ./tests/tests.py unit'
+    - 'uv run ./tests/tests.py unit'
 
 # job:test:integration:
 #   stage: test
@@ -84,12 +77,11 @@ job:perfs:compute:
   only:
     - main
   script:
-    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
     - 'if [ -e "./src/perf_logger/tests_data/history.log" ]; then rm ./src/perf_logger/tests_data/history.log ;fi'
     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then cp /home/gitlab-runner/automl_history.log ./src/perf_logger/tests_data/history.log ;fi'
     - cp -R /home/gitlab-runner/dont_push /home/gitlab-runner/builds/w-N4hyQH/0/DataScience/automl/src/perf_logger/tests_data/
-    - 'python3 src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
-    - 'python3 src/perf_logger/perf_comparator.py' # Compute perfs
+    - 'uv run src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
+    - 'uv run src/perf_logger/perf_comparator.py' # Compute perfs
     - 'if [ -e "/home/gitlab-runner/automl_history.log.old" ]; then rm /home/gitlab-runner/automl_history.log.old ;fi'
     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then mv /home/gitlab-runner/automl_history.log /home/gitlab-runner/automl_history.log.old ;fi'
     - 'cp ./src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_history.log'
@@ -98,7 +90,6 @@ job:perfs:compute:
     paths:
       - docs
       - ./src/perf_logger/tests_data/history.log
-
 
 job:perfs:compute_stages:
   stage: perfs
@@ -109,10 +100,9 @@ job:perfs:compute_stages:
   only:
     - rm-stages
   script:
-    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
     - cp -R /home/gitlab-runner/dont_push /home/gitlab-runner/builds/w-N4hyQH/0/DataScience/automl/src/perf_logger/tests_data/
-    - 'python3 src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
-    - 'python3 src/perf_logger/perf_comparator.py' # Compute perfs
+    - 'uv run src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
+    - 'uv run src/perf_logger/perf_comparator.py' # Compute perfs
     - 'if [ -e "/home/gitlab-runner/automl_stage_history.log" ]; then rm /home/gitlab-runner/automl_stage_history.log ;fi'
     - 'cp ./src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_stage_history.log'
   artifacts:
@@ -131,9 +121,7 @@ job:docs:create:
   only: 
     - main
   script:
-    - 'source /home/gitlab-runner/.automl_venv/bin/activate'
-    - 'python3 -m pip install mkdocs'
-    - 'python3 -m mkdocs build -d public'
+    - 'uv run mkdocs build -d public'
   artifacts:
     expose_as: 'HTML Static documentation'
     paths:

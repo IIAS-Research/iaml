@@ -5,7 +5,7 @@ Transform, resample and then predict from Candidate instance
 import pickle
 from copy import deepcopy
 from hashlib import md5
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict
 import numpy as np
 import shap
 import pandas as pd
@@ -14,6 +14,7 @@ from .dataset import Dataset
 from .void_step import VoidStep
 from .explanation import Explanation
 from .cache import Cache
+from .reference import Reference
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -98,6 +99,7 @@ class IAMLPipeline(Pipeline):
         self.transformers = []
         self.resamplers = []
         self.predictor = None
+        
         for value in values:
             self.__add_step(value)
             
@@ -436,4 +438,10 @@ class IAMLPipeline(Pipeline):
         to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
         
         return md5(to_hash.encode()).hexdigest()
-            
+
+    def bibliography(self, structured: bool) -> str | List[Dict]:
+        """
+        Return a string listing all step's references or a structured list of dict
+        """
+        references = [reference for step in self.steps for reference in step[1].references]
+        return Reference.bibliography(references, structured)

@@ -14,6 +14,16 @@ class ActGaussianNb(Predictor):
     [STEP] Learn : Gaussian NB
     """
     name = "Learn : Gaussian NB"
+    refs = [
+        {
+            'year': 1763,
+            'name': None,
+            'authors': [
+            ],
+            'doi': None,
+            'publisher': None
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'var_smoothing': {

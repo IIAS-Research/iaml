@@ -14,6 +14,32 @@ class ActLogisticRegression(Predictor):
     [STEP] Learn :  Logistic Regression Classifier
     """
     name = "Learn : Logistic Regression Classifier"
+    refs = [
+        {
+            'year': 1944,
+            'name': 'Application of the Logistic Function to Bio-Essay',
+            'authors': [
+                'Joseph Berkson'
+            ],
+            'doi': 'https://doi.org/10.2307/2280041',
+            'publisher': (
+                'Journal of the American Statistical Association '
+                'Vol. 39, No. 227, page 357--365'
+            )
+        },
+        {
+            'year': 1951,
+            'name': 'Why I Prefer Logits to Probits',
+            'authors': [
+                'Joseph Berkson'
+            ],
+            'doi': 'https://doi.org/10.2307/3001655',
+            'publisher': (
+                'Biometrics '
+                'Vol. 7, No. 4, page 327--339'
+            )
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'random_state': {

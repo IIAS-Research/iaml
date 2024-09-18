@@ -12,7 +12,22 @@ class ActAdaBoostRegressor(Predictor):
     """
     [STEP] Learn :  AdaBoost Regressor
     """
-    name = "Learn : AdaBoost Regressor" 
+    name = "Learn : AdaBoost Regressor"
+    refs = [
+        {
+            'year': 1995,
+            'name': (
+                'A desicion-theoretic generalization of on-line learning '
+                'and an application to boosting'
+            ),
+            'authors': [
+                'Yoav Freund',
+                'Robert E. Schapire'
+            ],
+            'doi': 'https://doi.org/10.1007/3-540-59119-2_166',
+            'publisher': 'Springer, Berlin, Heidelberg'
+        }
+    ]
     def __init__(self):
         self.configuration:dict = {
             'learning_rate': {
