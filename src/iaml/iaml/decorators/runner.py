@@ -46,7 +46,7 @@ def runner(func) -> callable:
                     self.add_cache(current_candidate, candidate)
                 else:
                     callback(self) # Call callback manually because we used cache
-            else: # If the step is disable or not suitable for the dataset, do nothing
+            else: # If the step is disabled or not suitable for the dataset, do nothing
                 candidate = current_candidate    
             
                 
