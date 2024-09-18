@@ -15,6 +15,7 @@ class ActDropDateColumn(Actionable):
     """
     name = "Drop date columns"
     description = 'Drop date columns.'
+    can_be_disabled = False
     
     def __init__(self):
         self.columns_to_drop:list[str] = None

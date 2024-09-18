@@ -16,6 +16,7 @@ class ActDropTextualColumn(Actionable):
     """
     name = 'Drop textual columns'
     description = 'Drop textual columns.'
+    can_be_disabled = False
     
     def __init__(self):
         self.columns_to_drop:list[str] = None
@@ -30,9 +31,11 @@ class ActDropTextualColumn(Actionable):
         Returns:
             Candidate: Transformed candidate
         """
-        self.columns_to_drop = (dataset
-            .get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]))
-
+        self.columns_to_drop = list(set(
+                dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]) + \
+                list(dataset.X.select_dtypes(include='object').columns)
+            ))
+        
         self.explanations = [
             f'Dropped column **`{c}`**.' for c in self.columns_to_drop
         ]
