@@ -171,17 +171,6 @@ class Explanation:
         Returns:
             str: Markdown formatted Base64-encoded plot image.
         """
-        # self.to_plot(plot, ps)
-
-        # buffer = io.BytesIO()
-        # plt.savefig(buffer, bbox_inches='tight', **kw)
-        # buffer.seek(0)
-
-        # plt.close()
-
-        # b64 = base64.b64encode(buffer.read()).decode()
-
-
         b64 = self.to_b64_plot(plot, ps, **kw)
         return f'![{plot} plot](data:image/png;base64,{b64})'
     
