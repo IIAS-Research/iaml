@@ -48,8 +48,6 @@ def process_daemon(
             finally:
                 finally_queue.put(1)
             
-            time.sleep(0.1)
-            
 
 class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
     """
