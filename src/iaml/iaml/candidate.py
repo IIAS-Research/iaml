@@ -1,7 +1,7 @@
 """
 Candidate is used to exchange data between Steps  
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict
 from copy import copy, deepcopy
 from hashlib import md5
 import numpy as np
@@ -221,7 +221,9 @@ class Candidate:
                 
             try:
                 y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
-                y_pred_proba = copied_pipe.predict_proba(test_ds.X, model_only = not self.is_meta)
+                y_pred_proba = copied_pipe.predict_proba(test_ds.X, model_only = not self.is_meta) \
+                    if hasattr(copied_pipe, 'predict_proba') else None
+                    
                 metrics.append(self.__compute_metrics(test_ds.y, y_pred, y_pred_proba))
                 if not from_cache:
                     to_cache.append((train_ds, test_ds))
@@ -252,7 +254,8 @@ class Candidate:
             return None
         
         y_pred = self.pipeline.predict(X)
-        y_pred_proba = self.pipeline.predict_proba(X)
+        y_pred_proba = self.pipeline.predict_proba(X) \
+            if hasattr(self.pipeline, 'predict_proba') else None
         return self.__compute_metrics(np.array(y), y_pred, y_pred_proba)
     
     def __compute_metrics(self, y:np.array, y_pred:np.array, y_pred_proba:np.array) -> dict:
@@ -265,13 +268,14 @@ class Candidate:
                 return value
         return None
     
-    def bibliography(self) -> str:
+    def bibliography(self, structured: bool=False) -> str | List[Dict]:
         """Format a string with all step's referencies
 
         Returns:
-            str: formatted bibliography
+            str | List[Didct]: formatted bibliography or structured bibliography
         """
-        return self.pipeline.bibliography()
+        return self.pipeline.bibliography(structured)
+    
         
     def fingerprint(self) -> str:
         """

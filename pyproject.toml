@@ -2,7 +2,9 @@
 name = "iaml"
 version = "0.1.0"
 authors = [
-  { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
+    { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
+    { name="Robin BOURACHOT", email="rbourachot@chu-reims.fr" },
+    { name="Hugo RUELLET", email="hruellet@chu-reims.fr" },
 ]
 readme = "README.md"
 requires-python = ">=3.10"
