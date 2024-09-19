@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 
 # Include tools lib
-sys.path.append('./src/')
-from automed import *
+sys.path.append('./src/iaml')
+from iaml import *
 
 class TestAutomed(unittest.TestCase):
 
@@ -16,8 +16,8 @@ class TestAutomed(unittest.TestCase):
         y = df[labels]
         X = df.drop(columns=labels)
             
-        automed = AutoMed(quiet=False)
-        automed.default_pipeline(fast=True)
+        automed = IAML(quiet=False, max_duration=30, max_workers=2)
+        automed.default_pipeline()
         outputs = automed.fit(X, y)
 
         self.assertTrue(isinstance(outputs[0], Candidate))

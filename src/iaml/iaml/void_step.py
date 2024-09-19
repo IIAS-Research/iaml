@@ -5,6 +5,18 @@ from .step import Step
 from .decorators.all import is_step
 
 
+def predict(X):
+    return X
+
+
+def transform(dataset):
+    return dataset
+
+
+def resample(X,y):
+    return X, y
+
+
 @is_step()
 class VoidStep(Step):
     """
@@ -19,16 +31,10 @@ class VoidStep(Step):
             self.optimizable = True
             
             if hasattr(step_to_mimic, 'predict') and callable(step_to_mimic.predict):
-                def predict(X):
-                    return X
                 self.predict = predict
             elif hasattr(step_to_mimic, 'transform') and callable(step_to_mimic.transform):
-                def transform(dataset):
-                    return dataset
                 self.transform = transform
             elif hasattr(step_to_mimic, 'resample') and callable(step_to_mimic.resample):
-                def resample(X,y):
-                    return X, y
                 self.resample = resample
                 
     @classmethod
