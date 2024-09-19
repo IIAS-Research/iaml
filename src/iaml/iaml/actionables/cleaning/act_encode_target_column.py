@@ -21,8 +21,8 @@ class ActCategoryStringToNumeric(Actionable):
     """
     Encode categorical target column to numeric
     """
-    name = 'Encode categorical target column to numeric'
-    description = 'Encode categorical target column to numeric'
+    name = 'Textual Category To Numeric Value'
+    description = 'Encode categorical text data column to numeric value'
     
     def __init__(self):
         self.configuration:dict = {}

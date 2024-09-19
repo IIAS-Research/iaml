@@ -14,7 +14,7 @@ class ActDropDateColumn(Actionable):
     Find and drop data column
     """
     name = "Drop date columns"
-    description = 'Drop date columns.'
+    description = 'Drop all columns containing Date from the dataset'
     
     def __init__(self):
         self.columns_to_drop:list[str] = None

@@ -15,7 +15,7 @@ class ActDropTextualColumn(Actionable):
     [STEP] Drop Textual Column
     """
     name = 'Drop textual columns'
-    description = 'Drop textual columns.'
+    description = 'Drop all columns containing textual data from the dataset'
     
     def __init__(self):
         self.columns_to_drop:list[str] = None

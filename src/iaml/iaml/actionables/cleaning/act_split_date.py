@@ -14,7 +14,8 @@ class ActSplitDate(Actionable):
     """
     [STEP] Transform string column to date
     """
-    name = "Transform string column to date"
+    name = "Create Date Elements columns"
+    descrption = "Transform a textual date column into multiple columns for day, month, year, hour, minute, second"
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[str] = None

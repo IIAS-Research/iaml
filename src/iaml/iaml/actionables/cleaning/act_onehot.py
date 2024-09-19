@@ -16,6 +16,7 @@ class ActOnehot(Actionable):
     [STEP] One hot encoding categorical features
     """
     name="One hot encoding categorical features"
+    description = "Encode categorical data to numerical values using One Hot Encoding Algorithm"
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[str] = None

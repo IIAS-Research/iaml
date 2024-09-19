@@ -14,7 +14,8 @@ class ActDateConverter(Actionable):
     """
     [STEP] Convert Short text to date if possible
     """
-    name="Convert Short text to date if possible"
+    name = "Text to Date Converter"
+    description = "Convert Short text to date if possible"
     
     def __init__(self):
         self.configuration:dict = {

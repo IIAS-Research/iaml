@@ -16,6 +16,7 @@ class ActTfIdf(Actionable):
     [STEP] Vectorize textual columns with TF-IDF
     """
     name="TF-IDF"
+    description = "Process 'Term Frequency / Inversed Document Frequency' over a list of textual columns"
     refs = [
         {
             'year': 1972,

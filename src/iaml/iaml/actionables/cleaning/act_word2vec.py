@@ -24,6 +24,7 @@ class ActWord2Vec(Actionable):
     [STEP] Vectorize textual column with Word2Vec
     """
     name = "Word2Vec"
+    description = "Process Word2Vec algorithm over a list of columns"
     refs = [
         {
             'year': 2023,
