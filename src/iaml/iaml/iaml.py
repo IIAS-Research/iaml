@@ -184,6 +184,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
+
         start_time = time.monotonic()
 
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
