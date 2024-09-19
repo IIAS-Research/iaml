@@ -50,13 +50,16 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     refs = None
     __description = "Step description..."
     
+    # By default a Step can be disabled. This attribute can by change to force a step to stay active
+    can_be_disabled = True
+    
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
         self.tags:set = None # Will be set by is_step
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
         self.explanations:list[str] = []
         self.is_interchangeable:bool = False # Can be mutate into another step with the same tags
-        
+        self.enable:bool = True # A disable step, only take input and push it into output
         self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
         
         # Configuration of the Step. Each Step can have one configuration and will save it here.
@@ -74,7 +77,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             self.references = [Reference(ref, type(self).__name__) for ref in self.refs]
 
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args) -> 'Step':
+    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> 'Step':
         """
         Load any kind of Step (Step, MetaStep, Wrapper, etc) from json pipeline
 
@@ -95,7 +98,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         step_class = getattr(sys.modules['iaml'], pipeline['step']) # Get class from string
         if Step in step_class.__mro__:
             if step_class == cls:
-                step = cls(*args)  
+                step = cls(*args, **kwargs)
+                
+                if 'enable' in pipeline:
+                    step.enable = pipeline['enable']
             
                 if 'configuration' in pipeline:
                     for name, value in pipeline['configuration'].items():
@@ -107,19 +113,20 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         
         return step
     
-    # def fit(self, X:pd.DataFrame, y:pd.DataFrame) -> None: # pylint: disable=unused-argument
-    #     """
-    #     WIll always raise NotImplementedError.
-
-    #     Args:
-    #         X (pd.DataFrame): X Data
-    #         y (pd.DataFrame): Y data
-
-    #     Raises:
-    #         NotImplementedError: IAML Step can't be fit this way. You have to use IAML.run()
-    #     """
-    #     raise NotImplementedError("IAML Step can't be fit. You have to use IAML.run()")
+    @property
+    def enable(self) -> bool:
+        """
+        Does the step is enabled ?
+        """
+        return self.__enable
+    
+    @enable.setter
+    def enable(self, value: bool) -> bool:
+        # If can_be_disabled = False -> Value will always be True
+        self.__enable = value or not self.can_be_disabled
+        return self.enable
         
+            
     def __str__(self):
         return self.name
     
@@ -307,13 +314,13 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
                         return False
         return True
     
-    def all_step(self):
+    def all_steps(self):
         """Recursive function (last one here) to get all steps in a pipeline
 
         Returns:
             list: always empty
         """
-        return []
+        return [self]
         
         
     #####################
@@ -410,6 +417,8 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             'step': self.__class__.__name__,
             'name': self.name,
             'description': self.description,
+            'enable': self.enable,
+            'can_be_disable': self.can_be_disabled,
             'configuration': self.configuration,
             'children': []
         }

@@ -46,6 +46,12 @@ class MetaExplorerStep(MetaStep):
         """
         if Step in step.__class__.__mro__:
             step.is_interchangeable = True
+            
+            # Define enable only if False because True can generate strange behavior. 
+            # True is default value anyway
+            if not self._enable:
+                step.enable = False
+            
             self.steps.append(self.configure_child(step))
         else:
             raise ValueError("step must be an occurrence of step (or inherited classes)")
