@@ -47,7 +47,7 @@ class IAMLPipeline(Pipeline):
         """
         if steps is None:
             steps = []
-            
+
         self.original_dataset = original_dataset
         self.transformers:list[tuple[str, object]] = []
         self.resamplers:list[tuple[str, object]] = []

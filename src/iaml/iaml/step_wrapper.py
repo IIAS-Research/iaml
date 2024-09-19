@@ -19,7 +19,7 @@ class StepWrapper(Step):
         
     
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args) -> Step:
+    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
         """
         Load any kind of StepWrapper
 
@@ -97,22 +97,19 @@ class StepWrapper(Step):
             dict: JSON pipeline
         """
         return {
-            'step': self.__class__.__name__,
-            'name': self.name,
-            'description': self.description,
-            'configuration': self.configuration,
+            **Step.json_pipeline(self),
             'children': [self.step.json_pipeline()]
         }
     
     
-    def all_step(self) -> list[Step]:
+    def all_steps(self) -> list[Step]:
         """
         Recursive function to get all steps in a pipeline
 
         Returns:
             list[Step]: All children Step
         """
-        return [self.step, *self.step.all_step()]
+        return [self.step, *self.step.all_steps()]
         
 
     @runner
