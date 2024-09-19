@@ -1,7 +1,7 @@
 """
 Enables steps to "explain" their processings and prediction results.
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Tuple
 import base64
 import io
 import matplotlib.pyplot as plt
@@ -110,10 +110,24 @@ class Explanation:
             case _:
                 raise RuntimeError(f'Unknown plot type ({plot}).')
     
-    def to_markdown_data_uri_plot(self, plot: str, ps: slice = None, **kw):
+    def to_b64_plots(self) -> List[Tuple[str]]:
         """
-        Plot SHAP values and encode the plot image into a Markdown
-        image.
+        Build List of SHAP values and encode the plot images into b64 string.
+
+        Args:
+            None
+        Returns:
+            str: Base64-encoded plot image.
+        """
+        plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
+        b64_plots = []
+        for plot in plots:
+            b64_plots.append((plot, self.to_b64_plot(plot)))
+        return b64_plots
+    
+    def to_b64_plot(self, plot: str, ps: slice = None, **kw) -> str:
+        """
+        Build SHAP values and encode the plot image into b64 string.
 
         Args:
             plot (str): Plot to generate (one of "force", "scatter",
@@ -137,7 +151,27 @@ class Explanation:
         plt.close()
 
         b64 = base64.b64encode(buffer.read()).decode()
+        return b64
+    
+    def to_markdown_data_uri_plot(self, plot: str, ps: slice = None, **kw):
+        """
+        Plot SHAP values and encode the plot image into a Markdown
+        image.
 
+        Args:
+            plot (str): Plot to generate (one of "force", "scatter",
+                "beeswarm", "heatmap", "bar"). Refer to the SHAP
+                documentation for more details on these plots.
+            ps (slice, optional): Specify the indexes of the SHAP values
+                to plot. Defaults to all predictions. If plot is
+                "force", it will pick the first prediction matching
+                the provided slice (defaults to first of all).
+            **kw (dict): Parameters to pass to matplotlib.
+        
+        Returns:
+            str: Markdown formatted Base64-encoded plot image.
+        """
+        b64 = self.to_b64_plot(plot, ps, **kw)
         return f'![{plot} plot](data:image/png;base64,{b64})'
     
     def to_markdown_conf(self) -> str:
