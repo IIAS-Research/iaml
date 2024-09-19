@@ -10,7 +10,8 @@ import time
 import random
 import traceback
 import multiprocess
-from multiprocess.queues import Empty
+
+import multiprocess.process
 from .logger import Logger
 
 def process_daemon(
@@ -35,24 +36,19 @@ def process_daemon(
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         while True:
+            value = to_run_queue.get()
+            
+            method, args, kwargs, callback_id = value
             try:
-                value = to_run_queue.get(block=False, timeout=1)
-                if isinstance(value, str) and value == "stop":
-                    to_run_queue.put("stop")
-                    break
-                
-                method, args, kwargs, callback_id = value
-                try:
-                    result = method(*args, **kwargs)
-                    queue.put((result, callback_id))
-                except Exception:  # pylint: disable=broad-exception-caught
-                    Logger().log("error", force=True)
-                    error_queue.put((traceback.format_exc(), callback_id))
-                finally:
-                    finally_queue.put(1)
-                    
-            except Empty:
-                time.sleep(0.1)
+                result = method(*args, **kwargs)
+                queue.put((result, callback_id))
+            except Exception:  # pylint: disable=broad-exception-caught
+                Logger().log("error", force=True)
+                error_queue.put((traceback.format_exc(), callback_id))
+            finally:
+                finally_queue.put(1)
+            
+            time.sleep(0.1)
             
 
 class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
@@ -91,7 +87,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.finished_run = 0
         
         # List of sub process
-        self.process = []
+        self.process: list[multiprocess.Process] = []
         
         # Create and start sub process (will only wait until first submit)
         for _ in range(max_workers):
@@ -126,57 +122,56 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
             Collect results from queues and run callback
         """
-        while not self.result_queue.empty():
-            try:
-                result, callback_id = self.result_queue.get(block=False, timeout=1)
-                Logger().log(str(result))
-                if callback_id and callable(self.callbacks[callback_id]):
-                    self.callbacks[callback_id](result)
-                self.results.append(result)
-            except Empty:
+        while True:
+            result, callback_id = self.result_queue.get()
+
+            if isinstance(result, str) and result == 'stop':
                 break
+
+            if callback_id and callable(self.callbacks[callback_id]):
+                self.callbacks[callback_id](result)
+
+            Logger().log(str(result))
+            self.results.append(result)
+
+    def __collect_finally(self) -> None:
+        while self.finally_queue.get() != "stop":
+            self.finished_run += 1
         
     def __print_errors(self) -> None:
         """
             Collect and print error from error_queue
         """
-        while not self.error_queue.empty():
-            try:
-                error, callback_id = self.error_queue.get(block=False, timeout=1)
-                Logger().log("ERROR IN PROCESS", error, force=True)
-                self.callbacks[callback_id](None)
-            except Empty:
+        while True:
+            error, callback_id = self.error_queue.get()
+            
+            if error == 'stop':
                 break
+            
+            Logger().log("ERROR IN PROCESS", error, force=True)
+            self.callbacks[callback_id](None)
     
     def __keep_running(self) -> None:
         """
         Daemon THREAD process. Infinite loop to catch results & errors
         """
         while True:
-            self.__print_errors()
-            self.__collect_results()
-            Logger().print_queue()
-            time.sleep(0.1)
-            
             if self.stop_flag:
+                self.error_queue.put(("stop", None)) # Gentilly ask process to stop
+                self.result_queue.put(("stop", None)) # Gentilly ask process to stop
+                self.finally_queue.put("stop") # Gentilly ask process to stop
+
+                for process in self.process:
+                    process.kill()
+
+                # empty task queue
+                while self.to_run_queue.qsize() > 0:
+                    self.to_run_queue.get()
+                
                 break
-        
-        # Kill process
-        while not self.to_run_queue.empty():
-            try:
-                self.to_run_queue.get(block=False, timeout=1) # Empty task queue 
-            except Empty:
-                break
-            
-        self.to_run_queue.put("stop") # Gentilly ask process to stop
-        time.sleep(0.5)
-        
-        for process in self.process:
-            if process.is_alive(): # If process still alive, force stop
-                process.kill()
-                    
-        time.sleep(1)
-            
+
+            Logger().print_queue()
+            time.sleep(0.5)
     
     def __run_daemon(self) -> None:
         """
@@ -186,6 +181,10 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         if not self.daemon or not self.daemon.is_alive():
             self.daemon = threading.Thread(target=self.__keep_running)
             self.daemon.start()
+
+            threading.Thread(target=self.__print_errors).start()
+            threading.Thread(target=self.__collect_results).start()
+            threading.Thread(target=self.__collect_finally).start()
                 
         
     def submit(self, target:callable, *args, **kwargs) -> None:
@@ -195,6 +194,9 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         Args:
             target (callable): Method to run
         """
+        if self.stop_flag:
+            return
+
         if self.debug:
             self.result_queue.put((target(*args, **kwargs), len(self.callbacks)-1))
         else:
@@ -203,15 +205,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         
     def __finished(self) -> bool:
         """
-        Do all the submit task are finished ?
+        Are all the submitted tasks finished?
         """
-        while not self.finally_queue.empty():
-            try:
-                self.finally_queue.get(block=False, timeout=1)
-                self.finished_run += 1
-            except Empty:
-                break
-            
         return self.finished_run >= self.submit_count
     
     def reset(self):
@@ -220,14 +215,6 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         Allow to reuse this instance of TimedPoolExecutor without restarting subProcess
         """
         if not self.sliding_stages:
-            for queue in \
-                [self.error_queue, self.finally_queue, self.to_run_queue]:
-                while not queue.empty():
-                    try:
-                        queue.get(block=False, timeout=0.05)
-                    except Empty:
-                        pass
-                    
             self.callbacks = [self.callbacks[-1]]
             self.submit_count = 0
             self.finished_run = 0
@@ -264,13 +251,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 self.finished_run >= (self.submit_count - self.max_workers/2))
         
         while not self.__finished() and remain_time() and not slide():
-            time.sleep(0.3)
+            time.sleep(0.5)
         
-            
-        self.__collect_results()
-        self.__print_errors()
-        
-        results = self.results # Save before reset !
+        results = self.results # Save before reset!
+
+        self.shutdown()
         
         if reset:
             self.reset()

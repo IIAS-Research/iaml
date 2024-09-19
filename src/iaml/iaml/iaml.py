@@ -183,6 +183,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
+
         start_time = time.monotonic()
         
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
@@ -233,7 +234,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     gen0_candidates = self.__run_evaluations(candidates,
                                 dataset,
                                 timeout=min(remain_time(), self.time_before_sample_use))
-
                 
                 ### FINETUNING
                 candidates = self.__optimize(dataset,
@@ -241,8 +241,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                                             optimizer=GeneticOptimizer(duration=remain_time()),
                                             max_duration=remain_time(),
                                             patience=patience)
-                ### FINAL FIT
-                
+
+                ### FINAL FIT                
                 self.executor.shutdown()
                 
                 # Fit candidate with the whole dataset
