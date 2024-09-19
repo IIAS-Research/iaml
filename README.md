@@ -55,3 +55,5 @@ Structures des fichiers :
 ## 💪 5 -  Crédits
 
 - Rudy MERIEUX
+- Robin BOURACHOT
+- Hugo RUELLET

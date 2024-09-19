@@ -61,7 +61,25 @@ class Predictor(Actionable, metaclass=ABCMeta):
         """
         if self.model and hasattr(self.model, 'predict_proba'):
             return self.model.predict_proba(X)
-        return None
+        
+        raise AttributeError("Unable to predict probabilities with this model")
+    
+    def __getattribute__(self, attr: str) -> bool:
+        """Overload getattr to allow accurate hasattr on predict_proba
+
+        Args:
+            attr (str): Attribute to test
+
+        Returns:
+            bool: does attribute is implemented
+        """
+        if attr == 'predict_proba' \
+            and not( \
+                self.model and hasattr(self.model, 'predict_proba') \
+            ):
+            raise AttributeError("predict_proba not implemented in this model")
+        
+        return super().__getattribute__(attr)
     
     def predict(self, X:pd.DataFrame) -> list[float]:
         """
