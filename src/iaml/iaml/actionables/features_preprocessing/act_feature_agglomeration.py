@@ -15,7 +15,12 @@ class ActFeatureAgglomeration(Actionable):
     """
     [STEP] Agglomerate features with FeatureAgglomeration
     """
-    name="Agglomerate features with FeatureAgglomeration"
+    name = 'Agglomerate features with FeatureAgglomeration Algorithm'
+    description = '''Reduce numbers of columns to {n_clusters} 
+        using FeatureAgglomeration algorithm'''
+    description_long = '''Perform FeatureAgglomeration on the current dataset.
+        The goal is to reduce the number of columns by merging together 
+        similar columns using {metric}.'''
     
     def __init__(self):
         self.configuration:dict = {

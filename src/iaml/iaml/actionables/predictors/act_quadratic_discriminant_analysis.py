@@ -14,6 +14,16 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
     [STEP] Learn : Quadratic Discriminant Analysis
     """
     name = "Learn : Quadratic Discriminant Analysis"
+    description = '''QuadraticDiscriminantAnalysis is a machine learning algorithm 
+        that models the relationship between input features and a categorical 
+        output variable using a quadratic function.'''
+    description_long = '''QuadraticDiscriminantAnalysis is a type of discriminant analysis 
+        algorithm that models the relationship between input features and a categorical output 
+        variable using a quadratic function. 
+        It works by estimating the covariance matrices of the classes and using 
+        them to calculate the probability density functions for each class. 
+        The class with the highest probability density function is then used to make 
+        the prediction.'''
     refs = [
         {
             'year': 1965,

@@ -14,6 +14,15 @@ class ActMLPRegressor(Predictor):
     [STEP] Learn : MLP Regressor
     """
     name = "Learn : MLP Regressor"
+    description = '''MLPRegressor is a machine learning algorithm that models the 
+        relationship between input features and a continuous output variable using 
+        a multi-layer perceptron neural network.'''
+    description_long = '''MLPRegressor is a type of neural network algorithm that models 
+        the relationship between input features and a continuous output variable using a 
+        multi-layer perceptron (MLP) neural network. 
+        It works by transforming the input features through one or more hidden 
+        layers with non-linear activation functions, and then using a final layer with 
+        a linear activation function to output a continuous value.'''
     refs = [
         {
             'year': 1989,

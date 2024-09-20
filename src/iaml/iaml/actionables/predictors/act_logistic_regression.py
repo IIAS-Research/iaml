@@ -14,6 +14,14 @@ class ActLogisticRegression(Predictor):
     [STEP] Learn :  Logistic Regression Classifier
     """
     name = "Learn : Logistic Regression Classifier"
+    description = '''LogisticRegression is a machine learning algorithm 
+        that models the relationship between input features and a binary 
+        output variable using a logistic function.'''
+    description_long = '''LogisticRegression is a type of classification algorithm that models 
+        the relationship between input features and a binary 
+        output variable using a logistic function. 
+        It works by finding the best-fitting line or hyperplane that 
+        maximizes the likelihood of the observed output variables given the input features.'''
     refs = [
         {
             'year': 1944,

@@ -16,6 +16,13 @@ class ActTPLOT(Predictor):
     [STEP] Learn :  TPLOT
     """
     name="Learn : TPLOT"
+    description = '''TPOTClassifier is a machine learning algorithm that uses genetic programming 
+        to search for the best pipeline of machine learning models and hyperparameters for a given 
+        classification task.'''
+    description_long = ''' It works by generating a population of random pipelines, evaluating their
+        performance using cross-validation, and then applying genetic operations such as mutation 
+        and crossover to create new pipelines. The process is repeated until a stopping criterion 
+        is met, such as a maximum number of generations or a maximum time limit.'''
     refs = [
         {
             'year': 2015,

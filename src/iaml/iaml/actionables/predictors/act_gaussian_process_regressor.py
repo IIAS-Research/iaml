@@ -14,6 +14,11 @@ class ActGaussianProcessRegressor(Predictor):
     [STEP] Learn : Gaussian Process Regressor
     """
     name = "Learn : Gaussian Process Regressor"
+    description = '''GaussianProcessRegressor is a machine learning algorithm 
+        that makes predictions for regression tasks using Gaussian processes.'''
+    description_long = '''GaussianProcessRegressor is a powerful algorithm for regression tasks, 
+        especially when the relationship between the input features and the output variable is 
+        complex and non-linear, and when uncertainty estimates are important.'''
     refs = [
         {
             'year': 2006,
