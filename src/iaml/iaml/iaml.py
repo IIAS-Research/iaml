@@ -191,88 +191,86 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
 
         try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                
-                if isinstance(y, pd.DataFrame):
-                    y = y.values.ravel()
-                
-                dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
-                
-                ### INITIAL GENERATE CANDIDATE 
-                
-                self.fit_candidate:Candidate = Candidate(
-                    dataset.sample(generation_sample_size),
-                    main_metric=self.main_metric)
-
-                # Select metrics used to evaluate performances
-                for metric \
-                    in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-                    self.fit_candidate.add_metric(metric)
-
-                # Generate candidates
-                candidates = self.__run(self.fit_candidate, *args, **kwargs)
+        
+            if isinstance(y, pd.DataFrame):
+                y = y.values.ravel()
             
-                # Remove candidate without predictor 
-                candidates = [candidate for candidate in candidates \
-                    if candidate.pipeline.predictor is not None]
-                Logger().info(f"{len(candidates)} generated pipelines")
+            dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
+            
+            ### INITIAL GENERATE CANDIDATE 
+            
+            self.fit_candidate:Candidate = Candidate(
+                dataset.sample(generation_sample_size),
+                main_metric=self.main_metric)
+
+            # Select metrics used to evaluate performances
+            for metric \
+                in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                self.fit_candidate.add_metric(metric)
+
+            # Generate candidates
+            candidates = self.__run(self.fit_candidate, *args, **kwargs)
+        
+            # Remove candidate without predictor 
+            candidates = [candidate for candidate in candidates \
+                if candidate.pipeline.predictor is not None]
+            Logger().info(f"{len(candidates)} generated pipelines")
+            
+            ### INITIAL EVALUATION
+            
+            def remain_time():
+                return self.max_duration - (time.monotonic() - start_time)
+            # Evaluate candidates
+            gen0_candidates = []
+            i = 0
+            can_be_downsize = True
+            while can_be_downsize and not gen0_candidates and remain_time() >= 1:
+                # If process is too long and dataset big enough, 
+                # we can downsize it to get quicker training
+                if i > 0:
+                    dataset = dataset.sample(0.1)
+                    Logger().warning(f"Training is too time consuming. \
+                        Let's try again with dataset sample. \
+                        New features shape {dataset.X.shape}")
+                i+= 1
                 
-                ### INITIAL EVALUATION
-                
-                def remain_time():
-                    return self.max_duration - (time.monotonic() - start_time)
-                # Evaluate candidates
-                gen0_candidates = []
-                i = 0
-                can_be_downsize = True
-                while can_be_downsize and not gen0_candidates and remain_time() >= 1:
-                    # If process is too long and dataset big enough, 
-                    # we can downsize it to get quicker training
-                    if i > 0:
-                        dataset = dataset.sample(0.1)
-                        Logger().warning(f"Training is too time consuming. \
-                            Let's try again with dataset sample. \
-                            New features shape {dataset.X.shape}")
-                    i+= 1
+                can_be_downsize = dataset.X.shape[0] >= 500
+
+                timeout = min(remain_time(), self.time_before_sample_use) \
+                    if can_be_downsize else remain_time()
                     
-                    can_be_downsize = dataset.X.shape[0] >= 500
+                gen0_candidates = self.__run_evaluations(candidates,
+                            dataset, timeout=timeout)
 
-                    timeout = min(remain_time(), self.time_before_sample_use) \
-                        if can_be_downsize else remain_time()
-                        
-                    gen0_candidates = self.__run_evaluations(candidates,
-                                dataset, timeout=timeout)
+            if not gen0_candidates:
+                if remain_time() < 1:
+                    raise TimeoutError('IAML was unable to generate a model within the \
+                        imposed time limit. Try increasing the processing time')
+                raise RuntimeError('Undefined error. IAML was unable to create pipeline \
+                    based on your data')
 
-                if not gen0_candidates:
-                    if remain_time() < 1:
-                        raise TimeoutError('IAML was unable to generate a model within the \
-                            imposed time limit. Try increasing the processing time')
-                    raise RuntimeError('Undefined error. IAML was unable to create pipeline \
-                        based on your data')
+            ### FINETUNING
+            candidates = self.__optimize(dataset,
+                                        gen0_candidates,
+                                        optimizer=GeneticOptimizer(duration=remain_time()),
+                                        max_duration=remain_time(),
+                                        patience=patience)
 
-                ### FINETUNING
-                candidates = self.__optimize(dataset,
-                                            gen0_candidates,
-                                            optimizer=GeneticOptimizer(duration=remain_time()),
-                                            max_duration=remain_time(),
-                                            patience=patience)
+            ### FINAL FIT
+            self.executor.shutdown()
 
-                ### FINAL FIT
-                self.executor.shutdown()
+            # Fit candidates with the whole dataset
+            fit_candidates = []
+            for i in range(min(n_candidates, len(candidates))):
+                Cache.reset()
+                current_candidate = deepcopy(candidates[i])
+                current_candidate.pipeline.fit(X, y)
+                fit_candidates.append(current_candidate)
 
-                # Fit candidates with the whole dataset
-                fit_candidates = []
-                for i in range(min(n_candidates, len(candidates))):
-                    Cache.reset()
-                    current_candidate = deepcopy(candidates[i])
-                    current_candidate.pipeline.fit(X, y)
-                    fit_candidates.append(current_candidate)
+            self.chosen_candidate = fit_candidates[0]
+            self.last_stage_candidates = candidates
 
-                self.chosen_candidate = fit_candidates[0]
-                self.last_stage_candidates = candidates
-
-                return fit_candidates
+            return fit_candidates
         except Exception as ex:
             print("Error during fit")
             self.executor.shutdown()
