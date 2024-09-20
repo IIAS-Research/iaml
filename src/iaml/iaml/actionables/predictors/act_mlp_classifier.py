@@ -14,6 +14,15 @@ class ActMLPClassifier(Predictor):
     [STEP] Learn : MLP Classifier
     """
     name = "Learn : MLP Classifier"
+    description = '''MLPClassifier is a machine learning algorithm that models the relationship 
+        between input features and a categorical output variable using a 
+        multi-layer perceptron neural network.'''
+    description_long = '''MLPClassifier is a type of neural network algorithm that models the 
+        relationship between input features and a categorical output variable using a 
+        multi-layer perceptron (MLP) neural network. 
+        It works by transforming the input features through one or more hidden layers with 
+        non-linear activation functions, and then using a final layer with a softmax activation 
+        function to output a probability distribution over the classes.'''
     refs = [
         {
             'year': 1989,

@@ -14,6 +14,14 @@ class ActARDRegression(Predictor):
     [STEP] Learn : ARD Regression
     """
     name = "Learn : ARD Regression"
+    description = '''ARDRegression is a powerful tool that helps computers make accurate 
+        predictions by giving each feature its own importance weight.'''
+    description_long = '''ARDRegression (Automatic Relevance Determination Regression) 
+        is a Bayesian regression technique used for predicting continuous outcomes. 
+        It works by assigning weights to each feature, allowing some features to be 
+        more important than others. 
+        These weights are determined automatically during training, 
+        hence the "automatic relevance determination.'''
     refs = [
         {
             'year': 1996,
