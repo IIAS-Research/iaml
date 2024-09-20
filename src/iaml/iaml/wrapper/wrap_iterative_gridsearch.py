@@ -36,7 +36,7 @@ class WrapIterativeGridSearch(StepWrapper):
     to_avoid = ['random_state']
     
     @runner
-    def run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
+    def run(self, candidate:Candidate) -> list[Candidate]:
         """
         Iterative GridSearch
             Numeric values
@@ -54,7 +54,6 @@ class WrapIterativeGridSearch(StepWrapper):
 
         Args:
             candidate (Candidate): _description_
-            callback (callable, optional): _description_. Defaults to None.
 
         Returns:
             list[Candidate]: All generated Candidate 
@@ -73,7 +72,7 @@ class WrapIterativeGridSearch(StepWrapper):
                     
             gi = GridIteration(self.step, self.get_config('modificator'), \
                 copy_config=config, patience=self.get_config('patience'))
-            candidate, _ = gi.run(candidate, callback=callback)
+            candidate, _ = gi.run(candidate)
             results = results + ([candidate] if type(candidate) in [Candidate] else candidate)
         
         self.step.reset_cache()
@@ -306,7 +305,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         
         
     
-    def run(self, candidate:Candidate, callback:callable=None) \
+    def run(self, candidate:Candidate) \
         -> tuple[list[Candidate], list['GridIteration']]:
         """
         Run and Stack results
@@ -314,7 +313,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         # Run and Stack results
         if not self.key:
             # print("# RUN nk # ", self.step, self.step.resume_configuration())
-            return self.step.run(candidate, callback=callback), []
+            return self.step.run(candidate), []
         
         while not self.done():
             results = []
@@ -325,13 +324,13 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
                 results = []
                 while self.children:
                     child = self.children.pop(0)
-                    current_results, siblings = child.run(candidate, callback=callback)
+                    current_results, siblings = child.run(candidate)
                     results = results + current_results
                     
                     if siblings:
                         self.children = self.children + siblings
             else:
-                results = results + self.step.run(candidate, callback=callback)
+                results = results + self.step.run(candidate)
                 # print("# RUN # ", self.step, self.step.resume_configuration())
             
             self.__stack_results(results)

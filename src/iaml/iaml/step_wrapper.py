@@ -113,11 +113,11 @@ class StepWrapper(Step):
         
 
     @runner
-    def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
+    def run(self, candidate:Candidate) -> Candidate:
         """
         This wrapper is useless. Only run the step
         """
-        return self.step.run(candidate, callback=callback) 
+        return self.step.run(candidate) 
     
     def count_steps(self) -> int:
         """

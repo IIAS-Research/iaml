@@ -221,7 +221,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 
     def set_callback(self, callback:callable) -> None:
         """
-        Set the method to when a task finish
+        Set the method call to when a task finish
 
         Args:
             callback (callable): callback method

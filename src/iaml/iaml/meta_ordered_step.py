@@ -19,20 +19,19 @@ class MetaOrderedStep(MetaStep):
     """
     # Run steps self ordered by "priorize" function
     @runner
-    def run(self, candidate:'Candidate', callback:callable=None) -> 'Candidate':
+    def run(self, candidate:'Candidate') -> 'Candidate':
         """
         Run all step in order. Candidate will be transform successively by Steps
 
         Args:
             candidate (Candidate): Candidate to transform
-            callback (callable, optional): Method to call after each Step. Defaults to None.
 
         Returns:
             Candidate: transformed data
         """
         current_candidate:Candidate = candidate
         for step in self.steps:
-            current_candidate = step.run(current_candidate, callback=callback)
+            current_candidate = step.run(current_candidate)
         
         return current_candidate
             

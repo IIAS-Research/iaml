@@ -47,12 +47,11 @@ class ActAdaBoost(Actionable):
         }
         
     @runner
-    def run(self, candidate: Candidate, callback:callable=None) -> Candidate: # pylint: disable=unused-argument
+    def run(self, candidate: Candidate) -> Candidate: # pylint: disable=unused-argument
         """_summary_
 
         Args:
             candidate (Candidate): Candidate data
-            callback (callable, optional): Call after each run. Defaults to None.
 
         Returns:
             Candidate: Transformed candidate

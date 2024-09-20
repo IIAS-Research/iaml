@@ -160,33 +160,30 @@ class MetaStep(Step):
         return [self, *children]
     
     @runner
-    def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
+    def run(self, candidate:Candidate) -> Candidate:
         """
         Run steps self ordered by "priorize" function
 
         Args:
             candidate (Candidate): Imput data
-            callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
             Candidate: Results
         """
         steps_to_run = self.steps.copy()
         
-        return self.__recursive_run(steps_to_run, [candidate], callback=callback)
+        return self.__recursive_run(steps_to_run, [candidate])
         
     
     def __recursive_run(self,
                         remain_steps:list[Step],
-                        candidates:list[Candidate],
-                        callback:callable=None) -> list[Candidate]:
+                        candidates:list[Candidate]) -> list[Candidate]:
         """
         Recursive_run to manage Step with several candidates 
 
         Args:
             remain_steps (list[Step]): Remaining Steps
             candidates (Candidate): Candidate of previous Step
-            callback (_type_, optional): Call after each step run. Defaults to None.
 
         Returns:
             list[Candidate]: Results
@@ -202,11 +199,11 @@ class MetaStep(Step):
                         max_eval = current_eval 
                         max_index = index+1
                 
-                results = remain_steps[max_index].run(current_candidate, callback=callback)
+                results = remain_steps[max_index].run(current_candidate)
                 futures_steps = remain_steps.copy()
                 futures_steps.pop(max_index)
                 output_candidates = output_candidates + \
-                    self.__recursive_run(futures_steps, results, callback=callback)
+                    self.__recursive_run(futures_steps, results)
                 
             return output_candidates
         return candidates

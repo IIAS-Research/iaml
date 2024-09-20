@@ -95,7 +95,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.time_before_sample_use = math.inf
         
         self.candidates:list[Candidate] = None
-        self.fit_candidate:Candidate = None
+        self.init_candidate:Candidate = None
         self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep
         self.last_stage_candidates = []
         
@@ -161,7 +161,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Returns:
             Dataset: Candidate dataset defined by .fit()
         """
-        return self.fit_candidate.dataset
+        return self.init_candidate.dataset
 
     ###########
     ### RUN ###
@@ -201,17 +201,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 
                 ### INITIAL GENERATE CANDIDATE 
                 
-                self.fit_candidate:Candidate = Candidate(
+                self.init_candidate:Candidate = Candidate(
                     dataset.sample(generation_sample_size),
                     main_metric=self.main_metric)
 
                 # Select metrics used to evaluate performances
                 for metric \
                     in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-                    self.fit_candidate.add_metric(metric)
+                    self.init_candidate.add_metric(metric)
 
                 # Generate candidates
-                candidates = self.__run(self.fit_candidate, *args, **kwargs)
+                candidates = self.__run(self.init_candidate, *args, **kwargs)
             
                 # Remove candidate without predictor 
                 candidates = [candidate for candidate in candidates \
@@ -468,33 +468,18 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 yield subclass
 
     # Execute all the pipeline steps
-        # Callback -> Will be call after each step 
-    def __run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
+    def __run(self, candidate:Candidate) -> list[Candidate]:
         """Run pipeline
 
         Args:
             candidate (Candidate): Data used to fit models and steps
-            callback (callable, optional): Will be call after each Step run (-> many times).
-                                            Defaults to None.
 
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
-        with Logger().progress as progress:
-            step_count:int = self.first_step.count_steps()
-            task = progress.add_task('Generate candidates', total=step_count)
-            # Override callback to handle progress bar
-            def progress_callback(step: Step) -> None:
-                progress.update(task, advance=1)
-                if callback is not None:
-                    callback(step)
-                    
-            # RUN!
-            self.candidates = self.first_step.run(candidate, callback=progress_callback)
-            progress.update(task, completed=step_count)
+        Logger().log("Generate candidate...")
+        self.candidates = self.first_step.run(candidate)
             
-        # Order candidate according the main metric
-        self.candidates.sort(reverse=True)
         return self.candidates
 
     ########################

@@ -58,13 +58,12 @@ class MetaExplorerStep(MetaStep):
         
     # Explore all steps
     @runner
-    def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
+    def run(self, candidate:Candidate) -> Candidate:
         """
         Run all children Step in threads 
 
         Args:
             candidate (Candidate): Candidate data
-            callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
             Candidate: Result candidate
@@ -78,7 +77,7 @@ class MetaExplorerStep(MetaStep):
         workers: list[WorkerFuture] = []
 
         for step in self.steps:
-            future = WorkerManager().submit(step, step.run, candidate.to_input(), callback)
+            future = WorkerManager().submit(step, step.run, candidate.to_input())
             workers.append(future)
             
         # Wait end of all threads

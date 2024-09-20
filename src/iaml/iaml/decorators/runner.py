@@ -9,7 +9,6 @@ def runner(func) -> callable:
         - Store results in cache
         - Send information to Destroyers
         - Put results in good shape
-        - Call callback method
         - And maybe more
 
     Args:
@@ -18,8 +17,7 @@ def runner(func) -> callable:
     Returns:
         callable: edited method
     """
-    def runner_wrapper(self, candidates:list['Candidate'],
-                        callback:callable=None
+    def runner_wrapper(self, candidates:list['Candidate']
                         ) -> list['Candidate']:
         """Wrapping decorated method
 
@@ -42,19 +40,15 @@ def runner(func) -> callable:
             if self.suitable(current_candidate.dataset) and self.enable:
                 candidate = self.from_cache(current_candidate)
                 if not candidate:
-                    candidate = func(self, current_candidate, callback=callback)
+                    candidate = func(self, current_candidate)
                     self.add_cache(current_candidate, candidate)
-                else:
-                    callback(self) # Call callback manually because we used cache
             else: # If the step is disabled or not suitable for the dataset, do nothing
                 candidate = current_candidate    
             
                 
             result = result + ([candidate] if type(candidate) in [Candidate] else candidate)
 
-        self.candidate = result        
-        if callback:
-            callback(self)
+        self.candidate = result
         
         return result
     return runner_wrapper
