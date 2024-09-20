@@ -15,8 +15,12 @@ class ActTfIdf(Actionable):
     """
     [STEP] Vectorize textual columns with TF-IDF
     """
-    name="TF-IDF"
-    description = "Process 'Term Frequency / Inversed Document Frequency' over a list of textual columns"
+    name='TF-IDF'
+    description = '''Process "Term Frequency / Inversed Document Frequency"
+        over a list of textual columns'''
+    description_long = '''This algorithm is used to evaluate the importance of a word inside
+        it\'s corpus. A word with a lot of repetitions will
+        have more importance than a word appearing once.'''
     refs = [
         {
             'year': 1972,

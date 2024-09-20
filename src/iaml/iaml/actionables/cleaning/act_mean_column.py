@@ -14,9 +14,12 @@ class ActMeanColumn(Actionable):
     """
     [STEP] Fill missing values with mean
     """
-    name = 'Fill missing values with mean'
-    description = """Fills missing values with the mean of non-missing values
-        when the proportion of empty rows is lower than {empty_threshold}."""
+    name = 'Fill missing values'
+    description = '''Fill missing values with the mean of non-missing values
+        when the proportion of empty rows is lower than {empty_threshold}.'''
+    description_long = '''Fill a column missings values with the mean of the columns
+        when the proportion of empty rows is lower than {empty_threshold}.
+        Work only for numerical columns.'''
 
     def __init__(self):
         self.columns:list[str] = None

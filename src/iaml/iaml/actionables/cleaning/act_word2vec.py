@@ -25,6 +25,9 @@ class ActWord2Vec(Actionable):
     """
     name = "Word2Vec"
     description = "Process Word2Vec algorithm over a list of columns"
+    description_long = '''Word2Vec is a word embedding algorithm auto-supervised algorithm.
+        This means we don't need labelled data as the algorithm discover 
+        the ground truth by himself'''
     refs = [
         {
             'year': 2023,
