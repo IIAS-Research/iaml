@@ -62,6 +62,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         self.preprocessor = preprocessor
         
+        self.__user_callback:callable = None
+        
         # Enable / Disable Meta Learner
         self.metalearner = metalearner
         if metalearner is None:
@@ -147,6 +149,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         learning_tag = 'fast_predictor' if fast else 'predictor'
         
         self.first_step.add_step(MetaExplorerStep(tag=learning_tag))
+        
+    def __callback(self, **kwargs):
+        if self.__user_callback and callable(self.__user_callback):
+            self.__user_callback(**kwargs)
 
 
     ##################
@@ -175,12 +181,19 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             patience:int=-1,
             generation_sample_size=200,
             n_candidates=1,
+            callback:callable = None,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
             X (pd.DataFrame): Training features 
             y (pd.DataFrame): Training labels
+            groups (pd.DataFrame) : Dataframe used to split data by groups (default None)
+            patience (int) : Max generation without improvement (default None)
+            generation_sample_size (int) : Size of the sample dataset used to generate first 
+                                            generation of candidates (default 200)
+            n_candidates (int) : Number of candidates to return (default 1) 
+            callback (callable) : Method call after each big step of training. Signature must be something(**kwargs).
 
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
@@ -189,7 +202,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
-
+        
+        def remain_time():
+            return self.max_duration - (time.monotonic() - start_time)
+        
+        # Wrap callback to keep clean code below
+        self.__user_callback = callback
+                
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
@@ -218,10 +237,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     if candidate.pipeline.predictor is not None]
                 Logger().log(f"{len(candidates)} generated pipelines", force=True)
                 
-                ### INITIAL EVALUATION
                 
-                def remain_time():
-                    return self.max_duration - (time.monotonic() - start_time)
+                ### INITIAL EVALUATION
+            
                 # Evaluate candidates
                 gen0_candidates = []
                 i = 0
@@ -312,6 +330,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         stage_number:int=None) -> None:
         
         new_candidates:list[Candidate] = []
+        start_time = time.monotonic()
 
         with Logger().progress as progress:
             task = progress.add_task(
@@ -356,6 +375,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             fingerprint = candidate.pipeline.fingerprint()
             if not Cache().from_cache('IAML_'+fingerprint, dataset.X):
                 Cache().add_to_cache('IAML_'+fingerprint, dataset.X, candidate.computed_metrics)
+    
+
+        self.__callback( # pylint: disable=too-many-function-args
+            generation = stage_number,
+            generation_size = len(new_candidates), 
+            best = new_candidates[0].get_main_metric_value(),
+            remaining_time = timeout - (time.monotonic() - start_time),
+            text = f'Stage {stage_number} finished' \
+                if stage_number is not None else "Initial evaluation finished")
                 
         return new_candidates
         
@@ -415,11 +443,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
-            
-            # Logger().log([(round(candidate.get_main_metric_value(), 5), \
-            #     candidate.pipeline.predictor[0], \
-            #     candidate.pipeline.predictor[1].resume_configuration()) \
-            #         for candidate in candidates], force=True)
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()
