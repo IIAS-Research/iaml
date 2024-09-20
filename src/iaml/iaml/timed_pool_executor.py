@@ -193,7 +193,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             target (callable): Method to run
         """
         if self.stop_flag:
-            return
+            raise RuntimeError("Job submission failed: Executor is currently \
+                shutdown and cannot accept new tasks.")
 
         if self.debug:
             self.result_queue.put((target(*args, **kwargs), len(self.callbacks)-1))
@@ -252,8 +253,6 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             time.sleep(0.5)
         
         results = self.results # Save before reset!
-
-        self.shutdown()
         
         if reset:
             self.reset()

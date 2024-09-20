@@ -277,6 +277,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             print("Error during fit")
             self.executor.shutdown()
             raise ex
+        finally:
+            self.executor.shutdown()
     
     @property
     def chosen_model(self):
