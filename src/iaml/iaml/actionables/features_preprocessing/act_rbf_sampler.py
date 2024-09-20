@@ -15,6 +15,13 @@ class ActRBFSampler(Actionable):
     [STEP] Approximate with RBFSampler
     """
     name="Approximate with RBFSampler"
+    description = '''RBFSampler is a tool that helps computers understand complex relationships 
+        between things by turning them into simpler numbers.'''
+    description_long = '''RBFSampler is a machine learning technique that transforms data into
+        a higher-dimensional space where it's easier for algorithms to find patterns.
+        It works by creating random projections of the original data onto a new set of axes.
+        This allows it to approximate the effects of a radial basis function kernel, which is a 
+        mathematical way of measuring similarity between data points.'''
     refs=[
         {
             'year': 2008,
