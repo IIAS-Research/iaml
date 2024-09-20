@@ -43,7 +43,6 @@ def process_daemon(
                 result = method(*args, **kwargs)
                 queue.put((result, callback_id))
             except Exception:  # pylint: disable=broad-exception-caught
-                Logger().log("error", force=True)
                 error_queue.put((traceback.format_exc(), callback_id))
             finally:
                 finally_queue.put(1)
@@ -130,7 +129,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             if callback_id and callable(self.callbacks[callback_id]):
                 self.callbacks[callback_id](result)
 
-            Logger().log(str(result))
+            Logger().info(str(result))
             self.results.append(result)
 
     def __collect_finally(self) -> None:
@@ -147,7 +146,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             if error == 'stop':
                 break
             
-            Logger().log("ERROR IN PROCESS", error, force=True)
+            Logger().error("Error in a subprocess : ", error)
             self.callbacks[callback_id](None)
     
     def __keep_running(self) -> None:

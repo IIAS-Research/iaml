@@ -287,11 +287,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         
         if best_val <= self.best_result:
             self.iterations_without_improvement = self.iterations_without_improvement + 1
-            Logger().log('Iteration without improvement', \
-                self.iterations_without_improvement, best_val)
         else:
-            Logger().log('IMPROVED !', best_val, ' > ', \
-                self.best_result, best_val > self.best_result )
             self.best_result = best_val
             self.iterations_without_improvement = 0
         

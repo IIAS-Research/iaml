@@ -33,9 +33,9 @@ from .wrapper import * # pylint: disable=unused-wildcard-import,wildcard-import
 try:
     import cudf.pandas 
     cudf.pandas.install()
-    Logger().log('cuDF is installed: using cuDF pandas accelerator mode.')
+    Logger().info('cuDF is installed: using cuDF pandas accelerator mode.')
 except ImportError as e:
-    Logger().log('cuDF not found: falling back to standalone pandas.')
+    Logger().warning('cuDF not found: falling back to standalone pandas.')
 
 # Main class of the package
 # Useful to create & run pipeline
@@ -49,7 +49,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     """
     def __init__(self, # pylint: disable=too-many-arguments
                 max_workers:int=None,
-                quiet:bool=False,
                 max_stage_duration:int=None,
                 metalearner:bool=None,
                 splitter=None,
@@ -58,15 +57,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 preprocessor:bool=False,
                 main_metric:Metric=None):
         
-        Logger().set_quiet(quiet)
-        
         self.preprocessor = preprocessor
         
         # Enable / Disable Meta Learner
         self.metalearner = metalearner
         if metalearner is None:
             if max_duration < 500 and max_duration != -1:
-                Logger().log("Max duration under 500 seconds : \
+                Logger().warning("Max duration under 500 seconds : \
                     Meta learner are disabled (you can enable it, \
                     with the parameter 'metalearner')")
                 self.metalearner = False
@@ -74,7 +71,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         # Set max duration of each stage
         if max_stage_duration is None:
             self.max_stage_duration = max(max_duration / 5, 900)
-            Logger().log(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
+            Logger().warning(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
         else:
             self.max_stage_duration = max_stage_duration
             
@@ -175,6 +172,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             patience:int=-1,
             generation_sample_size=200,
             n_candidates=1,
+            verbose=1,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
@@ -186,6 +184,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
         self.check_pipeline() # Raise error if the pipeline is not valid
+        
+        Logger().verbose = verbose # Set logger verbose
         
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
@@ -216,7 +216,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 # Remove candidate without predictor 
                 candidates = [candidate for candidate in candidates \
                     if candidate.pipeline.predictor is not None]
-                Logger().log(f"{len(candidates)} generated pipelines", force=True)
+                Logger().info(f"{len(candidates)} generated pipelines")
                 
                 ### INITIAL EVALUATION
                 
@@ -231,9 +231,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     # we can downsize it to get quicker training
                     if i > 0:
                         dataset = dataset.sample(0.1)
-                        Logger().log(f"Training is too time consuming. \
+                        Logger().warning(f"Training is too time consuming. \
                             Let's try again with dataset sample. \
-                            New features shape {dataset.X.shape}", force=True)
+                            New features shape {dataset.X.shape}")
                     i+= 1
                     
                     can_be_downsize = dataset.X.shape[0] >= 500
@@ -382,7 +382,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         # If there is not, define an arbitrary stop condition
         if max_duration == -1 and patience == -1:
-            Logger().log('You have not defined any stop condition. \
+            Logger().warning('You have not defined any stop condition. \
                 Patient has arbitrary set to 20')
             patience = 20
         
@@ -401,7 +401,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                             ).to_candidate()
                         candidates.append(meta_candidate)
                 
-            Logger().log(f'Finetuning... \
+            Logger().info(f'Finetuning... \
                 stage={iterations_count} \
                 candidates={len(candidates)} \
                 patience={iterations_without_improvement}/{patience}, \
@@ -417,11 +417,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             # Remove not computed (error or timeout)
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
-            
-            # Logger().log([(round(candidate.get_main_metric_value(), 5), \
-            #     candidate.pipeline.predictor[0], \
-            #     candidate.pipeline.predictor[1].resume_configuration()) \
-            #         for candidate in candidates], force=True)
             
             # Improvement ?
             new_best:float = candidates[0].get_main_metric_value()

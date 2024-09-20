@@ -16,9 +16,8 @@ class TestAutomed(unittest.TestCase):
         y = df[labels]
         X = df.drop(columns=labels)
             
-        automed = IAML(quiet=False, max_duration=30, max_workers=2)
-        automed.default_pipeline()
-        outputs = automed.fit(X, y)
+        automed = IAML(max_duration=30, max_workers=2)
+        outputs = automed.fit(X, y, verbose=2)
 
         self.assertTrue(isinstance(outputs[0], Candidate))
         self.assertTrue(outputs[0].computed_metrics is not None)
