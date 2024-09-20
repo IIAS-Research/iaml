@@ -163,7 +163,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     process.kill()
 
                 # empty task queue
-                while self.to_run_queue.qsize() > 0:
+                while not self.to_run_queue.empty():
                     self.to_run_queue.get()
                 
                 break
