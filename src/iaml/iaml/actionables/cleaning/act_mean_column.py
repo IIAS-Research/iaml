@@ -66,7 +66,7 @@ class ActMeanColumn(Actionable):
             pd.DataFrame: Transformed dataset
         """
         for name, mean in self.columns:
-            X[name].fillna(mean, inplace=True)
+            X[name] = X[name].fillna(mean)
         
         return X
         
