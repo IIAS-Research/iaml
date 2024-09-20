@@ -14,7 +14,11 @@ class ActKernelPCA(Actionable):
     """
     [STEP] Decompose features with KernelPCA
     """
-    name="Decompose features with KernelPCA"
+    name = 'Decompose features with KernelPCA'
+    description = '''Reduce datasets number of features by using
+        Kernel Principal Component Analysis Algorithm.'''
+    description_long = '''The dataset is reduced to {n_components} components
+        using {kernel} kernel'''
     refs = [
         {
             'year': 1997,

@@ -14,7 +14,10 @@ class ActNystroem(Actionable):
     """
     [STEP] Approximate with Nystroem
     """
-    name="Approximate with Nystroem"
+    name = 'Approximate with Nystroem'
+    description = ''
+    description_long = '''
+        '''
     
     def __init__(self):
         self.configuration:dict = {

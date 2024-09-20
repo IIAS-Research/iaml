@@ -14,8 +14,11 @@ class ActDateConverter(Actionable):
     """
     [STEP] Convert Short text to date if possible
     """
-    name = "Text to Date Converter"
-    description = "Convert Short text to date if possible"
+    name = 'Text to Date Converter'
+    description = 'Convert Text to Date if possible'
+    description_long = '''Try to convert all text of a column to date. If more than {authorized_error_ratios}%
+        of the rows return errors, then the column is not converted. As converting to date is time consuming, 
+        we will perform the test on {sample_size}.'''
     
     def __init__(self):
         self.configuration:dict = {
