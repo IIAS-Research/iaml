@@ -69,10 +69,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.daemon = None
         
         # Queue used to exchange data with sub process
-        self.to_run_queue = multiprocess.Queue()
-        self.error_queue = multiprocess.Queue()
-        self.result_queue = multiprocess.Queue()
-        self.finally_queue = multiprocess.Queue()
+        m = multiprocess.Manager()
+        self.to_run_queue = m.Queue()
+        self.error_queue = m.Queue()
+        self.result_queue = m.Queue()
+        self.finally_queue = m.Queue()
         
         # Method to call after each run
         self.callbacks = [callback]
