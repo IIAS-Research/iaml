@@ -24,6 +24,7 @@ rmm_log.txt
 
 # Python
 __pycache__
+*egg-info/
 
 # Documentation
 public/

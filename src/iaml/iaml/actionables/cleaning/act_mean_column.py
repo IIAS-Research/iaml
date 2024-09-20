@@ -20,7 +20,7 @@ class ActMeanColumn(Actionable):
     description_long = '''Fill a column missings values with the mean of the columns
         when the proportion of empty rows is lower than {empty_threshold}.
         Work only for numerical columns.'''
-
+    can_be_disabled = False
     def __init__(self):
         self.columns:list[str] = None
         self.configuration:dict = {

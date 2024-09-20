@@ -69,10 +69,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.daemon = None
         
         # Queue used to exchange data with sub process
-        self.to_run_queue = multiprocess.Queue()
-        self.error_queue = multiprocess.Queue()
-        self.result_queue = multiprocess.Queue()
-        self.finally_queue = multiprocess.Queue()
+        m = multiprocess.Manager()
+        self.to_run_queue = m.Queue()
+        self.error_queue = m.Queue()
+        self.result_queue = m.Queue()
+        self.finally_queue = m.Queue()
         
         # Method to call after each run
         self.callbacks = [callback]
@@ -193,7 +194,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             target (callable): Method to run
         """
         if self.stop_flag:
-            return
+            raise RuntimeError("Job submission failed: Executor is currently \
+                shutdown and cannot accept new tasks.")
 
         if self.debug:
             self.result_queue.put((target(*args, **kwargs), len(self.callbacks)-1))
@@ -252,8 +254,6 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             time.sleep(0.5)
         
         results = self.results # Save before reset!
-
-        self.shutdown()
         
         if reset:
             self.reset()

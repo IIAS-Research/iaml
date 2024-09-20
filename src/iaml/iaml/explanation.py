@@ -109,17 +109,62 @@ class Explanation:
                 shap.plots.bar(self.shap_values[ps], show=False)
             case _:
                 raise RuntimeError(f'Unknown plot type ({plot}).')
-    
-    def to_b64_plots(self) -> List[Tuple[str]]:
+
+    def to_binary_plots(self, plots: List[str] = None, ps: slice = None, **kw) -> List[Tuple[str]]:
+        """
+        Build List of SHAP values and encode the plot images into bytes string.
+
+        Args:
+            plots (List[str], optionnal): List of plot names to process
+            ps (slice, optionnal):
+            **kw (dict, optionnal): optionnal parameters dict for matplotlib
+        Returns:
+            List[Tuple[str]]: List of tuple (name, bytes) images
+        """
+        if plots is None:
+            plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
+        
+        if self.shap_values is None or len(plots) == 0:
+            return []
+        
+        bin_plots = []
+        for plot in plots:
+            bin_plots.append((plot, self.to_binary_plot(plot, ps, **kw)))
+        return bin_plots
+
+    def to_binary_plot(self, plot: str, ps: slice = None, **kw) -> io.BytesIO:
+        """
+        Build SHAP values and encode the plot images into bytes string.
+
+        Args:
+            plot (str): plot name to process
+            ps (slice, optionnal):
+            **kw (dict, optionnal): optionnal parameters dict for matplotlib
+        Returns:
+            io.BytesIO: Bytes object containing the generated image
+        """
+        self.to_plot(plot, ps)
+        buffer = io.BytesIO()
+        plt.savefig(buffer, bbox_inches='tight', **kw)
+        buffer.seek(0)
+        plt.close()
+        return buffer
+        
+    def to_b64_plots(self, plots: List[str] = None) -> List[Tuple[str]]:
         """
         Build List of SHAP values and encode the plot images into b64 string.
 
         Args:
-            None
+            plots (List[str], optionnal)
         Returns:
-            str: Base64-encoded plot image.
+            List[Tuple[str]]: List of tuple (name, Base64-encoded) images.
         """
-        plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
+        if plots is None:
+            plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
+        
+        if self.shap_values is None or len(plots) == 0:
+            return []
+        
         b64_plots = []
         for plot in plots:
             b64_plots.append((plot, self.to_b64_plot(plot)))
@@ -142,15 +187,7 @@ class Explanation:
         Returns:
             str: Base64-encoded plot image.
         """
-        self.to_plot(plot, ps)
-
-        buffer = io.BytesIO()
-        plt.savefig(buffer, bbox_inches='tight', **kw)
-        buffer.seek(0)
-
-        plt.close()
-
-        b64 = base64.b64encode(buffer.read()).decode()
+        b64 = base64.b64encode(self.to_binary_plot(plot, ps, **kw).read()).decode()
         return b64
     
     def to_markdown_data_uri_plot(self, plot: str, ps: slice = None, **kw):
