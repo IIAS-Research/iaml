@@ -23,7 +23,7 @@ Here is an basic example of Actionable Step :
 ```python
 def transform(x, y, columns):
     for name, mean in columns:
-        x[name].fillna(mean, inplace=True)
+        x[name] = x[name].fillna(mean)
 
     return x, y
 

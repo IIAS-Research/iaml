@@ -139,7 +139,7 @@ def already_computed(dataset, duration, package):
 
 def train_iaml(X, y, duration):
     Cache.reset()
-    estimator = IAML(quiet=True, max_workers=12, max_duration=duration)
+    estimator = IAML(max_workers=12, max_duration=duration)
     estimator.fit(X, y)
     return estimator.chosen_model, estimator.chosen_model.predict, estimator.chosen_model.predict_proba, f"{estimator.chosen_model.transformers[-1][0]} -> {estimator.chosen_model.predictor[0]}"
 

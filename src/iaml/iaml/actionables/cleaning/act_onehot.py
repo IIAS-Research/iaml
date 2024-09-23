@@ -15,7 +15,12 @@ class ActOnehot(Actionable):
     """
     [STEP] One hot encoding categorical features
     """
-    name="One hot encoding categorical features"
+    name = 'One hot encoding categorical features'
+    description = 'Encode categorical data to numerical values using One Hot Encoding Algorithm'
+    description_long = '''Retrieve all unique values from a column, then transform
+        those values to multiple binary columns.
+        Exemple: If a column "A" contain 3 uniques values like "coffee", "tea" and "water",
+        this step will create binary columns "A_coffee", "A_tea" and "A_water".'''
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[str] = None

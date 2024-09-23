@@ -14,6 +14,14 @@ class ActMultinomialNB(Predictor):
     [STEP] Learn : Multinomial NB
     """
     name = "Learn : Multinomial NB"
+    description = '''MultinomialNB is a machine learning algorithm that models 
+        the relationship between input features and a categorical output variable 
+        using a multinomial distribution.'''
+    description_long = '''MultinomialNB is a type of naive Bayes algorithm that models 
+        the relationship between input features and a categorical output variable using 
+        a multinomial distribution. It works by assuming that the input features are 
+        independent and follow a multinomial distribution, where each feature is represented 
+        by the number of times it appears in a document or bag-of-words representation.'''
     refs = [
         {
             'year': 2008,

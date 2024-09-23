@@ -11,8 +11,7 @@ df = pd.read_csv('./src/perf_logger/tests_data/fetal_health.csv', sep=";")
 y = pd.DataFrame(df["label"])
 X = df.drop(columns=['label'])
 
-iaml = IAML(quiet=True, max_duration=300)
-iaml.default_pipeline()
+iaml = IAML(max_duration=300)
 output = iaml.fit(X, y)
 
 

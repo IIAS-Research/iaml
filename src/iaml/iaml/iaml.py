@@ -33,9 +33,9 @@ from .wrapper import * # pylint: disable=unused-wildcard-import,wildcard-import
 try:
     import cudf.pandas 
     cudf.pandas.install()
-    Logger().log('cuDF is installed: using cuDF pandas accelerator mode.')
+    Logger().info('cuDF is installed: using cuDF pandas accelerator mode.')
 except ImportError as e:
-    Logger().log('cuDF not found: falling back to standalone pandas.')
+    Logger().warning('cuDF not found: falling back to standalone pandas.')
 
 # Main class of the package
 # Useful to create & run pipeline
@@ -49,7 +49,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     """
     def __init__(self, # pylint: disable=too-many-arguments
                 max_workers:int=None,
-                quiet:bool=False,
                 max_stage_duration:int=None,
                 metalearner:bool=None,
                 splitter=None,
@@ -57,8 +56,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 time_before_sample_use:int=None,
                 preprocessor:bool=False,
                 main_metric:Metric=None):
-        
-        Logger().set_quiet(quiet)
         
         self.preprocessor = preprocessor
         
@@ -68,7 +65,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.metalearner = metalearner
         if metalearner is None:
             if max_duration < 500 and max_duration != -1:
-                Logger().log("Max duration under 500 seconds : \
+                Logger().warning("Max duration under 500 seconds : \
                     Meta learner are disabled (you can enable it, \
                     with the parameter 'metalearner')")
                 self.metalearner = False
@@ -76,7 +73,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         # Set max duration of each stage
         if max_stage_duration is None:
             self.max_stage_duration = max(max_duration / 5, 900)
-            Logger().log(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
+            Logger().warning(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
         else:
             self.max_stage_duration = max_stage_duration
             
@@ -182,6 +179,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             generation_sample_size=200,
             n_candidates=1,
             callback:callable = None,
+            verbose=1,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
@@ -200,6 +198,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """
         self.check_pipeline() # Raise error if the pipeline is not valid
         
+        Logger().verbose = verbose # Set logger verbose
+        
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
         
@@ -210,91 +210,89 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.__user_callback = callback
                 
         try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                
-                if isinstance(y, pd.DataFrame):
-                    y = y.values.ravel()
-                
-                dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
-                
-                ### INITIAL GENERATE CANDIDATE 
-                
-                self.init_candidate:Candidate = Candidate(
-                    dataset.sample(generation_sample_size),
-                    main_metric=self.main_metric)
-
-                # Select metrics used to evaluate performances
-                for metric \
-                    in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-                    self.init_candidate.add_metric(metric)
-
-                # Generate candidates
-                candidates = self.__run(self.init_candidate, *args, **kwargs)
+            if isinstance(y, pd.DataFrame):
+                y = y.values.ravel()
             
-                # Remove candidate without predictor 
-                candidates = [candidate for candidate in candidates \
-                    if candidate.pipeline.predictor is not None]
-                Logger().log(f"{len(candidates)} generated pipelines", force=True)
-                
-                
-                ### INITIAL EVALUATION
+            dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
             
-                # Evaluate candidates
-                gen0_candidates = []
-                i = 0
-                can_be_downsize = True
-                while can_be_downsize and not gen0_candidates and remain_time() >= 1:
-                    # If process is too long and dataset big enough, 
-                    # we can downsize it to get quicker training
-                    if i > 0:
-                        dataset = dataset.sample(0.1)
-                        Logger().log(f"Training is too time consuming. \
-                            Let's try again with dataset sample. \
-                            New features shape {dataset.X.shape}", force=True)
-                    i+= 1
-                    
-                    can_be_downsize = dataset.X.shape[0] >= 500
+            ### INITIAL GENERATE CANDIDATE 
+            
+            self.init_candidate:Candidate = Candidate(
+                dataset.sample(generation_sample_size),
+                main_metric=self.main_metric)
 
-                    timeout = min(remain_time(), self.time_before_sample_use) \
-                        if can_be_downsize else remain_time()
-                        
-                    gen0_candidates = self.__run_evaluations(candidates,
-                                dataset, timeout=timeout)
+            # Select metrics used to evaluate performances
+            for metric \
+                in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                self.init_candidate.add_metric(metric)
 
-                if not gen0_candidates:
-                    if remain_time() < 1:
-                        raise TimeoutError('IAML was unable to generate a model within the \
-                            imposed time limit. Try increasing the processing time')
-                    raise RuntimeError('Undefined error. IAML was unable to create pipeline \
-                        based on your data')
+            # Generate candidates
+            candidates = self.__run(self.init_candidate, *args, **kwargs)
+        
+            # Remove candidate without predictor 
+            candidates = [candidate for candidate in candidates \
+                if candidate.pipeline.predictor is not None]
+            Logger().info(f"{len(candidates)} generated pipelines")
+            
+            ### INITIAL EVALUATION
+            
+            def remain_time():
+                return self.max_duration - (time.monotonic() - start_time)
+            # Evaluate candidates
+            gen0_candidates = []
+            i = 0
+            can_be_downsize = True
+            while can_be_downsize and not gen0_candidates and remain_time() >= 1:
+                # If process is too long and dataset big enough, 
+                # we can downsize it to get quicker training
+                if i > 0:
+                    dataset = dataset.sample(0.1)
+                    Logger().warning(f"Training is too time consuming. \
+                        Let's try again with dataset sample. \
+                        New features shape {dataset.X.shape}")
+                i+= 1
+                can_be_downsize = dataset.X.shape[0] >= 500
 
-                ### FINETUNING
-                candidates = self.__optimize(dataset,
-                                            gen0_candidates,
-                                            optimizer=GeneticOptimizer(duration=remain_time()),
-                                            max_duration=remain_time(),
-                                            patience=patience)
+                timeout = min(remain_time(), self.time_before_sample_use) \
+                    if can_be_downsize else remain_time()
 
-                ### FINAL FIT
-                self.executor.shutdown()
+                gen0_candidates = self.__run_evaluations(candidates,
+                            dataset, timeout=timeout)
 
-                # Fit candidates with the whole dataset
-                fit_candidates = []
-                for i in range(min(n_candidates, len(candidates))):
-                    Cache.reset()
-                    current_candidate = deepcopy(candidates[i])
-                    current_candidate.pipeline.fit(X, y)
-                    fit_candidates.append(current_candidate)
+            if not gen0_candidates:
+                if remain_time() < 1:
+                    raise TimeoutError('IAML was unable to generate a model within the \
+                        imposed time limit. Try increasing the processing time')
+                raise RuntimeError('Undefined error. IAML was unable to create pipeline \
+                    based on your data')
 
-                self.chosen_candidate = fit_candidates[0]
-                self.last_stage_candidates = candidates
+            ### FINETUNING
+            candidates = self.__optimize(dataset,
+                                        gen0_candidates,
+                                        optimizer=GeneticOptimizer(duration=remain_time()),
+                                        max_duration=remain_time(),
+                                        patience=patience)
 
-                return fit_candidates
+            ### FINAL FIT
+            self.executor.shutdown()
+
+            # Fit candidates with the whole dataset
+            fit_candidates = []
+            for i in range(min(n_candidates, len(candidates))):
+                Cache.reset()
+                current_candidate = deepcopy(candidates[i])
+                current_candidate.pipeline.fit(X, y)
+                fit_candidates.append(current_candidate)
+
+            self.chosen_candidate = fit_candidates[0]
+            self.last_stage_candidates = candidates
+
+            return fit_candidates
         except Exception as ex:
             print("Error during fit")
-            self.executor.shutdown()
             raise ex
+        finally:
+            self.executor.shutdown()
     
     @property
     def chosen_model(self):
@@ -408,7 +406,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         # If there is not, define an arbitrary stop condition
         if max_duration == -1 and patience == -1:
-            Logger().log('You have not defined any stop condition. \
+            Logger().warning('You have not defined any stop condition. \
                 Patient has arbitrary set to 20')
             patience = 20
         
@@ -427,7 +425,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                             ).to_candidate()
                         candidates.append(meta_candidate)
                 
-            Logger().log(f'Finetuning... \
+            Logger().info(f'Finetuning... \
                 stage={iterations_count} \
                 candidates={len(candidates)} \
                 patience={iterations_without_improvement}/{patience}, \

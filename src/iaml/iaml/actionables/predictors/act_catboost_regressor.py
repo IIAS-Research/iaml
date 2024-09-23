@@ -15,6 +15,11 @@ class ActCatBoostRegressor(Predictor):
     [STEP] Learn :  CatBoost Regressor
     """
     name = "Learn : CatBoost Regressor"
+    description = '''CatBoostRegressor is a powerful tool that helps computers make accurate 
+        predictions for continuous outcomes by learning from both positive and 
+        negative examples simultaneously.'''
+    description_long = '''CatBoostRegressor is a gradient boosting algorithm specifically 
+        designed for regression tasks.'''
     refs = [
         {
             'year': 2017,

@@ -14,10 +14,12 @@ class ActDropTextualColumn(Actionable):
     """
     [STEP] Drop Textual Column
     """
-    name = 'Drop textual columns'
-    description = 'Drop textual columns.'
+    name = 'Remove textual columns'
+    description = 'Remove all columns containing textual data from the dataset'
+    description_long = '''Remove all columns containing textual data from the dataset.
+        This step is used to clean the dataset in order to perform other actions later on 
+        that can't be applied to textual columns.'''
     can_be_disabled = False
-    
     def __init__(self):
         self.columns_to_drop:list[str] = None
     

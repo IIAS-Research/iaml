@@ -34,9 +34,9 @@ class WorkerFuture(Future):
         try:
             return self.task(*self.args, **self.kwargs)
         except:  # pylint: disable=bare-except
-            Logger().log(f'[red]A worker for [b]{self.step.__class__.__name__}[/b] \
+            Logger().error(f'[red]A worker for [b]{self.step.__class__.__name__}[/b] \
                 has crashed.[/red]')
-            Logger().log(traceback.format_exc())
+            Logger().error(traceback.format_exc())
 
             return []
 

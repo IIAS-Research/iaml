@@ -15,7 +15,10 @@ class ActPCA(Actionable):
     """
     [STEP] Decompose features with PCA
     """
-    name="Decompose features with PCA"
+    name = "Decompose features with PCA"
+    description = 'Reduce dataset number of features using Principal Component Analysis Algorithm'
+    description_long = '''Reduce the dataset to {n_components}% of the total columns
+    '''
     
     def __init__(self):
         self.configuration:dict = {

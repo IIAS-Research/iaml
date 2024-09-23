@@ -43,7 +43,6 @@ def process_daemon(
                 result = method(*args, **kwargs)
                 queue.put((result, callback_id))
             except Exception:  # pylint: disable=broad-exception-caught
-                Logger().log("error", force=True)
                 error_queue.put((traceback.format_exc(), callback_id))
             finally:
                 finally_queue.put(1)
@@ -69,10 +68,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.daemon = None
         
         # Queue used to exchange data with sub process
-        self.to_run_queue = multiprocess.Queue()
-        self.error_queue = multiprocess.Queue()
-        self.result_queue = multiprocess.Queue()
-        self.finally_queue = multiprocess.Queue()
+        m = multiprocess.Manager()
+        self.to_run_queue = m.Queue()
+        self.error_queue = m.Queue()
+        self.result_queue = m.Queue()
+        self.finally_queue = m.Queue()
         
         # Method to call after each run
         self.callbacks = [callback]
@@ -129,7 +129,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             if callback_id and callable(self.callbacks[callback_id]):
                 self.callbacks[callback_id](result)
 
-            Logger().log(str(result))
+            Logger().info(str(result))
             self.results.append(result)
 
     def __collect_finally(self) -> None:
@@ -146,7 +146,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             if error == 'stop':
                 break
             
-            Logger().log("ERROR IN PROCESS", error, force=True)
+            Logger().error("Error in a subprocess : ", error)
             self.callbacks[callback_id](None)
     
     def __keep_running(self) -> None:
@@ -193,7 +193,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             target (callable): Method to run
         """
         if self.stop_flag:
-            return
+            raise RuntimeError("Job submission failed: Executor is currently \
+                shutdown and cannot accept new tasks.")
 
         if self.debug:
             self.result_queue.put((target(*args, **kwargs), len(self.callbacks)-1))
@@ -252,8 +253,6 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             time.sleep(0.5)
         
         results = self.results # Save before reset!
-
-        self.shutdown()
         
         if reset:
             self.reset()

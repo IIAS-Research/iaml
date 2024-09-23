@@ -15,7 +15,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     """
     name = 'Remove High Correlated Column'
     description = 'Remove columns which correlation with other columns is higher than {threshold}.'
-
+    description_long = ''''''
     def __init__(self):
         self.configuration:dict = {
             'threshold': {

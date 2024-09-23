@@ -15,6 +15,11 @@ class ActAutoSKLearn(Predictor):
     [STEP] Learn : AutoSkLearn
     """
     name="Learn : AutoSkLearn"
+    description = '''Auto-sklearn for classification is a powerful tool that automatically 
+        finds the best combination of machine learning models and 
+        hyperparameters to solve classification problems.'''
+    description_long = '''Auto-sklearn.classification is an automated 
+        machine learning system that can handle various types of classification tasks.'''
     refs = [
         {
             'year': 2015,
