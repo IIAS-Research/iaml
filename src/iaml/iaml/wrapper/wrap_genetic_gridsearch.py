@@ -90,7 +90,7 @@ class WrapGeneticGridSearch(StepWrapper):
             
         # Loop one time by wanted generation
         for i_gen in range(0, self.get_config('nb_generations')):
-            Logger().log(f"created new generation: [b]{self.step.__class__.__name__}[/] \
+            Logger().info(f"created new generation: [b]{self.step.__class__.__name__}[/] \
                 (generation={i_gen})")
             
             meta = MetaExplorerStep() # Use MetaExplorer to run all our generation easily
@@ -139,7 +139,7 @@ class WrapGeneticGridSearch(StepWrapper):
                     
                 generation = new_generation # Let's go for the next generation
             else:
-                Logger().log(f"finished all generations: [b]{self.step.__class__.__name__}[/]")
+                Logger().info(f"finished all generations: [b]{self.step.__class__.__name__}[/]")
         
         return candidates
             

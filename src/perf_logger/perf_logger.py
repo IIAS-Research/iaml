@@ -38,7 +38,7 @@ def each_file(file):
     X_test = test_df.drop(columns=labels)
         
 
-    auto = IAML(quiet=True, max_workers=8, max_duration=DURATION)
+    auto = IAML(max_workers=8, max_duration=DURATION)
     auto.default_pipeline(fast=False)
     local_results = auto.fit(X, y, patience=5)
     

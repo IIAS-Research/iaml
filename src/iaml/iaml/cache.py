@@ -43,7 +43,7 @@ class Cache(metaclass=MetaSingleton):
         Get data from cache
         
         Args:
-            fingerprint (bool): New quiet value
+            fingerprint (bool): Fingerprint used to identify task
         """
         if self.__disable:
             return None

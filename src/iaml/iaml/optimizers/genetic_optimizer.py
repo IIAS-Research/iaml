@@ -81,10 +81,6 @@ class GeneticOptimizer(Optimizer):
         
         new_generation = [item for item in new_generation if item is not None] # remove None
         
-        Logger().log(f"gen{self.generation_count}, \
-            Nb mutation={count_mutate}, \
-            Nb random={len(new_generation)-count_mutate-nb_to_keep} ",force=True)
-        
         return self.__unique(new_generation) # Remove duplicated
     
     def __random_configuration(self, candidate:Candidate) -> Candidate:

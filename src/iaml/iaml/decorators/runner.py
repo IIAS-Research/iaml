@@ -36,7 +36,7 @@ def runner(func) -> callable:
 
         # only print "parent" steps to reduce logs
         if hasattr(self, 'step') or hasattr(self, 'steps'):
-            Logger().log(f'running step: {self.to_rich_str()}')
+            Logger().info(f'running step: {self.to_rich_str()}')
         
         for current_candidate in candidates:
             if self.suitable(current_candidate.dataset) and self.enable:
