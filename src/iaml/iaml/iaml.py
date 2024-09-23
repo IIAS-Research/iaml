@@ -498,7 +498,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
-        Logger().log("Generate candidate...")
+        Logger().info("Generate candidate...")
         self.candidates = self.first_step.run(candidate)
             
         return self.candidates
