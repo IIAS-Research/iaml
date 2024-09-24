@@ -59,8 +59,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         self.preprocessor = preprocessor
         
-        self.__user_callback:callable = None
-        
         # Enable / Disable Meta Learner
         self.metalearner = metalearner
         if metalearner is None:
@@ -147,9 +145,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         self.first_step.add_step(MetaExplorerStep(tag=learning_tag))
         
-    def __callback(self, **kwargs):
-        if self.__user_callback and callable(self.__user_callback):
-            self.__user_callback(**kwargs)
+    def __callback(self, callback, **kwargs):
+        if callback and callable(callback):
+            callback(**kwargs)
 
 
     ##################
@@ -205,9 +203,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         def remain_time():
             return self.max_duration - (time.monotonic() - start_time)
-        
-        # Wrap callback to keep clean code below
-        self.__user_callback = callback
                 
         try:
             if isinstance(y, pd.DataFrame):
@@ -257,7 +252,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     if can_be_downsize else remain_time()
 
                 gen0_candidates = self.__run_evaluations(candidates,
-                            dataset, timeout=timeout)
+                            dataset, timeout=timeout, callback=callback)
 
             if not gen0_candidates:
                 if remain_time() < 1:
@@ -271,7 +266,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                                         gen0_candidates,
                                         optimizer=GeneticOptimizer(duration=remain_time()),
                                         max_duration=remain_time(),
-                                        patience=patience)
+                                        patience=patience,
+                                        callback=callback)
 
             ### FINAL FIT
             self.executor.shutdown()
@@ -325,7 +321,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         candidates:Candidate,
                         dataset:Dataset,
                         timeout:int=None,
-                        stage_number:int=None) -> None:
+                        stage_number:int=None,
+                        callback=None) -> None:
         
         new_candidates:list[Candidate] = []
         start_time = time.monotonic()
@@ -375,7 +372,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 Cache().add_to_cache('IAML_'+fingerprint, dataset.X, candidate.computed_metrics)
     
 
-        self.__callback( # pylint: disable=too-many-function-args
+        self.__callback(callback, # pylint: disable=too-many-function-args
             generation = stage_number,
             generation_size = len(new_candidates), 
             best = new_candidates[0].get_main_metric_value(),
@@ -392,7 +389,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     candidates:list[Candidate],
                     optimizer:Optimizer=Optimizer(),
                     patience:int=5,
-                    max_duration:int=-1) -> list[Candidate]:
+                    max_duration:int=-1,
+                    callback=None) -> list[Candidate]:
         if not candidates:
             return []
         
@@ -436,7 +434,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             candidates = self.__run_evaluations(candidates,
                         dataset,
                         timeout=max_duration - (time.monotonic() - starting_time),
-                        stage_number=iterations_count)
+                        stage_number=iterations_count,
+                        callback=callback)
             
             
             # Remove not computed (error or timeout)
