@@ -163,7 +163,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     process.kill()
 
                 # empty task queue
-                while self.to_run_queue.qsize() > 0:
+                while not self.to_run_queue.empty():
                     self.to_run_queue.get()
                 
                 break
@@ -222,7 +222,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 
     def set_callback(self, callback:callable) -> None:
         """
-        Set the method to when a task finish
+        Set the method call to when a task finish
 
         Args:
             callback (callable): callback method

@@ -30,7 +30,7 @@ class ActAtcCode(Actionable):
     }
     
     @runner
-    def run(self, input, callback=None) -> Output:
+    def run(self, input) -> Output:
         columns_to_add = {'test': pd.DataFrame(), 'train': pd.DataFrame()}
         for column in input.dataset.X_train.columns:
             values = {'test': input.dataset.X_test[column], 'train': input.dataset.X_train[column]}

@@ -37,7 +37,7 @@ class Predictor(Actionable, metaclass=ABCMeta):
         self.model = None
     
     @runner
-    def run(self, candidate:Candidate, callback:callable=None) -> Candidate:
+    def run(self, candidate:Candidate) -> Candidate:
         """
         Run the step. In "Run" stage, predict does not "fit". Only add himself to pipeline
 

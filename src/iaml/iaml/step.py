@@ -493,7 +493,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         return self
     
     @runner  
-    def run(self, candidate:'Candidate', callback:callable=None) -> 'Candidate':
+    def run(self, candidate:'Candidate') -> 'Candidate':
         """
         Run the step on candidate data
 

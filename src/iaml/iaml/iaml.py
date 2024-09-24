@@ -92,7 +92,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.time_before_sample_use = math.inf
         
         self.candidates:list[Candidate] = None
-        self.fit_candidate:Candidate = None
+        self.init_candidate:Candidate = None
         self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep
         self.last_stage_candidates = []
         
@@ -144,6 +144,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         learning_tag = 'fast_predictor' if fast else 'predictor'
         
         self.first_step.add_step(MetaExplorerStep(tag=learning_tag))
+        
+    def __callback(self, callback, **kwargs):
+        if callback and callable(callback):
+            callback(**kwargs)
 
 
     ##################
@@ -158,7 +162,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Returns:
             Dataset: Candidate dataset defined by .fit()
         """
-        return self.fit_candidate.dataset
+        return self.init_candidate.dataset
 
     ###########
     ### RUN ###
@@ -172,6 +176,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             patience:int=-1,
             generation_sample_size=200,
             n_candidates=1,
+            callback:callable = None,
             verbose=1,
             **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
@@ -179,6 +184,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Args:
             X (pd.DataFrame): Training features 
             y (pd.DataFrame): Training labels
+            groups (pd.DataFrame) : Dataframe used to split data by groups (default None)
+            patience (int) : Max generation without improvement (default None)
+            generation_sample_size (int) : Size of the sample dataset used to generate first 
+                                            generation of candidates (default 200)
+            n_candidates (int) : Number of candidates to return (default 1) 
+            callback (callable) : Method call after each big step of training. Signature must be something(**kwargs).
 
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
@@ -189,9 +200,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
-
-        try:
         
+        def remain_time():
+            return self.max_duration - (time.monotonic() - start_time)
+                
+        try:
             if isinstance(y, pd.DataFrame):
                 y = y.values.ravel()
             
@@ -199,17 +212,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             ### INITIAL GENERATE CANDIDATE 
             
-            self.fit_candidate:Candidate = Candidate(
+            self.init_candidate:Candidate = Candidate(
                 dataset.sample(generation_sample_size),
                 main_metric=self.main_metric)
 
             # Select metrics used to evaluate performances
             for metric \
                 in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-                self.fit_candidate.add_metric(metric)
+                self.init_candidate.add_metric(metric)
 
             # Generate candidates
-            candidates = self.__run(self.fit_candidate, *args, **kwargs)
+            candidates = self.__run(self.init_candidate, *args, **kwargs)
         
             # Remove candidate without predictor 
             candidates = [candidate for candidate in candidates \
@@ -233,14 +246,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         Let's try again with dataset sample. \
                         New features shape {dataset.X.shape}")
                 i+= 1
-                
                 can_be_downsize = dataset.X.shape[0] >= 500
 
                 timeout = min(remain_time(), self.time_before_sample_use) \
                     if can_be_downsize else remain_time()
-                    
+
                 gen0_candidates = self.__run_evaluations(candidates,
-                            dataset, timeout=timeout)
+                            dataset, timeout=timeout, callback=callback)
 
             if not gen0_candidates:
                 if remain_time() < 1:
@@ -254,7 +266,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                                         gen0_candidates,
                                         optimizer=GeneticOptimizer(duration=remain_time()),
                                         max_duration=remain_time(),
-                                        patience=patience)
+                                        patience=patience,
+                                        callback=callback)
 
             ### FINAL FIT
             self.executor.shutdown()
@@ -273,7 +286,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return fit_candidates
         except Exception as ex:
             print("Error during fit")
-            self.executor.shutdown()
             raise ex
         finally:
             self.executor.shutdown()
@@ -309,9 +321,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         candidates:Candidate,
                         dataset:Dataset,
                         timeout:int=None,
-                        stage_number:int=None) -> None:
+                        stage_number:int=None,
+                        callback=None) -> None:
         
         new_candidates:list[Candidate] = []
+        start_time = time.monotonic()
 
         with Logger().progress as progress:
             task = progress.add_task(
@@ -356,6 +370,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             fingerprint = candidate.pipeline.fingerprint()
             if not Cache().from_cache('IAML_'+fingerprint, dataset.X):
                 Cache().add_to_cache('IAML_'+fingerprint, dataset.X, candidate.computed_metrics)
+    
+
+        self.__callback(callback, # pylint: disable=too-many-function-args
+            generation = stage_number,
+            generation_size = len(new_candidates), 
+            best = new_candidates[0].get_main_metric_value(),
+            remaining_time = timeout - (time.monotonic() - start_time),
+            text = f'Stage {stage_number} finished' \
+                if stage_number is not None else "Initial evaluation finished")
                 
         return new_candidates
         
@@ -366,7 +389,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     candidates:list[Candidate],
                     optimizer:Optimizer=Optimizer(),
                     patience:int=5,
-                    max_duration:int=-1) -> list[Candidate]:
+                    max_duration:int=-1,
+                    callback=None) -> list[Candidate]:
         if not candidates:
             return []
         
@@ -410,7 +434,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             candidates = self.__run_evaluations(candidates,
                         dataset,
                         timeout=max_duration - (time.monotonic() - starting_time),
-                        stage_number=iterations_count)
+                        stage_number=iterations_count,
+                        callback=callback)
             
             
             # Remove not computed (error or timeout)
@@ -463,33 +488,18 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 yield subclass
 
     # Execute all the pipeline steps
-        # Callback -> Will be call after each step 
-    def __run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
+    def __run(self, candidate:Candidate) -> list[Candidate]:
         """Run pipeline
 
         Args:
             candidate (Candidate): Data used to fit models and steps
-            callback (callable, optional): Will be call after each Step run (-> many times).
-                                            Defaults to None.
 
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
-        with Logger().progress as progress:
-            step_count:int = self.first_step.count_steps()
-            task = progress.add_task('Generate candidates', total=step_count)
-            # Override callback to handle progress bar
-            def progress_callback(step: Step) -> None:
-                progress.update(task, advance=1)
-                if callback is not None:
-                    callback(step)
-                    
-            # RUN!
-            self.candidates = self.first_step.run(candidate, callback=progress_callback)
-            progress.update(task, completed=step_count)
+        Logger().info("Generate candidate...")
+        self.candidates = self.first_step.run(candidate)
             
-        # Order candidate according the main metric
-        self.candidates.sort(reverse=True)
         return self.candidates
 
     ########################

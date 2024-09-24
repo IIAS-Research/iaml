@@ -56,7 +56,7 @@ class WrapGeneticGridSearch(StepWrapper):
         
     # pylint: disable=too-many-locals
     @runner
-    def run(self, candidate:Candidate, callback:callable=None) -> list[Candidate]:
+    def run(self, candidate:Candidate) -> list[Candidate]:
         """
         Will iterate over generation to find best parameters
         
@@ -70,7 +70,6 @@ class WrapGeneticGridSearch(StepWrapper):
                 Generate totally new steps
         Args:
             candidate (Candidate): Candidate data
-            callback (callable, optional): Call after each step run. Defaults to None.
 
         Returns:
             list[Candidate]: All generated Candidate
@@ -80,7 +79,7 @@ class WrapGeneticGridSearch(StepWrapper):
                 
         # If no configuration, let's run the step once. Nothing to optimize here
         if not any(self.__config_keys()):
-            return self.step.run(candidate, callback=callback)
+            return self.step.run(candidate)
                 
         # Create the first generation of Steps. 
         # This first generation is full of random Steps configurations
@@ -95,7 +94,7 @@ class WrapGeneticGridSearch(StepWrapper):
             
             meta = MetaExplorerStep() # Use MetaExplorer to run all our generation easily
             meta.add_steps(generation) # Give all steps to MetaExplorer
-            candidates = meta.run(candidate, callback=callback) # And run !
+            candidates = meta.run(candidate) # And run !
             
             # If this is not the last generation, let's create a new one
             if i_gen+1 < self.get_config('nb_generations'):
