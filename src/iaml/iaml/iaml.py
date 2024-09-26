@@ -7,7 +7,7 @@ import math
 import multiprocessing
 import warnings
 import pandas as pd
-from .timed_pool_executor import TimedPoolExecutor
+from .timed_pool_executor import TimedPoolExecutor, TerminatedError
 from .step import Step
 from .cache import Cache
 from .metastep import MetaStep
@@ -284,6 +284,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.last_stage_candidates = candidates
 
             return fit_candidates
+        except TerminatedError:
+            print('IAML was terminated.')
         except Exception as ex:
             print("Error during fit")
             raise ex

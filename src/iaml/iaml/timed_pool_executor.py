@@ -4,15 +4,22 @@
     Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
 """
 
-import threading
-import warnings
-import time
-import random
-import traceback
 import multiprocess
+import random
+import signal
+import threading
+import time
+import traceback
+import warnings
 
 import multiprocess.process
 from .logger import Logger
+from .worker_manager import WorkerManager
+
+
+class TerminatedError(RuntimeError):
+    pass
+
 
 def process_daemon(
     to_run_queue:multiprocess.Queue,
@@ -68,11 +75,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.daemon = None
         
         # Queue used to exchange data with sub process
-        m = multiprocess.Manager()
-        self.to_run_queue = m.Queue()
-        self.error_queue = m.Queue()
-        self.result_queue = m.Queue()
-        self.finally_queue = m.Queue()
+        self.manager = multiprocess.Manager()
+        self.to_run_queue = self.manager.Queue()
+        self.error_queue = self.manager.Queue()
+        self.result_queue = self.manager.Queue()
+        self.finally_queue = self.manager.Queue()
         
         # Method to call after each run
         self.callbacks = [callback]
@@ -102,6 +109,9 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             self.process[-1].start()
             
         self.__run_daemon() # Run the daemon THREAD
+
+        signal.signal(signal.SIGINT, lambda *_: self.shutdown())
+        signal.signal(signal.SIGTERM, lambda *_: self.shutdown())
         
     def __del__(self):
         """
@@ -165,6 +175,9 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 # empty task queue
                 while not self.to_run_queue.empty():
                     self.to_run_queue.get()
+
+                self.manager.shutdown()
+                WorkerManager().executor.shutdown()
                 
                 break
 
@@ -193,7 +206,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             target (callable): Method to run
         """
         if self.stop_flag:
-            raise RuntimeError("Job submission failed: Executor is currently \
+            raise TerminatedError("Job submission failed: Executor is currently \
                 shutdown and cannot accept new tasks.")
 
         if self.debug:
@@ -246,7 +259,12 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             return max(0, int(timeout - (time.monotonic() - start_time)))
         
         def slide():
-            return self.sliding_stages and (self.to_run_queue.empty() and \
+            try:
+                is_empty = self.to_run_queue.empty()
+            except BrokenPipeError:
+                is_empty = True
+
+            return self.sliding_stages and (is_empty and \
                 self.finished_run >= (self.submit_count - self.max_workers/2))
         
         while not self.__finished() and remain_time() and not slide():
