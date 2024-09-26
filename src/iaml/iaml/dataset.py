@@ -3,10 +3,11 @@ Encapsulate X, y data to be used by Steps
 Add features like data type detection and splitting 
 """
 import copy
-from typing import Iterator, TYPE_CHECKING
+from typing import Iterator, TYPE_CHECKING, List
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 import numpy as np
 import pandas as pd
+
 
 from .data_type import DataType
 from .type_of_target import type_of_target
@@ -21,7 +22,13 @@ class Dataset:
     Add features like data type detection and splitting
     """
     
-    def __init__(self, X:pd.DataFrame, y:list=None, groups:pd.DataFrame=None, columns_types:dict=None):
+    def __init__(self,
+        X:pd.DataFrame,
+        y:list=None,
+        groups: pd.DataFrame = None,
+        groups_columns: List[str] = None,
+        columns_types:dict=None
+    ):
         self.__X:pd.DataFrame = X
         self.__y:np.array = np.array(y)
         
@@ -30,6 +37,7 @@ class Dataset:
             self.groups = pd.DataFrame(groups)
         else:
             self.groups = groups
+        self.groups_columns: List[str] = groups_columns
         self.columns_types:dict = columns_types if columns_types else {}
         self.__detect_columns_types()
         self.type_of_target:str = type_of_target(self.__y)
@@ -78,10 +86,14 @@ class Dataset:
             return copy.deepcopy(self)
         return copy.copy(self)
     
-    def decline(self, X, y, groups=None) -> 'Dataset':
-        if not groups:
+    def decline(self, X, y, groups=None, groups_columns: List[str] = []) -> 'Dataset':
+        if not isinstance(groups, pd.DataFrame) and not groups:
             groups = self.groups
-        return Dataset(X, y, groups=groups, columns_types=self.columns_types)
+        elif isinstance(groups, pd.DataFrame) and groups.empty:
+            groups = self.groups
+        if not groups_columns:
+            groups_columns = self.groups_columns
+        return Dataset(X, y, groups=groups, groups_columns=groups_columns, columns_types=self.columns_types)
     
     def sample(self, n) -> 'Dataset':
         """
@@ -150,6 +162,8 @@ class Dataset:
             # Resampler
             X, y = resampler(X, self.y)
             
+            print(f"{X.columns=}")
+            print(f"{self.groups.columns=}")
             # Split groups and X
             return self.decline(X.drop(columns=self.groups.columns),
                             y,

@@ -5,6 +5,7 @@
 import time
 import math
 import multiprocessing
+from typing import List
 import warnings
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor
@@ -173,6 +174,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             y:pd.DataFrame,
             *args,
             groups:pd.DataFrame = None,
+            groups_columns: List[str] = [],
             patience:int=-1,
             generation_sample_size=200,
             n_candidates=1,
@@ -208,10 +210,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             if isinstance(y, pd.DataFrame):
                 y = y.values.ravel()
             
-            dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
+            dataset:Dataset = Dataset(
+                deepcopy(X),
+                deepcopy(y),
+                groups=groups,
+                groups_columns=groups_columns
+            )
             
             ### INITIAL GENERATE CANDIDATE 
-            
+            print("A")
             self.init_candidate:Candidate = Candidate(
                 dataset.sample(generation_sample_size),
                 main_metric=self.main_metric)
@@ -221,6 +228,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
                 self.init_candidate.add_metric(metric)
 
+            print("B")
             # Generate candidates
             candidates = self.__run(self.init_candidate, *args, **kwargs)
         
@@ -229,6 +237,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 if candidate.pipeline.predictor is not None]
             Logger().info(f"{len(candidates)} generated pipelines")
             
+            print("C")
             ### INITIAL EVALUATION
             
             def remain_time():
@@ -240,6 +249,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             while can_be_downsize and not gen0_candidates and remain_time() >= 1:
                 # If process is too long and dataset big enough, 
                 # we can downsize it to get quicker training
+                print("CCC")
                 if i > 0:
                     dataset = dataset.sample(0.1)
                     Logger().warning(f"Training is too time consuming. \
@@ -248,12 +258,16 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 i+= 1
                 can_be_downsize = dataset.X.shape[0] >= 500
 
+                print("DDD")
                 timeout = min(remain_time(), self.time_before_sample_use) \
                     if can_be_downsize else remain_time()
 
+                print(f"{dataset.X.head()=}")
                 gen0_candidates = self.__run_evaluations(candidates,
                             dataset, timeout=timeout, callback=callback)
+                print("EEE")
 
+            print("D")
             if not gen0_candidates:
                 if remain_time() < 1:
                     raise TimeoutError('IAML was unable to generate a model within the \
