@@ -110,6 +110,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             
         self.__run_daemon() # Run the daemon THREAD
 
+        signal.signal(signal.SIGINT, lambda *_: self.shutdown())
         signal.signal(signal.SIGTERM, lambda *_: self.shutdown())
         
     def __del__(self):
