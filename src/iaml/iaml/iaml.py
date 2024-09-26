@@ -57,6 +57,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 preprocessor:bool=False,
                 main_metric:Metric=None):
         
+        # Set pandas config to avoid SettingsWithcopyWarning
+        pd.options.mode.copy_on_write = True
+        
         self.preprocessor = preprocessor
         
         # Enable / Disable Meta Learner
