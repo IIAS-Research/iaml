@@ -428,6 +428,7 @@ class IAMLPipeline(Pipeline):
         mask_dataset = self.original_dataset if self.original_dataset is not None \
             and not self.original_dataset.empty else X
 
+        print(f"{mask_dataset.columns=} \n {X.columns=}")
         explainer = shap.KernelExplainer(p, mask_dataset)
         shap_values = explainer.shap_values(X, nsamples=nsamples)
 

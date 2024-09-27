@@ -11,6 +11,7 @@ def kfold_splitter(dataset:Dataset, nb_folds=5):
     Allow to split a dataset into n folds to compute crossvalidation
     """
     kwargs = {}
+    # print(f"{dataset.X.shape=}, {dataset.y.shape=}, {dataset.groups.shape=}")
     if dataset.type_of_target in ['binary', 'multiclass']:
         if dataset.has_groups:
             kfold = StratifiedGroupKFold(nb_folds)

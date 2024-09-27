@@ -35,7 +35,7 @@ class Dataset:
         if groups is not None and set(groups.columns).intersection(X.columns):
             raise ValueError("Group columns present in dataset!")
 
-        self.__X:pd.DataFrame = X.drop(groups_columns, axis=1)
+        self.__X:pd.DataFrame = X.drop(columns=groups_columns)
         
         self.__y:np.array = np.array(y)
         
@@ -47,7 +47,6 @@ class Dataset:
             else:
                 self.groups = groups
 
-        self.groups_columns: List[str] = groups_columns
         self.columns_types:dict = columns_types if columns_types else {}
         self.__detect_columns_types()
         self.type_of_target:str = type_of_target(self.__y)

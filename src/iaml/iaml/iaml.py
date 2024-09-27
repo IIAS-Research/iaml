@@ -337,7 +337,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         new_candidates:list[Candidate] = []
         start_time = time.monotonic()
-
         with Logger().progress as progress:
             task = progress.add_task(
                 f'Stage {stage_number}' if stage_number is not None else "Initial evaluation",
@@ -352,6 +351,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     'IAML_'+candidate.pipeline.fingerprint(), dataset.X)
                 
                 if from_cache:
+                    
                     candidate.computed_metrics = from_cache
                     new_candidates.append(candidate)
                     update_progressbar() # Update progressbar even if data come from cache
@@ -370,12 +370,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             # Add results to progressbar
             if new_candidates:
+                
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     ({new_candidates[0].get_main_metric_value():.4f})'
             else:
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     (no result)'
-                            
+        
+           
         # Add to cache
         for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()
@@ -390,7 +392,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             remaining_time = timeout - (time.monotonic() - start_time),
             text = f'Stage {stage_number} finished' \
                 if stage_number is not None else "Initial evaluation finished")
-                
+
         return new_candidates
         
             
