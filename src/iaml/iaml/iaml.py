@@ -8,7 +8,7 @@ import multiprocessing
 from typing import List
 import warnings
 import pandas as pd
-from .timed_pool_executor import TimedPoolExecutor
+from .timed_pool_executor import TimedPoolExecutor, TerminatedError
 from .step import Step
 from .cache import Cache
 from .metastep import MetaStep
@@ -57,6 +57,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 time_before_sample_use:int=None,
                 preprocessor:bool=False,
                 main_metric:Metric=None):
+        
+        # Set pandas config to avoid SettingsWithcopyWarning
+        pd.options.mode.copy_on_write = True
         
         self.preprocessor = preprocessor
         
@@ -298,6 +301,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.last_stage_candidates = candidates
 
             return fit_candidates
+        except TerminatedError:
+            print('IAML was terminated.')
         except Exception as ex:
             print("Error during fit")
             raise ex

@@ -56,7 +56,7 @@ class WorkerManager(metaclass=MetaSingleton):
     """
     def __init__(self, max_workers: int = None) -> None:
         self.active_workers_count = 0
-        self.executor = ThreadPoolExecutor(max_workers=math.inf)
+        self.executor = ThreadPoolExecutor(max_workers=math.inf, thread_name_prefix='WorkerManager')
         self.max_workers = max_workers or os.cpu_count()
         self.running_futures: list[WorkerFuture] = []
         self.running_parents: list[list[int]] = []
