@@ -26,17 +26,27 @@ class Dataset:
         X:pd.DataFrame,
         y:list=None,
         groups: pd.DataFrame = None,
-        groups_columns: List[str] = None,
+        groups_columns: List[str] = [],
         columns_types:dict=None
     ):
-        self.__X:pd.DataFrame = X
+        if groups is not None and groups_columns:
+            raise ValueError("groups and groups_columns are not None. Only one must be set")
+
+        if groups is not None and set(groups.columns).intersection(X.columns):
+            raise ValueError("Group columns present in dataset!")
+
+        self.__X:pd.DataFrame = X.drop(groups_columns, axis=1)
+        
         self.__y:np.array = np.array(y)
         
-        
-        if type(groups) in [pd.Series, list, np.array]:
-            self.groups = pd.DataFrame(groups)
+        if groups_columns:
+            self.groups = X[groups_columns]
         else:
-            self.groups = groups
+            if type(groups) in [pd.Series, list, np.array]:
+                self.groups = pd.DataFrame(groups)
+            else:
+                self.groups = groups
+
         self.groups_columns: List[str] = groups_columns
         self.columns_types:dict = columns_types if columns_types else {}
         self.__detect_columns_types()
@@ -86,14 +96,10 @@ class Dataset:
             return copy.deepcopy(self)
         return copy.copy(self)
     
-    def decline(self, X, y, groups=None, groups_columns: List[str] = []) -> 'Dataset':
-        if not isinstance(groups, pd.DataFrame) and not groups:
+    def decline(self, X, y, groups=None) -> 'Dataset':
+        if groups is None:
             groups = self.groups
-        elif isinstance(groups, pd.DataFrame) and groups.empty:
-            groups = self.groups
-        if not groups_columns:
-            groups_columns = self.groups_columns
-        return Dataset(X, y, groups=groups, groups_columns=groups_columns, columns_types=self.columns_types)
+        return Dataset(X, y, groups=groups, columns_types=self.columns_types)
     
     def sample(self, n) -> 'Dataset':
         """
@@ -161,9 +167,7 @@ class Dataset:
     
             # Resampler
             X, y = resampler(X, self.y)
-            
-            print(f"{X.columns=}")
-            print(f"{self.groups.columns=}")
+    
             # Split groups and X
             return self.decline(X.drop(columns=self.groups.columns),
                             y,
