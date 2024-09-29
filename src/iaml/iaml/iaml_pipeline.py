@@ -162,7 +162,7 @@ class IAMLPipeline(Pipeline):
         return False
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
-            only_predictor:bool=False, **kwargs) -> 'IAMLPipeline':
+            only_predictor:bool=False, groups_columns: List[str] = [], **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
         
@@ -171,9 +171,11 @@ class IAMLPipeline(Pipeline):
             y (pd.DataFrame): label to predict
         """
         if not only_predictor:
-            X, y = self.fit_transform(X, y, **kwargs)
-            
-        dataset = Dataset(X, y)
+            X, y = self.fit_transform(X, y, groups_columns=groups_columns, **kwargs)
+            # Reset groups_columns as returned X is aldready pruned from groups columns
+            # This way we avoid caching KeyError in dataset init
+            groups_columns = []
+        dataset = Dataset(X, y, groups_columns=groups_columns)
         
         if self.predictor[1].suitable(dataset):
             self.predictor[1].fit(dataset, **kwargs)
@@ -182,7 +184,7 @@ class IAMLPipeline(Pipeline):
         
         return self
     
-    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, **kwargs) -> 'IAMLPipeline':
+    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, groups_columns: List[str] = [], **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline and transform data 
         
@@ -190,7 +192,7 @@ class IAMLPipeline(Pipeline):
             X (pd.DataFrame): Candidate features
             y (pd.DataFrame): label to predict
         """
-        dataset = Dataset(X, y)
+        dataset = Dataset(X, y, groups_columns=groups_columns)
         
         for _, step in [*self.transformers, *self.resamplers]:
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
@@ -338,7 +340,7 @@ class IAMLPipeline(Pipeline):
         """
         if not self.have_model:
             raise ValueError("Model need to be set before predict")
-        
+
         if not model_only:
             return super().predict(X, **kwargs)
         
@@ -428,7 +430,6 @@ class IAMLPipeline(Pipeline):
         mask_dataset = self.original_dataset if self.original_dataset is not None \
             and not self.original_dataset.empty else X
 
-        print(f"{mask_dataset.columns=} \n {X.columns=}")
         explainer = shap.KernelExplainer(p, mask_dataset)
         shap_values = explainer.shap_values(X, nsamples=nsamples)
 
