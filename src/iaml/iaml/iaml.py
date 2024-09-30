@@ -128,12 +128,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                                     Fast mode is use to create fast pipeline and iterate
                                     quickly when debugging code. Defaults to False.
         """
-        self.first_step = MetaOrderedStep() # First step -> Contain all stages of the pipeline
+        self.first_step = MetaOrderedStep(tag="Main") # First step -> Contain all stages of the pipeline
 
-        self.first_step.add_step(MetaStep(tag='features_precleaning'))
-        self.first_step.add_step(MetaStep(tag='cleaning'))
-        self.first_step.add_step(MetaStep(tag='features_selection'))
-        self.first_step.add_step(MetaStep(tag='normalize'))
+        self.first_step.add_step(MetaStep(tag='features_precleaning', name='Features Precleaning'))
+        self.first_step.add_step(MetaStep(tag='cleaning', name='Features Cleaning'))
+        self.first_step.add_step(MetaStep(tag='features_selection', name='Features Selection'))
+        self.first_step.add_step(MetaStep(tag='normalize', name='Features Normalization'))
         
         if self.preprocessor:
             self.first_step.add_step(

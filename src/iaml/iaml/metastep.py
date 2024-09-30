@@ -21,13 +21,17 @@ class MetaStep(Step):
 
     There is children classes of MetaStep to execute Steps in a different way
     """
-    name = "MetaStep"
+    name = "Steps groups"
     def __init__(self,  *args, tag=None, wrap=None, **kwargs):
         self.steps:list[Step] = [] # Initialize steps to empty
         
+            
         # If there is a tag -> add all Steps with this tag
         if tag:
             self.add_step_by_tag(tag, wrap=wrap) 
+            self.name = f"Step : {tag}"
+        if 'name' in kwargs:
+            self.name = kwargs['name']
         
     @classmethod
     def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
