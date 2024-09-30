@@ -3,10 +3,11 @@ Encapsulate X, y data to be used by Steps
 Add features like data type detection and splitting 
 """
 import copy
-from typing import Iterator, TYPE_CHECKING
+from typing import Iterator, TYPE_CHECKING, List
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 import numpy as np
 import pandas as pd
+
 
 from .data_type import DataType
 from .type_of_target import type_of_target
@@ -21,15 +22,31 @@ class Dataset:
     Add features like data type detection and splitting
     """
     
-    def __init__(self, X:pd.DataFrame, y:list=None, groups:pd.DataFrame=None, columns_types:dict=None):
-        self.__X:pd.DataFrame = X
+    def __init__(self,
+        X:pd.DataFrame,
+        y:list=None,
+        groups: pd.DataFrame = None,
+        groups_columns: List[str] = [],
+        columns_types:dict=None
+    ):
+        if groups is not None and groups_columns:
+            raise ValueError("groups and groups_columns are not None. Only one must be set")
+
+        if groups is not None and set(groups.columns).intersection(X.columns):
+            raise ValueError("Group columns present in dataset!")
+
+        self.__X:pd.DataFrame = X.drop(columns=groups_columns)
+        
         self.__y:np.array = np.array(y)
         
-        
-        if type(groups) in [pd.Series, list, np.array]:
-            self.groups = pd.DataFrame(groups)
+        if groups_columns:
+            self.groups = X[groups_columns]
         else:
-            self.groups = groups
+            if type(groups) in [pd.Series, list, np.array]:
+                self.groups = pd.DataFrame(groups)
+            else:
+                self.groups = groups
+
         self.columns_types:dict = columns_types if columns_types else {}
         self.__detect_columns_types()
         self.type_of_target:str = type_of_target(self.__y)
@@ -79,7 +96,7 @@ class Dataset:
         return copy.copy(self)
     
     def decline(self, X, y, groups=None) -> 'Dataset':
-        if not groups:
+        if groups is None:
             groups = self.groups
         return Dataset(X, y, groups=groups, columns_types=self.columns_types)
     
@@ -149,7 +166,7 @@ class Dataset:
     
             # Resampler
             X, y = resampler(X, self.y)
-            
+    
             # Split groups and X
             return self.decline(X.drop(columns=self.groups.columns),
                             y,

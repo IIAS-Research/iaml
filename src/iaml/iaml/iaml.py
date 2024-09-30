@@ -5,6 +5,7 @@
 import time
 import math
 import multiprocessing
+from typing import List
 import warnings
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
@@ -176,6 +177,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             y:pd.DataFrame,
             *args,
             groups:pd.DataFrame = None,
+            groups_columns: List[str] = [],
             patience:int=-1,
             generation_sample_size=200,
             n_candidates=1,
@@ -206,15 +208,19 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         def remain_time():
             return self.max_duration - (time.monotonic() - start_time)
-                
+
         try:
             if isinstance(y, pd.DataFrame):
                 y = y.values.ravel()
             
-            dataset:Dataset = Dataset(deepcopy(X), deepcopy(y), groups=groups)
+            dataset:Dataset = Dataset(
+                deepcopy(X),
+                deepcopy(y),
+                groups=groups,
+                groups_columns=groups_columns
+            )
             
             ### INITIAL GENERATE CANDIDATE 
-            
             self.init_candidate:Candidate = Candidate(
                 dataset.sample(generation_sample_size),
                 main_metric=self.main_metric)
@@ -280,7 +286,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             for i in range(min(n_candidates, len(candidates))):
                 Cache.reset()
                 current_candidate = deepcopy(candidates[i])
-                current_candidate.pipeline.fit(X, y)
+                current_candidate.pipeline.fit(X, y, groups_columns=groups_columns)
                 fit_candidates.append(current_candidate)
 
             self.chosen_candidate = fit_candidates[0]
@@ -331,7 +337,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         new_candidates:list[Candidate] = []
         start_time = time.monotonic()
-
         with Logger().progress as progress:
             task = progress.add_task(
                 f'Stage {stage_number}' if stage_number is not None else "Initial evaluation",
@@ -346,6 +351,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     'IAML_'+candidate.pipeline.fingerprint(), dataset.X)
                 
                 if from_cache:
+                    
                     candidate.computed_metrics = from_cache
                     new_candidates.append(candidate)
                     update_progressbar() # Update progressbar even if data come from cache
@@ -364,12 +370,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             # Add results to progressbar
             if new_candidates:
+                
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     ({new_candidates[0].get_main_metric_value():.4f})'
             else:
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     (no result)'
-                            
+        
+           
         # Add to cache
         for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()
@@ -384,7 +392,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             remaining_time = timeout - (time.monotonic() - start_time),
             text = f'Stage {stage_number} finished' \
                 if stage_number is not None else "Initial evaluation finished")
-                
+
         return new_candidates
         
             
