@@ -24,6 +24,10 @@ def random_splitter(dataset:Dataset, ratio: float=0.2, random_state: int=42):
     kwargs = {}
     if dataset.has_groups:
         kwargs['groups'] = dataset.groups
-        return dataset.split(group_split, **kwargs)
+        for ds_train, ds_test in dataset.split(group_split, **kwargs):
+            yield (ds_train, ds_test)
+        # return dataset.split(group_split, **kwargs)
     else:
-        return dataset.split(split)
+        # return dataset.split(split)
+        for ds_train, ds_test in dataset.split(split):
+            yield (ds_train, ds_test)

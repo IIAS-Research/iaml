@@ -104,4 +104,9 @@ print(len(dataset.X))
 
 X = splitter.random_splitter(dataset)
 for train, test in X:
+    print(train.y)
     print(train.X.head())
+    
+X_train = train.X
+X_train['label'] = train.y
+print(X_train.head())
