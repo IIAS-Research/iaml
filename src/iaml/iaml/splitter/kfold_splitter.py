@@ -25,5 +25,6 @@ def kfold_splitter(dataset:Dataset, nb_folds=5):
         else:
             kfold = SKKFold(nb_folds)
     
-    for ds_train, ds_test in dataset.split(kfold.split, **kwargs):
-        yield (ds_train, ds_test)
+    return dataset.split(kfold.split, **kwargs)
+    # for ds_train, ds_test in dataset.split(kfold.split, **kwargs):
+    #     yield (ds_train, ds_test)
