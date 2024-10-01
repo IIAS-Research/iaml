@@ -209,7 +209,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             generation_sample_size (int) : Size of the sample dataset used to generate first 
                                             generation of candidates (default 200)
             n_candidates (int) : Number of candidates to return (default 1) 
-            callback (callable) : Method call after each big step of training. Signature must be something(**kwargs).
+            callback (callable) : Method call after each big step of training. 
+            Signature must be something(**kwargs).
 
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
@@ -247,8 +248,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             # Generate candidates
             candidates = self.__run(self.init_candidate, *args, **kwargs)
-        
-            # Remove candidate without predictor 
+            
+            # Remove candidate without predictor
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
             Logger().info(f"{len(candidates)} generated pipelines")
@@ -385,14 +386,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             # Add results to progressbar
             if new_candidates:
-                
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     ({new_candidates[0].get_main_metric_value():.4f})'
             else:
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     (no result)'
         
-           
         # Add to cache
         for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()

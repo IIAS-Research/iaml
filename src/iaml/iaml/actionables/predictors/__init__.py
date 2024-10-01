@@ -29,3 +29,7 @@ from .act_hist_gradient_boosting_regressor import *
 from .act_mlp_regressor import *
 from .act_sgd_regressor import *
 from .act_gaussian_process_regressor import *
+
+# Survival
+from .act_cox import *
+from .act_random_survival_forest import *

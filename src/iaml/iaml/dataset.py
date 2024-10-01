@@ -244,7 +244,13 @@ class Dataset:
         """
         Kind of estimator needed for this dataset
         """
-        return 'regressor' if self.type_of_target == 'continuous' else 'classifier'
+        if self.type_of_target == 'continuous':
+            return 'regressor'
+        
+        if self.type_of_target == 'survival':
+            return 'survival'
+        
+        return 'classifier'
     
     def __detect_columns_types(self) -> None:
         """

@@ -53,8 +53,9 @@ class IAMLPipeline(Pipeline):
         self.resamplers:list[tuple[str, object]] = []
         self.predictor:tuple[str, object] = None
         
-        if estimator_type not in ['classifier', 'regressor']:
-            raise ValueError(f"Estimator type ({estimator_type}) must be classifier or regressor")
+        if estimator_type not in ['classifier', 'regressor', 'survival']:
+            raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
+                survival or regressor")
         self.__estimator_type = estimator_type
         
         super().__init__(steps) # split steps into transformers, resamplers and predictor

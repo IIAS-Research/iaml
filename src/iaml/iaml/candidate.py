@@ -11,7 +11,6 @@ from .cache import Cache
 from .splitter import random_splitter
 from .iaml_pipeline import IAMLPipeline
 
-
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -48,6 +47,8 @@ class Candidate:
         if main_metric is None:
             if self.pipeline.estimator_type == "classifier":
                 self.main_metric = 'balanced_accuracy'
+            elif self.pipeline.estimator_type == "survival":
+                self.main_metric = 'concordance_index'
             else:
                 self.main_metric = 'r2_score'
         else:
@@ -223,7 +224,7 @@ class Candidate:
                 y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
                 y_pred_proba = copied_pipe.predict_proba(test_ds.X, model_only = not self.is_meta) \
                     if hasattr(copied_pipe, 'predict_proba') else None
-                    
+                
                 metrics.append(self.__compute_metrics(test_ds.y, y_pred, y_pred_proba))
                 if not from_cache:
                     to_cache.append((train_ds, test_ds))
