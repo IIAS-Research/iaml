@@ -17,6 +17,9 @@ class MetaExplorerStep(MetaStep):
     [METASTEP] Explore all sub steps in Thread and return one candidate by Sub Step
     """
     name = "MetaExplorerStep"
+    description = 'Execute all steps and keep the best result'
+    description_long = None
+    
     def __init__(self, *args, also_explore_without:bool=False, **kwargs):  # pylint: disable=unused-argument
         self.candidate = []
         self.also_explore_without = also_explore_without

@@ -128,7 +128,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         
             
     def __str__(self):
-        return self.name
+        return ' '.join([self.name, ':', self.description])
     
     def suitable(self, dataset:Dataset) -> bool: # pylint: disable=unused-argument
         """
