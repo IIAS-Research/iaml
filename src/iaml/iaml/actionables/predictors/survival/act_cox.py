@@ -5,10 +5,10 @@
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 import numpy as np
 
-from ...predictor import Predictor
-from ...candidate import Candidate
-from ...dataset import Dataset
-from ...decorators.all import is_step
+from ....predictor import Predictor
+from ....candidate import Candidate
+from ....dataset import Dataset
+from ....decorators.all import is_step
 
 # @is_step('predictor', 'tabular', 'survival')
 class ActCox(Predictor):

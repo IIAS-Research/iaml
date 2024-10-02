@@ -2,10 +2,10 @@
 [STEP] Learn : KNN
 """
 from sklearn.neighbors import KNeighborsRegressor
-from ...predictor import Predictor
-from ...candidate import Candidate
-from ...dataset import Dataset
-from ...decorators.all import is_step
+from ....predictor import Predictor
+from ....candidate import Candidate
+from ....dataset import Dataset
+from ....decorators.all import is_step
 
 
 

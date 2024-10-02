@@ -3,10 +3,10 @@
 """
 
 from sklearn.linear_model import SGDRegressor
-from ...predictor import Predictor
-from ...dataset import Dataset
-from ...candidate import Candidate
-from ...decorators.all import is_step
+from ....predictor import Predictor
+from ....dataset import Dataset
+from ....candidate import Candidate
+from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActSGDRegressor(Predictor):

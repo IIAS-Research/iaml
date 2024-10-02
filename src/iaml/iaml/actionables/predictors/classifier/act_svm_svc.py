@@ -2,10 +2,10 @@
 [STEP] Learn :  SVM Classifier
 """
 from sklearn import svm
-from ...predictor import Predictor
-from ...candidate import Candidate
-from ...dataset import Dataset
-from ...decorators.all import is_step
+from ....predictor import Predictor
+from ....candidate import Candidate
+from ....dataset import Dataset
+from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActSVMSVC(Predictor):

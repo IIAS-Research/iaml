@@ -3,10 +3,10 @@
 """
 
 from sklearn.naive_bayes import GaussianNB
-from ...predictor import Predictor
-from ...dataset import Dataset
-from ...candidate import Candidate
-from ...decorators.all import is_step
+from ....predictor import Predictor
+from ....dataset import Dataset
+from ....candidate import Candidate
+from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActGaussianNb(Predictor):
