@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.utils.multiclass import type_of_target as sk_type_of_target
 
 def type_of_target(y) -> str:
@@ -33,7 +34,7 @@ def is_survival(y) -> bool:
     
     # Check if the first element of all tuples is binary-like
     first_elements = [row[0] for row in y]
-    if sk_type_of_target(first_elements) != 'binary':
+    if any(not isinstance(element, bool) for element in first_elements):
         return False
     
     # Check if the second element of all tuples is numeric (int or float)
