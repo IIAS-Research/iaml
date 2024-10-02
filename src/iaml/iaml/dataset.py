@@ -180,7 +180,6 @@ class Dataset:
         Yields:
             tuple['Dataset', 'Dataset']: Train set and Test set 
         """
-    
         # Split the dataset as many times as the splitter requires it
         for i_train, i_test in splitter(self.X, self.y, *args, **kwargs):
             X_train = self.X.iloc[i_train].copy()
@@ -190,7 +189,6 @@ class Dataset:
 
             ds_train = self.decline(X_train, y_train)
             ds_test = self.decline(X_test, y_test)
-
             yield (ds_train, ds_test)
         
     def get_columns_names_by_type(self, types:list[DataType]) -> list[str]:
