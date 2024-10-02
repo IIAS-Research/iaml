@@ -11,23 +11,12 @@ def random_splitter(dataset:Dataset, ratio: float=0.2, random_state: int=42):
     """
     Allow to split randomly a dataset to train/test 
     """
-    def split(X: pd.DataFrame, y: np.array): # pylint: disable=unused-argument
-        return ShuffleSplit(1, test_size=ratio, random_state=random_state).split(X)
-    
-    def group_split(X: pd.DataFrame, y: np.array, **kwargs): # pylint: disable=unused-argument
-        return GroupShuffleSplit(
-            1,
-            test_size=ratio,
-            random_state=random_state
-        ).split(X, groups=kwargs['groups'])
-
     kwargs = {}
     if dataset.has_groups:
         kwargs['groups'] = dataset.groups
-        for ds_train, ds_test in dataset.split(group_split, **kwargs):
-            yield (ds_train, ds_test)
-        # return dataset.split(group_split, **kwargs)
+        splitter = GroupShuffleSplit(1, test_size=ratio, random_state=random_state)
     else:
-        # return dataset.split(split)
-        for ds_train, ds_test in dataset.split(split):
-            yield (ds_train, ds_test)
+        splitter = ShuffleSplit(1, test_size=ratio, random_state=random_state)
+
+    for ds_train, ds_test in dataset.split(splitter.split, **kwargs):
+        yield (ds_train, ds_test)
