@@ -347,6 +347,29 @@ class IAMLPipeline(Pipeline):
         
         return self.predictor[1].predict(X)
     
+    def predict_survival_function(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
+        """
+        Run all the steps to predict survival function  from candidate data
+
+        Args:
+            X (pd.DataFrame): Features used as candidate of the pipeline
+            model_only (bool, optional): True to execute only the model with already
+                                        transformed data. Defaults to False.
+
+        Raises:
+            ValueError: Model must have been set before call predict
+
+        Returns:
+            list: Predicted values
+        """
+        if not self.have_model:
+            raise ValueError("Model need to be set before predict")
+
+        if not model_only:
+            X = self.transform(X, **kwargs)
+        
+        return self.predictor[1].predict_survival_function(X)
+    
     def predict_proba(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
         """
         Run all the steps to predict labels from candidate data
