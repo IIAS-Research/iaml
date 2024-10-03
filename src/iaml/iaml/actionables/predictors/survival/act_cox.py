@@ -10,7 +10,7 @@ from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
-# @is_step('predictor', 'tabular', 'survival')
+@is_step('predictor', 'tabular', 'survival')
 class ActCox(Predictor):
     """
     [STEP] Learn :  Cox
@@ -66,14 +66,14 @@ class ActCox(Predictor):
                 'description': 'Regularization strength. Higher values specify \
                     stronger regularization. alpha=0 means no regularization.',
                 'default': 0,
-                'range': [0, float('inf')],
+                'range': [0, 100],
                 'passthrough': False
             },
             'ties': {
                 'description': 'Method for handling tied event times in the data. \
                     "breslow" is the most common method.',
                 'default': 'breslow',
-                'categorical': ['breslow', 'efron', 'exact']
+                'categorical': ['breslow', 'efron']
             },
             'n_iter': {
                 'description': 'Maximum number of iterations for fitting the model.',
