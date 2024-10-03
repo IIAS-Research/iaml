@@ -32,3 +32,12 @@ class Metric:
             bool: Need probabilities ? 
         """
         return False
+
+    @property
+    def name(self) -> str:
+        """Return the metric formatted name
+        
+        Returns:
+            str: formatted name
+        """
+        return ' '.join(x.title() for x in str(self).split('_'))
