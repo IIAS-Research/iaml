@@ -17,3 +17,4 @@ from .specificity_multiclass_metric import *
 from .specificity_multilabel_metric import *
 from .roc_auc_metric import RocAucMetric
 from .concordance_index_metric import ConcordanceIndexMetric
+from .integrated_brier_score import IntegratedBrierScoreMetric
