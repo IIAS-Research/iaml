@@ -32,8 +32,8 @@ class ConcordanceIndexMetric(Metric):
             bool: Suitable?
         """
         return type_of_target == 'survival'
-
-    def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame) -> float:
+        
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute the concordance index with the predicted data.
 
