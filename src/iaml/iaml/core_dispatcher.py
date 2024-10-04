@@ -14,7 +14,7 @@ class CoreDispatcher(metaclass=MetaSingleton):
     """
     Singleton used by IAML to dispatch cores to process
     """
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:  #pylint: disable=unused-argument
         self.__all_cores = set(range(psutil.cpu_count(logical=True)))
         self.manager = multiprocess.Manager()
         self.books = self.manager.list([])
@@ -81,7 +81,9 @@ class CoreDispatcher(metaclass=MetaSingleton):
         if hasattr(test_process, 'cpu_affinity'):
             self.__book_cpu(pids, core_number)
         else:
-            Logger().warning('Your OS doesn\'t support CPU affinity. We are not able to control CPU cores access')
+            Logger().warning(
+                'Your OS doesn\'t support CPU affinity. We are not able to control CPU cores access'
+            )
     
     def __free_cores(self) -> None:
         """
