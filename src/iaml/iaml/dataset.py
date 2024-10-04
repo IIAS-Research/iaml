@@ -11,6 +11,7 @@ import pandas as pd
 
 from .data_type import DataType
 from .type_of_target import type_of_target
+from .logger import Logger
 
 
 if TYPE_CHECKING:
@@ -46,6 +47,14 @@ class Dataset:
                 self.groups = pd.DataFrame(groups)
             else:
                 self.groups = groups
+        
+        if self.groups is not None and self.groups.shape[1] > 1:
+            # Create a combined group label by concatenating all columns into tuples
+            Logger().warning("You are using multiple columns as groups. Be careful, as these columns will serve as a composite key.")
+            self.groups = pd.DataFrame(pd.Series(
+                list(zip(*[self.groups[col] for col in self.groups.columns]))),
+                columns=['groups']
+                )
 
         self.columns_types:dict = columns_types if columns_types else {}
         self.__detect_columns_types()
