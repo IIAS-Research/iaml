@@ -15,6 +15,7 @@ import warnings
 import multiprocess.process
 from .logger import Logger
 from .worker_manager import WorkerManager
+from .core_dispatcher import CoreDispatcher
 
 
 class TerminatedError(RuntimeError):
@@ -108,10 +109,13 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             )
             self.process[-1].start()
             
+        CoreDispatcher().affiliate([process.pid for process in self.process], core_number=self.max_workers)
+            
         self.__run_daemon() # Run the daemon THREAD
 
-        signal.signal(signal.SIGINT, lambda *_: self.shutdown())
-        signal.signal(signal.SIGTERM, lambda *_: self.shutdown())
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, lambda *_: self.shutdown())
+            signal.signal(signal.SIGTERM, lambda *_: self.shutdown())
         
     def __del__(self):
         """
