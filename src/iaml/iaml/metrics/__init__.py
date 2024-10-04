@@ -17,4 +17,7 @@ from .specificity_multiclass_metric import *
 from .specificity_multilabel_metric import *
 from .roc_auc_metric import RocAucMetric
 from .concordance_index_metric import ConcordanceIndexMetric
+from .concordance_index_ipcw import ConcordanceIndexIPCWMetric
+from .brier_score import BrierScoreMetric
 from .integrated_brier_score import IntegratedBrierScoreMetric
+from .cumulative_dynamic_auc import CumulativeDynamicAUCMetric
