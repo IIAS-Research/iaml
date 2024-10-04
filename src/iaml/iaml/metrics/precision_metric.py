@@ -11,6 +11,26 @@ class PrecisionMetric(Metric):
     """
     [METRIC] Precision
     """
+
+    name="Precision"
+    description = '''Precision measures the accuracy of positive predictions made by a model. 
+        It indicates the proportion of true positive results among all positive predictions.'''
+    description_long = '''Precision evaluates how many of the predicted positive cases are actually correct. 
+        It is calculated as the number of true positives divided by the sum of true positives and false positives. 
+        For example, if a model predicts 10 positive cases, and 7 of them are correct, the precision would be 70%. 
+        This metric is important in healthcare to ensure that positive predictions are reliable, minimizing false alarms.'''
+    refs=[
+        {
+            'year': 2007,
+            'name': 'Evaluation: From Precision, Recall and F-Measure to ROC, Informedness, Markedness & Correlation',
+            'authors': [
+                'David M. W. Powers'
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.2010.16061',
+            'publisher': 'Journal of Machine Learning Technologies'
+        }
+    ]
+
     def __str__(self):
         return 'precision'
     

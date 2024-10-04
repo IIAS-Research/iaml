@@ -10,6 +10,28 @@ class AccuracyMetric(Metric):
     """
     [METRIC] Accuracy
     """
+    name = 'Accuracy'
+    description = '''Accuracy measures how well a model predicts outcomes by calculating the percentage 
+        of correct predictions out of the total predictions. Higher accuracy means better performance.'''
+    description_long = '''Accuracy is a tool to evaluate how well a predictive 
+        model works, especially in healthcare. 
+        It shows the percentage of correct predictions made by the model.
+        To calculate it, you add the number of correct positive and negative predictions, then divide by the total number of predictions. 
+        For example, if a model is correct 80 times out of 100, its accuracy is 80%.'''
+    refs = [
+        {
+            'year': 2006,
+            'name': 'Understanding the meaning of accuracy, trueness and precision',
+            'authors': [
+                'Antonio Menditto',
+                'Marina Patriarca',
+                'Bertil Magnusson'    
+            ],
+            'doi': 'https://doi.org/10.1007/s00769-006-0191-z',
+            'publisher': ' Accreditation and Quality Assurance, Volume 12, pages 45--47'
+        }
+    ]
+
     def __str__(self) -> str:
         return 'accuracy'
     
