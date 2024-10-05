@@ -14,7 +14,6 @@ import multiprocess
 import multiprocess.process
 
 from .logger import Logger
-from .worker_manager import WorkerManager
 from .core_dispatcher import CoreDispatcher
 
 

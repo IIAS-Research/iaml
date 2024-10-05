@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any
 import dataclasses
 import pandas as pd
+from sklearn.base import BaseEstimator
 from .actionable import Actionable
 from .decorators.runner import runner
 from .candidate import Candidate
@@ -21,7 +22,7 @@ class Model(metaclass=ABCMeta):
         Any predict method implemented by most ML frameworks.
         """
 
-class Predictor(Actionable, metaclass=ABCMeta):
+class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
     """
     [STEP] Learn : Abstract learning step
     
@@ -119,3 +120,18 @@ class Predictor(Actionable, metaclass=ABCMeta):
         """Return classes of the target in fit data
         """
         return self.model.classes_
+    
+    def score(self, *args, **kwargs):
+        """
+        Mimic Scikitlearn API
+        """
+        return self.model.score(*args, **kwargs)
+    
+    def __name__(self) -> str:
+        """Return the predictor formatted name
+        
+        Returns:
+            str: formatted name
+        """
+        return ' '.join(x.title() for x in str(self).split('_'))
+    

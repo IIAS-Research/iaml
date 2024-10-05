@@ -4,12 +4,14 @@ Candidate is used to exchange data between Steps
 from typing import TYPE_CHECKING, List, Dict
 from copy import copy, deepcopy
 from hashlib import md5
+import textwrap
 import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
 from .splitter import random_splitter
 from .iaml_pipeline import IAMLPipeline
+from .plot import Plot
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -326,12 +328,34 @@ class Candidate:
             f'| `{m}` | **{self.__metric_value(m):.4f}** | *{m.explain()}* |'
             for m in self.metrics
         ])
-        results_explain:str = f'''
-### Results
-| Metric name | Computed value | Description |
-| ----------- | -------------- | ----------- |
-{metrics}
-''' if len(metrics) > 0 else ""
+        results_explain:str = textwrap.dedent(f'''
+            ### Results
+            | Metric name | Computed value | Description |
+            | ----------- | -------------- | ----------- |
+            {metrics}
+            ''') if len(metrics) > 0 else ""
         
         return [*self.pipeline.explanations, results_explain]
     
+    def explain_model_performance(self, X_test:pd.DataFrame, y_test:list) -> list[Plot]:
+        """
+        Return a list of plot that explain models performances
+
+        Args:
+            X_test (pd.DataFrame): Features
+            y_test (list): Target
+
+        Returns:
+            list[Plot]: List of plot instances.
+        """
+        plots = []
+        for plot_sub_class in Plot.__subclasses__():
+            # Instantiate a subclass
+            plot = plot_sub_class()
+            
+            # Verify if a subclass is suitable or not
+            if plot.suitable(self.dataset.type_of_target):
+                plot.compute(self.pipeline, X_test, y_test)
+                plots.append(plot)
+                
+        return plots
