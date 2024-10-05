@@ -32,8 +32,8 @@ class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
     
     model: Model
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.optimizable:bool = True
         self.model = None
     
@@ -126,6 +126,15 @@ class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
         Mimic Scikitlearn API
         """
         return self.model.score(*args, **kwargs)
+    
+    def get_params(self, *args, **kwargs):
+        
+        """
+        Mimic Scikitlearn API
+        """
+        if self.model and hasattr(self.model, 'get_params'):
+            return self.model.get_params(*args, **kwargs)
+        return None
     
     def __name__(self) -> str:
         """Return the predictor formatted name

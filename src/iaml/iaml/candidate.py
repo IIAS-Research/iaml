@@ -339,7 +339,7 @@ class Candidate:
         return [*self.pipeline.explanations, results_explain]
     
     def explain_model_performance(self, X_test:pd.DataFrame, y_test:list,
-            X_train:pd.DataFrame, y_train:list) -> list[Plot]:
+            X_train:pd.DataFrame=None, y_train:list=None) -> list[Plot]:
         """
         Return a list of plot that explain models performances
 
