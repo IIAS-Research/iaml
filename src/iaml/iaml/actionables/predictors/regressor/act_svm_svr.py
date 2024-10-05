@@ -24,7 +24,8 @@ class ActSVMSVR(Predictor):
     refs = [
         {
             'year': 1999,
-            'name': 'Probabilistic Outputs for Support Vector Machines and Comparisons to Regularized Likelihood Methods',
+            'name': 'Probabilistic Outputs for Support Vector Machines and Comparisons to \
+                Regularized Likelihood Methods',
             'authors': [
                 'John C. Platt'
             ],

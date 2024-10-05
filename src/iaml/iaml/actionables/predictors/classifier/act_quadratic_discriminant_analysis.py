@@ -27,7 +27,8 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
     refs = [
         {
             'year': 1965,
-            'name': 'Geometrical and Statistical Properties of Systems of Linear Inequalities with Applications in Pattern Recognition',
+            'name': 'Geometrical and Statistical Properties of Systems of Linear Inequalities \
+                with Applications in Pattern Recognition',
             'authors': ['Thomas M. Cover'],
             'doi': 'https://doi.org/10.1109/PGEC.1965.264137',
             'publisher': 'IEEE Transactions on Electronic Computers Vol.EC-14 page 326--334'
@@ -38,7 +39,8 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
             'name': 'Linear vs. quadratic discriminant analysis classifier: a tutorial',
             'authors': ['Alaa Tharwat'],
             'doi': 'https://www.inderscienceonline.com/doi/abs/10.1504/IJAPR.2016.079050',
-            'publisher': 'International Journal of Applied Pattern Recognition Vol.3, No.2 page 145--180'
+            'publisher': 'International Journal of Applied Pattern Recognition \
+                Vol.3, No.2 page 145--180'
         }
     ]
     def __init__(self):

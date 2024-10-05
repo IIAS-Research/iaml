@@ -163,7 +163,7 @@ class IAMLPipeline(Pipeline):
         return False
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
-            only_predictor:bool=False, groups_columns: List[str] = [], **kwargs) -> 'IAMLPipeline':
+            only_predictor:bool=False, groups_columns: List[str] = None, **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
         
@@ -171,6 +171,9 @@ class IAMLPipeline(Pipeline):
             X (pd.DataFrame): Candidate features
             y (pd.DataFrame): label to predict
         """
+        if groups_columns is None:
+            groups_columns = []
+            
         if not only_predictor:
             X, y = self.fit_transform(X, y, groups_columns=groups_columns, **kwargs)
             # Reset groups_columns as returned X is aldready pruned from groups columns
@@ -185,7 +188,8 @@ class IAMLPipeline(Pipeline):
         
         return self
     
-    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, groups_columns: List[str] = [], **kwargs) -> 'IAMLPipeline':
+    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None,
+            groups_columns: List[str] = None, **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline and transform data 
         
@@ -193,6 +197,9 @@ class IAMLPipeline(Pipeline):
             X (pd.DataFrame): Candidate features
             y (pd.DataFrame): label to predict
         """
+        if groups_columns is None:
+            groups_columns = []
+        
         dataset = Dataset(X, y, groups_columns=groups_columns)
         
         for _, step in [*self.transformers, *self.resamplers]:
@@ -310,7 +317,7 @@ class IAMLPipeline(Pipeline):
         """
         return bool(self.predictor)
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X:pd.DataFrame) -> pd.DataFrame: # pylint: disable=arguments-differ
         """Apply transformers without predict
 
         Args:
