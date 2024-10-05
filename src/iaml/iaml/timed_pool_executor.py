@@ -4,21 +4,23 @@
     Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
 """
 
-import multiprocess
 import random
 import signal
-import threading
 import time
 import traceback
 import warnings
-
+import threading
+import multiprocess
 import multiprocess.process
+
 from .logger import Logger
 from .worker_manager import WorkerManager
 
 
 class TerminatedError(RuntimeError):
-    pass
+    """Custom RuntimeError
+    Raised when we try to run a job in a stopped executor
+    """
 
 
 def process_daemon(

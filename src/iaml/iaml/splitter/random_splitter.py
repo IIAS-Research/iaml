@@ -2,8 +2,6 @@
 Allow to split randomly a dataset to train/test 
 """
 
-import pandas as pd
-import numpy as np
 from sklearn.model_selection import ShuffleSplit, GroupShuffleSplit
 from ..dataset import Dataset
 

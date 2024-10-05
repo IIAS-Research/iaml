@@ -1,19 +1,25 @@
 """
 [STEP] Void step -> Just a step that do nothing and can be mutated to siblings
 """
+from typing import Tuple, List
+import pandas as pd
 from .step import Step
 from .decorators.all import is_step
+from .dataset import Dataset
 
 
-def predict(X):
+def predict(X:pd.DataFrame) -> pd.DataFrame:
+    """VoidStep : Do nothing"""
     return X
 
 
-def transform(dataset):
+def transform(dataset:Dataset) -> Dataset:
+    """VoidStep : Do nothing"""
     return dataset
 
 
-def resample(X,y):
+def resample(X:pd.DataFrame,y:List) -> Tuple[pd.DataFrame, List]:
+    """VoidStep : Do nothing"""
     return X, y
 
 

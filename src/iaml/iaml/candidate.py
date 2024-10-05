@@ -200,6 +200,7 @@ class Candidate:
         
         # without cache !
         from_cache:bool = True
+        to_cache:list = True
         splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
         if not splitted_datasets or self.is_meta: # Cannot use cache with meta for now
             from_cache = False

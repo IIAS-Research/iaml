@@ -7,7 +7,6 @@ import time
 from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
-from ..logger import Logger
 
 class GeneticOptimizer(Optimizer):
     """
@@ -72,7 +71,6 @@ class GeneticOptimizer(Optimizer):
             new_generation.append(self.__mutate(random.choice(candidates[0:nb_to_keep])))
             
         new_generation = [item for item in new_generation if item is not None] # remove None
-        count_mutate = len(new_generation) - nb_to_keep
         
         while len(new_generation) < self.number_of_candidate:
             new_generation.append(

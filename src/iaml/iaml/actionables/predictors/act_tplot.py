@@ -36,7 +36,8 @@ class ActTPLOT(Predictor):
         },
         {
             'year': 2016,
-            'name': 'Evaluation of a Tree-based Pipeline Optimization Tool for Automating Data Science',
+            'name': 'Evaluation of a Tree-based Pipeline Optimization Tool for \
+                Automating Data Science',
             'authors': [
                 'Randal S. Olson',
                 'Nathan Bartley',

@@ -11,13 +11,12 @@ import sys
 import json
 from hashlib import md5
 from typing import TYPE_CHECKING
-from typing import Any, Dict, List, Tuple
+from typing import Any, List
 from copy import deepcopy
 from multipledispatch import dispatch
 from .dataset import Dataset
 from .decorators.runner import runner
 from .reference import Reference
-from .reference_dict import REF
 
 if TYPE_CHECKING:
     from .candidate import Candidate
@@ -480,7 +479,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     #######
     # RUN #
     #######
-    def fit(self, dataset:Dataset) -> 'Step':
+    def fit(self, dataset:Dataset) -> 'Step':  # pylint: disable=unused-argument
         """
         Fit Step on a Dataset.
 
