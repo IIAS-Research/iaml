@@ -4,11 +4,11 @@
 import textwrap
 import io
 import pandas as pd
-from yellowbrick.regressor import ResidualsPlot
+from yellowbrick.regressor import ResidualsPlot as ybResidualsPlot
 
 from ..plot import Plot, capture
 
-class ResidualsPlotPlot(Plot):
+class ResidualsPlot(Plot):
     """
     [PLOT] Residuals Plot
     """
@@ -40,12 +40,15 @@ class ResidualsPlotPlot(Plot):
     
     @capture
     def compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y:pd.DataFrame, **kwargs) -> Plot:
+            X:pd.DataFrame, y:pd.DataFrame, 
+            X_train:pd.DataFrame=None, y_train:list=None, **kwargs) -> Plot:
         """
         Compute plot given X, y.
         """
         self._binary_image = io.BytesIO()
-        self.__visualizer = ResidualsPlot(estimator, is_fitted=True)
+        
+        self.__visualizer = ybResidualsPlot(estimator)
+        self.__visualizer.fit(X_train, y_train,)
         self.__visualizer.score(X, y)
         self.__visualizer.poof(self._binary_image)
         

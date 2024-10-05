@@ -38,6 +38,7 @@ class Candidate:
                 main_metric:'Metric'=None):
 
         self.dataset = dataset
+        
         self.metrics = copy(metrics) if metrics is not None else []
         self.pipeline = iaml_pipeline \
             or IAMLPipeline(
@@ -337,7 +338,8 @@ class Candidate:
         
         return [*self.pipeline.explanations, results_explain]
     
-    def explain_model_performance(self, X_test:pd.DataFrame, y_test:list) -> list[Plot]:
+    def explain_model_performance(self, X_test:pd.DataFrame, y_test:list,
+            X_train:pd.DataFrame, y_train:list) -> list[Plot]:
         """
         Return a list of plot that explain models performances
 
@@ -355,7 +357,9 @@ class Candidate:
             
             # Verify if a subclass is suitable or not
             if plot.suitable(self.dataset.type_of_target):
-                plot.compute(self.pipeline, X_test, y_test)
+                plot.compute(self.pipeline,
+                    X_test, y_test,
+                    X_train=X_train, y_train=y_train)
                 plots.append(plot)
                 
         return plots
