@@ -188,7 +188,6 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     self.to_run_queue.get()
 
                 self.manager.shutdown()
-                WorkerManager().executor.shutdown()
                 
                 break
 
