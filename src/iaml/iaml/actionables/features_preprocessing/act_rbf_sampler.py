@@ -25,7 +25,8 @@ class ActRBFSampler(Actionable):
     refs=[
         {
             'year': 2008,
-            'name': 'Weighted Sums of Random Kitchen Sinks: Replacing minimization with randomization in learning',
+            'name': 'Weighted Sums of Random Kitchen Sinks: Replacing minimization with \
+                randomization in learning',
             'authors': [
                 'Ali Rahimi',
                 'Benjamin Recht'

@@ -4,7 +4,6 @@
 from copy import deepcopy
 from ..step_wrapper import StepWrapper
 from ..candidate import Candidate
-from ..logger import Logger
 from ..step import Step
 from ..decorators.all import is_step, runner
 

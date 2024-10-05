@@ -32,7 +32,8 @@ class ActPowerTransformer(Actionable):
                 'D. R. Cox'
             ],
             'doi': 'https://doi.org/10.1111/j.2517-6161.1964.tb00553.x',
-            'publisher': 'Journal of the Royal Statistical Society: Series B (Methodological), Vol.26, No.2 page 211--243'
+            'publisher': 'Journal of the Royal Statistical Society: Series B (Methodological), \
+                Vol.26, No.2 page 211--243'
         },
         {
             'year': 2000,

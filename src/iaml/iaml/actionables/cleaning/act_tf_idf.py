@@ -8,7 +8,6 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
-from ...logger import Logger
 
 @is_step('cleaning')
 class ActTfIdf(Actionable):
@@ -24,7 +23,8 @@ class ActTfIdf(Actionable):
     refs = [
         {
             'year': 1972,
-            'name': 'A STATISTICAL INTERPRETATION OF TERM SPECIFICITY AND ITS APPLICATION IN RETRIEVAL',
+            'name': 'A STATISTICAL INTERPRETATION OF TERM SPECIFICITY AND ITS APPLICATION \
+                IN RETRIEVAL',
             'authors': [
                 'Karen Sparck Jones'    
             ],

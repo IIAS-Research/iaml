@@ -27,7 +27,7 @@ class Dataset:
         X:pd.DataFrame,
         y:list=None,
         groups: pd.DataFrame = None,
-        groups_columns: List[str] = [],
+        groups_columns: List[str] = None,
         columns_types:dict=None
     ):
         if groups is not None and groups_columns:
@@ -36,6 +36,9 @@ class Dataset:
         if groups is not None and set(groups.columns).intersection(X.columns):
             raise ValueError("Group columns present in dataset!")
 
+        if groups_columns is None:
+            groups_columns = []
+            
         self.__X:pd.DataFrame = X.drop(columns=groups_columns)
         
         self.__y:np.array = np.array(y)
@@ -105,6 +108,10 @@ class Dataset:
         return copy.copy(self)
     
     def decline(self, X, y, groups=None) -> 'Dataset':
+        """
+        Create a new Dataset with columns_types based on self.
+        Avoid time consuming columns_types computing
+        """
         if groups is None:
             groups = self.groups
         return Dataset(X, y, groups=groups, columns_types=self.columns_types)
