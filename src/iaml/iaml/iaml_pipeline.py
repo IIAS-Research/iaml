@@ -163,7 +163,8 @@ class IAMLPipeline(Pipeline):
         return False
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
-            only_predictor:bool=False, groups_columns: List[str] = None, **kwargs) -> 'IAMLPipeline':
+            only_predictor:bool=False, groups_columns: List[str] = None,
+            **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
         

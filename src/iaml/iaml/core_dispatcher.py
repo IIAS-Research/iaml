@@ -2,12 +2,9 @@
     Singleton used by IAML to dispatch cores to process
 """
 import psutil
-import time
-import threading
 import multiprocess
 from .meta_singleton import MetaSingleton
 from .logger import Logger
-import signal
 
 
 class CoreDispatcher(metaclass=MetaSingleton):
@@ -92,7 +89,8 @@ class CoreDispatcher(metaclass=MetaSingleton):
         with self.manager.Lock():
             new_books = []
             for book in self.books:
-                if any(psutil.pid_exists(pid) and psutil.Process(pid).is_running() for pid in book['pids']):
+                if any(psutil.pid_exists(pid) and psutil.Process(pid).is_running()
+                    for pid in book['pids']):
                     new_books.append(book)
                     
             self.reset_books()

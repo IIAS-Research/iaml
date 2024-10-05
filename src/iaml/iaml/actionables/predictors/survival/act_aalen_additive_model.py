@@ -1,5 +1,7 @@
+"""
+[STEP] Learn : Aalen's Additive Model for Survival Analysis
+"""
 from lifelines import AalenAdditiveFitter
-import numpy as np
 import pandas as pd
 
 from ....predictor import Predictor
@@ -7,7 +9,8 @@ from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'survival')
+# @is_step('predictor', 'tabular', 'survival')
+@is_step('disabled')
 class ActAalenAdditiveFitter(Predictor):
     """
     [STEP] Learn : Aalen's Additive Model for Survival Analysis

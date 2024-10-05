@@ -1,3 +1,6 @@
+"""
+[STEP] Learn : Extra Survival Trees
+"""
 from sksurv.ensemble import ExtraSurvivalTrees
 import numpy as np
 
@@ -68,7 +71,8 @@ class ActExtraSurvivalTrees(Predictor):
                 'passthrough': False
             },
             'max_features': {
-                'description': 'The number of features to consider when looking for the best split.',
+                'description': 'The number of features to consider when \
+                    looking for the best split.',
                 'default': "sqrt",
                 'options': ["auto", "sqrt", "log2", None],
                 'passthrough': False

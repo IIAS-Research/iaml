@@ -1,3 +1,6 @@
+"""
+[METRIC] Integrated Brier Score for Survival Models
+"""
 import pandas as pd
 import numpy as np
 from sksurv.metrics import integrated_brier_score
@@ -16,7 +19,8 @@ class IntegratedBrierScoreMetric(Metric):
         return 'Computes the Integrated Brier Score (IBS) using sksurv, which evaluates the \
                 prediction accuracy of a survival model by comparing the predicted probabilities \
                 of survival with the actual survival status over time. Lower values indicate better \
-                model performance. 0.25 is considered neutral for a balanced binary classification problem.'
+                model performance. 0.25 is considered neutral for a balanced binary classification \
+                problem.'
 
     def __str__(self):
         return 'integrated_brier_score'

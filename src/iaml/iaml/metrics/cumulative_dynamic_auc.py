@@ -1,3 +1,6 @@
+"""
+[METRIC] Cumulative Dynamic AUC for Survival Models
+"""
 import pandas as pd
 import numpy as np
 from sksurv.metrics import cumulative_dynamic_auc
@@ -13,9 +16,10 @@ class CumulativeDynamicAUCMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'Computes the time-dependent Cumulative Dynamic Area Under the ROC Curve (AUC) for survival models. \
-                The time-dependent AUC measures the model’s ability to distinguish between subjects who experience \
-                the event before a given time and those who do not, considering censored data. Higher values indicate \
+        return 'Computes the time-dependent Cumulative Dynamic Area Under the ROC Curve (AUC) \
+                for survival models. The time-dependent AUC measures the model’s ability to \
+                distinguish between subjects who experience the event before a given time and \
+                those who do not, considering censored data. Higher values indicate \
                 better discrimination, with 1 being perfect.'
 
     def __str__(self):
@@ -41,7 +45,7 @@ class CumulativeDynamicAUCMetric(Metric):
         return type_of_target == 'survival'
         
     def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, 
-                y_train: pd.DataFrame = None, time_points=None, **kwargs) -> float:
+                y_train: pd.DataFrame = None, **kwargs) -> float:
         """
         Compute the cumulative dynamic AUC using the predicted data.
 

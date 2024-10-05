@@ -65,7 +65,8 @@ class ActRandomSurvivalForest(Predictor):
                 'passthrough': False
             },
             'max_depth': {
-                'description': 'The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure.',
+                'description': 'The maximum depth of the tree. If None, then nodes are expanded \
+                    until all leaves are pure.',
                 'default': None,
                 'range': [1, None],
                 'passthrough': False

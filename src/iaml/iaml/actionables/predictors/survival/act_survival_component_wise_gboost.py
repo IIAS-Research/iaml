@@ -1,3 +1,6 @@
+"""
+[STEP] Learn : Componentwise Gradient Boosting Survival Analysis
+"""
 from sksurv.ensemble import ComponentwiseGradientBoostingSurvivalAnalysis
 import numpy as np
 

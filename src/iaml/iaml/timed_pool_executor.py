@@ -113,7 +113,9 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             )
             self.process[-1].start()
             
-        CoreDispatcher().affiliate([process.pid for process in self.process], core_number=self.max_workers)
+        CoreDispatcher().affiliate(
+            [process.pid for process in self.process],
+            core_number=self.max_workers)
             
         self.__run_daemon() # Run the daemon THREAD
 
@@ -304,7 +306,10 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             return self.sliding_stages \
                 and ( 
                     is_empty # submit queue is empty
-                    and self.submit_count - self.finished_run <= self.max_workers/2 # At least half of the worker is free
+                    and (
+                        self.submit_count - self.finished_run <= self.max_workers/2
+                        # At least half of the worker is free
+                        )
                     and self.results # We have got at least one result
                 )
         

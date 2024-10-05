@@ -1,3 +1,7 @@
+"""
+[METRIC] Concordance Index with Inverse Probability of Censoring 
+Weights (IPCW) for Survival Models
+"""
 import pandas as pd
 import numpy as np
 from sksurv.metrics import concordance_index_ipcw
@@ -5,7 +9,8 @@ from ..metric import Metric
 
 class ConcordanceIndexIPCWMetric(Metric):
     """
-    [METRIC] Concordance Index with Inverse Probability of Censoring Weights (IPCW) for Survival Models
+    [METRIC] Concordance Index with Inverse Probability of Censoring 
+    Weights (IPCW) for Survival Models
     """
     def explain(self) -> str:
         """Describe metric
@@ -13,9 +18,10 @@ class ConcordanceIndexIPCWMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'Computes the Concordance Index (C-index) using IPCW, which measures the predictive accuracy \
-                of a survival model. The C-index is the proportion of all pairs of subjects whose predicted \
-                survival times are correctly ordered. IPCW adjusts for censored data. A value of 0.5 indicates \
+        return 'Computes the Concordance Index (C-index) using IPCW, which measures the \
+                predictive accuracy of a survival model. The C-index is the proportion \
+                of all pairs of subjects whose predicted survival times are correctly \
+                ordered. IPCW adjusts for censored data. A value of 0.5 indicates \
                 random predictions, and a value of 1 indicates perfect predictions.'
 
     def __str__(self):

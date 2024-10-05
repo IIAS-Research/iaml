@@ -221,7 +221,12 @@ class Candidate:
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
             try:
-                metrics.append(self.__compute_metrics(test_ds.X, test_ds.y, pipeline=copied_pipe, model_only= not self.is_meta))
+                metrics.append(self.__compute_metrics(
+                    test_ds.X,
+                    test_ds.y,
+                    pipeline=copied_pipe,
+                    model_only= not self.is_meta)
+                    )
                 if not from_cache:
                     to_cache.append((train_ds, test_ds))
             except ValueError:
@@ -253,7 +258,8 @@ class Candidate:
         return self.__compute_metrics(X, np.array(y))
     
         
-    def __compute_metrics(self, X_test:pd.DataFrame, y_test:np.array, pipeline=None, **kwargs) -> dict:
+    def __compute_metrics(self,
+            X_test:pd.DataFrame, y_test:np.array, pipeline=None, **kwargs) -> dict:
         
         if pipeline is None: # Is no pipeline in args -> Use the main one
             pipeline = self.pipeline

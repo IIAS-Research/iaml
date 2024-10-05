@@ -1,3 +1,6 @@
+"""
+[STEP] Learn : Gradient Boosting Survival Analysis
+"""
 from sksurv.ensemble import GradientBoostingSurvivalAnalysis
 import numpy as np
 
@@ -36,7 +39,8 @@ class ActGradientBoostingSurvivalAnalysis(Predictor):
                 'C. Weihs'
             ],
             'doi': 'https://doi.org/10.1007/978-3-642-11746-4_24',
-            'publisher': 'Advances in Data Analysis, Data Handling and Business Intelligence, pages 239-248'
+            'publisher': 'Advances in Data Analysis, Data Handling and Business Intelligence, \
+                pages 239-248'
         }
     ]
 

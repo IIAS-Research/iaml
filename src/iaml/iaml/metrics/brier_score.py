@@ -1,3 +1,7 @@
+
+"""
+[METRIC] Brier Score for Survival Models
+"""
 import pandas as pd
 import numpy as np
 from sksurv.metrics import brier_score
@@ -14,9 +18,10 @@ class BrierScoreMetric(Metric):
         Returns:
             str: Metric description
         """
-        return 'Computes the Brier Score, which measures the accuracy of probabilistic predictions for survival models. \
-                The Brier Score is the mean squared error between the predicted probabilities and the actual outcomes, \
-                with adjustments for censored data. Lower values indicate better accuracy, with 0 being perfect.'
+        return 'Computes the Brier Score, which measures the accuracy of probabilistic \
+                predictions for survival models. The Brier Score is the mean squared error \
+                between the predicted probabilities and the actual outcomes, with adjustments \
+                for censored data. Lower values indicate better accuracy, with 0 being perfect.'
 
     def __str__(self):
         return 'brier_score'

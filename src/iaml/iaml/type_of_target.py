@@ -2,7 +2,6 @@
 Try to figure out the type of target
 """
 import numpy as np
-import pandas as pd
 from sklearn.utils.multiclass import type_of_target as sk_type_of_target
 
 def type_of_target(y) -> str:

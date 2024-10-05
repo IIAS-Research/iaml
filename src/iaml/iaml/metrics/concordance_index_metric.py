@@ -1,3 +1,6 @@
+"""
+[METRIC] Concordance Index for Survival Models using sksurv
+"""
 import pandas as pd
 from sksurv.metrics import concordance_index_censored
 from ..metric import Metric
