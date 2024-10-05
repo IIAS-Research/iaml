@@ -57,12 +57,3 @@ class ClassPredictionErrorPlot(Plot):
         Does this plot is usable for a given type_of_target ?
         """
         return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
-
-    @property
-    def name(self) -> str:
-        """Return the plot formatted name
-        
-        Returns:
-            str: formatted name
-        """
-        return ' '.join(x.title() for x in str(self).split('_'))

@@ -28,6 +28,9 @@ from .wrapper import *
 # Metrics
 from .metrics import *
 
+# Plots
+from .plots import *
+
 # Stack
 from .stack import Stack
 

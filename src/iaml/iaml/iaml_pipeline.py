@@ -482,6 +482,9 @@ class IAMLPipeline(Pipeline):
     def __sklearn_clone__(self):
         return deepcopy(self)
     
+    def target_type_(self):
+        return self.original_dataset.type_of_target
+    
     # Fingerprint (used by cache)
     def fingerprint(self) -> str:
         """
