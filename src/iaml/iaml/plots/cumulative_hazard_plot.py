@@ -63,6 +63,7 @@ class CumulativeHazardModelComparisonPlot(Plot):
         try:
             if baseline_estimator is None:
                 if X_train is not None and y_train is not None:
+                    transform = True
                     baseline_estimator = CoxPHSurvivalAnalysis()
                     y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
                     baseline_estimator.fit(estimator.transform(X_train), y_train)
@@ -82,7 +83,6 @@ class CumulativeHazardModelComparisonPlot(Plot):
             plt.step(mean_hazard_time_cox, mean_hazard_prob_cox, where="post", 
                     label=f"Baseline model ({model_name})", color="red", linestyle="--")
         except Exception:
-            print(traceback.format_exc())
             Logger().error(traceback.format_exc())
 
         # Current model prediction
