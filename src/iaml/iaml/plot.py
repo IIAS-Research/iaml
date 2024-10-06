@@ -9,16 +9,13 @@ class Plot:
     """
     [PLOT] Parent of all others Plot, implement the default behavior
     """
+    
+    title = "Here is the plot title"
+    description = "Here is an explanation of how this plot work"
+    
     def __init__(self):
         self.__visualizer = None  # pylint: disable=unused-private-member
         self._binary_image = None
-    
-    @property
-    def explain(self) -> str:
-        """
-        Return str explanation of the plot
-        """
-        return "Here is an explanation of how this plot work"
     
     @property
     def image(self):
@@ -43,14 +40,10 @@ class Plot:
         """
         return False
 
-    @property
-    def name(self) -> str:
-        """Return the plot formatted name
-        
-        Returns:
-            str: formatted name
-        """
-        return ' '.join(x.title() for x in str(self).split('_'))
+    def to_json(self) -> dict:
+        return {'title': self.title,
+            'description': self.description,
+            'image': self.image}
     
 
 def capture(func):

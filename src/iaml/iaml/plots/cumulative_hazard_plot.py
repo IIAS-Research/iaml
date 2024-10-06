@@ -17,22 +17,18 @@ class CumulativeHazardModelComparisonPlot(Plot):
     [PLOT] Cumulative Hazard Model Comparison Plot using sksurv
     """
 
-    @property
-    def explain(self) -> str:
-        """
-        Return str explanation of the plot
-        """
-        return textwrap.dedent("""
-            The Cumulative Hazard Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
-            survival models by comparing predicted cumulative hazard functions against the observed cumulative hazards.
+    title = "Cumulative Hazard"
+    description = textwrap.dedent("""
+        The Cumulative Hazard Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
+        survival models by comparing predicted cumulative hazard functions against the observed cumulative hazards.
 
-            The x-axis represents time, and the y-axis represents the cumulative hazard. Ideally, 
-            the model-predicted cumulative hazard curves should closely align with the observed curves, 
-            indicating good model performance. Discrepancies between the two curves highlight 
-            areas where the model's predictions diverge from reality, signaling potential issues with 
-            the model's predictive ability.
+        The x-axis represents time, and the y-axis represents the cumulative hazard. Ideally, 
+        the model-predicted cumulative hazard curves should closely align with the observed curves, 
+        indicating good model performance. Discrepancies between the two curves highlight 
+        areas where the model's predictions diverge from reality, signaling potential issues with 
+        the model's predictive ability.
 
-            Additionally, a Cox proportional hazards model can be trained to serve as a baseline for comparison.
+        Additionally, a Cox proportional hazards model can be trained to serve as a baseline for comparison.
         """)
 
     @capture
