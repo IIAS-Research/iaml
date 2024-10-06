@@ -54,7 +54,8 @@ class ROCDynamiqueCurvePlot(Plot):
         # Compute time-dependent ROC AUC for each time point
         _, event_times = zip(*y)
         
-        max_val = max(event_times) - 0.1 if isinstance(max(event_times), float) else max(event_times)
+        max_val = max(event_times) - 0.1 if isinstance(max(event_times), float) \
+            else max(event_times)
         times = np.arange(min(event_times), max_val)
         
 
@@ -71,7 +72,8 @@ class ROCDynamiqueCurvePlot(Plot):
         plt.xlabel("Temps de suivi")
         plt.ylabel("AUC dynamique cumulative")
         plt.title('ROC dynamique curve')
-        plt.axhline(np.nanmean(aucs), color='r', linestyle='--', label=f'Mean AUC = {np.nanmean(aucs):.2f}')
+        plt.axhline(np.nanmean(aucs), color='r', linestyle='--',
+            label=f'Mean AUC = {np.nanmean(aucs):.2f}')
         plt.legend()
         plt.grid(True)
 
