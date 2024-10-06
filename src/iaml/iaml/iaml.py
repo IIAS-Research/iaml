@@ -251,8 +251,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             # Generate candidates
             candidates = self.__run(self.init_candidate, *args, **kwargs)
-        
-            # Remove candidate without predictor 
+            
+            # Remove candidate without predictor
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
             Logger().info(f"{len(candidates)} generated pipelines")
@@ -386,13 +386,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             # Add results to progressbar
             if new_candidates:
-                
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     ({new_candidates[0].get_main_metric_value():.4f})'
             else:
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     (no result)'
-        
         
         # Add to cache
         for candidate in new_candidates:

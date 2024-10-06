@@ -40,7 +40,7 @@ class ClassificationErrorMetric(Metric):
     
     # Calculate the classification error using either accuracy or balanced accuracy, 
     # depending on relevence
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute metric with predicted data
 

@@ -39,7 +39,7 @@ class SpecificityMultilabelMetric(Metric):
     
     # Specificity is calculated for each label separately, 
     # then averaged to obtain an overall measure. 
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute metric with predicted data
 

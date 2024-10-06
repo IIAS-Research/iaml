@@ -12,7 +12,7 @@ class Metric:
         """
         return "Here is an explanation of how this metrics work"
     
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame):
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs):
         """
         Compute metric given y, y_pred. 
         Must be overwrote by children classes
@@ -25,13 +25,14 @@ class Metric:
         """
         return False
     
-    def need_proba(self) -> bool:
-        """Does this metric need probabilities to by computed
+    @property
+    def needed_prediction(self) -> str:
+        """Which kind of predict is needed by the metric
 
         Returns:
-            bool: Need probabilities ? 
+            string: method name
         """
-        return False
+        return "predict"
 
     @property
     def name(self) -> str:

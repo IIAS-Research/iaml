@@ -30,7 +30,8 @@ dependencies = [
     "scikit-learn>=1.5.2",
     "shap",
     "tpot>=0.12.2",
-    "psutil>=6.0.0",
+    "scikit-survival>=0.23.0",
+    "psutil>=6.0.0"
 ]
 
 [project.optional-dependencies]
@@ -50,7 +51,8 @@ dev-dependencies = [
     "ipykernel>=6.29.5",
     "mkdocs>=1.6.1",
     "pylint>=3.2.7",
-    "ipywidgets>=8.1.5"
+    "ipywidgets>=8.1.5",
+    "pre-commit>=3.8.0"
 ]
 
 [tool.uv.sources]

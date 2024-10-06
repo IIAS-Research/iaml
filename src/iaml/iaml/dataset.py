@@ -53,7 +53,8 @@ class Dataset:
         
         if self.groups is not None and self.groups.shape[1] > 1:
             # Create a combined group label by concatenating all columns into tuples
-            Logger().warning("You are using multiple columns as groups. Be careful, as these columns will serve as a composite key.")
+            Logger().warning("You are using multiple columns as groups. \
+                Be careful, as these columns will serve as a composite key.")
             self.groups = pd.DataFrame(pd.Series(
                 list(zip(*[self.groups[col] for col in self.groups.columns]))),
                 columns=['groups']
@@ -258,7 +259,13 @@ class Dataset:
         """
         Kind of estimator needed for this dataset
         """
-        return 'regressor' if self.type_of_target == 'continuous' else 'classifier'
+        if self.type_of_target == 'continuous':
+            return 'regressor'
+        
+        if self.type_of_target == 'survival':
+            return 'survival'
+        
+        return 'classifier'
     
     def __detect_columns_types(self) -> None:
         """
