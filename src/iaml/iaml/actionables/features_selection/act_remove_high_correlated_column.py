@@ -36,14 +36,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         Returns:
             Candidate: Transformed candidate
         """
-        # Compute correlation matrix 
-        corr_matrix = dataset.X.corr().abs()
-        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
-        
-        # Find features with above-threshold correlation
-        # self.to_drop = list(to_drop.keys())
-        corr = { c: (upper[upper[c] >= self.get_config('threshold')].index) for c in upper.columns }
-        self.to_drop = [ c for c, v in corr.items() if len(v) > 0 ]
+        self.to_drop, corr = self.__get_columns(dataset)
 
         self.explanations = [
             f"""Dropped column **`{c}`** because it was too correlated with
@@ -52,6 +45,16 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         ]
         
         return self
+    
+    def __get_columns(self, dataset:Dataset) -> list:
+        # Compute correlation matrix 
+        corr_matrix = dataset.X.corr().abs()
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
+        
+        # Find features with above-threshold correlation
+        corr = { c: (upper[upper[c] >= self.get_config('threshold')].index) for c in upper.columns }
+        
+        return ([ c for c, v in corr.items() if len(v) > 0 ], corr)
     
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
@@ -75,3 +78,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         Return : continuous between 0 and 1
         """
         return 0.5
+
+    def suitable(self, dataset:Dataset) -> bool:
+        return self.__get_columns(dataset)[0]
+    

@@ -60,3 +60,6 @@ class ActDropDateColumn(Actionable):
         Return : continuous between 0 and 1
         """
         return 0 # Last cleaning action
+
+    def suitable(self, dataset:Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type(DataType.DATE))    
