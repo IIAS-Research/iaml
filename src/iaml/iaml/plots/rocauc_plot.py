@@ -6,9 +6,9 @@ import io
 import pandas as pd
 from yellowbrick.classifier import ROCAUC
 
-from ..plot import Plot, capture
+from ..plot import MetricPlot, capture
 
-class ROCAUCPlot(Plot):
+class ROCAUCPlot(MetricPlot):
     """
     [PLOT] ROC-AUC Plot
     """
@@ -50,8 +50,8 @@ class ROCAUCPlot(Plot):
         """)
     
     @capture
-    def compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y:pd.DataFrame, **kwargs) -> Plot:
+    def _compute(self, estimator:'IAMLPipeline', 
+            X:pd.DataFrame, y:pd.DataFrame, **kwargs) -> MetricPlot:
         """
         Compute plot given X, y.
         """
@@ -62,7 +62,8 @@ class ROCAUCPlot(Plot):
         
         return self
     
-    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    @classmethod
+    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
         """
         Does this plot is usable for a given type_of_target ?
         """

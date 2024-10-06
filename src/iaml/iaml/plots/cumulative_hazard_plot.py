@@ -9,10 +9,10 @@ from sksurv.linear_model import CoxPHSurvivalAnalysis
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ..plot import Plot, capture
+from ..plot import MetricPlot, capture
 from ..logger import Logger
 
-class CumulativeHazardModelComparisonPlot(Plot):
+class CumulativeHazardModelComparisonPlot(MetricPlot):
     """
     [PLOT] Cumulative Hazard Model Comparison Plot using sksurv
     """
@@ -32,10 +32,10 @@ class CumulativeHazardModelComparisonPlot(Plot):
         """)
 
     @capture
-    def compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
+    def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
                 X_train:pd.DataFrame=None, y_train:pd.Series=None, 
                 baseline_estimator=None, transform:bool=True,
-                **kwargs) -> Plot:
+                **kwargs) -> MetricPlot:
         """
         Compute cumulative hazard plot with model predictions for comparison using sksurv.
         
@@ -101,7 +101,8 @@ class CumulativeHazardModelComparisonPlot(Plot):
 
         return self
     
-    def suitable(self, type_of_target:str) -> bool:
+    @classmethod
+    def suitable(cls, type_of_target:str) -> bool:
         """
         Does this plot is usable for a given type_of_target?
         """

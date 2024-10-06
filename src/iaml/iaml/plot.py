@@ -4,6 +4,8 @@
 from functools import wraps
 import matplotlib.pyplot as plt
 import pandas as pd
+import base64
+import textwrap
 
 class Plot:
     """
@@ -26,24 +28,57 @@ class Plot:
             return self._binary_image.getvalue()
         
         raise AttributeError("Plot must be computed before")
+    
+    @property
+    def b64_image(self):
+        base64.b64encode(self.image).decode()
         
-    def compute(self, estimator:'IAMLPipeline', X:pd.DataFrame, y:pd.DataFrame, **kwargs):
+    def _compute(self, estimator:'IAMLPipeline', X:pd.DataFrame, y:pd.DataFrame, **kwargs):
         """
         Compute plot given X, y. 
         Must be overwrote by children classes
         """
         raise NotImplementedError('Subclass must implement abstract method')
     
+    @classmethod
     def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
         """
         Does this plot is usable for a given type_of_target ?
         """
         return False
 
-    def to_json(self) -> dict:
+    def to_json(self, data_format='binary') -> dict:
+        match data_format:
+            case 'binary':
+                data = self.image
+            case 'b64':
+                data = self.b64_image
+            case _:
+                raise AttributeError('Invalide Data Format')
+        
         return {'title': self.title,
             'description': self.description,
-            'image': self.image}
+            'image': data}
+        
+    def to_markdown(self) -> str:
+        return textwrap.dedent(f"""
+            # {self.title}
+            
+            {self.description}
+            
+            ![{self.title}](data:image/png;base64,{self.b64_image})
+            """)
+
+
+class MetricPlot(Plot):
+    """
+    To be used by performance Explainer
+    """
+    def __init__(self, estimator:'IAMLPipeline', 
+                X:pd.DataFrame, y:pd.DataFrame, 
+                X_train:pd.DataFrame, y_train:pd.DataFrame, 
+                **kwargs):
+        self._compute(estimator, X, y, X_train=X_train, y_train=y_train, **kwargs)
     
 
 def capture(func):

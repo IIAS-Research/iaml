@@ -9,10 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.nonparametric import kaplan_meier_estimator
 from sksurv.linear_model import CoxPHSurvivalAnalysis
-from ..plot import Plot, capture
+from ..plot import MetricPlot, capture
 from ..logger import Logger
 
-class KaplanMeierModelComparisonPlot(Plot):
+class KaplanMeierModelComparisonPlot(MetricPlot):
     """
     [PLOT] Kaplan-Meier Model Comparison Survival
     """
@@ -41,10 +41,10 @@ class KaplanMeierModelComparisonPlot(Plot):
         """)
     
     @capture
-    def compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
+    def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
                 X_train:pd.DataFrame=None, y_train:pd.Series=None, 
                 baseline_estimator=None, transform:bool=True,
-                **kwargs) -> Plot:
+                **kwargs) -> MetricPlot:
         """
         Compute Kaplan-Meier survival plot with model predictions for comparison using sksurv.
         
@@ -110,7 +110,8 @@ class KaplanMeierModelComparisonPlot(Plot):
 
         return self
     
-    def suitable(self, type_of_target:str) -> bool:
+    @classmethod
+    def suitable(cls, type_of_target:str) -> bool:
         """
         Does this plot is usable for a given type_of_target?
         """

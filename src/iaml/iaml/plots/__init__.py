@@ -17,3 +17,4 @@ from .prediction_error_plot import PredictionErrorPlot
 from .kaplan_meier_comparison_plot import KaplanMeierModelComparisonPlot
 from .cumulative_hazard_plot import CumulativeHazardModelComparisonPlot
 from .roc_dynamique_curve_plot import ROCDynamiqueCurvePlot
+from .shap_plot import ShapPlot

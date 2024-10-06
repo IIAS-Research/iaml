@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.metrics import cumulative_dynamic_auc
 
-from ..plot import Plot, capture
+from ..plot import MetricPlot, capture
 
-class ROCDynamiqueCurvePlot(Plot):
+class ROCDynamiqueCurvePlot(MetricPlot):
     """
     [PLOT] ROC Dynamique Curve for Survival Models using sksurv
     """
@@ -33,8 +33,8 @@ class ROCDynamiqueCurvePlot(Plot):
         time goes on.""")
     
     @capture
-    def compute(self, estimator, X: pd.DataFrame, y: pd.Series,
-            y_train: pd.Series=None, **kwargs) -> Plot:
+    def _compute(self, estimator, X: pd.DataFrame, y: pd.Series,
+            y_train: pd.Series=None, **kwargs) -> MetricPlot:
         """
         Compute AUC Dynamique Curve for a survival model
         
@@ -78,7 +78,8 @@ class ROCDynamiqueCurvePlot(Plot):
 
         return self
     
-    def suitable(self, type_of_target: str) -> bool:
+    @classmethod
+    def suitable(cls, type_of_target: str) -> bool:
         """
         Does this plot is usable for a given type_of_target?
         """
