@@ -3,6 +3,7 @@
 """
 import pandas as pd
 import numpy as np
+import textwrap
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...data_type import DataType
@@ -15,16 +16,18 @@ class ActSplitDate(Actionable):
     [STEP] Transform string column to date
     """
     name = 'Create Date Elements columns'
-    descrption = '''Transform a textual date column into multiple columns
-        for day, month, year, hour, minute, second'''
-    description_long = '''Transform a textual date column into multiple columns for 
+    descrption = textwrap.dedent('''Transform a textual date column into multiple columns
+        for day, month, year, hour, minute, second''')
+    description_long = textwrap.dedent('''Transform a textual date column into multiple columns for 
         day, month, year, hour, minute, second.
         Exemple:
-+---------------------+----------+------------+-----------+-----------+----------+----------+
-| date                | date_day | date_month | date_year | date_hour | date_min | date_sec |
-+---------------------+----------+------------+-----------+-----------+----------+----------+
-| 2024-01-15 12:31:27 | 15       | 01         | 2024      | 12        | 31       | 27       |
-+---------------------+----------+------------+-----------+-----------+----------+----------+'''
+        +---------------------+----------+------------+-----------+-----------+----------+----------+
+        | date                | date_day | date_month | date_year | date_hour | date_min | date_sec |
+        +---------------------+----------+------------+-----------+-----------+----------+----------+
+        | 2024-01-15 12:31:27 | 15       | 01         | 2024      | 12        | 31       | 27       |
+        +---------------------+----------+------------+-----------+-----------+----------+----------+
+        ''')
+    
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[str] = None
@@ -70,8 +73,9 @@ class ActSplitDate(Actionable):
             X[column + '_second'] = X[column].dt.second.replace(np.NaN, -1) 
             
         return X
-
     
+    def suitable(self, dataset:Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type(DataType.DATE))
         
     def priorize(self, candidate:Candidate=None) -> float:
         """

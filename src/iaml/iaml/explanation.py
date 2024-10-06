@@ -8,6 +8,7 @@ import io
 import matplotlib.pyplot as plt
 import numpy as np
 import shap
+from .plots.shap_plot import ShapPlot
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -70,7 +71,7 @@ class Explanation:
             self,
             plot: str,
             ps: slice = None,
-            scatter_feature: list[str] = None) -> None:
+            scatter_feature: list[str] = None) -> ShapPlot:
         """
         Plot SHAP values.
 
@@ -88,130 +89,20 @@ class Explanation:
         """
         if self.shap_values is None:
             raise RuntimeError('Cannot generate plots for this explanation without SHAP values.')
-
-        if ps is None:
-            ps = slice(0, len(self.shap_values))
-
-        match plot:
-            case 'force':
-                shap.plots.force(self.shap_values[ps.start], show=False, matplotlib=True)
-            case 'waterfall':
-                shap.plots.waterfall(self.shap_values[ps.start], show=False)
-            case 'scatter':
-                if scatter_feature is None:
-                    scatter_feature = self.shap_values.feature_names[0]
-
-                shap.plots.scatter(self.shap_values[ps, scatter_feature], show=False)
-            case 'beeswarm':
-                shap.plots.beeswarm(self.shap_values[ps], show=False)
-            case 'heatmap':
-                shap.plots.heatmap(self.shap_values[ps], show=False)
-            case 'bar':
-                shap.plots.bar(self.shap_values[ps], show=False)
-            case _:
-                raise RuntimeError(f'Unknown plot type ({plot}).')
-
-    def to_binary_plots(self, plots: List[str] = None, ps: slice = None, **kw) -> List[Tuple[str]]:
-        """
-        Build List of SHAP values and encode the plot images into bytes string.
-
-        Args:
-            plots (List[str], optionnal): List of plot names to process
-            ps (slice, optionnal):
-            **kw (dict, optionnal): optionnal parameters dict for matplotlib
-        Returns:
-            List[Tuple[str]]: List of tuple (name, bytes) images
-        """
+        
+        shap_plot = None
+        if plot == 'scatter':  
+            shap_plot = ShapPlot(plot, self.shap_values, ps=ps, scatter_feature=scatter_feature)
+        else:
+            shap_plot = ShapPlot(plot, self.shap_values, ps=ps)
+            
+        return shap_plot
+    
+    def to_plots(self, plots=None) -> list:
         if plots is None:
             plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
-        
-        if self.shap_values is None or len(plots) == 0:
-            return []
-        
-        bin_plots = []
-        for plot in plots:
-            bin_plots.append((plot, self.to_binary_plot(plot, ps, **kw)))
-        return bin_plots
+        return [self.to_plot(p) for p in plots]
 
-    def to_binary_plot(self, plot: str, ps: slice = None, **kw) -> io.BytesIO:
-        """
-        Build SHAP values and encode the plot images into bytes string.
-
-        Args:
-            plot (str): plot name to process
-            ps (slice, optionnal):
-            **kw (dict, optionnal): optionnal parameters dict for matplotlib
-        Returns:
-            io.BytesIO: Bytes object containing the generated image
-        """
-        self.to_plot(plot, ps)
-        buffer = io.BytesIO()
-        plt.savefig(buffer, bbox_inches='tight', **kw)
-        buffer.seek(0)
-        plt.close()
-        return buffer
-        
-    def to_b64_plots(self, plots: List[str] = None) -> List[Tuple[str]]:
-        """
-        Build List of SHAP values and encode the plot images into b64 string.
-
-        Args:
-            plots (List[str], optionnal)
-        Returns:
-            List[Tuple[str]]: List of tuple (name, Base64-encoded) images.
-        """
-        if plots is None:
-            plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
-        
-        if self.shap_values is None or len(plots) == 0:
-            return []
-        
-        b64_plots = []
-        for plot in plots:
-            b64_plots.append((plot, self.to_b64_plot(plot)))
-        return b64_plots
-    
-    def to_b64_plot(self, plot: str, ps: slice = None, **kw) -> str:
-        """
-        Build SHAP values and encode the plot image into b64 string.
-
-        Args:
-            plot (str): Plot to generate (one of "force", "scatter",
-                "beeswarm", "heatmap", "bar"). Refer to the SHAP
-                documentation for more details on these plots.
-            ps (slice, optional): Specify the indexes of the SHAP values
-                to plot. Defaults to all predictions. If plot is
-                "force", it will pick the first prediction matching
-                the provided slice (defaults to first of all).
-            **kw (dict): Parameters to pass to matplotlib.
-        
-        Returns:
-            str: Base64-encoded plot image.
-        """
-        b64 = base64.b64encode(self.to_binary_plot(plot, ps, **kw).read()).decode()
-        return b64
-    
-    def to_markdown_data_uri_plot(self, plot: str, ps: slice = None, **kw):
-        """
-        Plot SHAP values and encode the plot image into a Markdown
-        image.
-
-        Args:
-            plot (str): Plot to generate (one of "force", "scatter",
-                "beeswarm", "heatmap", "bar"). Refer to the SHAP
-                documentation for more details on these plots.
-            ps (slice, optional): Specify the indexes of the SHAP values
-                to plot. Defaults to all predictions. If plot is
-                "force", it will pick the first prediction matching
-                the provided slice (defaults to first of all).
-            **kw (dict): Parameters to pass to matplotlib.
-        
-        Returns:
-            str: Markdown formatted Base64-encoded plot image.
-        """
-        b64 = self.to_b64_plot(plot, ps, **kw)
-        return f'![{plot} plot](data:image/png;base64,{b64})'
-    
     def to_markdown_conf(self) -> str:
         """
         Renders the step configurations for this explanation as
@@ -308,52 +199,12 @@ class Explanation:
         if self.shap_values is None or len(plots) == 0:
             return ""
         
-        features = self.shap_values.feature_names
-
-        values = self.shap_values[0].values
-        force_shap, force_feature = max(zip(values, features), key=lambda v: abs(v[0]))
-
-        mean_shap = np.abs(self.shap_values.values).mean(axis=0)
-        bar_shap, bar_feature = max(zip(mean_shap, features), key=lambda v: v[0])
-
+        markdown = ['\n\n'.join(p.to_markdown() for p in self.to_plots(plots))]
+        
         return textwrap.dedent(f"""
             ### SHAP plots
 
-            {f'''
-            #### Force plot
-            {self.to_markdown_data_uri_plot('force')}
-
-            ***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
-            ''' if 'force' in plots else ''}
-
-            {f'''
-            #### Waterfall plot
-            {self.to_markdown_data_uri_plot('waterfall')}
-
-            ***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
-            ''' if 'waterfall' in plots else ''}
-
-            {f'''
-            #### Beeswarm plot
-            {self.to_markdown_data_uri_plot('beeswarm')}
-            ''' if 'beeswarm' in plots else ''}
-
-            {f'''
-            #### Heatmap plot
-            {self.to_markdown_data_uri_plot('heatmap')}
-            ''' if 'heatmap' in plots else ''}
-
-            {f'''
-            #### Scatter plot
-            {self.to_markdown_data_uri_plot('scatter')}
-            ''' if 'scatter' in plots else ''}
-
-            {f'''
-            #### Bar plot
-            {self.to_markdown_data_uri_plot('bar')}
-
-            ***Reading**: `{bar_feature}` has an absolute impact of **{bar_shap:.3f}** on the average final prediction value.*
-            ''' if 'bar' in plots else ''}
+            {markdown}
             """)
     
     def to_markdown(
@@ -382,4 +233,4 @@ class Explanation:
             {self.to_markdown_metrics()}
             {self.to_markdown_shap()}
             {self.to_markdown_plots(plots)}
-                    """)
+            """)

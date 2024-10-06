@@ -11,7 +11,7 @@ from .dataset import Dataset
 from .cache import Cache
 from .splitter import random_splitter
 from .iaml_pipeline import IAMLPipeline
-from .plot import Plot
+from .plot import MetricPlot
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -339,7 +339,7 @@ class Candidate:
         return [*self.pipeline.explanations, results_explain]
     
     def explain_model_performance(self, X_test:pd.DataFrame, y_test:list,
-            X_train:pd.DataFrame=None, y_train:list=None, **kwargs) -> list[Plot]:
+            X_train:pd.DataFrame=None, y_train:list=None, **kwargs) -> list[MetricPlot]:
         """
         Return a list of plot that explain models performances
 
@@ -351,13 +351,10 @@ class Candidate:
             list[Plot]: List of plot instances.
         """
         plots = []
-        for plot_sub_class in Plot.__subclasses__():
-            # Instantiate a subclass
-            plot = plot_sub_class()
-            
+        for plot_sub_class in MetricPlot.__subclasses__():
             # Verify if a subclass is suitable or not
-            if plot.suitable(self.dataset.type_of_target):
-                plot.compute(self.pipeline,
+            if plot_sub_class.suitable(self.dataset.type_of_target):
+                plot = plot_sub_class(self.pipeline,
                     X_test, y_test,
                     X_train=X_train, y_train=y_train, **kwargs)
                 plots.append(plot)

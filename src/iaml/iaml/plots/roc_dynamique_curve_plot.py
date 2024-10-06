@@ -8,37 +8,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.metrics import cumulative_dynamic_auc
 
-from ..plot import Plot, capture
+from ..plot import MetricPlot, capture
 
-class ROCDynamiqueCurvePlot(Plot):
+class ROCDynamiqueCurvePlot(MetricPlot):
     """
     [PLOT] ROC Dynamique Curve for Survival Models using sksurv
     """
     
-    @property
-    def explain(self) -> str:
-        """
-        Return str explanation of the plot
-        """
-        return textwrap.dedent("""
-            This curve represents how well a predictive survival model is able to distinguish 
-            between patients who experience an event (like death or a heart attack) at different 
-            points in time and those who do not. The y-axis shows the AUC (Area Under the Curve), 
-            which is a measure of how good the model is at making this distinction—the closer to 1, 
-            the better the model performs. The x-axis represents time, showing different follow-up 
-            periods after the initial observation.
+    title = "ROC Dynamique Curve"
+    description = textwrap.dedent("""
+        This curve represents how well a predictive survival model is able to distinguish 
+        between patients who experience an event (like death or a heart attack) at different 
+        points in time and those who do not. The y-axis shows the AUC (Area Under the Curve), 
+        which is a measure of how good the model is at making this distinction—the closer to 1, 
+        the better the model performs. The x-axis represents time, showing different follow-up 
+        periods after the initial observation.
 
-            As time progresses, the curve helps us see if the model's predictions remain accurate 
-            or start to decline. For example, in a medical study predicting patient survival after 
-            a heart attack, this curve would indicate how well the model distinguishes between 
-            patients who pass away versus those who survive, over several months or years. 
-            A high AUC value means the model is very good at predicting outcomes, while a lower 
-            value suggests it struggles to differentiate between high-risk and low-risk patients as 
-            time goes on.""")
+        As time progresses, the curve helps us see if the model's predictions remain accurate 
+        or start to decline. For example, in a medical study predicting patient survival after 
+        a heart attack, this curve would indicate how well the model distinguishes between 
+        patients who pass away versus those who survive, over several months or years. 
+        A high AUC value means the model is very good at predicting outcomes, while a lower 
+        value suggests it struggles to differentiate between high-risk and low-risk patients as 
+        time goes on.""")
     
     @capture
-    def compute(self, estimator, X: pd.DataFrame, y: pd.Series,
-            y_train: pd.Series=None, **kwargs) -> Plot:
+    def _compute(self, estimator, X: pd.DataFrame, y: pd.Series,
+            y_train: pd.Series=None, **kwargs) -> MetricPlot:
         """
         Compute AUC Dynamique Curve for a survival model
         
@@ -82,7 +78,8 @@ class ROCDynamiqueCurvePlot(Plot):
 
         return self
     
-    def suitable(self, type_of_target: str) -> bool:
+    @classmethod
+    def suitable(cls, type_of_target: str) -> bool:
         """
         Does this plot is usable for a given type_of_target?
         """

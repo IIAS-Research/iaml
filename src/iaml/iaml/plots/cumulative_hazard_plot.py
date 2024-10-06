@@ -9,37 +9,33 @@ from sksurv.linear_model import CoxPHSurvivalAnalysis
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ..plot import Plot, capture
+from ..plot import MetricPlot, capture
 from ..logger import Logger
 
-class CumulativeHazardModelComparisonPlot(Plot):
+class CumulativeHazardModelComparisonPlot(MetricPlot):
     """
     [PLOT] Cumulative Hazard Model Comparison Plot using sksurv
     """
 
-    @property
-    def explain(self) -> str:
-        """
-        Return str explanation of the plot
-        """
-        return textwrap.dedent("""
-            The Cumulative Hazard Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
-            survival models by comparing predicted cumulative hazard functions against the observed cumulative hazards.
+    title = "Cumulative Hazard"
+    description = textwrap.dedent("""
+        The Cumulative Hazard Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
+        survival models by comparing predicted cumulative hazard functions against the observed cumulative hazards.
 
-            The x-axis represents time, and the y-axis represents the cumulative hazard. Ideally, 
-            the model-predicted cumulative hazard curves should closely align with the observed curves, 
-            indicating good model performance. Discrepancies between the two curves highlight 
-            areas where the model's predictions diverge from reality, signaling potential issues with 
-            the model's predictive ability.
+        The x-axis represents time, and the y-axis represents the cumulative hazard. Ideally, 
+        the model-predicted cumulative hazard curves should closely align with the observed curves, 
+        indicating good model performance. Discrepancies between the two curves highlight 
+        areas where the model's predictions diverge from reality, signaling potential issues with 
+        the model's predictive ability.
 
-            Additionally, a Cox proportional hazards model can be trained to serve as a baseline for comparison.
+        Additionally, a Cox proportional hazards model can be trained to serve as a baseline for comparison.
         """)
 
     @capture
-    def compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
+    def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
                 X_train:pd.DataFrame=None, y_train:pd.Series=None, 
                 baseline_estimator=None, transform:bool=True,
-                **kwargs) -> Plot:
+                **kwargs) -> MetricPlot:
         """
         Compute cumulative hazard plot with model predictions for comparison using sksurv.
         
@@ -105,7 +101,8 @@ class CumulativeHazardModelComparisonPlot(Plot):
 
         return self
     
-    def suitable(self, type_of_target:str) -> bool:
+    @classmethod
+    def suitable(cls, type_of_target:str) -> bool:
         """
         Does this plot is usable for a given type_of_target?
         """

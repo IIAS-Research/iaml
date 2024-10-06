@@ -9,46 +9,42 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.nonparametric import kaplan_meier_estimator
 from sksurv.linear_model import CoxPHSurvivalAnalysis
-from ..plot import Plot, capture
+from ..plot import MetricPlot, capture
 from ..logger import Logger
 
-class KaplanMeierModelComparisonPlot(Plot):
+class KaplanMeierModelComparisonPlot(MetricPlot):
     """
-    [PLOT] Kaplan-Meier Model Comparison Survival Plot using sksurv
+    [PLOT] Kaplan-Meier Model Comparison Survival
     """
     
-    @property
-    def explain(self) -> str:
-        """
-        Return str explanation of the plot
-        """
-        return textwrap.dedent("""
-            The Kaplan-Meier Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
-            survival models by comparing predicted survival curves against the observed survival data.
+    title = "Kaplan-Meier Model Comparison"
+    description = textwrap.dedent("""
+        The Kaplan-Meier Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
+        survival models by comparing predicted survival curves against the observed survival data.
 
-            This plot is particularly useful for assessing how well a model can predict the time-to-event 
-            outcome, such as time until death, disease recurrence, or failure. The observed Kaplan-Meier 
-            survival curve represents the true survival probability over time, while the model's predicted 
-            survival curves show the model's estimations.
+        This plot is particularly useful for assessing how well a model can predict the time-to-event 
+        outcome, such as time until death, disease recurrence, or failure. The observed Kaplan-Meier 
+        survival curve represents the true survival probability over time, while the model's predicted 
+        survival curves show the model's estimations.
 
-            The x-axis represents time, and the y-axis represents the survival probability. Ideally, 
-            the model-predicted survival curves should closely align with the observed Kaplan-Meier 
-            curve, indicating good model performance. Discrepancies between the two curves highlight 
-            areas where the model's predictions diverge from reality, signaling potential issues with 
-            the model's predictive ability.
+        The x-axis represents time, and the y-axis represents the survival probability. Ideally, 
+        the model-predicted survival curves should closely align with the observed Kaplan-Meier 
+        curve, indicating good model performance. Discrepancies between the two curves highlight 
+        areas where the model's predictions diverge from reality, signaling potential issues with 
+        the model's predictive ability.
 
-            Additionally, if possible, a Cox proportional hazards model is also trained to serve as 
-            a baseline. This allows for a better understanding of model performances, as the Cox model 
-            is a widely-used, interpretable model in survival analysis. By comparing more complex models 
-            to this baseline, it becomes easier to gauge the improvement (or lack thereof) in predictive 
-            accuracy.
-            """)
+        Additionally, if possible, a Cox proportional hazards model is also trained to serve as 
+        a baseline. This allows for a better understanding of model performances, as the Cox model 
+        is a widely-used, interpretable model in survival analysis. By comparing more complex models 
+        to this baseline, it becomes easier to gauge the improvement (or lack thereof) in predictive 
+        accuracy.
+        """)
     
     @capture
-    def compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
+    def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
                 X_train:pd.DataFrame=None, y_train:pd.Series=None, 
                 baseline_estimator=None, transform:bool=True,
-                **kwargs) -> Plot:
+                **kwargs) -> MetricPlot:
         """
         Compute Kaplan-Meier survival plot with model predictions for comparison using sksurv.
         
@@ -114,7 +110,8 @@ class KaplanMeierModelComparisonPlot(Plot):
 
         return self
     
-    def suitable(self, type_of_target:str) -> bool:
+    @classmethod
+    def suitable(cls, type_of_target:str) -> bool:
         """
         Does this plot is usable for a given type_of_target?
         """
