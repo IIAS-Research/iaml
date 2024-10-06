@@ -15,3 +15,4 @@ from .prediction_error_plot import PredictionErrorPlot
 
 # Survival
 from .kaplan_meier_comparison_plot import KaplanMeierModelComparisonPlot
+from .cumulative_hazard_plot import CumulativeHazardModelComparisonPlot

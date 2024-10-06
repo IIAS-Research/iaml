@@ -429,7 +429,17 @@ class IAMLPipeline(Pipeline):
     def __eq__(self, other: 'IAMLPipeline') -> bool:
         if isinstance(other, IAMLPipeline):
             return self.fingerprint() == other.fingerprint()
-        return NotImplemented 
+        return NotImplemented
+    
+    @property
+    def name(self) -> str:
+        """Return pipeline formatted name
+        
+        Returns:
+            str: formatted name
+        """
+        return ' '.join(x.title() for x in str(self.model[0]).split('_'))
+
     
     def explain_model(self, X: 'pd.DataFrame', nsamples: int = 20):
         """
@@ -482,7 +492,10 @@ class IAMLPipeline(Pipeline):
     def __sklearn_clone__(self):
         return deepcopy(self)
     
-    def target_type_(self):
+    def target_type_(self) -> str:
+        """Mimic Scikit-learn API
+        Return models target type
+        """
         return self.original_dataset.type_of_target
     
     # Fingerprint (used by cache)

@@ -114,6 +114,21 @@ class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
             return self.model.predict_survival_function(X)
         
         raise AttributeError("Unable to predict survival function with this model")
+    
+    def predict_cumulative_hazard_function(self, X:pd.DataFrame) -> list[float]:
+        """
+        Apply prediction survival function model on DataFrame
+
+        Args:
+            X (pd.DataFrame): DataFrame use to predict
+
+        Returns:
+            list[list[float]]: Predicted values
+        """
+        if self.model and hasattr(self.model, 'predict_cumulative_hazard_function'):
+            return self.model.predict_cumulative_hazard_function(X)
+        
+        raise AttributeError("Unable to predict cumulative hazard function with this model")
                 
     @property
     def classes_(self) -> list:
