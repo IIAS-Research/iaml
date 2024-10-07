@@ -164,7 +164,7 @@ class IAMLPipeline(Pipeline):
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
             only_predictor:bool=False, 
             groups_columns: List[str] = [], 
-            metrics: list[Metric] | None = None,
+            metrics: list['Metric'] | None = None,
             **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
@@ -471,5 +471,6 @@ class IAMLPipeline(Pipeline):
         """
         Return a string listing all step's references or a structured list of dict
         """
+
         references = [reference for step in self.steps for reference in step[1].references] + [reference for metric in self.metrics for reference in metric.get_refs()]
         return Reference.bibliography(references, structured)

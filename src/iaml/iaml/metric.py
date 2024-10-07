@@ -3,7 +3,7 @@
 """
 import pandas as pd
 
-from iaml.iaml.reference import Reference
+from .reference import Reference
 
 class Metric:
     """
