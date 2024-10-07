@@ -350,8 +350,8 @@ class Candidate:
         Returns:
             list[Plot]: List of plot instances.
         """
-        if isinstance(y, pd.DataFrame):
-            y = y[y.columns[0]]
+        if isinstance(y_test, pd.DataFrame):
+            y_test = y_test[y_test.columns[0]]
         if isinstance(y_train, pd.DataFrame):
             y_train = y_train[y_train.columns[0]]
         
