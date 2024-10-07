@@ -1,13 +1,11 @@
 """
 [PLOT] Wrap Shap Plot 
 """
-from functools import wraps
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 import textwrap
-import shap
 import io
+import matplotlib.pyplot as plt
+import numpy as np
+import shap
 
 
 from ..plot import Plot

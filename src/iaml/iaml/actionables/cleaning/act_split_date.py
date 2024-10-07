@@ -1,9 +1,9 @@
 """
 [STEP] Transform string column to date
 """
+import textwrap
 import pandas as pd
 import numpy as np
-import textwrap
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...data_type import DataType

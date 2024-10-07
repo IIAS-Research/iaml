@@ -1,11 +1,10 @@
 """
 [PLOT] Parent of all others Plot, implement the default behavior
 """
+import base64
 from functools import wraps
 import matplotlib.pyplot as plt
 import pandas as pd
-import base64
-import textwrap
 
 class Plot:
     """

@@ -4,11 +4,9 @@
 import textwrap
 import io
 import pandas as pd
-import numpy as np
 from yellowbrick.classifier import PrecisionRecallCurve
 
 from ..plot import MetricPlot, capture
-from ..logger import Logger
 
 class PrecisionRecallCurvePlot(MetricPlot):
     """

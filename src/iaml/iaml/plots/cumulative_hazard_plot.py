@@ -78,7 +78,7 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
                 else str(baseline_estimator)
             plt.step(mean_hazard_time_cox, mean_hazard_prob_cox, where="post", 
                     label=f"Baseline model ({model_name})", color="red", linestyle="--")
-        except Exception:
+        except RuntimeError:
             Logger().error(traceback.format_exc())
 
         # Current model prediction
