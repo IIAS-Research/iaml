@@ -4,9 +4,11 @@
 import textwrap
 import io
 import pandas as pd
+import numpy as np
 from yellowbrick.classifier import PrecisionRecallCurve
 
 from ..plot import MetricPlot, capture
+from ..logger import Logger
 
 class PrecisionRecallCurvePlot(MetricPlot):
     """
@@ -35,12 +37,17 @@ class PrecisionRecallCurvePlot(MetricPlot):
     
     @capture
     def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y:pd.DataFrame, **kwargs) -> MetricPlot:
+            X:pd.DataFrame, y,
+            X_train:pd.DataFrame=None, y_train=None,
+            **kwargs) -> MetricPlot:
         """
         Compute plot given X, y.
         """
         self._binary_image = io.BytesIO()
         self.__visualizer = PrecisionRecallCurve(estimator, is_fitted=True)
+        
+        if X_train is not None and y_train is not None:
+            self.__visualizer.fit(X_train, y_train)
         self.__visualizer.score(X, y)
         self.__visualizer.poof(self._binary_image)
         
@@ -51,4 +58,4 @@ class PrecisionRecallCurvePlot(MetricPlot):
         """
         Does this plot is usable for a given type_of_target?
         """
-        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
+        return type_of_target in ['binary']

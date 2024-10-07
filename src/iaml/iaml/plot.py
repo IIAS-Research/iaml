@@ -31,7 +31,7 @@ class Plot:
     
     @property
     def b64_image(self):
-        base64.b64encode(self.image).decode()
+        return base64.b64encode(self.image).decode()
         
     def _compute(self, estimator:'IAMLPipeline', X:pd.DataFrame, y:pd.DataFrame, **kwargs):
         """
@@ -61,14 +61,9 @@ class Plot:
             'image': data}
         
     def to_markdown(self) -> str:
-        return textwrap.dedent(f"""
-            # {self.title}
-            
-            {self.description}
-            
-            ![{self.title}](data:image/png;base64,{self.b64_image})
-            """)
-
+        base64_md = f"![{self.title}](data:image/png;base64,{self.b64_image})"
+        return "\n\n".join([f"# {self.title}", self.description, base64_md])
+    
 
 class MetricPlot(Plot):
     """
