@@ -63,7 +63,7 @@ class F1ScoreMetric(Metric):
         return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
     
     
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute metric with predicted data
 

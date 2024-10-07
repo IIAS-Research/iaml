@@ -10,8 +10,6 @@ from .dataset import Dataset
 from .cache import Cache
 from .splitter import random_splitter
 from .iaml_pipeline import IAMLPipeline
-
-
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -48,6 +46,8 @@ class Candidate:
         if main_metric is None:
             if self.pipeline.estimator_type == "classifier":
                 self.main_metric = 'balanced_accuracy'
+            elif self.pipeline.estimator_type == "survival":
+                self.main_metric = 'concordance_index'
             else:
                 self.main_metric = 'r2_score'
         else:
@@ -200,6 +200,7 @@ class Candidate:
         
         # without cache !
         from_cache:bool = True
+        to_cache:list = True
         splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
         if not splitted_datasets or self.is_meta: # Cannot use cache with meta for now
             from_cache = False
@@ -220,11 +221,12 @@ class Candidate:
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
             try:
-                y_pred = copied_pipe.predict(test_ds.X, model_only = not self.is_meta)
-                y_pred_proba = copied_pipe.predict_proba(test_ds.X, model_only = not self.is_meta) \
-                    if hasattr(copied_pipe, 'predict_proba') else None
-                    
-                metrics.append(self.__compute_metrics(test_ds.y, y_pred, y_pred_proba))
+                metrics.append(self.__compute_metrics(
+                    test_ds.X,
+                    test_ds.y,
+                    pipeline=copied_pipe,
+                    model_only= not self.is_meta)
+                    )
                 if not from_cache:
                     to_cache.append((train_ds, test_ds))
             except ValueError:
@@ -253,14 +255,37 @@ class Candidate:
         if not self.pipeline.have_model:
             return None
         
-        y_pred = self.pipeline.predict(X)
-        y_pred_proba = self.pipeline.predict_proba(X) \
-            if hasattr(self.pipeline, 'predict_proba') else None
-        return self.__compute_metrics(np.array(y), y_pred, y_pred_proba)
+        return self.__compute_metrics(X, np.array(y))
     
-    def __compute_metrics(self, y:np.array, y_pred:np.array, y_pred_proba:np.array) -> dict:
-        return {str(metric): metric.compute(y, (y_pred_proba if metric.need_proba() else y_pred)) \
-            for metric in self.metrics}
+        
+    def __compute_metrics(self,
+            X_test:pd.DataFrame, y_test:np.array, pipeline=None, **kwargs) -> dict:
+        
+        if pipeline is None: # Is no pipeline in args -> Use the main one
+            pipeline = self.pipeline
+            
+        X_test = X_test.copy(deep=True)
+        y_test = deepcopy(y_test)
+            
+        computed = {}
+        needs = {metric.needed_prediction for metric in self.metrics}
+        
+        for need in needs:
+            try:
+                method = getattr(pipeline, need)
+                y_pred = method(X_test, **kwargs)
+                for metric in self.metrics:
+                    if metric.needed_prediction == need:
+                        computed[str(metric)] = metric.compute(
+                            y_test,
+                            y_pred,
+                            y_train=self.dataset.y,
+                            X_train=self.dataset.X
+                        )
+            except AttributeError:
+                pass
+
+        return computed
     
     def __metric_value(self, metric) -> float:
         for key, value in self.computed_metrics.items():

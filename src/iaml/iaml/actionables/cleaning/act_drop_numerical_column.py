@@ -16,9 +16,9 @@ class ActDropNumericalColumn(Actionable):
     name = 'Remove numerical columns'
     description = '''Remove numerical columns where the proportion of empty rows
         in the dataset is higher than {empty_threshold}.'''
-    description_long = '''Remove numerical columns from the dataset where the proportion of empty rows
-        in the dataset is higher than {empty_threshold}. This ensure that every columns will be relevant
-        for the model to train on.'''
+    description_long = '''Remove numerical columns from the dataset where the proportion of empty
+        rows in the dataset is higher than {empty_threshold}. This ensure that every columns will
+        be relevant for the model to train on.'''
     
     def __init__(self):
         self.columns_to_drop:list[str] = None

@@ -6,7 +6,6 @@ import time
 import math
 import multiprocessing
 from typing import List
-import warnings
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
 from .step import Step
@@ -75,7 +74,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         # Set max duration of each stage
         if max_stage_duration is None:
             self.max_stage_duration = max(max_duration / 5, 900)
-            Logger().warning(f"Max duration of each stage was set to {self.max_stage_duration} seconds")
+            Logger().warning(
+                f"Max duration of each stage was set to {self.max_stage_duration} seconds")
         else:
             self.max_stage_duration = max_stage_duration
             
@@ -192,7 +192,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             y:pd.DataFrame,
             *args,
             groups:pd.DataFrame = None,
-            groups_columns: List[str] = [],
+            groups_columns: List[str] = None,
             patience:int=-1,
             generation_sample_size=200,
             n_candidates=1,
@@ -209,11 +209,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             generation_sample_size (int) : Size of the sample dataset used to generate first 
                                             generation of candidates (default 200)
             n_candidates (int) : Number of candidates to return (default 1) 
-            callback (callable) : Method call after each big step of training. Signature must be something(**kwargs).
+            callback (callable) : Method call after each big step of training.
 
         Returns:
             list[Candidate]: List of all the generated candidates. Sorted by performances.
         """
+        # Avoid [] dangerous default value in the signature
+        if groups_columns is None:
+            groups_columns = []
+            
         self.check_pipeline() # Raise error if the pipeline is not valid
         
         Logger().verbose = verbose # Set logger verbose
@@ -247,16 +251,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             # Generate candidates
             candidates = self.__run(self.init_candidate, *args, **kwargs)
-        
-            # Remove candidate without predictor 
+            
+            # Remove candidate without predictor
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
             Logger().info(f"{len(candidates)} generated pipelines")
             
             ### INITIAL EVALUATION
-            
-            def remain_time():
-                return self.max_duration - (time.monotonic() - start_time)
             # Evaluate candidates
             gen0_candidates = []
             i = 0
@@ -385,14 +386,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
             # Add results to progressbar
             if new_candidates:
-                
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     ({new_candidates[0].get_main_metric_value():.4f})'
             else:
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     (no result)'
         
-           
         # Add to cache
         for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()
@@ -560,7 +559,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         all_steps = self.__all_steps()
 
         for step_id, config in configs.items():
-            current_step = self.__find_step_by_id(all_steps, step_id)
+            current_step:Step = self.__find_step_by_id(all_steps, step_id)
             if current_step:
                 for key, value in config:
                     current_step.configure(key, value)

@@ -18,9 +18,9 @@ class ActSelectPercentile(Actionable):
     name="Preprocess with SelectPercentile"
     description = '''SelectPercentile is a tool that helps choose important features from a 
         group of variables by looking at how well each one predicts the outcome.'''
-    description_long = '''SelectPercentile is a feature selection technique used in machine learning. 
-        It works by assigning scores to each feature based on how well it predicts the outcome. 
-        Then, it selects only the top-scoring percentage of features. 
+    description_long = '''SelectPercentile is a feature selection technique used in machine
+        learning. It works by assigning scores to each feature based on how well it predicts
+        the outcome. Then, it selects only the top-scoring percentage of features. 
         This helps reduce the number of variables while keeping the most informative ones.'''
     def __init__(self):
         self.configuration:dict = {

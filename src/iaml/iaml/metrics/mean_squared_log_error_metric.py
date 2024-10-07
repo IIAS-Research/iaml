@@ -59,7 +59,7 @@ class MeanSquaredLogErrorMetric(Metric):
         """
         return type_of_target == 'continuous' and not (y < 0).any(axis=None)
     
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute metric with predicted data
 

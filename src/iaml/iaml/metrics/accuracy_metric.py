@@ -66,7 +66,7 @@ class AccuracyMetric(Metric):
         """
         return type_of_target in ['binary', 'multiclass'] and not self.__is_balanced(y)
         
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute metric with predicted data
 

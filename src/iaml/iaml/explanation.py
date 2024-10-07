@@ -2,6 +2,7 @@
 Enables steps to "explain" their processings and prediction results.
 """
 from typing import TYPE_CHECKING, List, Tuple
+import textwrap
 import base64
 import io
 import matplotlib.pyplot as plt
@@ -224,12 +225,12 @@ class Explanation:
             for k, v in self.step.configuration.items()
         ])
 
-        return f"""
-### Configuration
-| Name | Description | Value |
-| ---- | ----------- | ----- |
-{confs}
-        """ if len(confs) > 0 else ""
+        return textwrap.dedent(f"""
+            ### Configuration
+            | Name | Description | Value |
+            | ---- | ----------- | ----- |
+            {confs}
+            """) if len(confs) > 0 else ""
     
     def to_markdown_processings(self, processings_limit: int = 20) -> str:
         """
@@ -246,11 +247,11 @@ class Explanation:
         processings = '\n'.join([ f' - {p}' for p in self.processings[:processings_limit] ])
         processings_left = len(self.processings) - processings_limit
 
-        return f"""
-### Processings
-{processings}
-{f" - *and **{processings_left}** more processings...*" if processings_left > 0 else ""}
-        """ if len(processings) > 0 else ""
+        return textwrap.dedent(f"""
+            ### Processings
+            {processings}
+            {f" - *and **{processings_left}** more processings...*" if processings_left > 0 else ""}
+            """) if len(processings) > 0 else ""
     
     def to_markdown_metrics(self) -> str:
         """
@@ -264,12 +265,12 @@ class Explanation:
             for m, v in self.metrics.items()
         ])
 
-        return f"""
-### Metrics
-| Metric name | Computed value | Description |
-| ----------- | -------------- | ----------- |
-{metrics}
-""" if len(metrics) > 0 else ""
+        return textwrap.dedent(f"""
+            ### Metrics
+            | Metric name | Computed value | Description |
+            | ----------- | -------------- | ----------- |
+            {metrics}
+            """) if len(metrics) > 0 else ""
     
     def to_markdown_shap(self) -> str:
         """
@@ -278,6 +279,7 @@ class Explanation:
         Returns
             str: Markdown document.
         """
+        feature_impacts = ""
         if self.shap_values is not None:
             feature_names = self.shap_values.feature_names
             feature_values = np.abs(self.shap_values.values).mean(axis=0)
@@ -285,12 +287,12 @@ class Explanation:
                 lambda i: f'| `{i[0]}` | **{np.mean(i[1]):.3f}** |',
                 list(zip(feature_names, feature_values))))
         
-        return f"""
-### Features impact
-| Feature | Mean impact (SHAP value) |
-| ------- | ------------------------ |
-{feature_impacts}
-""" if self.shap_values is not None else ""
+        return textwrap.dedent(f"""
+            ### Features impact
+            | Feature | Mean impact (SHAP value) |
+            | ------- | ------------------------ |
+            {feature_impacts}
+            """) if self.shap_values is not None else ""
 
     def to_markdown_plots(self, plots: list[str] = None) -> str:
         """
@@ -314,45 +316,45 @@ class Explanation:
         mean_shap = np.abs(self.shap_values.values).mean(axis=0)
         bar_shap, bar_feature = max(zip(mean_shap, features), key=lambda v: v[0])
 
-        return f"""
-### SHAP plots
+        return textwrap.dedent(f"""
+            ### SHAP plots
 
-{f'''
-#### Force plot
-{self.to_markdown_data_uri_plot('force')}
+            {f'''
+            #### Force plot
+            {self.to_markdown_data_uri_plot('force')}
 
-***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
-''' if 'force' in plots else ''}
+            ***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
+            ''' if 'force' in plots else ''}
 
-{f'''
-#### Waterfall plot
-{self.to_markdown_data_uri_plot('waterfall')}
+            {f'''
+            #### Waterfall plot
+            {self.to_markdown_data_uri_plot('waterfall')}
 
-***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
-''' if 'waterfall' in plots else ''}
+            ***Reading**: For this prediction, `{force_feature}` impacts the final prediction value by **{force_shap:.3f}**.*
+            ''' if 'waterfall' in plots else ''}
 
-{f'''
-#### Beeswarm plot
-{self.to_markdown_data_uri_plot('beeswarm')}
-''' if 'beeswarm' in plots else ''}
+            {f'''
+            #### Beeswarm plot
+            {self.to_markdown_data_uri_plot('beeswarm')}
+            ''' if 'beeswarm' in plots else ''}
 
-{f'''
-#### Heatmap plot
-{self.to_markdown_data_uri_plot('heatmap')}
-''' if 'heatmap' in plots else ''}
+            {f'''
+            #### Heatmap plot
+            {self.to_markdown_data_uri_plot('heatmap')}
+            ''' if 'heatmap' in plots else ''}
 
-{f'''
-#### Scatter plot
-{self.to_markdown_data_uri_plot('scatter')}
-''' if 'scatter' in plots else ''}
+            {f'''
+            #### Scatter plot
+            {self.to_markdown_data_uri_plot('scatter')}
+            ''' if 'scatter' in plots else ''}
 
-{f'''
-#### Bar plot
-{self.to_markdown_data_uri_plot('bar')}
+            {f'''
+            #### Bar plot
+            {self.to_markdown_data_uri_plot('bar')}
 
-***Reading**: `{bar_feature}` has an absolute impact of **{bar_shap:.3f}** on the average final prediction value.*
-''' if 'bar' in plots else ''}
-"""
+            ***Reading**: `{bar_feature}` has an absolute impact of **{bar_shap:.3f}** on the average final prediction value.*
+            ''' if 'bar' in plots else ''}
+            """)
     
     def to_markdown(
             self,
@@ -371,13 +373,13 @@ class Explanation:
         if len(self.processings) == 0 and len(self.metrics) == 0 and self.shap_values is None:
             return ''
 
-        return f"""
-## {self.step.name}
-**{self.description}**
+        return textwrap.dedent(f"""
+            ## {self.step.name}
+            **{self.description}**
 
-{self.to_markdown_conf()}
-{self.to_markdown_processings(processings_limit)}
-{self.to_markdown_metrics()}
-{self.to_markdown_shap()}
-{self.to_markdown_plots(plots)}
-        """
+            {self.to_markdown_conf()}
+            {self.to_markdown_processings(processings_limit)}
+            {self.to_markdown_metrics()}
+            {self.to_markdown_shap()}
+            {self.to_markdown_plots(plots)}
+                    """)

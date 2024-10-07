@@ -53,8 +53,9 @@ class IAMLPipeline(Pipeline):
         self.resamplers:list[tuple[str, object]] = []
         self.predictor:tuple[str, object] = None
         
-        if estimator_type not in ['classifier', 'regressor']:
-            raise ValueError(f"Estimator type ({estimator_type}) must be classifier or regressor")
+        if estimator_type not in ['classifier', 'regressor', 'survival']:
+            raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
+                survival or regressor")
         self.__estimator_type = estimator_type
         
         super().__init__(steps) # split steps into transformers, resamplers and predictor
@@ -175,6 +176,9 @@ class IAMLPipeline(Pipeline):
         """
         self.metrics = metrics
 
+        if groups_columns is None:
+            groups_columns = []
+            
         if not only_predictor:
             X, y = self.fit_transform(X, y, groups_columns=groups_columns, **kwargs)
             # Reset groups_columns as returned X is aldready pruned from groups columns
@@ -189,7 +193,8 @@ class IAMLPipeline(Pipeline):
         
         return self
     
-    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None, groups_columns: List[str] = [], **kwargs) -> 'IAMLPipeline':
+    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None,
+            groups_columns: List[str] = None, **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline and transform data 
         
@@ -197,6 +202,9 @@ class IAMLPipeline(Pipeline):
             X (pd.DataFrame): Candidate features
             y (pd.DataFrame): label to predict
         """
+        if groups_columns is None:
+            groups_columns = []
+        
         dataset = Dataset(X, y, groups_columns=groups_columns)
         
         for _, step in [*self.transformers, *self.resamplers]:
@@ -314,7 +322,7 @@ class IAMLPipeline(Pipeline):
         """
         return bool(self.predictor)
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X:pd.DataFrame) -> pd.DataFrame: # pylint: disable=arguments-differ
         """Apply transformers without predict
 
         Args:
@@ -350,6 +358,29 @@ class IAMLPipeline(Pipeline):
             return super().predict(X, **kwargs)
         
         return self.predictor[1].predict(X)
+    
+    def predict_survival_function(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
+        """
+        Run all the steps to predict survival function  from candidate data
+
+        Args:
+            X (pd.DataFrame): Features used as candidate of the pipeline
+            model_only (bool, optional): True to execute only the model with already
+                                        transformed data. Defaults to False.
+
+        Raises:
+            ValueError: Model must have been set before call predict
+
+        Returns:
+            list: Predicted values
+        """
+        if not self.have_model:
+            raise ValueError("Model need to be set before predict")
+
+        if not model_only:
+            X = self.transform(X, **kwargs)
+        
+        return self.predictor[1].predict_survival_function(X)
     
     def predict_proba(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
         """

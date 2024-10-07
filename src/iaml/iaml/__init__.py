@@ -2,6 +2,7 @@
     IAML is an autoML tools focusing on Medical Dataset with explainable models  
 """
 from .iaml import IAML
+from .core_dispatcher import CoreDispatcher
 from .step import *
 from .metastep import MetaStep
 from .actionable import Actionable
@@ -16,7 +17,6 @@ from .void_step import VoidStep
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 from .meta_partial_explorer_step import MetaPartialExplorerStep
-from .void_step import VoidStep
 
 # Default Actionables
 from .actionables import *

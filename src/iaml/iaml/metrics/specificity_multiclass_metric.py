@@ -64,7 +64,7 @@ class SpecificityMulticlassMetric(Metric):
     
     # Specificity is calculated by summing the true negartives and false 
     # positives for each class, then using these totals to obtain an overall specificity"
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute metric with predicted data
 

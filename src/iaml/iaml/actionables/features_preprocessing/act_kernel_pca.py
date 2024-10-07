@@ -44,7 +44,8 @@ class ActKernelPCA(Actionable):
         },
         {
             'year': 2009,
-            'name': 'Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions',
+            'name': 'Finding structure with randomness: Probabilistic algorithms for constructing \
+                approximate matrix decompositions',
             'authors': [
                 'Nathan Halko',
                 'Per-Gunnar Martinsson',

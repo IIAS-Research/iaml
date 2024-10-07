@@ -36,8 +36,6 @@ job:test:unit:
     - unix
     - test
     - calcul
-  except:
-    - main
   script:
     - 'uv run ./tests/tests.py unit'
 
@@ -68,47 +66,28 @@ job:test:unit:
 ## PERFORMANCES  ##
 ###################
 
-job:perfs:compute:
-  stage: perfs
-  timeout: 24h
-  tags:
-    - unix
-    - calcul
-  only:
-    - main
-  script:
-    - 'if [ -e "./src/perf_logger/tests_data/history.log" ]; then rm ./src/perf_logger/tests_data/history.log ;fi'
-    - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then cp /home/gitlab-runner/automl_history.log ./src/perf_logger/tests_data/history.log ;fi'
-    - cp -R /home/gitlab-runner/dont_push /home/gitlab-runner/builds/w-N4hyQH/0/DataScience/automl/src/perf_logger/tests_data/
-    - 'uv run src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
-    - 'uv run src/perf_logger/perf_comparator.py' # Compute perfs
-    - 'if [ -e "/home/gitlab-runner/automl_history.log.old" ]; then rm /home/gitlab-runner/automl_history.log.old ;fi'
-    - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then mv /home/gitlab-runner/automl_history.log /home/gitlab-runner/automl_history.log.old ;fi'
-    - 'cp ./src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_history.log'
-  artifacts:
-    expose_as: 'Compute performances of AutoMed'
-    paths:
-      - docs
-      - ./src/perf_logger/tests_data/history.log
-
-job:perfs:compute_stages:
-  stage: perfs
-  timeout: 24h
-  tags:
-    - unix
-    - calcul
-  only:
-    - rm-stages
-  script:
-    - cp -R /home/gitlab-runner/dont_push /home/gitlab-runner/builds/w-N4hyQH/0/DataScience/automl/src/perf_logger/tests_data/
-    - 'uv run src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
-    - 'uv run src/perf_logger/perf_comparator.py' # Compute perfs
-    - 'if [ -e "/home/gitlab-runner/automl_stage_history.log" ]; then rm /home/gitlab-runner/automl_stage_history.log ;fi'
-    - 'cp ./src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_stage_history.log'
-  artifacts:
-    expose_as: 'Compute performances of AutoMed Stages'
-    paths:
-      - ./src/perf_logger/tests_data/history.log
+# job:perfs:compute:
+#   stage: perfs
+#   timeout: 24h
+#   tags:
+#     - unix
+#     - calcul
+#   only:
+#     - main
+#   script:
+#     - 'if [ -e "./src/perf_logger/tests_data/history.log" ]; then rm ./src/perf_logger/tests_data/history.log ;fi'
+#     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then cp /home/gitlab-runner/automl_history.log ./src/perf_logger/tests_data/history.log ;fi'
+#     - cp -R /home/gitlab-runner/dont_push /home/gitlab-runner/builds/w-N4hyQH/0/DataScience/automl/src/perf_logger/tests_data/
+#     - 'uv run src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
+#     - 'uv run src/perf_logger/perf_comparator.py' # Compute perfs
+#     - 'if [ -e "/home/gitlab-runner/automl_history.log.old" ]; then rm /home/gitlab-runner/automl_history.log.old ;fi'
+#     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then mv /home/gitlab-runner/automl_history.log /home/gitlab-runner/automl_history.log.old ;fi'
+#     - 'cp ./src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_history.log'
+#   artifacts:
+#     expose_as: 'Compute performances of AutoMed'
+#     paths:
+#       - docs
+#       - ./src/perf_logger/tests_data/history.log
 
 ###################
 ## DOCUMENTATION ##

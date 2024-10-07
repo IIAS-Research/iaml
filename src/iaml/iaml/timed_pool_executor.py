@@ -4,21 +4,24 @@
     Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
 """
 
-import multiprocess
 import random
 import signal
-import threading
 import time
 import traceback
 import warnings
-
+import threading
+import multiprocess
 import multiprocess.process
+
 from .logger import Logger
 from .worker_manager import WorkerManager
+from .core_dispatcher import CoreDispatcher
 
 
 class TerminatedError(RuntimeError):
-    pass
+    """Custom RuntimeError
+    Raised when we try to run a job in a stopped executor
+    """
 
 
 def process_daemon(
@@ -66,13 +69,15 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 callback:callable=None,
                 sliding_stages:bool=True,
                 debug:bool=False):
+        
         self.max_workers = min(max_workers, multiprocess.cpu_count())
         self.debug = debug # If true, task will be done without using any process.  Easier to debug
         self.stop_flag:bool = False # Used to stop thread
         self.sliding_stages = sliding_stages
         
         # Daemon THREAD (& not Process) with a infinite loop to catch results of sub process
-        self.daemon = None
+        self.main_daemon = None
+        self.daemons_collectors = None
         
         # Queue used to exchange data with sub process
         self.manager = multiprocess.Manager()
@@ -108,10 +113,15 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             )
             self.process[-1].start()
             
+        CoreDispatcher().affiliate(
+            [process.pid for process in self.process],
+            core_number=self.max_workers)
+            
         self.__run_daemon() # Run the daemon THREAD
 
-        signal.signal(signal.SIGINT, lambda *_: self.shutdown())
-        signal.signal(signal.SIGTERM, lambda *_: self.shutdown())
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, lambda *_: self.shutdown())
+            signal.signal(signal.SIGTERM, lambda *_: self.shutdown())
         
     def __del__(self):
         """
@@ -124,7 +134,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             Shutdown TimedPoolExecutor : Kill subprocess and thread
         """
         self.stop_flag = True # Main daemon thread will kill process
-        self.daemon.join()
+        self.main_daemon.join()
 
     def __collect_results(self) -> None:
         """
@@ -146,6 +156,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         while self.finally_queue.get() != "stop":
             self.finished_run += 1
         
+        
     def __print_errors(self) -> None:
         """
             Collect and print error from error_queue
@@ -165,9 +176,9 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         while True:
             if self.stop_flag:
-                self.error_queue.put(("stop", None)) # Gentilly ask process to stop
-                self.result_queue.put(("stop", None)) # Gentilly ask process to stop
-                self.finally_queue.put("stop") # Gentilly ask process to stop
+                self.error_queue.put(("stop", None)) # Gentilly ask thread to stop
+                self.result_queue.put(("stop", None)) # Gentilly ask thread to stop
+                self.finally_queue.put("stop") # Gentilly ask thread to stop
 
                 for process in self.process:
                     process.kill()
@@ -177,7 +188,6 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     self.to_run_queue.get()
 
                 self.manager.shutdown()
-                WorkerManager().executor.shutdown()
                 
                 break
 
@@ -189,13 +199,23 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         Start the daemon THREAD
         """
         self.stop_flag = False
-        if not self.daemon or not self.daemon.is_alive():
-            self.daemon = threading.Thread(target=self.__keep_running)
-            self.daemon.start()
-
-            threading.Thread(target=self.__print_errors).start()
-            threading.Thread(target=self.__collect_results).start()
-            threading.Thread(target=self.__collect_finally).start()
+        if not self.main_daemon or not self.main_daemon.is_alive():
+            self.main_daemon = threading.Thread(target=self.__keep_running)
+            self.main_daemon.start()
+            
+            self.__run_collectors()
+            
+    def __run_collectors(self) -> None:
+        """
+        Start collector daemons
+        """
+        self.daemons_collectors = [
+            threading.Thread(target=self.__print_errors),
+            threading.Thread(target=self.__collect_results),
+            threading.Thread(target=self.__collect_finally)]
+        
+        for collector in self.daemons_collectors:
+            collector.start()
                 
         
     def submit(self, target:callable, *args, **kwargs) -> None:
@@ -232,6 +252,24 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             self.finished_run = 0
             
         self.results = []
+        
+    def __join_collectors(self):
+        """
+        Join collector thread.
+        Stop and start thread, used when we want to sync with thread to collect all data 
+        """
+        
+        # Stop and join collector
+        self.error_queue.put(("stop", None))
+        self.result_queue.put(("stop", None))
+        self.finally_queue.put("stop")
+        
+        for collector in self.daemons_collectors:
+            collector.join()
+            
+        # Restart collectors
+        self.__run_collectors()
+        
                 
     def set_callback(self, callback:callable) -> None:
         """
@@ -264,11 +302,21 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             except BrokenPipeError:
                 is_empty = True
 
-            return self.sliding_stages and (is_empty and \
-                self.finished_run >= (self.submit_count - self.max_workers/2))
+            return self.sliding_stages \
+                and ( 
+                    is_empty # submit queue is empty
+                    and (
+                        self.submit_count - self.finished_run <= self.max_workers/2
+                        # At least half of the worker is free
+                        )
+                    and self.results # We have got at least one result
+                )
         
         while not self.__finished() and remain_time() and not slide():
             time.sleep(0.5)
+            
+        # Join collector thread, just to be sure we have collected all data
+        self.__join_collectors()
         
         results = self.results # Save before reset!
         

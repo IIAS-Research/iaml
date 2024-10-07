@@ -57,10 +57,11 @@ class RocAucMetric(Metric):
         """
         return type_of_target == 'binary'
     
-    def need_proba(self):
-        return True
+    @property
+    def needed_prediction(self):
+        return 'predict_proba'
     
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame) -> float:
+    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
         """
         Compute metric with predicted data
 

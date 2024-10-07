@@ -24,7 +24,8 @@ def runner(func) -> callable:
         Returns:
             list[Candidate]: All generated candidates
         """
-        from ..candidate import Candidate # Avoid circular import
+        # Avoid circular import
+        from ..candidate import Candidate  # pylint: disable=import-outside-toplevel
         
         
         if candidates.__class__ in [Candidate]:

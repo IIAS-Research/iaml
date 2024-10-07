@@ -1,11 +1,11 @@
 """
 Singleton used by Automed to generate nice logs
 """
+from enum import Enum
 import rich.console
 import rich.progress
 import multiprocess
 from multiprocess.queues import Empty
-from enum import Enum
 
 from .meta_singleton import MetaSingleton
 

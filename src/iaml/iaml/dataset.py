@@ -11,6 +11,7 @@ import pandas as pd
 
 from .data_type import DataType
 from .type_of_target import type_of_target
+from .logger import Logger
 
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ class Dataset:
         X:pd.DataFrame,
         y:list=None,
         groups: pd.DataFrame = None,
-        groups_columns: List[str] = [],
+        groups_columns: List[str] = None,
         columns_types:dict=None
     ):
         if groups is not None and groups_columns:
@@ -35,6 +36,9 @@ class Dataset:
         if groups is not None and set(groups.columns).intersection(X.columns):
             raise ValueError("Group columns present in dataset!")
 
+        if groups_columns is None:
+            groups_columns = []
+            
         self.__X:pd.DataFrame = X.drop(columns=groups_columns)
         
         self.__y:np.array = np.array(y)
@@ -46,6 +50,15 @@ class Dataset:
                 self.groups = pd.DataFrame(groups)
             else:
                 self.groups = groups
+        
+        if self.groups is not None and self.groups.shape[1] > 1:
+            # Create a combined group label by concatenating all columns into tuples
+            Logger().warning("You are using multiple columns as groups. \
+                Be careful, as these columns will serve as a composite key.")
+            self.groups = pd.DataFrame(pd.Series(
+                list(zip(*[self.groups[col] for col in self.groups.columns]))),
+                columns=['groups']
+                )
 
         self.columns_types:dict = columns_types if columns_types else {}
         self.__detect_columns_types()
@@ -96,6 +109,10 @@ class Dataset:
         return copy.copy(self)
     
     def decline(self, X, y, groups=None) -> 'Dataset':
+        """
+        Create a new Dataset with columns_types based on self.
+        Avoid time consuming columns_types computing
+        """
         if groups is None:
             groups = self.groups
         return Dataset(X, y, groups=groups, columns_types=self.columns_types)
@@ -180,7 +197,6 @@ class Dataset:
         Yields:
             tuple['Dataset', 'Dataset']: Train set and Test set 
         """
-    
         # Split the dataset as many times as the splitter requires it
         for i_train, i_test in splitter(self.X, self.y, *args, **kwargs):
             X_train = self.X.iloc[i_train].copy()
@@ -190,7 +206,6 @@ class Dataset:
 
             ds_train = self.decline(X_train, y_train)
             ds_test = self.decline(X_test, y_test)
-
             yield (ds_train, ds_test)
         
     def get_columns_names_by_type(self, types:list[DataType]) -> list[str]:
@@ -244,7 +259,13 @@ class Dataset:
         """
         Kind of estimator needed for this dataset
         """
-        return 'regressor' if self.type_of_target == 'continuous' else 'classifier'
+        if self.type_of_target == 'continuous':
+            return 'regressor'
+        
+        if self.type_of_target == 'survival':
+            return 'survival'
+        
+        return 'classifier'
     
     def __detect_columns_types(self) -> None:
         """
