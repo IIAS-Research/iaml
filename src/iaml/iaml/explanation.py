@@ -1,11 +1,8 @@
 """
 Enables steps to "explain" their processings and prediction results.
 """
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 import textwrap
-import base64
-import io
-import matplotlib.pyplot as plt
 import numpy as np
 import shap
 from .plots.shap_plot import ShapPlot

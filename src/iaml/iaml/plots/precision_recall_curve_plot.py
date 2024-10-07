@@ -4,7 +4,8 @@
 import textwrap
 import io
 import pandas as pd
-from yellowbrick.classifier import PrecisionRecallCurve
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_curve, average_precision_score
 
 from ..plot import MetricPlot, capture
 
@@ -35,14 +36,35 @@ class PrecisionRecallCurvePlot(MetricPlot):
     
     @capture
     def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y:pd.DataFrame, **kwargs) -> MetricPlot:
+            X:pd.DataFrame, y,
+            X_train:pd.DataFrame=None, y_train=None,
+            **kwargs) -> MetricPlot:
         """
         Compute plot given X, y.
         """
         self._binary_image = io.BytesIO()
-        self.__visualizer = PrecisionRecallCurve(estimator, is_fitted=True)
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
+        
+        pos_label = y[0]
+        
+        # Predict probabilities for the positive class
+        y_prob = estimator.predict_proba(X)[:, 1]
+        
+        # Compute Precision-Recall curve
+        precision, recall, thresholds = precision_recall_curve(y, y_prob, pos_label=pos_label)
+        average_precision = average_precision_score(y, y_prob, pos_label=pos_label)
+        
+        # Create the Precision-Recall plot
+        plt.figure()
+        plt.plot(recall, precision, color='blue', lw=2, label=f'Precision-Recall curve (AP = {average_precision:.2f})')
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Precision-Recall Curve')
+        plt.legend(loc='lower left')
+        plt.grid(True)
+        
+        # Save plot to binary image
+        plt.savefig(self._binary_image, format='png')
+        plt.close()
         
         return self
     
@@ -51,4 +73,4 @@ class PrecisionRecallCurvePlot(MetricPlot):
         """
         Does this plot is usable for a given type_of_target?
         """
-        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
+        return type_of_target in ['binary']

@@ -1,13 +1,11 @@
 """
 [PLOT] Wrap Shap Plot 
 """
-from functools import wraps
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 import textwrap
-import shap
 import io
+import matplotlib.pyplot as plt
+import numpy as np
+import shap
 
 
 from ..plot import Plot
@@ -26,10 +24,14 @@ class ShapPlot(Plot):
         method, self.title, self.description = self.__plots_informations(plot_key, shaps_values)
         self._binary_image = io.BytesIO()
         
-        if scatter_feature:
+        if plot_key == 'scatter':
             method(shaps_values[ps, scatter_feature], *args, show=False, **kwargs)
-        else:
+        elif plot_key == 'force':
+            method(shaps_values[ps.start], *args, show=False, matplotlib=True, **kwargs)
+        elif plot_key == 'waterfall':
             method(shaps_values[ps.start], *args, show=False, **kwargs)
+        else:
+            method(shaps_values[ps], *args, show=False, **kwargs)
             
         
         plt.savefig(self._binary_image, bbox_inches='tight')
@@ -73,9 +75,10 @@ class ShapPlot(Plot):
             case 'force':
                 force_shap, force_feature = max(zip(values, features), key=lambda v: abs(v[0]))
                 return (shap.plots.force,
-                    "SHAP Force Plot: Visualizing How Individual Factors Contribute \
-                    to a Prediction",
-                    textwrap.dedent(f"""
+                    textwrap.dedent("""\
+                    SHAP Force Plot: Visualizing How Individual Factors Contribute to a Prediction
+                    """),
+                    textwrap.dedent(f"""\
                     The force plot shows how different factors (e.g., age, cholesterol level, blood 
                     pressure) push the model’s prediction for an individual patient. It explains 
                     whether each factor increases or decreases the likelihood of a certain outcome, 
@@ -89,8 +92,10 @@ class ShapPlot(Plot):
             case 'waterfall':
                 force_shap, force_feature = max(zip(values, features), key=lambda v: abs(v[0]))
                 return (shap.plots.waterfall,
-                    "SHAP Waterfall Plot: Decomposing a Prediction into Its Components",
-                    textwrap.dedent(f"""
+                    textwrap.dedent("""\
+                    SHAP Waterfall Plot: Decomposing a Prediction into Its Components
+                    """),
+                    textwrap.dedent(f"""\
                     The waterfall plot breaks down how each factor influences a single patient's 
                     prediction by showing the cumulative effect of each factor. Starting from the 
                     average prediction, it steps through each factor (e.g., age, medication history, 
@@ -103,9 +108,10 @@ class ShapPlot(Plot):
                     """))
             case 'beeswarm':
                 return (shap.plots.beeswarm,
-                    "SHAP Beeswarm Plot: Identifying the Most Important Factors \
-                    Across All Patients",
-                    textwrap.dedent("""
+                    textwrap.dedent("""\
+                    SHAP Beeswarm Plot: Identifying the Most Important Factors Across All Patients
+                    """),
+                    textwrap.dedent("""\
                     The beeswarm plot highlights which factors are most important across all patients.
                     Each dot represents a patient, with dots positioned based on the factor's impact 
                     on the prediction (e.g., positive or negative impact on disease risk). For instance, 
@@ -114,9 +120,10 @@ class ShapPlot(Plot):
                     """))
             case 'scatter':
                 return (shap.plots.scatter,
-                    "SHAP Scatter Plot: Visualizing the Relationship Between a Factor \
-                    and Prediction",
-                    textwrap.dedent("""
+                    textwrap.dedent("""\
+                    SHAP Scatter Plot: Visualizing the Relationship Between a Factor and Prediction
+                    """),
+                    textwrap.dedent("""\
                     The scatter plot shows the relationship between a specific factor (e.g., body mass index)
                     and its SHAP value, which tells us how much it affects the model’s prediction. 
                     By plotting multiple patients, this plot reveals how changes in a factor (like increasing
@@ -125,7 +132,7 @@ class ShapPlot(Plot):
             case 'heatmap':
                 return (shap.plots.heatmap,
                     "SHAP Heatmap: Understanding Factor Importance Across Multiple Patients",
-                    textwrap.dedent("""
+                    textwrap.dedent("""\
                     The heatmap shows the impact of different factors for many patients, with color 
                     intensity representing how strongly a factor influences the model's prediction. 
                     For example, dark red may highlight that high cholesterol is a strong positive 
@@ -137,7 +144,7 @@ class ShapPlot(Plot):
                 bar_shap, bar_feature = max(zip(mean_shap, features), key=lambda v: v[0])
                 return (shap.plots.bar,
                     "SHAP Bar Plot: Ranking the Most Important Factors",
-                    textwrap.dedent(f"""
+                    textwrap.dedent(f"""\
                     The bar plot ranks the factors by their overall importance in the model’s 
                     predictions. Each bar represents a factor (e.g., age, smoking status, 
                     cholesterol level) and shows how much it contributed to the model’s 
