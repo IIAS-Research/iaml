@@ -4,10 +4,12 @@
 import textwrap
 import io
 import pandas as pd
-from yellowbrick.classifier import ROCAUC
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
+from sklearn.preprocessing import label_binarize
 
-from ..plot import MetricPlot, capture
-
+from ..type_of_target import type_of_target as get_type_of_target
+from ..plot import Plot, MetricPlot, capture
 class ROCAUCPlot(MetricPlot):
     """
     [PLOT] ROC-AUC Plot
@@ -57,12 +59,32 @@ class ROCAUCPlot(MetricPlot):
         """
         Compute plot given X, y.
         """
+        
         self._binary_image = io.BytesIO()
-        self.__visualizer = ROCAUC(estimator, is_fitted=True)
-        if X_train is not None and y_train is not None:
-            self.__visualizer.fit(X_train, y_train)
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
+        
+        pos_label = y[0]
+        
+        # Predict probabilities
+        y_prob = estimator.predict_proba(X)[:, 1]
+        
+        # Compute ROC curve and AUC
+        fpr, tpr, thresholds = roc_curve(y, y_prob, pos_label=pos_label)
+        roc_auc = auc(fpr, tpr)
+        
+        # Create the ROC plot
+        plt.figure()
+        plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
+        plt.plot([0, 1], [0, 1], color='grey', lw=2, linestyle='--', label='Random guess')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver Operating Characteristic')
+        plt.legend(loc='lower right')
+        plt.grid(True)
+        
+        # Save plot to binary image
+        plt.savefig(self._binary_image, format='png')
         
         return self
     

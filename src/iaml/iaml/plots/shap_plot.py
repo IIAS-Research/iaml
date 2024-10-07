@@ -28,8 +28,10 @@ class ShapPlot(Plot):
             method(shaps_values[ps, scatter_feature], *args, show=False, **kwargs)
         elif plot_key == 'force':
             method(shaps_values[ps.start], *args, show=False, matplotlib=True, **kwargs)
-        else:
+        elif plot_key == 'waterfall':
             method(shaps_values[ps.start], *args, show=False, **kwargs)
+        else:
+            method(shaps_values[ps], *args, show=False, **kwargs)
             
         
         plt.savefig(self._binary_image, bbox_inches='tight')
