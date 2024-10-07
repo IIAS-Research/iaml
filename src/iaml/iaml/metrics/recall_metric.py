@@ -10,6 +10,24 @@ class RecallMetric(Metric):
     """
     [METRIC] Recall
     """
+    name="Recall"
+    description = '''Recall measures the ability of a model to identify all relevant positive cases. 
+        It indicates the proportion of true positive results among all actual positive cases.'''
+    description_long = '''Recall evaluates how many actual positive cases were correctly predicted by the model. 
+        It is calculated as the number of true positives divided by the total number of actual positives (true positives + false negatives). 
+        For example, if there are 100 actual positive cases and the model identifies 80, the recall would be 80 / (80 + 20) = 0.80 or 80%. 
+        This metric is crucial in healthcare to ensure that positive cases are detected, reducing missed diagnoses.'''
+    refs=[
+        {
+            'year': 2007,
+            'name': 'Evaluation: From Precision, Recall and F-Measure to ROC, Informedness, Markedness & Correlation',
+            'authors': [
+                'David M. W. Powers'
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.2010.16061',
+            'publisher': 'Journal of Machine Learning Technologies'
+        }
+    ]
     
     def __str__(self):
         return 'recall'

@@ -302,7 +302,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             for i in range(min(n_candidates, len(candidates))):
                 Cache.reset()
                 current_candidate = deepcopy(candidates[i])
-                current_candidate.pipeline.fit(X, y, groups_columns=groups_columns)
+                current_candidate.pipeline.fit(X, y, groups_columns=groups_columns, metrics=current_candidate.metrics)
                 fit_candidates.append(current_candidate)
 
             self.chosen_candidate = fit_candidates[0]

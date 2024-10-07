@@ -11,6 +11,29 @@ class SpecificityMulticlassMetric(Metric):
     """
     [METRIC] Specificity Multiclass
     """
+
+    name="Specificity Multiclass"
+    description = '''Multiclass specificity is a metric used to evaluate the performance of a classification model with multiple classes. 
+        It measures how well the model identifies the negative cases for each class by considering true negatives and false positives.'''
+    description_long = '''Multiclass specificity assesses how effectively a classification model identifies negative cases across multiple classes. 
+        For each class, it calculates the number of true negatives (correctly identified negatives) and false positives (incorrectly identified positives). 
+        By summing these values for all classes, you can determine an overall specificity score. 
+        A high multiclass specificity indicates that the model is good at correctly identifying non-target classes, 
+        while a low score suggests it may struggle with misclassifying negative cases.'''
+    refs=[
+        {
+            'year': 2020,
+            'name': 'Metrics for Multi-Class Classification: an Overview',
+            'authors': [
+                'Margherita Grandini',
+                'Enrico Bagli',
+                'Giorgio Visani'
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.2008.05756',
+            'publisher': ''
+        }
+    ]
+
     def __str__(self):
         return 'specificity_multiclass'    
     
