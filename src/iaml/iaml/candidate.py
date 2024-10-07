@@ -350,6 +350,12 @@ class Candidate:
         Returns:
             list[Plot]: List of plot instances.
         """
+        if isinstance(y, pd.DataFrame):
+            y = y[y.columns[0]]
+        if isinstance(y_train, pd.DataFrame):
+            y_train = y_train[y_train.columns[0]]
+        
+        
         plots = []
         for plot_sub_class in MetricPlot.__subclasses__():
             # Verify if a subclass is suitable or not
