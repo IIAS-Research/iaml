@@ -15,6 +15,8 @@ class ShapPlot(Plot):
     [PLOT] Wrap Shap Plot 
     """
     def __init__(self, plot_key, shaps_values, *args, ps=None, scatter_feature=None, **kwargs):
+        
+        self.key = plot_key
         if ps is None:
             ps = slice(0, len(shaps_values))
             
