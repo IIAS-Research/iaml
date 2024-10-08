@@ -31,7 +31,8 @@ dependencies = [
     "shap",
     "tpot>=0.12.2",
     "scikit-survival>=0.23.0",
-    "psutil>=6.0.0"
+    "psutil>=6.0.0",
+    "yellowbrick>=1.5"
 ]
 
 [project.optional-dependencies]
