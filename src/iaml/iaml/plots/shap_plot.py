@@ -27,6 +27,8 @@ class ShapPlot(Plot):
         self._binary_image = io.BytesIO()
         
         if plot_key == 'scatter':
+            # Prevent crash when providing a scatter feature
+            shaps_values.base_values = shaps_values.base_values.squeeze()
             method(shaps_values[ps, scatter_feature], *args, show=False, **kwargs)
         elif plot_key == 'force':
             method(shaps_values[ps.start], *args, show=False, matplotlib=True, **kwargs)
