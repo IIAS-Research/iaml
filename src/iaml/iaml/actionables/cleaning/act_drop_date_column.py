@@ -7,17 +7,18 @@ from ...data_type import DataType
 from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
+import textwrap
 
 @is_step('cleaning')
 class ActDropDateColumn(Actionable):
     """
     Find and drop data column
     """
-    name = 'Remove date columns'
-    description = 'Remove all columns containing Date from the dataset'
-    description_long = '''Remove all columns containing Data from the dataset
+    name = textwrap.dedent('Remove date columns')
+    description = textwrap.dedent('Remove all columns containing Date from the dataset')
+    description_long = textwrap.dedent('''Remove all columns containing Data from the dataset
         This step is used to clean the dataset in order to perform other actions later on 
-        that can't be applied to date columns.'''
+        that can't be applied to date columns.''')
     can_be_disabled = False
     def __init__(self):
         self.columns_to_drop:list[str] = None

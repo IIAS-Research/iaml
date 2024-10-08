@@ -8,20 +8,20 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-
+import textwrap
 
 @is_step('features_preprocessing')
 class ActSelectPercentile(Actionable):
     """
     [STEP] Preprocess with SelectPercentile
     """
-    name="Preprocess with SelectPercentile"
-    description = '''SelectPercentile is a tool that helps choose important features from a 
-        group of variables by looking at how well each one predicts the outcome.'''
-    description_long = '''SelectPercentile is a feature selection technique used in machine
+    name= textwrap.dedent("Preprocess with SelectPercentile")
+    description = textwrap.dedent('''SelectPercentile is a tool that helps choose important features from a 
+        group of variables by looking at how well each one predicts the outcome.''')
+    description_long = textwrap.dedent('''SelectPercentile is a feature selection technique used in machine
         learning. It works by assigning scores to each feature based on how well it predicts
         the outcome. Then, it selects only the top-scoring percentage of features. 
-        This helps reduce the number of variables while keeping the most informative ones.'''
+        This helps reduce the number of variables while keeping the most informative ones.''')
     def __init__(self):
         self.configuration:dict = {
             'score_func': {

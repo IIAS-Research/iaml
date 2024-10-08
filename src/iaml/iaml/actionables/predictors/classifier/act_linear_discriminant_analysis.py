@@ -7,22 +7,23 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActLinearDiscriminantAnalysis(Predictor):
     """
     [STEP] Learn : Linear Discriminant Analysis
     """
-    name = "Learn : Linear Discriminant Analysis"
-    description = '''LinearDiscriminantAnalysis is a machine learning algorithm that finds
+    name = textwrap.dedent("Learn : Linear Discriminant Analysis")
+    description = textwrap.dedent('''LinearDiscriminantAnalysis is a machine learning algorithm that finds
         a linear combination of features that maximizes the separation between 
-        classes for classification tasks.'''
-    description_long = '''LinearDiscriminantAnalysis is a type of dimensionality reduction 
+        classes for classification tasks.''')
+    description_long = textwrap.dedent('''LinearDiscriminantAnalysis is a type of dimensionality reduction 
         algorithm that finds a linear combination of features that maximizes the 
         separation between classes for classification tasks. 
         It works by calculating the within-class and between-class scatter matrices, 
         and then finding the directions in the feature space that maximize the ratio of 
-        the between-class scatter to the within-class scatter.'''
+        the between-class scatter to the within-class scatter.''')
     refs = [
         {
             'year': 1936,

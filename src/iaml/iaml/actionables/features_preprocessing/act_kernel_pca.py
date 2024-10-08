@@ -7,18 +7,18 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-
+import textwrap
 
 @is_step('features_preprocessing')
 class ActKernelPCA(Actionable):
     """
     [STEP] Decompose features with KernelPCA
     """
-    name = 'Decompose features with KernelPCA'
-    description = '''Reduce datasets number of features by using
-        Kernel Principal Component Analysis Algorithm.'''
-    description_long = '''The dataset is reduced to {n_components} components
-        using {kernel} kernel'''
+    name = textwrap.dedent('Decompose features with KernelPCA')
+    description = textwrap.dedent('''Reduce datasets number of features by using
+        Kernel Principal Component Analysis Algorithm.''')
+    description_long = textwrap.dedent('''The dataset is reduced to {n_components} components
+        using {kernel} kernel''')
     refs = [
         {
             'year': 1997,

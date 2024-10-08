@@ -6,20 +6,21 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActExtraTreesClassifier(Predictor):
     """
     [STEP] Learn :  Extra Trees Classifier
     """
-    name = "Learn : Extra Trees Classifier"
-    description = '''ExtraTreesClassifier is a machine learning algorithm that makes 
-        predictions by combining the outputs of multiple decision trees.'''
-    description_long = '''ExtraTreesClassifier is a type of ensemble learning algorithm that
+    name = textwrap.dedent("Learn : Extra Trees Classifier")
+    description = textwrap.dedent('''ExtraTreesClassifier is a machine learning algorithm that makes 
+        predictions by combining the outputs of multiple decision trees.''')
+    description_long = textwrap.dedent('''ExtraTreesClassifier is a type of ensemble learning algorithm that
         belongs to the family of decision tree-based models. It works by building multiple 
         decision trees, where each tree is trained on a random subset of the input features
         and a random subset of the training data. At prediction time, the algorithm aggregates
-        the outputs of all the decision trees to make a final prediction.'''
+        the outputs of all the decision trees to make a final prediction.''')
     refs = [
         {
             'year': 2006,

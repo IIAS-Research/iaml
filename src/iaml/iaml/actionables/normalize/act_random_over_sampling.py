@@ -7,6 +7,7 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 
 @is_step('normalize')
@@ -14,13 +15,13 @@ class ActRandomOverSampling(Actionable):
     """
     [STEP] Random Over Sampling
     """
-    name = "Random Over Sampling"
-    description = '''RandomOverSampler is a tool that helps balance data by copying 
-        and pasting samples from minority groups.'''
-    description_long = '''RandomOverSampler is a technique used to handle imbalanced datasets. 
+    name = textwrap.dedent("Random Over Sampling")
+    description = textwrap.dedent('''RandomOverSampler is a tool that helps balance data by copying 
+        and pasting samples from minority groups.''')
+    description_long = textwrap.dedent('''RandomOverSampler is a technique used to handle imbalanced datasets. 
         It works by randomly copying and pasting samples from the minority class 
         (the group with fewer samples) until it has the same number of samples as the majority class.
-        This helps ensure that all classes are represented equally in the dataset.'''
+        This helps ensure that all classes are represented equally in the dataset.''')
     refs = [
         {
             'year': 2012,

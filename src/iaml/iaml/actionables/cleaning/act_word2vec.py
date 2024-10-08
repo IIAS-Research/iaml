@@ -14,6 +14,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
+import textwrap
 
 download('stopwords')
 download('punkt')
@@ -23,11 +24,11 @@ class ActWord2Vec(Actionable):
     """
     [STEP] Vectorize textual column with Word2Vec
     """
-    name = "Word2Vec"
-    description = "Process Word2Vec algorithm over a list of columns"
-    description_long = '''Word2Vec is a word embedding algorithm auto-supervised algorithm.
+    name = textwrap.dedent("Word2Vec")
+    description = textwrap.dedent("Process Word2Vec algorithm over a list of columns")
+    description_long = textwrap.dedent('''Word2Vec is a word embedding algorithm auto-supervised algorithm.
         This means we don't need labelled data as the algorithm discover 
-        the ground truth by himself'''
+        the ground truth by himself''')
     refs = [
         {
             'year': 2023,

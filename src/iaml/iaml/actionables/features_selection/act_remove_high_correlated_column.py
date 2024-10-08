@@ -7,15 +7,16 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 @is_step('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
     """
     [STEP] Remove High Correlated Column
     """
-    name = 'Remove High Correlated Column'
-    description = 'Remove columns which correlation with other columns is higher than {threshold}.'
-    description_long = ''''''
+    name = textwrap.dedent('Remove High Correlated Column')
+    description = textwrap.dedent('Remove columns which correlation with other columns is higher than {threshold}.')
+    description_long = textwrap.dedent('''''')
     def __init__(self):
         self.configuration:dict = {
             'threshold': {

@@ -8,18 +8,20 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
+import textwrap
+
 
 @is_step('cleaning')
 class ActTfIdf(Actionable):
     """
     [STEP] Vectorize textual columns with TF-IDF
     """
-    name='TF-IDF'
-    description = '''Process "Term Frequency / Inversed Document Frequency"
-        over a list of textual columns'''
-    description_long = '''This algorithm is used to evaluate the importance of a word inside
+    name=textwrap.dedent('TF-IDF')
+    description = textwrap.dedent('''Process "Term Frequency / Inversed Document Frequency"
+        over a list of textual columns''')
+    description_long = textwrap.dedent('''This algorithm is used to evaluate the importance of a word inside
         it\'s corpus. A word with a lot of repetitions will
-        have more importance than a word appearing once.'''
+        have more importance than a word appearing once.''')
     refs = [
         {
             'year': 1972,

@@ -7,18 +7,19 @@ from ...dataset import Dataset
 from ...data_type import DataType
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 @is_step('cleaning')
 class ActDropNumericalColumn(Actionable):
     """
     [STEP] Drop Numerical Column
     """
-    name = 'Remove numerical columns'
-    description = '''Remove numerical columns where the proportion of empty rows
-        in the dataset is higher than {empty_threshold}.'''
-    description_long = '''Remove numerical columns from the dataset where the proportion of empty
+    name = textwrap.dedent('Remove numerical columns')
+    description = textwrap.dedent('''Remove numerical columns where the proportion of empty rows
+        in the dataset is higher than {empty_threshold}.''')
+    description_long = textwrap.dedent('''Remove numerical columns from the dataset where the proportion of empty
         rows in the dataset is higher than {empty_threshold}. This ensure that every columns will
-        be relevant for the model to train on.'''
+        be relevant for the model to train on.''')
     
     def __init__(self):
         self.columns_to_drop:list[str] = None

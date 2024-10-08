@@ -7,6 +7,7 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 
 @is_step('features_preprocessing')
@@ -14,10 +15,10 @@ class ActNystroem(Actionable):
     """
     [STEP] Approximate with Nystroem
     """
-    name = 'Approximate with Nystroem'
-    description = ''
-    description_long = '''
-        '''
+    name = textwrap.dedent('Approximate with Nystroem')
+    description = textwrap.dedent('')
+    description_long = textwrap.dedent('''
+        ''')
     
     def __init__(self):
         self.configuration:dict = {

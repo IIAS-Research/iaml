@@ -7,17 +7,18 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActCatBoost(Predictor):
     """
     [STEP] Learn :  CatBoost
     """
-    name = "Learn : CatBoost"
-    description = '''CatBoostClassifier is a powerful tool that helps computers make accurate 
-        predictions by learning from both positive and negative examples simultaneously.'''
-    description_long = '''CatBoostClassifier is a gradient boosting algorithm specifically 
-        designed for classification tasks.'''
+    name = textwrap.dedent("Learn : CatBoost")
+    description = textwrap.dedent('''CatBoostClassifier is a powerful tool that helps computers make accurate 
+        predictions by learning from both positive and negative examples simultaneously.''')
+    description_long = textwrap.dedent('''CatBoostClassifier is a gradient boosting algorithm specifically 
+        designed for classification tasks.''')
     refs = [
         {
             'year': 2017,
