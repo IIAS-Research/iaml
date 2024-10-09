@@ -63,6 +63,9 @@ class ActTfIdf(Actionable):
         
         return self
     
+    def suitable(self, dataset:Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type(DataType.SHORT_TEXT))    
+    
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """

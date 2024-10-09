@@ -10,6 +10,7 @@ from .candidate import Candidate
 from .dataset import Dataset
 from .data_type import DataType
 from .metric import Metric
+from .plot import Plot, MetricPlot
 from .cache import Cache
 from .meta_predictor import MetaPredictor
 from .void_step import VoidStep
@@ -26,6 +27,9 @@ from .wrapper import *
 
 # Metrics
 from .metrics import *
+
+# Plots
+from .plots import *
 
 # Stack
 from .stack import Stack

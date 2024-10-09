@@ -5,11 +5,37 @@ import pandas as pd
 import numpy as np
 from sksurv.metrics import integrated_brier_score
 from ..metric import Metric
+import textwrap
+
 
 class IntegratedBrierScoreMetric(Metric):
     """
     [METRIC] Integrated Brier Score for Survival Models
     """
+    
+    name = textwrap.dedent('Integrated Brier Score for Survival Models')
+    description = textwrap.dedent('''The Integrated Brier Score (IBS) is a measure used to evaluate how well survival 
+        models predict the likelihood of an event happening over time. It looks at the difference between what the model 
+        predicts and what actually happens, including cases where data is incomplete. A lower IBS score means the model is more accurate.''')
+    description_long = textwrap.dedent('''The Integrated Brier Score (IBS) is a tool used to check how accurately survival models predict events, 
+        like the time until a patient experiences a certain outcome. It compares the model's predictions with real-life results over a period of time, 
+        taking into account situations where some data may be missing or incomplete. By looking at these differences, the IBS provides a single score 
+        that summarizes the model's performance. A lower IBS score indicates that the model is doing a better job at making accurate predictions, 
+        which is important for making informed decisions in healthcare and research.''')
+    refs = [
+        {
+            'year': 1999,
+            'name': 'Assessment and comparison of prognostic classification schemes for survival data',
+            'authors': [
+                'E. Graf',
+                'C. Schmoor',
+                'W. Sauerbrei',
+                'M. Schumacher'
+            ],
+            'doi': 'https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18%3C2529::AID-SIM274%3E3.0.CO;2-5',
+            'publisher': ' Statistics in Medicine, vol. 18, no. 17-18, pp. 2529–2545'
+        }
+    ]
     def explain(self) -> str:
         """Describe metric
 

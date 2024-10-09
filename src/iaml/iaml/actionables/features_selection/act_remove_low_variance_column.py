@@ -41,18 +41,10 @@ class ActRemoveLowVarianceColumn(Actionable):
         Returns:
             Actionable: Self (for chaining)
         """
-        # Set up VarianceThreshold selector with the user-defined threshold
         threshold_value = self.get_config('threshold')
-        self.selector = VarianceThreshold(threshold=threshold_value)
         
-        # Apply selector to dataset to identify features to keep
-        self.selector.fit(dataset.X)
-
-        # Get the boolean mask of features to keep (features with sufficient variance)
-        feature_mask = self.selector.get_support()
-
         # Identify the columns that are being dropped (features with low variance)
-        self.to_drop = list(dataset.X.columns[~feature_mask])
+        self.to_drop = self.__get_columns(dataset)
         
         # Create explanations for each dropped feature
         self.explanations = [
@@ -62,6 +54,21 @@ class ActRemoveLowVarianceColumn(Actionable):
         ]
         
         return self
+    
+    def __get_columns(self, dataset:Dataset) -> list:
+        # Set up VarianceThreshold selector with the user-defined threshold
+        threshold_value = self.get_config('threshold')
+        selector = VarianceThreshold(threshold=threshold_value)
+        
+        # Apply selector to dataset to identify features to keep
+        selector.fit(dataset.X)
+
+        # Get the boolean mask of features to keep (features with sufficient variance)
+        feature_mask = selector.get_support()
+
+        # Identify the columns that are being dropped (features with low variance)
+        return list(dataset.X.columns[~feature_mask])
+        
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
@@ -85,5 +92,5 @@ class ActRemoveLowVarianceColumn(Actionable):
         return 0.5
     
     def suitable(self, dataset:Dataset) -> bool:
-        return dataset.type_of_target == 'survival' 
+        return dataset.type_of_target == 'survival' and self.__get_columns(dataset)
     

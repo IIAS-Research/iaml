@@ -4,11 +4,37 @@
 import pandas as pd
 from sksurv.metrics import concordance_index_censored
 from ..metric import Metric
+import textwrap
 
 class ConcordanceIndexMetric(Metric):
     """
     [METRIC] Concordance Index for Survival Models using sksurv
     """
+    name = textwrap.dedent('Concordance Index for Survival Models using sksurv')
+    description = textwrap.dedent('''The Concordance Index for Survival Models using sksurv measures how well 
+        a survival model predicts the order of events, such as survival times. A higher index value indicates better predictive accuracy.''')
+    description_long = textwrap.dedent('''The Concordance Index for Survival Models using sksurv evaluates the performance of 
+        survival models by assessing their ability to correctly rank individuals based on their survival times. It focuses on the relative 
+        timing of events rather than exact predictions. The index ranges from 0 to 1, where 0.5 indicates no predictive ability 
+        (similar to random guessing) and 1 indicates perfect prediction of event order. This metric is particularly useful in survival 
+        analysis, as it helps researchers and clinicians understand how well their models perform in predicting outcomes, making it a valuable
+        tool in fields like healthcare and clinical research.''')
+    refs=[
+        {
+            'year': 1996,
+            'name': 'Multivariable prognostic models: issues in developing models, evaluating assumptions and adequacy, and measuring and reducing errors',
+            'authors': [
+                'FRANK E.',
+                'HARRELL Jr.',
+                'KERRY L',
+                'LEE',
+                'DANIEL B. MARK'
+            ],
+            'doi': 'https://doi.org/10.1002/(SICI)1097-0258(19960229)15:4%3C361::AID-SIM168%3E3.0.CO;2-4',
+            'publisher': 'Statistics in Medicine, 15(4), 361-87'
+        }
+    ]
+
     def explain(self) -> str:
         """Describe metric
 

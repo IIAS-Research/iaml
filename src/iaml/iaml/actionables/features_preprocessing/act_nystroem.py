@@ -17,8 +17,7 @@ class ActNystroem(Actionable):
     """
     name = textwrap.dedent('Approximate with Nystroem')
     description = textwrap.dedent('')
-    description_long = textwrap.dedent('''
-        ''')
+    description_long = textwrap.dedent('''''')
     
     def __init__(self):
         self.configuration:dict = {

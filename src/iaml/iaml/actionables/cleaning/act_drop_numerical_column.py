@@ -81,3 +81,14 @@ class ActDropNumericalColumn(Actionable):
         Return : continuous between 0 and 1
         """
         return 0 # Last cleaning action
+    
+    def suitable(self, dataset:Dataset) -> bool:
+        for column in dataset.get_columns_names_by_type(DataType.NUMERIC):
+            values = dataset.X[column]
+            nan_values_count = values.isnull().sum()
+
+            if nan_values_count / len(values) >= self.get_config('empty_threshold'):
+                return True
+            
+        return False
+    

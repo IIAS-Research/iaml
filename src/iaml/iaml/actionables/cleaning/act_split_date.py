@@ -1,6 +1,7 @@
 """
 [STEP] Transform string column to date
 """
+import textwrap
 import pandas as pd
 import numpy as np
 from ...actionable import Actionable
@@ -72,8 +73,9 @@ class ActSplitDate(Actionable):
             X[column + '_second'] = X[column].dt.second.replace(np.NaN, -1) 
             
         return X
-
     
+    def suitable(self, dataset:Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type(DataType.DATE))
         
     def priorize(self, candidate:Candidate=None) -> float:
         """

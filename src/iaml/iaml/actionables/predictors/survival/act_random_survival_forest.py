@@ -8,18 +8,19 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'survival')
 class ActRandomSurvivalForest(Predictor):
     """
     [STEP] Learn : Random Survival Forest
     """
-    name = "Learn : RandomSurvivalForest"
-    description = '''RandomSurvivalForest is a survival analysis algorithm 
+    name = textwrap.dedent("Learn : RandomSurvivalForest")
+    description = textwrap.dedent('''RandomSurvivalForest is a survival analysis algorithm 
         that uses an ensemble of decision trees to estimate the survival function 
         over time. It is a non-parametric model that handles complex relationships 
-        and can model non-linear effects of covariates.'''
-    description_long = '''RandomSurvivalForest is a flexible survival analysis 
+        and can model non-linear effects of covariates.''')
+    description_long = textwrap.dedent('''RandomSurvivalForest is a flexible survival analysis 
         algorithm that uses an ensemble of decision trees to predict the time 
         until an event occurs. It extends the concept of random forests to survival 
         data, handling complex interactions and non-linear relationships between 
@@ -27,7 +28,7 @@ class ActRandomSurvivalForest(Predictor):
         Proportional Hazards model, RandomSurvivalForest makes fewer assumptions 
         about the underlying data, making it useful in cases where the assumptions 
         of proportional hazards do not hold. It also efficiently manages censored 
-        data, where the event may not have occurred during the study period.'''
+        data, where the event may not have occurred during the study period.''')
     
     refs = [
         {

@@ -6,21 +6,22 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActRandomForestRegressor(Predictor):
     """
     [STEP] Learn :  Random Forest Regressor
     """
-    name = "Learn : Random Forest Regressor"
-    description = '''RandomForestRegressor is a machine learning algorithm that 
+    name = textwrap.dedent("Learn : Random Forest Regressor")
+    description = textwrap.dedent('''RandomForestRegressor is a machine learning algorithm that 
         models the relationship between input features and a continuous output 
-        variable using a collection of decision trees.'''
-    description_long = '''RandomForestRegressor is a type of ensemble learning algorithm 
+        variable using a collection of decision trees.''')
+    description_long = textwrap.dedent('''RandomForestRegressor is a type of ensemble learning algorithm 
         that models the relationship between input features and a continuous output variable 
         using a collection of decision trees. It works by building multiple decision trees on 
         random subsets of the input features and data, and then averaging the predictions of each 
-        tree to make the final prediction.'''
+        tree to make the final prediction.''')
     refs = [
         {
             'year': 2001,

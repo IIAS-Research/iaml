@@ -5,11 +5,56 @@ import pandas as pd
 import numpy as np
 from sksurv.metrics import cumulative_dynamic_auc
 from ..metric import Metric
+import textwrap
 
 class CumulativeDynamicAUCMetric(Metric):
     """
     [METRIC] Cumulative Dynamic AUC for Survival Models
     """
+    name = textwrap.dedent('Concordance Index for Survival Models using sksurv')
+    description = textwrap.dedent('''The Cumulative Dynamic AUC (Area Under the Curve) for Survival Models measures the accuracy of a survival model 
+        in predicting the probability of an event over time. A higher AUC indicates better predictive performance.''')
+    description_long = textwrap.dedent('''The Cumulative Dynamic AUC for Survival Models evaluates how well a model predicts 
+        the likelihood of an event, such as death or disease, at various time points. Unlike traditional AUC, which 
+        assesses binary classification, the cumulative dynamic AUC accounts for time-dependent predictions in survival analysis. 
+        This metric calculates the area under the curve of the time-dependent receiver operating characteristic (ROC) curve, providing a 
+        comprehensive view of model performance over time. Values range from 0 to 1, where 0.5 indicates no predictive ability and 1 indicates perfect prediction. 
+        The Cumulative Dynamic AUC is particularly useful for researchers and clinicians in assessing the effectiveness of survival models in real-world scenarios.''')
+    refs=[
+        {
+            'year': 2007,
+            'name': 'Evaluating prediction rules for t-year survivors with censored regression models',
+            'authors': [
+                'H. Uno',
+                'T. Cai.',
+                ' L. Tian',
+                'L. J. Wei'
+            ],
+            'doi': 'https://doi.org/10.1198/016214507000000149',
+            'publisher': 'Journal of the American Statistical Association, vol. 102, pp. 527–537'
+        },
+        {
+            'year': 2010,
+            'name': 'Estimation methods for time-dependent AUC models with survival data',
+            'authors': [
+                'H. Hung',
+                'C. T. Chiang'
+            ],
+            'doi': '',
+            'publisher': 'Canadian Journal of Statistics, vol. 38, no. 1, pp. 8–26'
+        },
+        {
+            'year': 2014,
+            'name': 'Summary measure of discrimination in survival models based on cumulative/dynamic time-dependent ROC curves',
+            'authors': [
+                'J. Lambert',
+                'S. Chevret'
+            ],
+            'doi': '',
+            'publisher': 'Statistical Methods in Medical Research'
+        }
+    ]
+
     def explain(self) -> str:
         """Describe metric
 

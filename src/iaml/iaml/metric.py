@@ -2,10 +2,23 @@
 [METRIC] Parent of all others Metrics, implement the default behavior
 """
 import pandas as pd
+
+from .reference import Reference
+
 class Metric:
     """
     [METRIC] Parent of all others Metrics, implement the default behavior
     """
+
+
+    @classmethod
+    def get_refs(cls):
+        if hasattr(cls, 'refs'):
+            return [Reference(ref, cls.__name__) for ref in cls.refs]
+        else:
+            return []
+
+
     def explain(self) -> str:
         """
         Return str explanation of the metric

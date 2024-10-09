@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any
 import dataclasses
 import pandas as pd
+from sklearn.base import BaseEstimator
 from .actionable import Actionable
 from .decorators.runner import runner
 from .candidate import Candidate
@@ -21,7 +22,7 @@ class Model(metaclass=ABCMeta):
         Any predict method implemented by most ML frameworks.
         """
 
-class Predictor(Actionable, metaclass=ABCMeta):
+class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
     """
     [STEP] Learn : Abstract learning step
     
@@ -31,8 +32,8 @@ class Predictor(Actionable, metaclass=ABCMeta):
     
     model: Model
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.optimizable:bool = True
         self.model = None
     
@@ -113,9 +114,48 @@ class Predictor(Actionable, metaclass=ABCMeta):
             return self.model.predict_survival_function(X)
         
         raise AttributeError("Unable to predict survival function with this model")
+    
+    def predict_cumulative_hazard_function(self, X:pd.DataFrame) -> list[float]:
+        """
+        Apply prediction survival function model on DataFrame
+
+        Args:
+            X (pd.DataFrame): DataFrame use to predict
+
+        Returns:
+            list[list[float]]: Predicted values
+        """
+        if self.model and hasattr(self.model, 'predict_cumulative_hazard_function'):
+            return self.model.predict_cumulative_hazard_function(X)
+        
+        raise AttributeError("Unable to predict cumulative hazard function with this model")
                 
     @property
     def classes_(self) -> list:
         """Return classes of the target in fit data
         """
         return self.model.classes_
+    
+    def score(self, *args, **kwargs):
+        """
+        Mimic Scikitlearn API
+        """
+        return self.model.score(*args, **kwargs)
+    
+    def get_params(self, *args, **kwargs):
+        
+        """
+        Mimic Scikitlearn API
+        """
+        if self.model and hasattr(self.model, 'get_params'):
+            return self.model.get_params(*args, **kwargs)
+        return None
+    
+    def __name__(self) -> str:
+        """Return the predictor formatted name
+        
+        Returns:
+            str: formatted name
+        """
+        return ' '.join(x.title() for x in str(self).split('_'))
+    

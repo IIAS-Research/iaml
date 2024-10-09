@@ -4,12 +4,14 @@ Candidate is used to exchange data between Steps
 from typing import TYPE_CHECKING, List, Dict
 from copy import copy, deepcopy
 from hashlib import md5
+import textwrap
 import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
 from .splitter import random_splitter
 from .iaml_pipeline import IAMLPipeline
+from .plot import MetricPlot
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -36,6 +38,7 @@ class Candidate:
                 main_metric:'Metric'=None):
 
         self.dataset = dataset
+        
         self.metrics = copy(metrics) if metrics is not None else []
         self.pipeline = iaml_pipeline \
             or IAMLPipeline(
@@ -326,12 +329,40 @@ class Candidate:
             f'| `{m}` | **{self.__metric_value(m):.4f}** | *{m.explain()}* |'
             for m in self.metrics
         ])
-        results_explain:str = f'''
-### Results
-| Metric name | Computed value | Description |
-| ----------- | -------------- | ----------- |
-{metrics}
-''' if len(metrics) > 0 else ""
+        results_explain:str = textwrap.dedent(f'''
+            ### Results
+            | Metric name | Computed value | Description |
+            | ----------- | -------------- | ----------- |
+            {metrics}
+            ''') if len(metrics) > 0 else ""
         
         return [*self.pipeline.explanations, results_explain]
     
+    def explain_model_performance(self, X_test:pd.DataFrame, y_test:list,
+            X_train:pd.DataFrame=None, y_train:list=None, **kwargs) -> list[MetricPlot]:
+        """
+        Return a list of plot that explain models performances
+
+        Args:
+            X_test (pd.DataFrame): Features
+            y_test (list): Target
+
+        Returns:
+            list[Plot]: List of plot instances.
+        """
+        if isinstance(y_test, pd.DataFrame):
+            y_test = y_test[y_test.columns[0]]
+        if isinstance(y_train, pd.DataFrame):
+            y_train = y_train[y_train.columns[0]]
+        
+        
+        plots = []
+        for plot_sub_class in MetricPlot.__subclasses__():
+            # Verify if a subclass is suitable or not
+            if plot_sub_class.suitable(self.dataset.type_of_target):
+                plot = plot_sub_class(self.pipeline,
+                    X_test, y_test,
+                    X_train=X_train, y_train=y_train, **kwargs)
+                plots.append(plot)
+                
+        return plots

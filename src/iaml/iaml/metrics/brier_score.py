@@ -6,12 +6,38 @@ import pandas as pd
 import numpy as np
 from sksurv.metrics import brier_score
 from ..metric import Metric
-
+import textwrap
 
 class BrierScoreMetric(Metric):
     """
     [METRIC] Brier Score for Survival Models
     """
+    name = textwrap.dedent('Brier Score for Survival Models')
+    description = textwrap.dedent('''The Brier Score is a metric used to assess the accuracy of survival models, 
+        which predict the likelihood of an event, such as death or disease, occurring within a specific timeframe. 
+        It compares the model's probability predictions to actual outcomes, with lower scores indicating better model performance.''')
+    description_long = textwrap.dedent('''The Brier Score measures how well survival models predict the probability of an event happening, like survival over time. 
+        It calculates the average squared differences between predicted probabilities and actual outcomes 
+        (1 for an event occurring, 0 for it not occurring). The score ranges from 0 to 1, where 0 means perfect 
+        predictions and 1 means completely inaccurate ones. This metric is valuable because it not only evaluates prediction accuracy 
+        but also considers the uncertainty of those predictions. A lower Brier Score indicates a more reliable model, 
+        making it a crucial tool for researchers and practitioners in fields like medicine, where accurate survival 
+        predictions can significantly impact decision-making.''')
+    refs=[
+        {
+            'year': 1999,
+            'name': 'Assessment and comparison of prognostic classification schemes for survival data',
+            'authors': [
+                'E. Graf',
+                'C. Schmoor',
+                'W. Sauerbrei',
+                'M. Schumacher'
+            ],
+            'doi': 'https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18%3C2529::AID-SIM274%3E3.0.CO;2-5',
+            'publisher': 'Statistics in Medicine, vol. 18, no. 17-18, pp. 2529–2545'
+        }
+    ]
+
     def explain(self) -> str:
         """Describe metric
 

@@ -5,11 +5,36 @@ import pandas as pd
 from sklearn.metrics import multilabel_confusion_matrix
 import numpy as np
 from ..metric import Metric
+import textwrap
 
 class SpecificityMultilabelMetric(Metric):
     """
     [METRIC] Specificity Multilabel
     """
+
+    name= textwrap.dedent("Specificity Multilabel")
+    description = textwrap.dedent('''Multilabel specificity is a metric used to evaluate the performance of a classification model that 
+        predicts multiple labels for each instance. It measures how well the model identifies negative cases for each label individually.''')
+    description_long = textwrap.dedent('''Multilabel specificity assesses how effectively a classification model identifies negative cases for 
+        multiple labels. It calculates specificity for each label separately by determining the true negatives and false positives for that label. 
+        After calculating the specificity for all labels, these values are averaged to obtain an overall measure. A high multilabel specificity 
+        indicates that the model is good at correctly identifying non-target labels, while a low score suggests it may misclassify negative cases. 
+        In summary, multilabel specificity helps evaluate a model's ability to accurately recognize negative outcomes across various labels.''')
+    refs=[
+        {
+            'year': 2021,
+            'name': 'Comprehensive Comparative Study of Multi-Label Classification Methods',
+            'authors': [
+                'Jasmin Bogatinovski', 
+                'Ljupčo Todorovski', 
+                'Sašo Džeroski', 
+                'Dragi Kocev',
+            ],
+            'doi': 'https://doi.org/10.48550/arXiv.2102.07113',
+            'publisher': ''
+        }
+    ]
+
     def explain(self) -> str:
         """Describe metric
 

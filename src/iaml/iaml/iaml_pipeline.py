@@ -163,7 +163,9 @@ class IAMLPipeline(Pipeline):
         return False
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
-            only_predictor:bool=False, groups_columns: List[str] = None,
+            only_predictor:bool=False, 
+            groups_columns: List[str] = [], 
+            metrics: list['Metric'] | None = None,
             **kwargs) -> 'IAMLPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
@@ -172,6 +174,8 @@ class IAMLPipeline(Pipeline):
             X (pd.DataFrame): Candidate features
             y (pd.DataFrame): label to predict
         """
+        self.metrics = metrics
+
         if groups_columns is None:
             groups_columns = []
             
@@ -429,7 +433,17 @@ class IAMLPipeline(Pipeline):
     def __eq__(self, other: 'IAMLPipeline') -> bool:
         if isinstance(other, IAMLPipeline):
             return self.fingerprint() == other.fingerprint()
-        return NotImplemented 
+        return NotImplemented
+    
+    @property
+    def name(self) -> str:
+        """Return pipeline formatted name
+        
+        Returns:
+            str: formatted name
+        """
+        return ' '.join(x.title() for x in str(self.model[0]).split('_'))
+
     
     def explain_model(self, X: 'pd.DataFrame', nsamples: int = 20):
         """
@@ -482,6 +496,12 @@ class IAMLPipeline(Pipeline):
     def __sklearn_clone__(self):
         return deepcopy(self)
     
+    def target_type_(self) -> str:
+        """Mimic Scikit-learn API
+        Return models target type
+        """
+        return self.original_dataset.type_of_target
+    
     # Fingerprint (used by cache)
     def fingerprint(self) -> str:
         """
@@ -498,5 +518,6 @@ class IAMLPipeline(Pipeline):
         """
         Return a string listing all step's references or a structured list of dict
         """
-        references = [reference for step in self.steps for reference in step[1].references]
+
+        references = [reference for step in self.steps for reference in step[1].references] + [reference for metric in self.metrics for reference in metric.get_refs()]
         return Reference.bibliography(references, structured)
