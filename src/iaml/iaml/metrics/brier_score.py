@@ -12,11 +12,13 @@ class BrierScoreMetric(Metric):
     """
     [METRIC] Brier Score for Survival Models
     """
-    name = textwrap.dedent('Brier Score for Survival Models')
-    description = textwrap.dedent('''The Brier Score is a metric used to assess the accuracy of survival models, 
+    name = 'Brier Score for Survival Models'
+    description = textwrap.dedent('''\
+        The Brier Score is a metric used to assess the accuracy of survival models, 
         which predict the likelihood of an event, such as death or disease, occurring within a specific timeframe. 
         It compares the model's probability predictions to actual outcomes, with lower scores indicating better model performance.''')
-    description_long = textwrap.dedent('''The Brier Score measures how well survival models predict the probability of an event happening, like survival over time. 
+    description_long = textwrap.dedent('''\
+        The Brier Score measures how well survival models predict the probability of an event happening, like survival over time. 
         It calculates the average squared differences between predicted probabilities and actual outcomes 
         (1 for an event occurring, 0 for it not occurring). The score ranges from 0 to 1, where 0 means perfect 
         predictions and 1 means completely inaccurate ones. This metric is valuable because it not only evaluates prediction accuracy 

@@ -14,10 +14,12 @@ class ActARDRegression(Predictor):
     """
     [STEP] Learn : ARD Regression
     """
-    name = textwrap.dedent("Learn : ARD Regression")
-    description = textwrap.dedent('''ARDRegression is a powerful tool that helps computers make accurate 
+    name = "Learn : ARD Regression"
+    description = textwrap.dedent('''\
+        ARDRegression is a powerful tool that helps computers make accurate 
         predictions by giving each feature its own importance weight.''')
-    description_long = textwrap.dedent('''ARDRegression (Automatic Relevance Determination Regression) 
+    description_long = textwrap.dedent('''\
+        ARDRegression (Automatic Relevance Determination Regression) 
         is a Bayesian regression technique used for predicting continuous outcomes. 
         It works by assigning weights to each feature, allowing some features to be 
         more important than others. 

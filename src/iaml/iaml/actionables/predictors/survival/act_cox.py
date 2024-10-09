@@ -16,11 +16,13 @@ class ActCox(Predictor):
     """
     [STEP] Learn :  Cox
     """
-    name = textwrap.dedent("Learn : CoxPHSurvivalAnalysis")
-    description = textwrap.dedent('''CoxPHSurvivalAnalysis is a survival analysis algorithm 
+    name = "Learn : CoxPHSurvivalAnalysis"
+    description = textwrap.dedent('''\
+        CoxPHSurvivalAnalysis is a survival analysis algorithm 
         that estimates the effect of covariates on the likelihood of an event 
         occurring over time, using the Cox proportional hazards model.''')
-    description_long = textwrap.dedent('''CoxPHSurvivalAnalysis is a survival analysis method 
+    description_long = textwrap.dedent('''\
+        CoxPHSurvivalAnalysis is a survival analysis method 
         that models the relationship between multiple input features (covariates) 
         and the time until a particular event happens. The algorithm is based on 
         the Cox proportional hazards model, which assumes that the hazard or risk 

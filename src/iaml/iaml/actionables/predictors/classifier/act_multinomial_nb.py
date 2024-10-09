@@ -14,11 +14,13 @@ class ActMultinomialNB(Predictor):
     """
     [STEP] Learn : Multinomial NB
     """
-    name = textwrap.dedent("Learn : Multinomial NB")
-    description = textwrap.dedent('''MultinomialNB is a machine learning algorithm that models 
+    name = "Learn : Multinomial NB"
+    description = textwrap.dedent('''\
+        MultinomialNB is a machine learning algorithm that models 
         the relationship between input features and a categorical output variable 
         using a multinomial distribution.''')
-    description_long = textwrap.dedent('''MultinomialNB is a type of naive Bayes algorithm that models 
+    description_long = textwrap.dedent('''\
+        MultinomialNB is a type of naive Bayes algorithm that models 
         the relationship between input features and a categorical output variable using 
         a multinomial distribution. It works by assuming that the input features are 
         independent and follow a multinomial distribution, where each feature is represented 

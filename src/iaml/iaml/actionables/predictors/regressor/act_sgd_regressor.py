@@ -14,11 +14,13 @@ class ActSGDRegressor(Predictor):
     """
     [STEP] Learn : SGD Regressor
     """
-    name = textwrap.dedent("Learn : SGD Regressor")
-    description = textwrap.dedent('''SGDRegressor is a machine learning algorithm that models 
+    name = "Learn : SGD Regressor"
+    description = textwrap.dedent('''\
+        SGDRegressor is a machine learning algorithm that models 
         the relationship between input features and a continuous output variable 
         using stochastic gradient descent.''')
-    description_long = textwrap.dedent('''SGDRegressor is a type of linear model that models the relationship 
+    description_long = textwrap.dedent('''\
+        SGDRegressor is a type of linear model that models the relationship 
         between input features and a continuous output variable using stochastic gradient descent. 
         It works by iteratively updating the model parameters in the direction of the negative 
         gradient of the loss function with respect to the parameters, using a single example 

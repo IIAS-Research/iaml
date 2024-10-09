@@ -14,12 +14,15 @@ class ActCatBoostRegressor(Predictor):
     """
     [STEP] Learn :  CatBoost Regressor
     """
-    name = textwrap.dedent("Learn : CatBoost Regressor")
-    description = textwrap.dedent('''CatBoostRegressor is a powerful tool that helps computers make accurate 
+    name = "Learn : CatBoost Regressor"
+    description = textwrap.dedent('''\
+        CatBoostRegressor is a powerful tool that helps computers make accurate 
         predictions for continuous outcomes by learning from both positive and 
         negative examples simultaneously.''')
-    description_long = textwrap.dedent('''CatBoostRegressor is a gradient boosting algorithm specifically 
+    description_long = textwrap.dedent('''\
+        CatBoostRegressor is a gradient boosting algorithm specifically 
         designed for regression tasks.''')
+    
     refs = [
         {
             'year': 2017,

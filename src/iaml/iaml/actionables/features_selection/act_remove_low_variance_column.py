@@ -14,13 +14,14 @@ class ActRemoveLowVarianceColumn(Actionable):
     """
     [STEP] Remove Low Variance Column
     """
-    name = textwrap.dedent('Remove Low Variance Column')
-    description = textwrap.dedent('Remove columns with variance lower than {threshold}.')
-    description_long = textwrap.dedent('''Remove features from the dataset that have variance lower than
-                        the specified threshold. Low variance columns do not contribute 
-                        significantly to the predictive power of models and can lead to 
-                        overfitting.''')
-    
+    name = 'Remove Low Variance Column'
+    description = 'Remove columns with variance lower than {threshold}.'
+    description_long = textwrap.dedent('''\
+        Remove features from the dataset that have variance lower than
+        the specified threshold. Low variance columns do not contribute 
+        significantly to the predictive power of models and can lead to 
+        overfitting.''')
+
     def __init__(self):
         self.configuration:dict = {
             'threshold': {

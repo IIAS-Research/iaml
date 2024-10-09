@@ -13,11 +13,13 @@ class ActRandomForest(Predictor):
     """
     [STEP] Learn :  Random Forest
     """
-    name = textwrap.dedent("Learn : Random Forest")
-    description = textwrap.dedent('''RandomForestClassifier is a machine learning algorithm that models 
+    name = "Learn : Random Forest"
+    description = textwrap.dedent('''\
+        RandomForestClassifier is a machine learning algorithm that models 
         the relationship between input features and a categorical output variable using 
         a collection of decision trees.''')
-    description_long = textwrap.dedent('''RandomForestClassifier is a type of ensemble learning algorithm that 
+    description_long = textwrap.dedent('''\
+        RandomForestClassifier is a type of ensemble learning algorithm that 
         models the relationship between input features and a categorical output variable using 
         a collection of decision trees. It works by building multiple decision trees on random 
         subsets of the input features and data, and then using a majority vote to make 

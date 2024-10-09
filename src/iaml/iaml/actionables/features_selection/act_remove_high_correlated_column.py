@@ -12,11 +12,19 @@ import textwrap
 @is_step('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
     """
-    [STEP] Remove High Correlated Column
+    [STEP] Remove High Correlated Columns
     """
-    name = textwrap.dedent('Remove High Correlated Column')
-    description = textwrap.dedent('Remove columns which correlation with other columns is higher than {threshold}.')
-    description_long = textwrap.dedent('''''')
+    name = "Remove High Correlated Columns"
+    description = "Remove columns that have high correlation with each other"
+    description_long = textwrap.dedent('''\
+        Removing high correlated columns helps to reduce multicollinearity 
+        in a dataset. When two columns are highly correlated, they contain 
+        redundant information. By removing one of them, we can simplify the 
+        model and improve its performance. This step typically involves 
+        computing a correlation matrix and removing columns that have a 
+        correlation above a certain threshold.
+    ''')
+    
     def __init__(self):
         self.configuration:dict = {
             'threshold': {

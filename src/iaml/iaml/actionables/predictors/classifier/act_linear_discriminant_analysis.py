@@ -14,16 +14,19 @@ class ActLinearDiscriminantAnalysis(Predictor):
     """
     [STEP] Learn : Linear Discriminant Analysis
     """
-    name = textwrap.dedent("Learn : Linear Discriminant Analysis")
-    description = textwrap.dedent('''LinearDiscriminantAnalysis is a machine learning algorithm that finds
+    name = "Learn : Linear Discriminant Analysis"
+    description = textwrap.dedent('''\
+        LinearDiscriminantAnalysis is a machine learning algorithm that finds
         a linear combination of features that maximizes the separation between 
         classes for classification tasks.''')
-    description_long = textwrap.dedent('''LinearDiscriminantAnalysis is a type of dimensionality reduction 
+    description_long = textwrap.dedent('''\
+        LinearDiscriminantAnalysis is a type of dimensionality reduction 
         algorithm that finds a linear combination of features that maximizes the 
         separation between classes for classification tasks. 
         It works by calculating the within-class and between-class scatter matrices, 
         and then finding the directions in the feature space that maximize the ratio of 
         the between-class scatter to the within-class scatter.''')
+    
     refs = [
         {
             'year': 1936,

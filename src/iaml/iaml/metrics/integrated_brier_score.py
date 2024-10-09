@@ -13,14 +13,18 @@ class IntegratedBrierScoreMetric(Metric):
     [METRIC] Integrated Brier Score for Survival Models
     """
     
-    name = textwrap.dedent('Integrated Brier Score for Survival Models')
-    description = textwrap.dedent('''The Integrated Brier Score (IBS) is a measure used to evaluate how well survival 
-        models predict the likelihood of an event happening over time. It looks at the difference between what the model 
-        predicts and what actually happens, including cases where data is incomplete. A lower IBS score means the model is more accurate.''')
-    description_long = textwrap.dedent('''The Integrated Brier Score (IBS) is a tool used to check how accurately survival models predict events, 
-        like the time until a patient experiences a certain outcome. It compares the model's predictions with real-life results over a period of time, 
-        taking into account situations where some data may be missing or incomplete. By looking at these differences, the IBS provides a single score 
-        that summarizes the model's performance. A lower IBS score indicates that the model is doing a better job at making accurate predictions, 
+    name = 'Integrated Brier Score for Survival Models'
+    description = textwrap.dedent('''\
+        The Integrated Brier Score (IBS) is a measure used to evaluate how well survival 
+        models predict the likelihood of an event happening over time. It looks at the 
+        difference between what the model predicts and what actually happens, including cases 
+        where data is incomplete. A lower IBS score means the model is more accurate.''')
+    description_long = textwrap.dedent('''\
+        The Integrated Brier Score (IBS) is a tool used to check how accurately survival models predict events, 
+        like the time until a patient experiences a certain outcome. It compares the model's predictions with 
+        real-life results over a period of time, taking into account situations where some data may be missing 
+        or incomplete. By looking at these differences, the IBS provides a single score that summarizes the model's 
+        performance. A lower IBS score indicates that the model is doing a better job at making accurate predictions, 
         which is important for making informed decisions in healthcare and research.''')
     refs = [
         {

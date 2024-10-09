@@ -17,17 +17,20 @@ class ActSplitDate(Actionable):
     """
     [STEP] Transform string column to date
     """
-    name = textwrap.dedent('Create Date Elements columns')
-    descrption = textwrap.dedent('''Transform a textual date column into multiple columns
+    name = 'Create Date Elements columns'
+    descrption = textwrap.dedent('''\
+        Transform a textual date column into multiple columns
         for day, month, year, hour, minute, second''')
-    description_long = textwrap.dedent('''Transform a textual date column into multiple columns for 
+    description_long = textwrap.dedent('''\
+        Transform a textual date column into multiple columns for 
         day, month, year, hour, minute, second.
         Exemple:
-+---------------------+----------+------------+-----------+-----------+----------+----------+
-| date                | date_day | date_month | date_year | date_hour | date_min | date_sec |
-+---------------------+----------+------------+-----------+-----------+----------+----------+
-| 2024-01-15 12:31:27 | 15       | 01         | 2024      | 12        | 31       | 27       |
-+---------------------+----------+------------+-----------+-----------+----------+----------+''')
+            +---------------------+----------+------------+-----------+-----------+----------+----------+
+            | date                | date_day | date_month | date_year | date_hour | date_min | date_sec |
+            +---------------------+----------+------------+-----------+-----------+----------+----------+
+            | 2024-01-15 12:31:27 | 15       | 01         | 2024      | 12        | 31       | 27       |
+            +---------------------+----------+------------+-----------+-----------+----------+----------+
+        ''')
     def __init__(self):
         self.configuration:dict = {}
         self.columns:list[str] = None

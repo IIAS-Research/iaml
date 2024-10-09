@@ -14,11 +14,13 @@ class ActPolynomialFeatures(Actionable):
     """
     [STEP] Preprocess with PolynomialFeatures
     """
-    name= textwrap.dedent("Preprocess with PolynomialFeatures")
-    description = textwrap.dedent('''PolynomialFeatures creates new features by combining existing
+    name= "Preprocess with PolynomialFeatures"
+    description = textwrap.dedent('''\
+        PolynomialFeatures creates new features by combining existing
         features mathematically. It squares, cubes, and multiplies features to 
         create more complex patterns.''')
-    description_long = textwrap.dedent('''PolynomialFeatures is a preprocessing technique that
+    description_long = textwrap.dedent('''\
+        PolynomialFeatures is a preprocessing technique that
         generates new features based on polynomial relationships between existing
         features. This helps capture non-linear relationships in the data that may
         not be apparent from the original features alone. PolynomialFeatures is

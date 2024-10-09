@@ -14,10 +14,12 @@ class ActGaussianNb(Predictor):
     """
     [STEP] Learn : Gaussian NB
     """
-    name = textwrap.dedent("Learn : Gaussian NB")
-    description = textwrap.dedent('''GaussianNB is a machine learning algorithm that makes predictions 
+    name = "Learn : Gaussian NB"
+    description = textwrap.dedent('''\
+        GaussianNB is a machine learning algorithm that makes predictions 
         based on the Gaussian (normal) distribution of the input features.''')
-    description_long = textwrap.dedent('''GaussianNB is a type of naive Bayes classifier that assumes the 
+    description_long = textwrap.dedent('''\
+        GaussianNB is a type of naive Bayes classifier that assumes the 
         input features are independent and follow a Gaussian (normal) distribution. 
         It uses Bayes' theorem to calculate the probability of each class given the 
         input features and then makes a prediction based on the highest probability. 
@@ -25,6 +27,7 @@ class ActGaussianNb(Predictor):
         distribution and can be modeled well by a normal distribution. 
         It is a simple and fast algorithm that works well for many classification problems, 
         especially when the number of features is much larger than the number of samples.''')  
+    
     refs = [
         {
             'year': 1763,

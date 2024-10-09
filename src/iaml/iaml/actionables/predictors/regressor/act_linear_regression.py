@@ -13,15 +13,18 @@ class ActLinearRegression(Predictor):
     """
     [STEP] Learn :  Linear Regression
     """
-    name = textwrap.dedent("Learn : Linear Regression")
-    description = textwrap.dedent('''LinearRegression is a machine learning algorithm that models the 
+    name = "Learn : Linear Regression"
+    description = textwrap.dedent('''\
+        LinearRegression is a machine learning algorithm that models the 
         relationship between input features and a continuous output variable using 
         a linear function.''')
-    description_long = textwrap.dedent('''LinearRegression is a type of regression algorithm that models 
+    description_long = textwrap.dedent('''\
+        LinearRegression is a type of regression algorithm that models 
         the relationship between input features and a continuous output variable using 
         a linear function. It works by finding the best-fitting line or hyperplane 
         that minimizes the sum of the squared differences between the predicted 
         and actual output variables.''')
+    
     refs = [
         {
             'year': 1875,

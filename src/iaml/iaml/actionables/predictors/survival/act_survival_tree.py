@@ -15,13 +15,15 @@ class ActSurvivalTree(Predictor):
     """
     [STEP] Learn : SurvivalTree
     """
-    name = textwrap.dedent("Learn : SurvivalTree")
-    description = textwrap.dedent('''SurvivalTree is a decision tree algorithm tailored for survival analysis. 
+    name = "Learn : SurvivalTree"
+    description = textwrap.dedent('''\
+        SurvivalTree is a decision tree algorithm tailored for survival analysis. 
         It constructs a tree structure based on the log-rank test, where each split 
         is designed to separate data by survival times. The method handles censored data 
         and outputs risk scores, cumulative hazard functions, and survival functions 
         based on the tree's terminal nodes.''')
-    description_long = textwrap.dedent('''SurvivalTree builds a decision tree based on survival data, using the 
+    description_long = textwrap.dedent('''\
+        SurvivalTree builds a decision tree based on survival data, using the 
         log-rank splitting rule to determine the best splits. It is a non-parametric model that
         is particularly suited for survival analysis with right-censored data. The model provides
         both cumulative hazard and survival functions at each terminal node, making it useful for

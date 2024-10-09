@@ -15,12 +15,14 @@ class ActRandomSurvivalForest(Predictor):
     """
     [STEP] Learn : Random Survival Forest
     """
-    name = textwrap.dedent("Learn : RandomSurvivalForest")
-    description = textwrap.dedent('''RandomSurvivalForest is a survival analysis algorithm 
+    name = "Learn : RandomSurvivalForest"
+    description = textwrap.dedent('''\
+        RandomSurvivalForest is a survival analysis algorithm 
         that uses an ensemble of decision trees to estimate the survival function 
         over time. It is a non-parametric model that handles complex relationships 
         and can model non-linear effects of covariates.''')
-    description_long = textwrap.dedent('''RandomSurvivalForest is a flexible survival analysis 
+    description_long = textwrap.dedent('''\
+        RandomSurvivalForest is a flexible survival analysis 
         algorithm that uses an ensemble of decision trees to predict the time 
         until an event occurs. It extends the concept of random forests to survival 
         data, handling complex interactions and non-linear relationships between 

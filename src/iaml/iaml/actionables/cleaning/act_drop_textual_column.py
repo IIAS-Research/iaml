@@ -15,9 +15,10 @@ class ActDropTextualColumn(Actionable):
     """
     [STEP] Drop Textual Column
     """
-    name = textwrap.dedent('Remove textual columns')
-    description = textwrap.dedent('Remove all columns containing textual data from the dataset')
-    description_long = textwrap.dedent('''Remove all columns containing textual data from the dataset.
+    name = 'Remove textual columns'
+    description = 'Remove all columns containing textual data from the dataset'
+    description_long = textwrap.dedent('''\
+        Remove all columns containing textual data from the dataset.
         This step is used to clean the dataset in order to perform other actions later on 
         that can't be applied to textual columns.''')
     can_be_disabled = False

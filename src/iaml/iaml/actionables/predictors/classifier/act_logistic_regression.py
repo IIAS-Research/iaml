@@ -13,11 +13,13 @@ class ActLogisticRegression(Predictor):
     """
     [STEP] Learn :  Logistic Regression Classifier
     """
-    name = textwrap.dedent("Learn : Logistic Regression Classifier")
-    description = textwrap.dedent('''LogisticRegression is a machine learning algorithm 
+    name = "Learn : Logistic Regression Classifier"
+    description = textwrap.dedent('''\
+        LogisticRegression is a machine learning algorithm 
         that models the relationship between input features and a binary 
         output variable using a logistic function.''')
-    description_long = textwrap.dedent('''LogisticRegression is a type of classification algorithm that models 
+    description_long = textwrap.dedent('''\
+        LogisticRegression is a type of classification algorithm that models 
         the relationship between input features and a binary 
         output variable using a logistic function. 
         It works by finding the best-fitting line or hyperplane that 

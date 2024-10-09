@@ -14,11 +14,13 @@ class ActMLPClassifier(Predictor):
     """
     [STEP] Learn : MLP Classifier
     """
-    name = textwrap.dedent("Learn : MLP Classifier")
-    description = textwrap.dedent('''MLPClassifier is a machine learning algorithm that models the relationship 
+    name = "Learn : MLP Classifier"
+    description = textwrap.dedent('''\
+        MLPClassifier is a machine learning algorithm that models the relationship 
         between input features and a categorical output variable using a 
         multi-layer perceptron neural network.''')
-    description_long = textwrap.dedent('''MLPClassifier is a type of neural network algorithm that models the 
+    description_long = textwrap.dedent('''\
+        MLPClassifier is a type of neural network algorithm that models the 
         relationship between input features and a categorical output variable using a 
         multi-layer perceptron (MLP) neural network. 
         It works by transforming the input features through one or more hidden layers with 

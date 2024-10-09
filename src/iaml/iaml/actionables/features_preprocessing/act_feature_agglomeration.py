@@ -14,14 +14,17 @@ import textwrap
 @is_step('features_preprocessing')
 class ActFeatureAgglomeration(Actionable):
     """
-    [STEP] Agglomerate features with FeatureAgglomeration
+    [STEP] Apply FeatureAgglomeration for dimensionality reduction
     """
-    name = textwrap.dedent('Agglomerate features with FeatureAgglomeration Algorithm')
-    description = textwrap.dedent('''Reduce numbers of columns to {n_clusters} 
-        using FeatureAgglomeration algorithm''')
-    description_long = textwrap.dedent('''Perform FeatureAgglomeration on the current dataset.
-        The goal is to reduce the number of columns by merging together 
-        similar columns using {metric}.''')
+    name = "FeatureAgglomeration"
+    description = "Process FeatureAgglomeration algorithm over a set of features"
+    description_long = textwrap.dedent('''\
+        FeatureAgglomeration is a clustering-based dimensionality reduction technique.
+        It groups similar features together using a hierarchical clustering approach, 
+        which can help reduce the dimensionality of the dataset while preserving 
+        essential information. This technique is unsupervised, meaning it does not 
+        require labeled data, as it identifies clusters of features based on similarity.
+    ''')
     
     def __init__(self):
         self.configuration:dict = {

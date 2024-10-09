@@ -15,14 +15,16 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
     """
     [STEP] Learn : Componentwise Gradient Boosting Survival Analysis
     """
-    name = textwrap.dedent("Learn : ComponentwiseGradientBoostingSurvivalAnalysis")
-    description = textwrap.dedent('''ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis 
+    name = "Learn : ComponentwiseGradientBoostingSurvivalAnalysis"
+    description = textwrap.dedent('''\
+        ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis 
         algorithm that uses gradient boosting with componentwise (stagewise) updates 
         to estimate the survival function over time. This variant of boosting allows 
         the model to fit individual components (features) in a stagewise manner, 
         making it a more interpretable approach for feature selection and model 
         refinement in survival analysis.''')
-    description_long = textwrap.dedent('''ComponentwiseGradientBoostingSurvivalAnalysis extends 
+    description_long = textwrap.dedent('''\
+        ComponentwiseGradientBoostingSurvivalAnalysis extends 
         gradient boosting for survival analysis by applying updates one component 
         (feature) at a time. This approach improves the model's ability to handle 
         sparse datasets or datasets with high-dimensional features, where only 

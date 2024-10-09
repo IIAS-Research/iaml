@@ -15,10 +15,12 @@ class ActHistGradientBoostingRegressor(Predictor):
     """
     [STEP] Learn : HistGradient Boosting Regressor
     """
-    name = textwrap.dedent("Learn : HistGradient Boosting Regressor")
-    description = textwrap.dedent('''HistGradientBoostingRegressor is a machine learning algorithm 
+    name = "Learn : HistGradient Boosting Regressor"
+    description = textwrap.dedent('''\
+        HistGradientBoostingRegressor is a machine learning algorithm 
         that makes predictions for regression tasks using histogram-based gradient boosting.''')
-    description_long = textwrap.dedent('''HistGradientBoostingRegressor is a type of gradient boosting 
+    description_long = textwrap.dedent('''\
+        HistGradientBoostingRegressor is a type of gradient boosting 
         algorithm that uses histogram-based decision trees to model the relationship between 
         the input features and the output variable. It works by iteratively adding decision 
         trees to the model, where each tree is trained to correct the errors made by the 

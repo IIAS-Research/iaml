@@ -14,11 +14,13 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
     """
     [STEP] Learn : Quadratic Discriminant Analysis
     """
-    name = textwrap.dedent("Learn : Quadratic Discriminant Analysis")
-    description = textwrap.dedent('''QuadraticDiscriminantAnalysis is a machine learning algorithm 
+    name = "Learn : Quadratic Discriminant Analysis"
+    description = textwrap.dedent('''\
+        QuadraticDiscriminantAnalysis is a machine learning algorithm 
         that models the relationship between input features and a categorical 
         output variable using a quadratic function.''')
-    description_long = textwrap.dedent('''QuadraticDiscriminantAnalysis is a type of discriminant analysis 
+    description_long = textwrap.dedent('''\
+        QuadraticDiscriminantAnalysis is a type of discriminant analysis 
         algorithm that models the relationship between input features and a categorical output 
         variable using a quadratic function. 
         It works by estimating the covariance matrices of the classes and using 

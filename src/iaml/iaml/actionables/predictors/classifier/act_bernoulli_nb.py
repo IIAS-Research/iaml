@@ -14,12 +14,15 @@ class ActBernoulliNb(Predictor):
     """
     [STEP] Learn : Bernoulli NB
     """
-    name = textwrap.dedent("Learn : Bernoulli NB")
-    description = textwrap.dedent('''BernoulliNB is a tool that helps computers predict categories 
+    name = "Learn : Bernoulli NB"
+    description = textwrap.dedent('''\
+        BernoulliNB is a tool that helps computers predict categories 
         by analyzing binary features, even if the input isn't strictly binary.''')
-    description_long = textwrap.dedent('''BernoulliNB is a type of Naive Bayes classifier specifically 
+    description_long = textwrap.dedent('''\
+        BernoulliNB is a type of Naive Bayes classifier specifically 
         designed for binary features. While it's primarily meant for binary inputs,
         scikit-learn implements it in a way that can handle non-binary data.''')
+    
     refs = [
         {
             'year': 1998,

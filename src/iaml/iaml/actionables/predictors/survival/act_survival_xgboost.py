@@ -15,12 +15,14 @@ class ActGradientBoostingSurvivalAnalysis(Predictor):
     """
     [STEP] Learn : Gradient Boosting Survival Analysis
     """
-    name = textwrap.dedent("Learn : GradientBoostingSurvivalAnalysis")
-    description = textwrap.dedent('''GradientBoostingSurvivalAnalysis is a survival analysis algorithm 
+    name = "Learn : GradientBoostingSurvivalAnalysis"
+    description = textwrap.dedent('''\
+        GradientBoostingSurvivalAnalysis is a survival analysis algorithm 
         that uses gradient boosting to estimate the survival function over time. 
         It is an ensemble-based model that minimizes a differentiable loss function 
         to predict the time until an event occurs.''')
-    description_long = textwrap.dedent('''GradientBoostingSurvivalAnalysis is a flexible survival 
+    description_long = textwrap.dedent('''\
+        GradientBoostingSurvivalAnalysis is a flexible survival 
         analysis algorithm that uses gradient boosting to predict the time until 
         an event occurs. It extends the concept of boosting to survival data, 
         handling complex interactions and non-linear relationships between input 

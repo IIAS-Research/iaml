@@ -15,14 +15,16 @@ class ActExtraSurvivalTrees(Predictor):
     """
     [STEP] Learn : Extra Survival Trees
     """
-    name = textwrap.dedent("Learn : ExtraSurvivalTrees")
-    description = textwrap.dedent('''ExtraSurvivalTrees is an ensemble learning method for survival 
+    name = "Learn : ExtraSurvivalTrees"
+    description = textwrap.dedent('''\
+        ExtraSurvivalTrees is an ensemble learning method for survival 
         analysis based on extremely randomized trees. It fits multiple decision trees 
         to the data, where each tree is built from a random subset of features and 
         splits are selected randomly. This method provides more variance reduction 
         and robustness, especially useful when dealing with high-dimensional or 
         sparse data.''')
-    description_long = textwrap.dedent('''ExtraSurvivalTrees is a variant of ensemble learning for survival 
+    description_long = textwrap.dedent('''\
+        ExtraSurvivalTrees is a variant of ensemble learning for survival 
         analysis that uses extremely randomized trees. In this approach, multiple trees 
         are grown by selecting random subsets of features and splitting points. 
         Compared to other tree-based methods, this randomness helps reduce overfitting 

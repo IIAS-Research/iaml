@@ -14,9 +14,10 @@ class ActDropDateColumn(Actionable):
     """
     Find and drop data column
     """
-    name = textwrap.dedent('Remove date columns')
-    description = textwrap.dedent('Remove all columns containing Date from the dataset')
-    description_long = textwrap.dedent('''Remove all columns containing Data from the dataset
+    name = 'Remove date columns'
+    description = 'Remove all columns containing Date from the dataset'
+    description_long = textwrap.dedent('''\
+        Remove all columns containing Data from the dataset
         This step is used to clean the dataset in order to perform other actions later on 
         that can't be applied to date columns.''')
     can_be_disabled = False

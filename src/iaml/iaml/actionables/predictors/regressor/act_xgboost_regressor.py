@@ -13,13 +13,16 @@ class ActXGBoostRegressor(Predictor):
     """
     [STEP] Learn :  XGBoost Regressor
     """
-    name = textwrap.dedent("Learn : XGBoost Regressor")
-    description = textwrap.dedent('''GradientBoostingRegressor is a machine learning algorithm that models the 
+    name = "Learn : XGBoost Regressor"
+    description = textwrap.dedent('''\
+        GradientBoostingRegressor is a machine learning algorithm that models the 
         relationship between input features and a continuous output variable using 
         gradient boosting.''')
-    description_long = textwrap.dedent('''It works by building multiple decision trees in a sequential manner, 
+    description_long = textwrap.dedent('''\
+        It works by building multiple decision trees in a sequential manner, 
         where each tree is trained to correct the errors made by the previous tree. The final 
         prediction is made by summing the predictions of all the trees.''')
+    
     refs = [
         {
             'name': 'Stochastic Gradient Boosting',

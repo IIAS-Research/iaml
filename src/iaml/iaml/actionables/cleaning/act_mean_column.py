@@ -14,10 +14,12 @@ class ActMeanColumn(Actionable):
     """
     [STEP] Fill missing values with mean
     """
-    name = textwrap.dedent('Fill missing values')
-    description = textwrap.dedent('''Fill missing values with the mean of non-missing values
+    name = 'Fill missing values'
+    description = textwrap.dedent('''\
+        Fill missing values with the mean of non-missing values
         when the proportion of empty rows is lower than {empty_threshold}.''')
-    description_long = textwrap.dedent('''Fill a column missings values with the mean of the columns
+    description_long = textwrap.dedent('''\
+        Fill a column missings values with the mean of the columns
         when the proportion of empty rows is lower than {empty_threshold}.
         Work only for numerical columns.''')
     can_be_disabled = False
