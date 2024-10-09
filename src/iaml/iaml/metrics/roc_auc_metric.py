@@ -4,20 +4,25 @@
 from sklearn.metrics import roc_auc_score
 import pandas as pd
 from ..metric import Metric
+import textwrap
 
 class RocAucMetric(Metric):
     """
     [METRIC] ROC AUC
     """
 
-    name="ROC AUC"
-    description = '''The ROC AUC metric (Receiver Operating Characteristic - Area Under the Curve) is a tool used to evaluate the performance of a classification model. 
-        It measures the model's ability to distinguish between two classes by indicating the proportion of true positives relative to false positives.'''
-    description_long = '''The ROC AUC metric is a method that helps assess the effectiveness of a classification model. 
-        The ROC curve illustrates the model's performance at various decision thresholds, with a curve closer to the top-left corner indicating better performance. 
-        The AUC, or "area under the curve," provides a score between 0 and 1, where 1 means perfect predictions 
-        and 0.5 means the model is no better than random guessing. In essence, the ROC AUC metric is a clear way to evaluate a 
-        model's ability to correctly distinguish between two categories.'''
+    name= "ROC AUC"
+    description = textwrap.dedent('''\
+        The ROC AUC metric (Receiver Operating Characteristic - Area Under the Curve) is a tool used to evaluate 
+        the performance of a classification model. It measures the model's ability to distinguish between two 
+        classes by indicating the proportion of true positives relative to false positives.''')
+    description_long = textwrap.dedent('''\
+        The ROC AUC metric is a method that helps assess the effectiveness of a classification model. 
+        The ROC curve illustrates the model's performance at various decision thresholds, with a curve closer 
+        to the top-left corner indicating better performance. The AUC, or "area under the curve," provides 
+        a score between 0 and 1, where 1 means perfect predictions and 0.5 means the model is no better than 
+        random guessing. In essence, the ROC AUC metric is a clear way to evaluate a 
+        model's ability to correctly distinguish between two categories.''')
     refs=[
         {
             'year': 1982,

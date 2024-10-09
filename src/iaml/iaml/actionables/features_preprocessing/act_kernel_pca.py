@@ -7,18 +7,22 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-
+import textwrap
 
 @is_step('features_preprocessing')
 class ActKernelPCA(Actionable):
     """
-    [STEP] Decompose features with KernelPCA
+    [STEP] Apply KernelPCA for dimensionality reduction
     """
-    name = 'Decompose features with KernelPCA'
-    description = '''Reduce datasets number of features by using
-        Kernel Principal Component Analysis Algorithm.'''
-    description_long = '''The dataset is reduced to {n_components} components
-        using {kernel} kernel'''
+    name = "KernelPCA"
+    description = "Perform Kernel Principal Component Analysis (KernelPCA) on a dataset"
+    description_long = textwrap.dedent('''\
+        KernelPCA is a dimensionality reduction technique that extends Principal Component Analysis (PCA) 
+        using kernel methods. It projects data into a higher-dimensional space before performing PCA, 
+        enabling it to capture complex, non-linear structures in the data. KernelPCA is useful for reducing 
+        dimensionality while preserving intricate patterns and relationships within the data.
+    ''')
+
     refs = [
         {
             'year': 1997,

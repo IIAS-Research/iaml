@@ -7,6 +7,7 @@ from ...dataset import Dataset
 from ...data_type import DataType
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 
 @is_step('features_precleaning')
@@ -16,10 +17,12 @@ class ActDateConverter(Actionable):
     """
     name = 'Text to Date Converter'
     description = 'Convert Text to Date if possible'
-    description_long = '''Try to convert all text of a column to date. 
+    description_long = textwrap.dedent('''\
+        Try to convert all text of a column to date. 
         If more than {authorized_error_ratios}% of the rows return errors, then the
         column is not converted. As converting to date is time consuming, we will 
-        perform the test on {sample_size}.'''
+        perform the test on {sample_size}.
+        ''')
     
     def __init__(self):
         self.configuration:dict = {

@@ -7,6 +7,7 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActGaussianNb(Predictor):
@@ -14,16 +15,19 @@ class ActGaussianNb(Predictor):
     [STEP] Learn : Gaussian NB
     """
     name = "Learn : Gaussian NB"
-    description = '''GaussianNB is a machine learning algorithm that makes predictions 
-        based on the Gaussian (normal) distribution of the input features.'''
-    description_long = '''GaussianNB is a type of naive Bayes classifier that assumes the 
+    description = textwrap.dedent('''\
+        GaussianNB is a machine learning algorithm that makes predictions 
+        based on the Gaussian (normal) distribution of the input features.''')
+    description_long = textwrap.dedent('''\
+        GaussianNB is a type of naive Bayes classifier that assumes the 
         input features are independent and follow a Gaussian (normal) distribution. 
         It uses Bayes' theorem to calculate the probability of each class given the 
         input features and then makes a prediction based on the highest probability. 
         GaussianNB is particularly useful when the input features have a continuous 
         distribution and can be modeled well by a normal distribution. 
         It is a simple and fast algorithm that works well for many classification problems, 
-        especially when the number of features is much larger than the number of samples.'''    
+        especially when the number of features is much larger than the number of samples.''')  
+    
     refs = [
         {
             'year': 1763,

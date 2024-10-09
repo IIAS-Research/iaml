@@ -7,7 +7,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
-
+import textwrap
 
 @is_step('cleaning')
 class ActMeanColumn(Actionable):
@@ -15,11 +15,13 @@ class ActMeanColumn(Actionable):
     [STEP] Fill missing values with mean
     """
     name = 'Fill missing values'
-    description = '''Fill missing values with the mean of non-missing values
-        when the proportion of empty rows is lower than {empty_threshold}.'''
-    description_long = '''Fill a column missings values with the mean of the columns
+    description = textwrap.dedent('''\
+        Fill missing values with the mean of non-missing values
+        when the proportion of empty rows is lower than {empty_threshold}.''')
+    description_long = textwrap.dedent('''\
+        Fill a column missings values with the mean of the columns
         when the proportion of empty rows is lower than {empty_threshold}.
-        Work only for numerical columns.'''
+        Work only for numerical columns.''')
     can_be_disabled = False
     def __init__(self):
         self.columns:list[str] = None

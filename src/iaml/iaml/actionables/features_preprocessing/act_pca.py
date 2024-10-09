@@ -7,18 +7,24 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-
+import textwrap
 
 
 @is_step('features_preprocessing')
 class ActPCA(Actionable):
     """
-    [STEP] Decompose features with PCA
+    [STEP] Reduce dimensions with PCA
     """
-    name = "Decompose features with PCA"
-    description = 'Reduce dataset number of features using Principal Component Analysis Algorithm'
-    description_long = '''Reduce the dataset to {n_components}% of the total columns
-    '''
+    name = "PCA"
+    description = "Apply PCA for dimensionality reduction over a list of columns"
+    description_long = textwrap.dedent('''\
+        PCA, or Principal Component Analysis, is a dimensionality reduction technique. 
+        It transforms the data into a set of linearly uncorrelated components, capturing 
+        the maximum variance in the data with each successive component. 
+        This method is unsupervised, meaning it does not require labeled data, 
+        and is particularly useful for simplifying datasets while retaining 
+        as much of the underlying structure as possible.
+    ''')
     
     def __init__(self):
         self.configuration:dict = {

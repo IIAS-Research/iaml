@@ -7,23 +7,25 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-
+import textwrap
 
 @is_step('features_preprocessing')
 class ActPolynomialFeatures(Actionable):
     """
     [STEP] Preprocess with PolynomialFeatures
     """
-    name="Preprocess with PolynomialFeatures"
-    description = '''PolynomialFeatures creates new features by combining existing
+    name= "Preprocess with PolynomialFeatures"
+    description = textwrap.dedent('''\
+        PolynomialFeatures creates new features by combining existing
         features mathematically. It squares, cubes, and multiplies features to 
-        create more complex patterns.'''
-    description_long = '''PolynomialFeatures is a preprocessing technique that
+        create more complex patterns.''')
+    description_long = textwrap.dedent('''\
+        PolynomialFeatures is a preprocessing technique that
         generates new features based on polynomial relationships between existing
         features. This helps capture non-linear relationships in the data that may
         not be apparent from the original features alone. PolynomialFeatures is
         particularly useful when you suspect the underlying relationship in your data
-        might not be straightforward or linear.'''
+        might not be straightforward or linear.''')
     
     def __init__(self):
         self.configuration:dict = {

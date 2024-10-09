@@ -6,7 +6,7 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-
+import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActXGBoostRegressor(Predictor):
@@ -14,12 +14,15 @@ class ActXGBoostRegressor(Predictor):
     [STEP] Learn :  XGBoost Regressor
     """
     name = "Learn : XGBoost Regressor"
-    description = '''GradientBoostingRegressor is a machine learning algorithm that models the 
+    description = textwrap.dedent('''\
+        GradientBoostingRegressor is a machine learning algorithm that models the 
         relationship between input features and a continuous output variable using 
-        gradient boosting.'''
-    description_long = '''It works by building multiple decision trees in a sequential manner, 
+        gradient boosting.''')
+    description_long = textwrap.dedent('''\
+        It works by building multiple decision trees in a sequential manner, 
         where each tree is trained to correct the errors made by the previous tree. The final 
-        prediction is made by summing the predictions of all the trees.'''
+        prediction is made by summing the predictions of all the trees.''')
+    
     refs = [
         {
             'name': 'Stochastic Gradient Boosting',

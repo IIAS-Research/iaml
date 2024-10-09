@@ -6,6 +6,7 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActAdaBoostRegressor(Predictor):
@@ -13,11 +14,13 @@ class ActAdaBoostRegressor(Predictor):
     [STEP] Learn :  AdaBoost Regressor
     """
     name = "Learn : AdaBoost Regressor"
-    description = '''AdaBoostRegressor is a powerful tool that combines many simple models 
-        to make accurate predictions for continuous outcomes.'''
-    description_long = '''AdaBoostRegressor is an ensemble learning technique 
+    description = textwrap.dedent('''\
+        AdaBoostRegressor is a powerful tool that combines many simple models 
+        to make accurate predictions for continuous outcomes.''')
+    description_long = textwrap.dedent('''\
+        AdaBoostRegressor is an ensemble learning technique 
         used for regression problems. It works by combining multiple weak learners 
-        (simple models) into a strong learner. '''
+        (simple models) into a strong learner. ''')
     refs = [
         {
             'year': 1995,

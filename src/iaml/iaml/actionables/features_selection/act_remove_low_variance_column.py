@@ -7,6 +7,7 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 @is_step('features_selection')
 class ActRemoveLowVarianceColumn(Actionable):
@@ -15,11 +16,12 @@ class ActRemoveLowVarianceColumn(Actionable):
     """
     name = 'Remove Low Variance Column'
     description = 'Remove columns with variance lower than {threshold}.'
-    description_long = '''Remove features from the dataset that have variance lower than
-                        the specified threshold. Low variance columns do not contribute 
-                        significantly to the predictive power of models and can lead to 
-                        overfitting.'''
-    
+    description_long = textwrap.dedent('''\
+        Remove features from the dataset that have variance lower than
+        the specified threshold. Low variance columns do not contribute 
+        significantly to the predictive power of models and can lead to 
+        overfitting.''')
+
     def __init__(self):
         self.configuration:dict = {
             'threshold': {

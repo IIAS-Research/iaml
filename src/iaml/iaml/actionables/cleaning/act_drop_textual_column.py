@@ -7,6 +7,7 @@ from ...dataset import Dataset
 from ...data_type import DataType
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 
 @is_step('cleaning')
@@ -16,9 +17,10 @@ class ActDropTextualColumn(Actionable):
     """
     name = 'Remove textual columns'
     description = 'Remove all columns containing textual data from the dataset'
-    description_long = '''Remove all columns containing textual data from the dataset.
+    description_long = textwrap.dedent('''\
+        Remove all columns containing textual data from the dataset.
         This step is used to clean the dataset in order to perform other actions later on 
-        that can't be applied to textual columns.'''
+        that can't be applied to textual columns.''')
     can_be_disabled = False
     def __init__(self):
         self.columns_to_drop:list[str] = None

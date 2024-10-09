@@ -7,6 +7,7 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActMLPClassifier(Predictor):
@@ -14,15 +15,17 @@ class ActMLPClassifier(Predictor):
     [STEP] Learn : MLP Classifier
     """
     name = "Learn : MLP Classifier"
-    description = '''MLPClassifier is a machine learning algorithm that models the relationship 
+    description = textwrap.dedent('''\
+        MLPClassifier is a machine learning algorithm that models the relationship 
         between input features and a categorical output variable using a 
-        multi-layer perceptron neural network.'''
-    description_long = '''MLPClassifier is a type of neural network algorithm that models the 
+        multi-layer perceptron neural network.''')
+    description_long = textwrap.dedent('''\
+        MLPClassifier is a type of neural network algorithm that models the 
         relationship between input features and a categorical output variable using a 
         multi-layer perceptron (MLP) neural network. 
         It works by transforming the input features through one or more hidden layers with 
         non-linear activation functions, and then using a final layer with a softmax activation 
-        function to output a probability distribution over the classes.'''
+        function to output a probability distribution over the classes.''')
     refs = [
         {
             'year': 1989,

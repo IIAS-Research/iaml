@@ -7,6 +7,7 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 # @is_step('predictor', 'tabular', 'regressor')
 @is_step('disabled')
@@ -15,9 +16,11 @@ class ActHistGradientBoostingRegressor(Predictor):
     [STEP] Learn : HistGradient Boosting Regressor
     """
     name = "Learn : HistGradient Boosting Regressor"
-    description = '''HistGradientBoostingRegressor is a machine learning algorithm 
-        that makes predictions for regression tasks using histogram-based gradient boosting.'''
-    description_long = '''HistGradientBoostingRegressor is a type of gradient boosting 
+    description = textwrap.dedent('''\
+        HistGradientBoostingRegressor is a machine learning algorithm 
+        that makes predictions for regression tasks using histogram-based gradient boosting.''')
+    description_long = textwrap.dedent('''\
+        HistGradientBoostingRegressor is a type of gradient boosting 
         algorithm that uses histogram-based decision trees to model the relationship between 
         the input features and the output variable. It works by iteratively adding decision 
         trees to the model, where each tree is trained to correct the errors made by the 
@@ -25,7 +28,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         features, which allows for faster computation and more efficient memory 
         usage compared to other tree-based algorithms. 
         HistGradientBoostingRegressor also includes options for regularization, 
-        such as L1 and L2 regularization, to prevent overfitting.'''
+        such as L1 and L2 regularization, to prevent overfitting.''')
     refs = [
         {
             'year': 2006,

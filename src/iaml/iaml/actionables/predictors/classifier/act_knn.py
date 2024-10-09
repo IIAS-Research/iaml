@@ -7,6 +7,7 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActKNN(Predictor):
@@ -14,15 +15,18 @@ class ActKNN(Predictor):
     [STEP] Learn :  KNN
     """
     name = "Learn : KNN"
-    description = '''KNeighborsClassifier is a machine learning algorithm that makes 
-        predictions for classification tasks using k-nearest neighbors.'''
-    description_long = '''KNeighborsClassifier is a type of instance-based learning 
+    description = textwrap.dedent('''\
+        KNeighborsClassifier is a machine learning algorithm that makes 
+        predictions for classification tasks using k-nearest neighbors.''')
+    description_long = textwrap.dedent('''\
+        KNeighborsClassifier is a type of instance-based learning 
         algorithm that makes predictions for new input features based on the labels 
         of the k-nearest neighbors in the training data. 
         It works by calculating the distance between the new input features and all 
         the training data, and then selecting the k-nearest neighbors based on that distance.
         The label for the new input features is then determined by a majority vote of the 
-        labels of the k-nearest neighbors.'''
+        labels of the k-nearest neighbors.''')
+    
     refs = [
         {
             'year': 1951,

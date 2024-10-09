@@ -4,22 +4,25 @@
 from sklearn.metrics import balanced_accuracy_score
 import pandas as pd
 from ..metric import Metric
+import textwrap
 
 class BalancedAccuracyMetric(Metric):
     """
     [METRIC] Balanced Accuracy
     """
     name = 'Balanced Accuracy'
-    description = '''Balanced Accuracy Score is a metric that evaluates a model's 
+    description = textwrap.dedent('''\
+        Balanced Accuracy Score is a metric that evaluates a model's 
         performance by considering both positive and negative classes equally. 
-        It calculates the average accuracy for each class, making it useful for imbalanced dataset.'''
-    description_long = '''Balanced Accuracy Score evaluates how well a predictive 
+        It calculates the average accuracy for each class, making it useful for imbalanced dataset.''')
+    description_long = textwrap.dedent('''\
+        Balanced Accuracy Score evaluates how well a predictive 
         model performs, giving equal importance to both positive and negative classes. 
         This is important in healthcare when data is imbalanced.
         To calculate it, you find the accuracy for each class and then average those values. 
         For example, if a model has 70% accuracy for positive cases and 90% for negative cases, 
         the balanced accuracy is (70% + 90%) / 2 = 80%. This metric ensures that the model is effective 
-        for all classes, making it valuable for medical decision-making.'''
+        for all classes, making it valuable for medical decision-making.''')
     refs=[
         {
             'year': 2010,

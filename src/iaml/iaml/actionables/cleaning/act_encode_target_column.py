@@ -15,6 +15,7 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 # @is_step('cleaning')
 @is_step('disabled')
@@ -23,11 +24,11 @@ class ActCategoryStringToNumeric(Actionable):
     Encode categorical target column to numeric
     """
     name = 'Textual Category To Numeric Value'
-    description = 'Encode categorical text data column to numeric value'
-    description_long = '''Retrieve all unique values from a column,
-        then transform those values to a numeric type.
+    description ='Encode categorical text data column to numeric value'
+    description_long = textwrap.dedent('''\
+        Retrieve all unique values from a column, then transform those values to a numeric type.
         Exemple: If a column contain 3 uniques values like "coffee", "tea" and "water",
-        then all the coffee values will be transformed to 0, tea to 1 and water to 2.'''
+        then all the coffee values will be transformed to 0, tea to 1 and water to 2.''')
     
     def __init__(self):
         self.configuration:dict = {}

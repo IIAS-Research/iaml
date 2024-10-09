@@ -5,23 +5,27 @@ import pandas as pd
 from sklearn.metrics import f1_score
 from ..metric import Metric
 from ..type_of_target import type_of_target as get_type_of_target
+import textwrap
 
 class F1ScoreMetric(Metric):
     """
     [METRIC] F1 Score
     """
     name = 'F1 Score'
-    description = '''F1 Score is a metric that combines precision and recall to 
+    description = textwrap.dedent('''\
+        F1 Score is a metric that combines precision and recall to 
         evaluate a model's performance. It is especially useful for imbalanced datasets, 
-        providing a balance between false positives and false negatives.'''
-    description_long = '''F1 Score measures a model's performance by combining precision 
+        providing a balance between false positives and false negatives.''')
+    description_long = textwrap.dedent('''\
+        F1 Score measures a model's performance by combining precision 
         (the accuracy of positive predictions) and recall (the ability to identify all positive cases). 
         It is calculated as the harmonic mean of precision and recall, making it particularly useful in 
         healthcare when dealing with imbalanced data.
         The F1 Score ranges from 0 to 1, where 1 indicates perfect precision and recall. 
         For example, if a model has a precision of 70% and a recall of 80%, the F1 Score would be 
         calculated as 2 * (0.70 * 0.80) / (0.70 + 0.80) = 0.74. This metric helps ensure that both false positives 
-        and false negatives are considered, making it valuable for medical decision-making.'''
+        and false negatives are considered, making it valuable for medical decision-making.''')
+    
     refs = [
         {
             'year': 2007,

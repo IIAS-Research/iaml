@@ -7,6 +7,7 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActQuadraticDiscriminantAnalysis(Predictor):
@@ -14,16 +15,18 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
     [STEP] Learn : Quadratic Discriminant Analysis
     """
     name = "Learn : Quadratic Discriminant Analysis"
-    description = '''QuadraticDiscriminantAnalysis is a machine learning algorithm 
+    description = textwrap.dedent('''\
+        QuadraticDiscriminantAnalysis is a machine learning algorithm 
         that models the relationship between input features and a categorical 
-        output variable using a quadratic function.'''
-    description_long = '''QuadraticDiscriminantAnalysis is a type of discriminant analysis 
+        output variable using a quadratic function.''')
+    description_long = textwrap.dedent('''\
+        QuadraticDiscriminantAnalysis is a type of discriminant analysis 
         algorithm that models the relationship between input features and a categorical output 
         variable using a quadratic function. 
         It works by estimating the covariance matrices of the classes and using 
         them to calculate the probability density functions for each class. 
         The class with the highest probability density function is then used to make 
-        the prediction.'''
+        the prediction.''')
     refs = [
         {
             'year': 1965,

@@ -7,17 +7,24 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
+import textwrap
 
 
 @is_step('features_preprocessing')
 class ActNystroem(Actionable):
     """
-    [STEP] Approximate with Nystroem
+    [STEP] Apply Nystroem method for dimensionality reduction
     """
-    name = 'Approximate with Nystroem'
-    description = ''
-    description_long = '''
-        '''
+    name = "Nystroem"
+    description = "Apply the Nystroem method for dimensionality reduction over a list of columns"
+    description_long = textwrap.dedent('''\
+        The Nystroem method is a technique used for approximating kernel methods, 
+        which helps in reducing the computational cost of kernel-based algorithms.
+        It approximates a kernel map using a subset of the data, making it suitable 
+        for large datasets. This approach enables dimensionality reduction by creating 
+        a low-rank approximation of the original kernel matrix.
+    ''')
+
     
     def __init__(self):
         self.configuration:dict = {

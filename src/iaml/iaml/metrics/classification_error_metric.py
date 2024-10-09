@@ -4,23 +4,27 @@
 import pandas as pd
 from .balanced_accuracy_metric import BalancedAccuracyMetric
 from ..metric import Metric
+import textwrap
 
 class ClassificationErrorMetric(Metric):
     """
     [METRIC] Classification Error
     """
     name = 'Classification Error'
-    description = '''Classification Error measures a model's performance 
+    description = textwrap.dedent('''\
+        Classification Error measures a model's performance 
         by calculating the proportion of incorrect predictions. It is defined as 1 
         minus the Balanced Accuracy Score, making it useful for imbalanced datasets.
-    '''
-    description_long = '''Classification Error evaluates how well a predictive model performs 
+        ''')
+    description_long = textwrap.dedent('''\
+        Classification Error evaluates how well a predictive model performs 
         by measuring the proportion of incorrect predictions. It is calculated as 1 minus the Balanced 
         Accuracy Score, which gives equal importance to both positive and negative classes. 
         To calculate it, you first determine the Balanced Accuracy Score, which averages the accuracy 
         of both classes. Then, you subtract that value from 1. For example, if the Balanced Accuracy Score is 80%, 
         the Classification Error would be 1 - 0.80 = 0.20, or 20%. This metric helps highlight the model's shortcomings, 
-        making it a valuable tool for assessing performance in medical decision-making.'''
+        making it a valuable tool for assessing performance in medical decision-making.''')
+    
     refs=[
         {
             'year': 2010,

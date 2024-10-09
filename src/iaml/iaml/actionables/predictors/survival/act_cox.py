@@ -9,6 +9,7 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'survival')
 class ActCox(Predictor):
@@ -16,10 +17,12 @@ class ActCox(Predictor):
     [STEP] Learn :  Cox
     """
     name = "Learn : CoxPHSurvivalAnalysis"
-    description = '''CoxPHSurvivalAnalysis is a survival analysis algorithm 
+    description = textwrap.dedent('''\
+        CoxPHSurvivalAnalysis is a survival analysis algorithm 
         that estimates the effect of covariates on the likelihood of an event 
-        occurring over time, using the Cox proportional hazards model.'''
-    description_long = '''CoxPHSurvivalAnalysis is a survival analysis method 
+        occurring over time, using the Cox proportional hazards model.''')
+    description_long = textwrap.dedent('''\
+        CoxPHSurvivalAnalysis is a survival analysis method 
         that models the relationship between multiple input features (covariates) 
         and the time until a particular event happens. The algorithm is based on 
         the Cox proportional hazards model, which assumes that the hazard or risk 
@@ -28,7 +31,7 @@ class ActCox(Predictor):
         how factors such as age, treatment, or health conditions influence survival 
         rates, or in engineering to predict equipment failure. Unlike many other 
         models, it doesn't predict the exact time of the event but estimates the 
-        risk over time, handling cases where the event has not yet occurred (censored data).'''
+        risk over time, handling cases where the event has not yet occurred (censored data).''')
 
     refs = [
         {

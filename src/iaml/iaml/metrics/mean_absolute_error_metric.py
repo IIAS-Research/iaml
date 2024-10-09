@@ -4,6 +4,7 @@
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from ..metric import Metric
+import textwrap
 
 class MeanAbsoluteErrorMetric(Metric):
     """
@@ -11,14 +12,17 @@ class MeanAbsoluteErrorMetric(Metric):
     """
 
     name = 'Mean Absolute Error'
-    description = '''Mean Absolute Error (MAE) evaluates the accuracy of a predictive model by calculating 
+    description = textwrap.dedent('''\
+        Mean Absolute Error (MAE) evaluates the accuracy of a predictive model by calculating 
         the average of the absolute differences between predicted and actual values. It is a simple and intuitive metric 
-        that helps understand how far off predictions are from the true outcomes.'''
-    description_long = '''Mean Absolute Error (MAE) evaluates a model's accuracy by calculating the average of the absolute differences 
+        that helps understand how far off predictions are from the true outcomes.''')
+    description_long = textwrap.dedent('''\
+        Mean Absolute Error (MAE) evaluates a model's accuracy by calculating the average of the absolute differences 
         between predicted and actual values. It provides a clear understanding of how far predictions are from true outcomes. 
         To calculate MAE, you sum the absolute errors (the differences between predicted and actual values) and divide by the 
         total number of predictions. For example, if the errors are 2, -3, and 1, the MAE would be (|2| + |-3| + |1|) / 3 = 2. 
-        This metric is valuable in healthcare for assessing the accuracy of continuous predictions, like estimating patient outcomes.'''
+        This metric is valuable in healthcare for assessing the accuracy of continuous predictions, like estimating patient 
+        outcomes.''')
     refs = [
         {
             'year': 2005,

@@ -6,6 +6,7 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActSVMSVC(Predictor):
@@ -13,14 +14,17 @@ class ActSVMSVC(Predictor):
     [STEP] Learn :  SVM Classifier
     """
     name = "Learn : SVM Classification"
-    description = '''SVM Classifier is a machine learning algorithm that models the relationship 
+    description = textwrap.dedent('''\
+        SVM Classifier is a machine learning algorithm that models the relationship 
         between input features and a categorical output variable using a support vector machine 
         (SVM). It can handle non-linearly separable data by using a kernel function to map the data 
-        into a higher-dimensional space.'''
-    description_long = '''SVM Classifier is a type of classification algorithm that models the 
+        into a higher-dimensional space.''')
+    description_long = textwrap.dedent('''\
+        SVM Classifier is a type of classification algorithm that models the 
         relationship between input features and a categorical output variable using a support vector
         machine (SVM). It works by finding the optimal hyperplane or boundary that separates the 
-        data into different classes with the maximum margin.'''
+        data into different classes with the maximum margin.''')
+    
     refs = [
         {
             'year': 1999,

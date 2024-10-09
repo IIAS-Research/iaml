@@ -8,6 +8,7 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'survival')
 class ActExtraSurvivalTrees(Predictor):
@@ -15,20 +16,22 @@ class ActExtraSurvivalTrees(Predictor):
     [STEP] Learn : Extra Survival Trees
     """
     name = "Learn : ExtraSurvivalTrees"
-    description = '''ExtraSurvivalTrees is an ensemble learning method for survival 
+    description = textwrap.dedent('''\
+        ExtraSurvivalTrees is an ensemble learning method for survival 
         analysis based on extremely randomized trees. It fits multiple decision trees 
         to the data, where each tree is built from a random subset of features and 
         splits are selected randomly. This method provides more variance reduction 
         and robustness, especially useful when dealing with high-dimensional or 
-        sparse data.'''
-    description_long = '''ExtraSurvivalTrees is a variant of ensemble learning for survival 
+        sparse data.''')
+    description_long = textwrap.dedent('''\
+        ExtraSurvivalTrees is a variant of ensemble learning for survival 
         analysis that uses extremely randomized trees. In this approach, multiple trees 
         are grown by selecting random subsets of features and splitting points. 
         Compared to other tree-based methods, this randomness helps reduce overfitting 
         and increases model robustness. The method is particularly useful for survival 
         datasets that contain complex, non-linear relationships between features. 
         ExtraSurvivalTrees handles censored data and can provide interpretable models 
-        for survival time predictions.'''
+        for survival time predictions.''')
     
     refs = [
         {

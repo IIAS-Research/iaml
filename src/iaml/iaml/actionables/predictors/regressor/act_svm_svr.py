@@ -6,6 +6,7 @@ from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActSVMSVR(Predictor):
@@ -13,14 +14,17 @@ class ActSVMSVR(Predictor):
     [STEP] Learn :  SVM Regressor
     """
     name = "Learn : SVM Regression"
-    description = '''SVM Regressor is a machine learning algorithm that models the relationship 
+    description = textwrap.dedent('''\
+        SVM Regressor is a machine learning algorithm that models the relationship 
         between input features and a continuous output variable using a support vector machine 
         (SVM). It can handle non-linearly separable data by using a kernel function to map the data 
-        into a higher-dimensional space.'''
-    description_long = '''SVM Regressor is a type of regression algorithm that models the 
+        into a higher-dimensional space.''')
+    description_long = textwrap.dedent('''\
+        SVM Regressor is a type of regression algorithm that models the 
         relationship between input features and a continuous output variable using a support 
         vector machine (SVM). It works by finding the optimal hyperplane or boundary that predicts 
-        the output variable with the minimum error.'''
+        the output variable with the minimum error.''')
+    
     refs = [
         {
             'year': 1999,

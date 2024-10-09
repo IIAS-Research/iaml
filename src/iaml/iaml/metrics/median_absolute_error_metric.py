@@ -4,21 +4,25 @@
 import pandas as pd
 from sklearn.metrics import median_absolute_error
 from ..metric import Metric
+import textwrap
 
 class MedianAbsoluteErrorMetric(Metric):
     """
     [METRIC] Median Absolute Error
     """
 
-    name="Median Absolute Error"
-    description = '''Median Absolute Error (MedAE) is a metric used to evaluate the accuracy of a regression model. 
-        It measures the median of the absolute differences between predicted values and actual values, providing a robust indication of prediction errors.'''
-    description_long = '''Median Absolute Error (MedAE) is a metric that helps assess the accuracy of a regression 
+    name= "Median Absolute Error"
+    description = textwrap.dedent('''\
+        Median Absolute Error (MedAE) is a metric used to evaluate the accuracy of a regression model. 
+        It measures the median of the absolute differences between predicted values and actual values, 
+        providing a robust indication of prediction errors.''')
+    description_long = textwrap.dedent('''\
+        Median Absolute Error (MedAE) is a metric that helps assess the accuracy of a regression 
         model by focusing on the errors in predictions. It calculates the absolute differences between the predicted values 
         and the actual values, then finds the median of these differences. This approach makes MedAE less sensitive to outliers 
         compared to other error metrics, as it focuses on the middle value of the errors. A lower MedAE indicates better model 
         performance, meaning the predictions are closer to the actual values. In summary, MedAE is a useful measure for 
-        understanding the typical prediction error of a regression model.'''
+        understanding the typical prediction error of a regression model.''')
     refs=[
         {
             'year': 1992,
