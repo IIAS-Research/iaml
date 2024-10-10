@@ -181,6 +181,20 @@ class Explanation:
             | ------- | ------------------------ |
             {feature_impacts}
             """) if self.shap_values is not None else ""
+        
+    def features_impacts(self) -> list:
+        """
+        Return features impacts
+
+        Returns:
+            list[dict['name', 'value']] : name and impact of each feature
+        """
+        if self.shap_values is not None:
+            feature_names = self.shap_values.feature_names
+            feature_values = np.abs(self.shap_values.values).mean(axis=0)
+            return [{'name': key, 'value': value} 
+                for key, value in list(zip(feature_names, feature_values))]
+        return []
 
     def to_markdown_plots(self, plots: list[str] = None) -> str:
         """
