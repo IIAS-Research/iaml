@@ -89,7 +89,7 @@ class TestLearning(unittest.TestCase):
         Test : Survival on a CSV file
         """
         datasets = [
-                    # './src/perf_logger/tests_data/seer.csv',
+                    './src/perf_logger/tests_data/seer.csv',
                     './src/perf_logger/tests_data/chc.csv'
                     ]
         

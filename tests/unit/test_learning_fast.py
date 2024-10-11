@@ -54,11 +54,10 @@ class TestLearningFast(unittest.TestCase):
         """
         df = pd.read_csv('./src/perf_logger/tests_data/seer.csv', sep=",")
         
-        df['Status'] = df['Status'].replace({'Alive': False, 'Dead': True})
-        df['label'] = list(zip(df['Status'], df['Survival Months']))
-        df.drop(columns=['Status', 'Survival Months'], inplace=True)
-        
+        df['label'] = list(zip(df['event'], df['event_time']))
+        df.drop(columns=['event', 'event_time'], inplace=True)
+    
         y = df['label']
         X = df.drop(columns=['label'])
-
+    
         self.__learning_test(X, y, shap=False)
