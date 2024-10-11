@@ -30,6 +30,9 @@ class Plot:
     
     @property
     def b64_image(self):
+        """
+            Get b64 representation of the plot image
+        """
         return base64.b64encode(self.image).decode()
         
     def _compute(self, estimator:'IAMLPipeline', X:pd.DataFrame, y:pd.DataFrame, **kwargs):
@@ -40,13 +43,16 @@ class Plot:
         raise NotImplementedError('Subclass must implement abstract method')
     
     @classmethod
-    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
         """
         Does this plot is usable for a given type_of_target ?
         """
         return False
 
     def to_json(self, data_format='binary') -> dict:
+        """
+        Convert plot into json with name, description and b64 image
+        """
         match data_format:
             case 'binary':
                 data = self.image

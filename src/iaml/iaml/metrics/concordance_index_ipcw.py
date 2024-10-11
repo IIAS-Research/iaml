@@ -2,12 +2,13 @@
 [METRIC] Concordance Index with Inverse Probability of Censoring 
 Weights (IPCW) for Survival Models
 """
+import textwrap
 import pandas as pd
 import numpy as np
 from sksurv.metrics import concordance_index_ipcw
 from ..metric import Metric
 from ..dataset import Dataset
-import textwrap
+
 class ConcordanceIndexIPCWMetric(Metric):
     """
     [METRIC] Concordance Index with Inverse Probability of Censoring 
@@ -30,7 +31,9 @@ class ConcordanceIndexIPCWMetric(Metric):
     refs=[
         {
             'year': 2011,
-            'name': 'On the C-statistics for evaluating overall adequacy of risk prediction procedures with censored survival data',
+            'name': textwrap.dedent("""\
+                On the C-statistics for evaluating overall adequacy of risk prediction 
+                procedures with censored survival data"""),
             'authors': [
                 'Hajime Uno',
                 'Tianxi Cai',

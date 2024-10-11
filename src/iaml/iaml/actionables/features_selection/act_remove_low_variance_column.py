@@ -1,13 +1,13 @@
 """
 [STEP] Remove Low Variance Column
 """
+import textwrap
 from sklearn.feature_selection import VarianceThreshold
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-import textwrap
 
 @is_step('features_selection')
 class ActRemoveLowVarianceColumn(Actionable):

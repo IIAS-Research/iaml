@@ -1,13 +1,13 @@
 """
 [STEP] Drop Textual Column
 """
+import textwrap
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...data_type import DataType
 from ...candidate import Candidate
 from ...decorators.all import is_step
-import textwrap
 
 
 @is_step('cleaning')

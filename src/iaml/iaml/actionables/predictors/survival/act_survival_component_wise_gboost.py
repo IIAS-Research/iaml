@@ -1,6 +1,7 @@
 """
 [STEP] Learn : Componentwise Gradient Boosting Survival Analysis
 """
+import textwrap
 from sksurv.ensemble import ComponentwiseGradientBoostingSurvivalAnalysis
 import numpy as np
 
@@ -8,7 +9,6 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'survival')
 class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):

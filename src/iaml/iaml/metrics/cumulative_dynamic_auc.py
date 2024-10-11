@@ -1,13 +1,12 @@
 """
 [METRIC] Cumulative Dynamic AUC for Survival Models
 """
+import textwrap
 import pandas as pd
 import numpy as np
 from sksurv.metrics import cumulative_dynamic_auc
 from ..metric import Metric
-from ..logger import Logger
 from ..dataset import Dataset
-import textwrap
 
 class CumulativeDynamicAUCMetric(Metric):
     """
@@ -16,7 +15,8 @@ class CumulativeDynamicAUCMetric(Metric):
     name = 'Concordance Index for Survival Models'
     description = textwrap.dedent('''\
         The Cumulative Dynamic AUC (Area Under the Curve) for Survival Models measures the accuracy of a survival model 
-        in predicting the probability of an event over time. A higher AUC indicates better predictive performance.''')
+        in predicting the probability of an event over time. A higher AUC indicates better predictive performance.
+        ''')
     description_long = textwrap.dedent('''\
         The Cumulative Dynamic AUC for Survival Models evaluates how well a model predicts 
         the likelihood of an event, such as death or disease, at various time points. Unlike traditional AUC, which 
@@ -25,12 +25,15 @@ class CumulativeDynamicAUCMetric(Metric):
         operating characteristic (ROC) curve, providing a comprehensive view of model performance over time. 
         Values range from 0 to 1, where 0.5 indicates no predictive ability and 1 indicates perfect prediction. 
         The Cumulative Dynamic AUC is particularly useful for researchers and clinicians in assessing the effectiveness
-        of survival models in real-world scenarios.''')
+        of survival models in real-world scenarios.
+        ''')
     
     refs=[
         {
             'year': 2007,
-            'name': 'Evaluating prediction rules for t-year survivors with censored regression models',
+            'name': textwrap.dedent("""\
+                Evaluating prediction rules for t-year survivors with censored regression models
+                """),
             'authors': [
                 'H. Uno',
                 'T. Cai.',
@@ -52,7 +55,9 @@ class CumulativeDynamicAUCMetric(Metric):
         },
         {
             'year': 2014,
-            'name': 'Summary measure of discrimination in survival models based on cumulative/dynamic time-dependent ROC curves',
+            'name': textwrap.dedent("""\
+                Summary measure of discrimination in survival models based on cumulative/dynamic time-dependent ROC curves
+                """),
             'authors': [
                 'J. Lambert',
                 'S. Chevret'

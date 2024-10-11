@@ -1,12 +1,12 @@
 """
 [STEP] Learn : KNN
 """
+import textwrap
 from sklearn.neighbors import KNeighborsRegressor
 from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'fast_predictor', 'regressor')
 class ActKNNRegressor(Predictor):

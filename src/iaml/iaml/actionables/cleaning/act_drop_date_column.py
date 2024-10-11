@@ -1,13 +1,13 @@
 """
 [STEP] Find and drop date column
 """
+import textwrap
 import pandas as pd
 from ...actionable import Actionable
 from ...data_type import DataType
 from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
-import textwrap
 
 @is_step('cleaning')
 class ActDropDateColumn(Actionable):

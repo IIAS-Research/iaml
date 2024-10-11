@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  Random Forest Regressor
 """
+import textwrap
 from sklearn.ensemble import RandomForestRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActRandomForestRegressor(Predictor):

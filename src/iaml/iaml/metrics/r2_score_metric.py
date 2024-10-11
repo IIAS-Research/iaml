@@ -1,10 +1,10 @@
 """
 [METRIC] R2 Score
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import r2_score
 from ..metric import Metric
-import textwrap
 
 class R2ScoreMetric(Metric):
     """
@@ -30,7 +30,10 @@ class R2ScoreMetric(Metric):
                 'James H. Torrie'
             ],
             'doi': 'https://doi.org/10.2307/2287561',
-            'publisher': 'The American Statistician, Vol. 39, No. 4, Part 1 (Nov., 1985), pp. 279-285 (7 pages)'
+            'publisher': textwrap.dedent("""\
+                The American Statistician, Vol. 39, No. 4, Part 1 (Nov., 1985),
+                wpp. 279-285 (7 pages)
+                """)
         }
     ]
 

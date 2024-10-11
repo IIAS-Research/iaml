@@ -1,6 +1,7 @@
 """
 [STEP] Min Max Scaler
 """
+import textwrap
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from ...actionable import Actionable
@@ -8,7 +9,6 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
-import textwrap
 
 @is_step('normalize')
 class ActMinMaxScaler(Actionable):

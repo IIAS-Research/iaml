@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  XGBoost
 """
+import textwrap
 from sklearn.ensemble import GradientBoostingClassifier
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActXGBoost(Predictor):

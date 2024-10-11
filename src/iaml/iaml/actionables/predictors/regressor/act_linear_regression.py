@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  Linear Regression
 """
+import textwrap
 from sklearn.linear_model import LinearRegression
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'fast_predictor', 'regressor')
 class ActLinearRegression(Predictor):

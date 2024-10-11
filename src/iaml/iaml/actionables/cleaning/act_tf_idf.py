@@ -1,6 +1,7 @@
 """
 [STEP] Vectorize textual columns with TF-IDF
 """
+import textwrap
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from ...actionable import Actionable
@@ -8,7 +9,6 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
-import textwrap
 
 
 @is_step('cleaning')

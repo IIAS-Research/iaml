@@ -1,6 +1,7 @@
 """
 [STEP] Vectorize textual columns with Word2Vec
 """
+import textwrap
 import string
 import numpy as np
 import pandas as pd
@@ -14,7 +15,6 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
-import textwrap
 
 download('stopwords')
 download('punkt')

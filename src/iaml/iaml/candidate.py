@@ -1,6 +1,7 @@
 """
 Candidate is used to exchange data between Steps  
 """
+import traceback
 from typing import TYPE_CHECKING, List, Dict
 from copy import copy, deepcopy
 from hashlib import md5
@@ -13,7 +14,6 @@ from .splitter import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .plot import MetricPlot
 from .logger import Logger
-import traceback
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -296,7 +296,7 @@ class Candidate:
                                 y_train=y_train,
                                 X_train=X_train
                             )
-                    except Exception as ex:
+                    except Exception:  # pylint: disable=broad-exception-caught
                         Logger().error(traceback.format_exc())
             except AttributeError:
                 pass

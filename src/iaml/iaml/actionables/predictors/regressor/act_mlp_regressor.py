@@ -2,12 +2,12 @@
 [STEP] Learn : MLP Regressor
 """
 
+import textwrap
 from sklearn.neural_network import MLPRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActMLPRegressor(Predictor):

@@ -2,12 +2,12 @@
 """
 [STEP] Learn :  KNN
 """
+import textwrap
 from sklearn.neighbors import KNeighborsClassifier
 from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActKNN(Predictor):

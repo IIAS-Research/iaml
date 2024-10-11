@@ -1,11 +1,11 @@
 """
 [METRIC] Precision
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import precision_score
 from ..metric import Metric
 from ..type_of_target import type_of_target as get_type_of_target
-import textwrap
 
 class PrecisionMetric(Metric):
     """
@@ -15,16 +15,20 @@ class PrecisionMetric(Metric):
     name = "Precision"
     description = textwrap.dedent('''\
         Precision measures the accuracy of positive predictions made by a model. 
-        It indicates the proportion of true positive results among all positive predictions.''')
+        It indicates the proportion of true positive results among all positive predictions.
+        ''')
     description_long = textwrap.dedent('''\
         Precision evaluates how many of the predicted positive cases are actually correct. 
         It is calculated as the number of true positives divided by the sum of true positives and false positives. 
         For example, if a model predicts 10 positive cases, and 7 of them are correct, the precision would be 70%. 
-        This metric is important in healthcare to ensure that positive predictions are reliable, minimizing false alarms.''')
+        This metric is important in healthcare to ensure that positive predictions are reliable, minimizing false alarms.
+        ''')
     refs=[
         {
             'year': 2007,
-            'name': 'Evaluation: From Precision, Recall and F-Measure to ROC, Informedness, Markedness & Correlation',
+            'name': textwrap.dedent("""\
+                Evaluation: From Precision, Recall and F-Measure to ROC, Informedness, Markedness & Correlation
+                """),
             'authors': [
                 'David M. W. Powers'
             ],

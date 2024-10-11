@@ -1,10 +1,10 @@
 """
 [METRIC] Mean Squared Error
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 from ..metric import Metric
-import textwrap
 
 class MeanSquaredErrorMetric(Metric):
     """
@@ -14,13 +14,15 @@ class MeanSquaredErrorMetric(Metric):
     name = 'Mean Squared Error'
     description = textwrap.dedent('''\
         Mean Squared Error (MSE) measures the average of the squares of the errors 
-        in predictions. It emphasizes larger errors, making it useful for assessing prediction accuracy.''')
+        in predictions. It emphasizes larger errors, making it useful for assessing prediction accuracy.
+        ''')
     description_long = textwrap.dedent('''\
         Mean Squared Error (MSE) evaluates a model's accuracy by calculating the average of the squared 
         differences between predicted and actual values. It gives more weight to larger errors, which is important in healthcare.
         To calculate MSE, you square each error, sum them, and divide by the total number of predictions. 
         For example, if the errors are 2, -3, and 1, the MSE would be (2² + (-3)² + 1²) / 3 = 4.67. 
-        This metric helps identify how well a model performs, especially when larger errors matter more.''')
+        This metric helps identify how well a model performs, especially when larger errors matter more.
+        ''')
     refs = [
         {
             'year': 2006,
@@ -29,7 +31,9 @@ class MeanSquaredErrorMetric(Metric):
                 'Bickel, Peter J'
             ],
             'doi': 'https://doi.org/10.1201/9781315369266',
-            'publisher': ' Mathematical Statistics: Basic Ideas and Selected Topics. Vol. I (Second ed.). p. 20'
+            'publisher': textwrap.dedent("""\
+                Mathematical Statistics: Basic Ideas and Selected Topics. Vol. I (Second ed.). p. 20
+                """)
         }
     ]
 

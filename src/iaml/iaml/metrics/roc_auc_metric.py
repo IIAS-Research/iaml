@@ -1,10 +1,10 @@
 """
 [METRIC] ROC AUC
 """
+import textwrap
 from sklearn.metrics import roc_auc_score
 import pandas as pd
 from ..metric import Metric
-import textwrap
 
 class RocAucMetric(Metric):
     """
@@ -26,7 +26,9 @@ class RocAucMetric(Metric):
     refs=[
         {
             'year': 1982,
-            'name': 'The meaning and use of the area under a receiver operating characteristic (ROC) curve.',
+            'name': textwrap.dedent("""\
+                The meaning and use of the area under a receiver operating characteristic (ROC) curve.
+                """),
             'authors': [
                 'Hanley James A.',
                 'McNeil Barbara J.'

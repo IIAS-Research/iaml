@@ -1,11 +1,11 @@
 """
 [METRIC] Specificity Multilabel
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import multilabel_confusion_matrix
 import numpy as np
 from ..metric import Metric
-import textwrap
 
 class SpecificityMultilabelMetric(Metric):
     """

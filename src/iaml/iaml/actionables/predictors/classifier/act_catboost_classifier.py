@@ -1,13 +1,13 @@
 """
 [STEP] Learn :  CatBoost
 """
+import textwrap
 from catboost import CatBoostClassifier
 from sklearn.preprocessing import LabelEncoder
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActCatBoost(Predictor):

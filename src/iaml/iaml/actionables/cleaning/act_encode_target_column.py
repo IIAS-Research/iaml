@@ -10,12 +10,12 @@
 # - IAMLPipeline must be able to reverse the mapping after prediction
 #       (otherwise, outputs have no sense)
 
+import textwrap
 import numpy as np
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-import textwrap
 
 # @is_step('cleaning')
 @is_step('disabled')

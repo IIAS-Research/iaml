@@ -1,13 +1,12 @@
 """
 [STEP] Learn : SGD Regressor
 """
-
+import textwrap
 from sklearn.linear_model import SGDRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActSGDRegressor(Predictor):

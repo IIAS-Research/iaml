@@ -37,7 +37,6 @@ class PrecisionRecallCurvePlot(MetricPlot):
     @capture
     def _compute(self, estimator:'IAMLPipeline', 
             X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
             **kwargs) -> MetricPlot:
         """
         Compute plot given X, y.
@@ -50,12 +49,13 @@ class PrecisionRecallCurvePlot(MetricPlot):
         y_prob = estimator.predict_proba(X)[:, 1]
         
         # Compute Precision-Recall curve
-        precision, recall, thresholds = precision_recall_curve(y, y_prob, pos_label=pos_label)
+        precision, recall, _ = precision_recall_curve(y, y_prob, pos_label=pos_label)
         average_precision = average_precision_score(y, y_prob, pos_label=pos_label)
         
         # Create the Precision-Recall plot
         plt.figure()
-        plt.plot(recall, precision, color='blue', lw=2, label=f'Precision-Recall curve (AP = {average_precision:.2f})')
+        plt.plot(recall, precision, color='blue', 
+            lw=2, label=f'Precision-Recall curve (AP = {average_precision:.2f})')
         plt.xlabel('Recall')
         plt.ylabel('Precision')
         plt.title('Precision-Recall Curve')

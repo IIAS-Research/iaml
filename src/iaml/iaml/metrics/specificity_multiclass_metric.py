@@ -1,11 +1,11 @@
 """
 [METRIC] Specificity Multiclass
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 import numpy as np
 from ..metric import Metric
-import textwrap
 
 class SpecificityMulticlassMetric(Metric):
     """

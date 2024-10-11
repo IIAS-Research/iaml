@@ -2,12 +2,12 @@
 [STEP] Learn : MLP Classifier
 """
 
+import textwrap
 from sklearn.neural_network import MLPClassifier
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActMLPClassifier(Predictor):
