@@ -1,10 +1,10 @@
 """
 [METRIC] Specificity
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 from ..metric import Metric
-import textwrap
 
 class SpecificityMetric(Metric):
     """
@@ -20,7 +20,8 @@ class SpecificityMetric(Metric):
         Specificity is a metric that helps assess how well a classification model identifies the negative class. 
         For example, if you're predicting whether a medical test result is negative for a disease, specificity tells you the 
         percentage of actual negative cases that the model correctly identifies. A high specificity means the model is good at 
-        avoiding false positives, while a low specificity indicates it may incorrectly label negative cases as positive.''')
+        avoiding false positives, while a low specificity indicates it may incorrectly label negative cases as positive.
+        ''')
     
     refs=[
         {

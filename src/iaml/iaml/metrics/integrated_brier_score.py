@@ -1,11 +1,12 @@
 """
 [METRIC] Integrated Brier Score for Survival Models
 """
+import textwrap
 import pandas as pd
 import numpy as np
 from sksurv.metrics import integrated_brier_score
 from ..metric import Metric
-import textwrap
+from ..dataset import Dataset
 
 
 class IntegratedBrierScoreMetric(Metric):
@@ -29,14 +30,18 @@ class IntegratedBrierScoreMetric(Metric):
     refs = [
         {
             'year': 1999,
-            'name': 'Assessment and comparison of prognostic classification schemes for survival data',
+            'name': textwrap.dedent("""\
+                Assessment and comparison of prognostic classification schemes for survival data
+                """),
             'authors': [
                 'E. Graf',
                 'C. Schmoor',
                 'W. Sauerbrei',
                 'M. Schumacher'
             ],
-            'doi': 'https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18%3C2529::AID-SIM274%3E3.0.CO;2-5',
+            'doi': textwrap.dedent("""\
+                https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18%3C2529::AID-SIM274%3E3.0.CO;2-5
+                """),
             'publisher': ' Statistics in Medicine, vol. 18, no. 17-18, pp. 2529–2545'
         }
     ]
@@ -87,8 +92,9 @@ class IntegratedBrierScoreMetric(Metric):
         Returns:
             float: Computed Integrated Brier Score
         """
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
         y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
+        y = Dataset.fix_y_survival(y, y_train)        
+        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
         
         # Extract time from y test
         _, time = zip(*y)

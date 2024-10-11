@@ -1,11 +1,11 @@
 """
 [METRIC] Recall
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import recall_score
 from ..metric import Metric
 from ..type_of_target import type_of_target  as get_type_of_target
-import textwrap
 
 class RecallMetric(Metric):
     """
@@ -14,18 +14,23 @@ class RecallMetric(Metric):
     name= "Recall"
     description = textwrap.dedent('''\
         Recall measures the ability of a model to identify all relevant positive cases. 
-        It indicates the proportion of true positive results among all actual positive cases.''')
+        It indicates the proportion of true positive results among all actual positive cases.
+        ''')
     description_long = textwrap.dedent('''\
         Recall evaluates how many actual positive cases were correctly predicted by the model. 
         It is calculated as the number of true positives divided by the total number of actual positives 
         (true positives + false negatives). For example, if there are 100 actual positive cases and the model 
         identifies 80, the recall would be 80 / (80 + 20) = 0.80 or 80%. 
-        This metric is crucial in healthcare to ensure that positive cases are detected, reducing missed diagnoses.''')
+        This metric is crucial in healthcare to ensure that positive cases are detected, reducing missed diagnoses.
+        ''')
     
     refs=[
         {
             'year': 2007,
-            'name': 'Evaluation: From Precision, Recall and F-Measure to ROC, Informedness, Markedness & Correlation',
+            'name': textwrap.dedent("""\
+                Evaluation: From Precision, Recall and F-Measure to ROC,
+                Informedness, Markedness & Correlation
+                """),
             'authors': [
                 'David M. W. Powers'
             ],

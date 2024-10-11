@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  Logistic Regression Classifier
 """
+import textwrap
 from sklearn.linear_model import LogisticRegression
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'fast_predictor', 'classifier')
 class ActLogisticRegression(Predictor):

@@ -1,6 +1,7 @@
 """
 [STEP] Learn : Aalen's Additive Model for Survival Analysis
 """
+import textwrap
 from lifelines import AalenAdditiveFitter
 import pandas as pd
 
@@ -8,7 +9,6 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
-import textwrap
 
 # @is_step('predictor', 'tabular', 'survival')
 @is_step('disabled')

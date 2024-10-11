@@ -1,10 +1,10 @@
 """
 [METRIC] Mean Absolute Error
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from ..metric import Metric
-import textwrap
 
 class MeanAbsoluteErrorMetric(Metric):
     """
@@ -26,7 +26,9 @@ class MeanAbsoluteErrorMetric(Metric):
     refs = [
         {
             'year': 2005,
-            'name': 'Advantages of the mean absolute error (MAE) over the root mean square error (RMSE) in assessing average model performance',
+            'name': textwrap.dedent("""\
+                Advantages of the mean absolute error (MAE) over the root mean square error 
+                (RMSE) in assessing average model performance"""),
             'authors': [
                 'Willmott, Cort J',
                 'Matsuura, Kenji'

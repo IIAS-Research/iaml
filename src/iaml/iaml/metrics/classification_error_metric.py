@@ -1,10 +1,10 @@
 """
 [METRIC] Classification Error
 """
+import textwrap
 import pandas as pd
 from .balanced_accuracy_metric import BalancedAccuracyMetric
 from ..metric import Metric
-import textwrap
 
 class ClassificationErrorMetric(Metric):
     """
@@ -36,18 +36,24 @@ class ClassificationErrorMetric(Metric):
                 'Joachim M. Buhmann'
             ],
             'doi': 'https://doi.org/10.1109/ICPR.2010.764',
-            'publisher': 'Proceedings of the 20th International Conference on Pattern Recognition, 3121-24.'
+            'publisher': textwrap.dedent("""\
+                Proceedings of the 20th International Conference on Pattern Recognition, 3121-24.
+                """)
         },
         {
             'year': 2015,
-            'name': 'Fundamentals of Machine Learning for Predictive Data Analytics: Algorithms, Worked Examples, and Case Studies',
+            'name': textwrap.dedent("""\
+                Fundamentals of Machine Learning for Predictive Data Analytics: Algorithms, Worked Examples, and Case Studies
+                """),
             'authors': [
                 'John D. Kelleher',
                 'Brian Mac Namee',
                 'Aoife D\'Arcy'
             ],
             'doi': None,
-            'publisher': 'Fundamentals of Machine Learning for Predictive Data Analytics: Algorithms, Worked Examples, and Case Studies'
+            'publisher': textwrap.dedent("""\
+                Fundamentals of Machine Learning for Predictive Data Analytics: Algorithms, Worked Examples, and Case Studies
+                """)
         }
     ]
 

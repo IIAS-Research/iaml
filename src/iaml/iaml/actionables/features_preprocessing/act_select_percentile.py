@@ -2,13 +2,13 @@
 [STEP] Decompose features with SelectPercentile
 """
 
+import textwrap
 import pandas as pd
 from sklearn.feature_selection import SelectPercentile, chi2, f_classif
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-import textwrap
 
 @is_step('features_preprocessing')
 class ActSelectPercentile(Actionable):

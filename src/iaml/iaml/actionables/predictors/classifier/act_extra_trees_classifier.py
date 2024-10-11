@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  Extra Trees Classifier
 """
+import textwrap
 from sklearn.ensemble import ExtraTreesClassifier
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActExtraTreesClassifier(Predictor):

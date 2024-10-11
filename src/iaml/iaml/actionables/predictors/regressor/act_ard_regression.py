@@ -2,12 +2,12 @@
 [STEP] Learn : ARD Regression
 """
 
+import textwrap
 from sklearn.linear_model import ARDRegression
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActARDRegression(Predictor):

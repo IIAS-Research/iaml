@@ -6,10 +6,8 @@ import io
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
 
-from ..type_of_target import type_of_target as get_type_of_target
-from ..plot import Plot, MetricPlot, capture
+from ..plot import MetricPlot, capture
 class ROCAUCPlot(MetricPlot):
     """
     [PLOT] ROC-AUC Plot
@@ -53,22 +51,20 @@ class ROCAUCPlot(MetricPlot):
     
     @capture
     def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
-            **kwargs) -> MetricPlot:
+            X:pd.DataFrame, y, **kwargs) -> MetricPlot:
         """
         Compute plot given X, y.
         """
         
         self._binary_image = io.BytesIO()
         
-        pos_label = y[0]
+        pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0] 
         
         # Predict probabilities
         y_prob = estimator.predict_proba(X)[:, 1]
         
         # Compute ROC curve and AUC
-        fpr, tpr, thresholds = roc_curve(y, y_prob, pos_label=pos_label)
+        fpr, tpr, _ = roc_curve(y, y_prob, pos_label=pos_label)
         roc_auc = auc(fpr, tpr)
         
         # Create the ROC plot

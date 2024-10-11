@@ -95,7 +95,16 @@ class Explanation:
             
         return shap_plot
     
-    def to_plots(self, plots=None) -> list:
+    def to_plots(self, plots:list=None) -> list:
+        """Generate several plots
+
+        Args:
+            plots (list[str], optional): LIst of plot to generate . 
+                Defaults to ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar'].
+
+        Returns:
+            list: List of plots
+        """
         if plots is None:
             plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
         return [self.to_plot(p) for p in plots]

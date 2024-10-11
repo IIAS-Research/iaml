@@ -1,13 +1,13 @@
 """
 [STEP] Random Over Sampling
 """
+import textwrap
 from imblearn.over_sampling import RandomOverSampler
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-import textwrap
 
 
 @is_step('normalize')

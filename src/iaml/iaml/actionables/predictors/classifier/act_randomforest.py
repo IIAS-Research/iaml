@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  Random Forest
 """
+import textwrap
 from sklearn.ensemble import RandomForestClassifier
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActRandomForest(Predictor):

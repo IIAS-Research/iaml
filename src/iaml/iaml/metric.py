@@ -9,14 +9,16 @@ class Metric:
     """
     [METRIC] Parent of all others Metrics, implement the default behavior
     """
-
+    refs = []
 
     @classmethod
     def get_refs(cls):
+        """
+            Get bibliography references
+        """
         if hasattr(cls, 'refs'):
             return [Reference(ref, cls.__name__) for ref in cls.refs]
-        else:
-            return []
+        return []
 
 
     def explain(self) -> str:

@@ -2,11 +2,12 @@
 """
 [METRIC] Brier Score for Survival Models
 """
+import textwrap
 import pandas as pd
 import numpy as np
 from sksurv.metrics import brier_score
 from ..metric import Metric
-import textwrap
+from ..dataset import Dataset
 
 class BrierScoreMetric(Metric):
     """
@@ -16,7 +17,8 @@ class BrierScoreMetric(Metric):
     description = textwrap.dedent('''\
         The Brier Score is a metric used to assess the accuracy of survival models, 
         which predict the likelihood of an event, such as death or disease, occurring within a specific timeframe. 
-        It compares the model's probability predictions to actual outcomes, with lower scores indicating better model performance.''')
+        It compares the model's probability predictions to actual outcomes, with lower scores indicating 
+        better model performance.''')
     description_long = textwrap.dedent('''\
         The Brier Score measures how well survival models predict the probability of an event happening, like survival over time. 
         It calculates the average squared differences between predicted probabilities and actual outcomes 
@@ -28,7 +30,8 @@ class BrierScoreMetric(Metric):
     refs=[
         {
             'year': 1999,
-            'name': 'Assessment and comparison of prognostic classification schemes for survival data',
+            'name': \
+                'Assessment and comparison of prognostic classification schemes for survival data',
             'authors': [
                 'E. Graf',
                 'C. Schmoor',
@@ -86,16 +89,16 @@ class BrierScoreMetric(Metric):
         Returns:
             float: Computed Integrated Brier Score
         """
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
         y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
+        y = Dataset.fix_y_survival(y, y_train)
+        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
         
         # Extract time from y test
-        _, time = zip(*y)
+        _, times = zip(*y)
         
-        
-        time = max(time)
+        time = max(times)
         if isinstance(time, float):
-            time -= 0.1
+            time -= 1
             
         predictions = [fn(time) for fn in y_pred]
         

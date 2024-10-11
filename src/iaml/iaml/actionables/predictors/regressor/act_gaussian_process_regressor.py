@@ -2,12 +2,12 @@
 [STEP] Learn : Gaussian Process Regressor
 """
 
+import textwrap
 from sklearn.gaussian_process import GaussianProcessRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActGaussianProcessRegressor(Predictor):

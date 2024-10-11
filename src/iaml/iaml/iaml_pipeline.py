@@ -52,6 +52,7 @@ class IAMLPipeline(Pipeline):
         self.transformers:list[tuple[str, object]] = []
         self.resamplers:list[tuple[str, object]] = []
         self.predictor:tuple[str, object] = None
+        self.metrics = []
         
         if estimator_type not in ['classifier', 'regressor', 'survival']:
             raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
@@ -164,7 +165,7 @@ class IAMLPipeline(Pipeline):
         
     def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
             only_predictor:bool=False, 
-            groups_columns: List[str] = [], 
+            groups_columns: List[str] = None, 
             metrics: list['Metric'] | None = None,
             **kwargs) -> 'IAMLPipeline':
         """
@@ -519,5 +520,7 @@ class IAMLPipeline(Pipeline):
         Return a string listing all step's references or a structured list of dict
         """
 
-        references = [reference for step in self.steps for reference in step[1].references] + [reference for metric in self.metrics for reference in metric.get_refs()]
+        references = [reference for step in self.steps 
+            for reference in step[1].references] \
+            + [reference for metric in self.metrics for reference in metric.get_refs()]
         return Reference.bibliography(references, structured)

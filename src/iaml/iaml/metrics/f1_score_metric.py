@@ -1,11 +1,11 @@
 """
 [METRIC] F1 Score
 """
+import textwrap
 import pandas as pd
 from sklearn.metrics import f1_score
 from ..metric import Metric
 from ..type_of_target import type_of_target as get_type_of_target
-import textwrap
 
 class F1ScoreMetric(Metric):
     """

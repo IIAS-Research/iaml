@@ -2,12 +2,12 @@
 [STEP] Learn : Quadratic Discriminant Analysis
 """
 
+import textwrap
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActQuadraticDiscriminantAnalysis(Predictor):

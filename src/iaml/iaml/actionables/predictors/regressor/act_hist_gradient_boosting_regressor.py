@@ -2,12 +2,12 @@
 [STEP] Learn : HistGradient Boosting Regressor
 """
 
+import textwrap
 from sklearn.ensemble import HistGradientBoostingRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 # @is_step('predictor', 'tabular', 'regressor')
 @is_step('disabled')

@@ -44,7 +44,8 @@ def is_survival(y) -> bool:
     
     # Check if the first element of all tuples is binary-like
     first_elements = [row[0] for row in y]
-    if any(not isinstance(element, bool) for element in first_elements):
+    if any(not isinstance(element, (bool, int))
+            for element in first_elements):
         return False
     
     # Check if the second element of all tuples is numeric (int or float)

@@ -1,13 +1,12 @@
 """
 [STEP] Learn : Linear Discriminant Analysis
 """
-
+import textwrap
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActLinearDiscriminantAnalysis(Predictor):

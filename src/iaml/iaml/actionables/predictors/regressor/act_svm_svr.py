@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  SVM Regressor
 """
+import textwrap
 from sklearn import svm
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActSVMSVR(Predictor):

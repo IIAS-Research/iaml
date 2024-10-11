@@ -1,6 +1,7 @@
 """
 Candidate is used to exchange data between Steps  
 """
+import traceback
 from typing import TYPE_CHECKING, List, Dict
 from copy import copy, deepcopy
 from hashlib import md5
@@ -12,6 +13,7 @@ from .cache import Cache
 from .splitter import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .plot import MetricPlot
+from .logger import Logger
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -228,6 +230,8 @@ class Candidate:
                     test_ds.X,
                     test_ds.y,
                     pipeline=copied_pipe,
+                    X_train=train_ds.X,
+                    y_train=train_ds.y,
                     model_only= not self.is_meta)
                     )
                 if not from_cache:
@@ -262,13 +266,19 @@ class Candidate:
     
         
     def __compute_metrics(self,
-            X_test:pd.DataFrame, y_test:np.array, pipeline=None, **kwargs) -> dict:
+            X_test:pd.DataFrame, y_test:np.array, pipeline=None, 
+            X_train=None, y_train=None,
+            **kwargs) -> dict:
         
         if pipeline is None: # Is no pipeline in args -> Use the main one
             pipeline = self.pipeline
             
         X_test = X_test.copy(deep=True)
         y_test = deepcopy(y_test)
+        
+        if y_train is None or X_train is None:
+            y_train=self.dataset.y
+            X_train=self.dataset.X
             
         computed = {}
         needs = {metric.needed_prediction for metric in self.metrics}
@@ -278,16 +288,18 @@ class Candidate:
                 method = getattr(pipeline, need)
                 y_pred = method(X_test, **kwargs)
                 for metric in self.metrics:
-                    if metric.needed_prediction == need:
-                        computed[str(metric)] = metric.compute(
-                            y_test,
-                            y_pred,
-                            y_train=self.dataset.y,
-                            X_train=self.dataset.X
-                        )
+                    try:
+                        if metric.needed_prediction == need:
+                            computed[str(metric)] = metric.compute(
+                                y_test,
+                                y_pred,
+                                y_train=y_train,
+                                X_train=X_train
+                            )
+                    except Exception:  # pylint: disable=broad-exception-caught
+                        Logger().error(traceback.format_exc())
             except AttributeError:
                 pass
-
         return computed
     
     def __metric_value(self, metric) -> float:

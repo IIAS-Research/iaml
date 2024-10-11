@@ -2,12 +2,12 @@
 [STEP] Learn : Multinomial NB
 """
 
+import textwrap
 from sklearn.naive_bayes import MultinomialNB
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActMultinomialNB(Predictor):

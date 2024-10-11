@@ -1,6 +1,7 @@
 """
 [STEP] Learn : SurvivalTree
 """
+import textwrap
 from sksurv.tree import SurvivalTree
 import numpy as np
 
@@ -8,7 +9,6 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'survival')
 class ActSurvivalTree(Predictor):
@@ -27,7 +27,8 @@ class ActSurvivalTree(Predictor):
         log-rank splitting rule to determine the best splits. It is a non-parametric model that
         is particularly suited for survival analysis with right-censored data. The model provides
         both cumulative hazard and survival functions at each terminal node, making it useful for
-        clinical risk prediction and other applications where time-to-event outcomes are crucial.''')
+        clinical risk prediction and other applications where time-to-event outcomes are crucial.
+        ''')
     
     refs = [
         {

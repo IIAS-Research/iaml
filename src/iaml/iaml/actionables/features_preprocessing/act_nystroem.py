@@ -1,13 +1,13 @@
 """
 [STEP] Decompose features with Nystroem
 """
+import textwrap
 import pandas as pd
 from sklearn.kernel_approximation import Nystroem
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-import textwrap
 
 
 @is_step('features_preprocessing')

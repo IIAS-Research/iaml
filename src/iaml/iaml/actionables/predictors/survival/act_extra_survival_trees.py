@@ -1,6 +1,7 @@
 """
 [STEP] Learn : Extra Survival Trees
 """
+import textwrap
 from sksurv.ensemble import ExtraSurvivalTrees
 import numpy as np
 
@@ -8,7 +9,6 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'survival')
 class ActExtraSurvivalTrees(Predictor):

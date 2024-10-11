@@ -283,3 +283,20 @@ class Dataset:
                 new_types[column] = self.columns_types[column]
                 
         self.columns_types = new_types
+        
+    @classmethod
+    def fix_y_survival(cls, y, y_train):
+        """Just a tool to avoid survivial crash. 
+        TODO to something better
+        """
+        _, times = zip(*y_train)
+        censure_time = max(times)
+        
+        new_y = list([])
+        for event, time in y:
+            if time >= censure_time:
+                time = censure_time
+                event = False
+            new_y.append((event, time))
+        
+        return new_y

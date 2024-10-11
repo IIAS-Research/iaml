@@ -1,12 +1,12 @@
 """
 [STEP] Learn :  AdaBoost Regressor
 """
+import textwrap
 from sklearn.ensemble import AdaBoostRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
-import textwrap
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActAdaBoostRegressor(Predictor):
