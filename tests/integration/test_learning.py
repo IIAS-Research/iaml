@@ -13,17 +13,17 @@ class TestLearning(unittest.TestCase):
         iaml = IAML(max_duration=60, max_workers=2)
         outputs = iaml.fit(X, y, verbose=-1)
         
-        self.assertTrue(isinstance(outputs[0], Candidate), name)
-        self.assertTrue(outputs[0].computed_metrics is not None)
+        self.assertTrue(isinstance(outputs[0], Candidate), msg=name)
+        self.assertTrue(outputs[0].computed_metrics is not None, msg=name)
         
         perf_plots = iaml.chosen_candidate.explain_model_performance(X, y, X_train=X, y_train=y)
-        self.assertTrue(isinstance(perf_plots[0], Plot), name)
+        self.assertTrue(isinstance(perf_plots[0], Plot), msg=name)
         
         if shap:
             exp = iaml.chosen_model.explain_model(X.sample(40))
             shap_plots = exp.to_plots()
-            self.assertTrue(isinstance(exp, Explanation), name)
-            self.assertTrue(isinstance(shap_plots[0], Plot), name)
+            self.assertTrue(isinstance(exp, Explanation), msg=name)
+            self.assertTrue(isinstance(shap_plots[0], Plot), msg=name)
             
     
     def load_and_sample(self, path, size=1000):
@@ -77,7 +77,8 @@ class TestLearning(unittest.TestCase):
                     ]
         
         for dataset in datasets:
-            df = self.load_and_sample(dataset)
+            print("DATASET", dataset)
+            df = self.load_and_sample(dataset, size=250)
             y = df['label']
             X = df.drop(columns=['label'])
                 

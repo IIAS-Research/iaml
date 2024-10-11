@@ -44,7 +44,7 @@ class PrecisionRecallCurvePlot(MetricPlot):
         """
         self._binary_image = io.BytesIO()
         
-        pos_label = y[0]
+        pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0]
         
         # Predict probabilities for the positive class
         y_prob = estimator.predict_proba(X)[:, 1]
