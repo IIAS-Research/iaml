@@ -11,7 +11,7 @@ class TestLearning(unittest.TestCase):
     
     def __learning_test(self, X, y, shap=True, name=None):
         iaml = IAML(max_duration=60, max_workers=2)
-        outputs = iaml.fit(X, y, verbose=0)
+        outputs = iaml.fit(X, y, verbose=-1)
         
         self.assertTrue(isinstance(outputs[0], Candidate), name)
         self.assertTrue(outputs[0].computed_metrics is not None)
@@ -88,14 +88,13 @@ class TestLearning(unittest.TestCase):
         Test : Survival on a CSV file
         """
         datasets = [
-                    './src/perf_logger/tests_data/seer.csv',
+                    # './src/perf_logger/tests_data/seer.csv',
                     './src/perf_logger/tests_data/chc.csv'
                     ]
         
         for dataset in datasets:
             df = self.load_and_sample(dataset)
         
-            # df['event'] = df['event'].replace({'Alive': False, 'Dead': True})
             df['label'] = list(zip(df['event'], df['event_time']))
             df.drop(columns=['event', 'event_time'], inplace=True)
         

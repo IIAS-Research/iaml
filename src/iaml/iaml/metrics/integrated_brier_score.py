@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from sksurv.metrics import integrated_brier_score
 from ..metric import Metric
+from ..dataset import Dataset
 import textwrap
 
 
@@ -87,8 +88,9 @@ class IntegratedBrierScoreMetric(Metric):
         Returns:
             float: Computed Integrated Brier Score
         """
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
         y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
+        y = Dataset.fix_y_survival(y, y_train)        
+        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
         
         # Extract time from y test
         _, time = zip(*y)
