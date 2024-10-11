@@ -39,17 +39,16 @@ job:test:unit:
   script:
     - 'uv run ./tests/tests.py unit'
 
-# job:test:integration:
-#   stage: test
-#   tags:
-#     - unix
-#     - test
-#   script:
-#     # - 'cp /home/gitlab-runner/ehop_toolbox_credentials.yml ./credentials.yml' # Example of a way to get credentials
-#     - 'mkdir ./data'
-#     - 'source ./.venv/bin/activate'
-#     - 'python3 ./tests/tests.py integration'
-#     # - 'rm ./credentials.yml' # Do forget to delete credentials
+job:test:full:
+  stage: perfs
+  only:
+    - main
+  tags:
+    - unix
+    - test
+    - calcul
+  script:
+    - 'uv run ./tests/tests.py'
 
 # Uncomment et complet below to enable CD
 # job:deploy:
