@@ -51,6 +51,7 @@ class ActMLPRegressor(Predictor):
             )
         }
     ]
+    
     def __init__(self):
         self.configuration:dict = {
             'activation': {

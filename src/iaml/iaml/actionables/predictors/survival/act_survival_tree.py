@@ -38,7 +38,7 @@ class ActSurvivalTree(Predictor):
                 'M. Leblanc',
                 'J. Crowley'
             ],
-            'doi': 'https://doi.org/10.1080/01621459.1993.10476284',
+            'doi': 'https://doi.org/10.1080/01621459.1993.10476296',
             'publisher': 'Journal of the American Statistical Association, 88(422), 457-467'
         }
     ]

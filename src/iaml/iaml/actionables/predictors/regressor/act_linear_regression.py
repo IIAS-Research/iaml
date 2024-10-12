@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'fast_predictor', 'regressor', 'baseline_predictor')
 class ActLinearRegression(Predictor):
     """
-    [STEP] Learn :  Linear Regression
+    [STEP] Linear Regression
     """
-    name = "Learn : Linear Regression"
+    name = "Linear Regression"
     description = textwrap.dedent('''\
         LinearRegression is a machine learning algorithm that models the 
         relationship between input features and a continuous output variable using 
@@ -25,17 +25,8 @@ class ActLinearRegression(Predictor):
         that minimizes the sum of the squared differences between the predicted 
         and actual output variables.''')
     
-    refs = [
-        {
-            'year': 1875,
-            'name': 'No information provided',
-            'authors': [
-                'Sir Francis Galton'
-            ],
-            'doi': '',
-            'publisher': ''
-        }
-    ]
+    refs = []
+    
     def __init__(self):
         self.configuration:dict = {}
         self.model:LinearRegression = None

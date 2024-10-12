@@ -37,11 +37,12 @@ class ActGradientBoostingSurvivalAnalysis(Predictor):
             'year': 2010,
             'name': 'Gradient boosting for survival analysis',
             'authors': [
-                'B. Bischl',
-                'O. Hammerschmidt',
-                'C. Weihs'
+                "Chen, Yifei",
+                "Jia, Zhenyu",
+                "Mercola, Dan",
+                "Xie, Xiaohui"
             ],
-            'doi': 'https://doi.org/10.1007/978-3-642-11746-4_24',
+            'doi': 'https://doi.org/10.1155/2013/873595',
             'publisher': 'Advances in Data Analysis, Data Handling and Business Intelligence, \
                 pages 239-248'
         }

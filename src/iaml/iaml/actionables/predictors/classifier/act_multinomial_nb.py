@@ -34,7 +34,7 @@ class ActMultinomialNB(Predictor):
                 'Prabhakar Raghaban',
                 'Hinrich Schütze'
             ],
-            'doi': '',
+            'doi': "https://doi.org/10.1017/CBO9780511809071",
             'publisher': 'Cambridge University Press'
         }
     ]

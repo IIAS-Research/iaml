@@ -33,7 +33,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
             'authors': [
                 'Sir Ronald Aylmer Fisher'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.1111/j.1469-1809.1936.tb02137.x',
             'publisher': 'Annals of Eugenics Vol.7 page 179--188'
         }
     ]

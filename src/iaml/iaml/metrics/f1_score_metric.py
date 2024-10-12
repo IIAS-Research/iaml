@@ -33,7 +33,7 @@ class F1ScoreMetric(Metric):
             'authors': [
                 'Yutaka Sasaki'
             ],
-            'doi': 'https://doi.org/10.1007/s00769-006-0191-z',
+            'doi': 'https://www.researchgate.net/publication/268185911_The_truth_of_the_F-measure',
             'publisher': ' Teach Tutor Mater. Vol. 1, no. 5. pp. 1–5'
         }
     ]

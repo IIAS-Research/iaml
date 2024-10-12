@@ -43,7 +43,7 @@ class ActMLPClassifier(Predictor):
                 'Xavier Glorot',
                 'Yoshua Bengio'
             ],
-            'doi': '',
+            'doi': "https://www.semanticscholar.org/paper/Understanding-the-difficulty-of-training-deep-Glorot-Bengio/ea9d2a2b4ce11aaf85136840c65f3bc9c03ab649",
             'publisher': (
                 'Proceedings of the Thirteenth International Conference on '
                 'Artificial Intelligence and Statistics page 249--256'

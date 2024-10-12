@@ -36,11 +36,11 @@ class ActCox(Predictor):
     refs = [
         {
             'year': 1972,
-            'name': 'Regression models and life tables (with discussion)',
+            'name': 'Regression models and life tables',
             'authors': [
                 'D. R. Cox'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.1111/j.2517-6161.1972.tb00899.x',
             'publisher': 'Journal of the Royal Statistical Society. Series B, 34: page 187-220'
         },
         {
@@ -49,7 +49,7 @@ class ActCox(Predictor):
             'authors': [
                 'N. E. Breslow'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.2307/2287816',
             'publisher': 'Biometrics, 30: page 89-99'
         },
         {
@@ -58,7 +58,7 @@ class ActCox(Predictor):
             'authors': [
                 'B. Efron'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.1007/978-0-387-75692-9_6',
             'publisher': 'Journal of the American Statistical Association, 72: page 557-565'
         }
     ]

@@ -37,7 +37,7 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'Carl Edward Rasmussen',
                 'Christopher K. I. Williams'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.7551/mitpress/3206.001.0001',
             'publisher': 'MIT Press 2006'
         }
     ]

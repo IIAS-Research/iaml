@@ -33,7 +33,7 @@ class ActSVMSVR(Predictor):
             'authors': [
                 'John C. Platt'
             ],
-            'doi': None,
+            'doi': 'https://api.semanticscholar.org/CorpusID:5656387',
             'publisher': 'Microsoft Research'
         },
         {

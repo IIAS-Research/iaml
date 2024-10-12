@@ -18,7 +18,7 @@ class ActAdaBoost(Actionable):
         random_state: Random seed. Default 42
         n_estimator: Number of estimator. Default 2000
     """
-    name:str = "Learn : AdaBoost"
+    name:str = "AdaBoost Classifier"
     refs = [
         {
             'year': 1995,

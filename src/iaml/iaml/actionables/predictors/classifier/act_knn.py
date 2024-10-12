@@ -35,7 +35,7 @@ class ActKNN(Predictor):
                 'Evelyn Fix',
                 'Joseph Lawson Hodges Jr.'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.2307/1403797',
             'publisher': 'Technical Report 4, USAF School of Aviation Medicine, Randolph Field'
         },
         {

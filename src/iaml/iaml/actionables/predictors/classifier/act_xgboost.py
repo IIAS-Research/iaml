@@ -28,7 +28,7 @@ class ActXGBoost(Predictor):
             'name': 'Stochastic Gradient Boosting',
             'year': 1999,
             'authors': [
-              'Jerome H. Friedman'  
+                'Jerome H. Friedman'  
             ],
             'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2',
             'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
@@ -37,7 +37,7 @@ class ActXGBoost(Predictor):
             'year': 2001,
             'name': 'Greedy Function Approximation: A Gradient Boosting Machine',
             'authors': [
-              'Jerome H. Friedman'  
+                'Jerome H. Friedman'  
             ],
             'doi': 'https://doi.org/10.1214/aos/1013203451',
             'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'

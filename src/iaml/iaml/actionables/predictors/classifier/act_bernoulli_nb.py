@@ -31,7 +31,7 @@ class ActBernoulliNb(Predictor):
                 'Andrew McCallum',
                 'Kamal Nigam'
             ],
-            'doi': None,
+            'doi': "https://www.semanticscholar.org/paper/A-comparison-of-event-models-for-naive-bayes-text-McCallum-Nigam/04ce064505b1635583fa0d9cc07cac7e9ea993cc",
             'publisher': (
                 'AAAI-98 workshop on learning for text categorization, '
                 '752, page 41--48. (1998)'
@@ -45,7 +45,7 @@ class ActBernoulliNb(Predictor):
                 'Ion Androutsopoulos',
                 'Georgios Paliouras'
             ],
-            'doi': '',
+            'doi': "https://www.semanticscholar.org/paper/Spam-Filtering-with-Naive-Bayes-Which-Naive-Bayes-Metsis-Androutsopoulos/7f5ce28afc0c2eafd4a6ef711e399bee4056c3b8",
             'publisher': (
                 'The Third Conference on Email and Anti-Spam 2006 (CEAS)'
             )
