@@ -11,7 +11,7 @@ from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'survival')
+@is_step('predictor', 'tabular', 'survival', 'baseline_predictor')
 class ActCox(Predictor):
     """
     [STEP] Learn :  Cox
@@ -109,8 +109,8 @@ class ActCox(Predictor):
             **self.passthrough_parameters()
             )
         
-        y = np.array(dataset.y, dtype=[('event', 'bool'), ('time', 'float')])
-        self.model.fit(dataset.X, y)
+        X, y = dataset.to_survival()
+        self.model.fit(X, y)
         
         return self
     

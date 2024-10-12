@@ -10,7 +10,7 @@ from iaml.explanation import Explanation
 class TestLearningFast(unittest.TestCase):
     
     def __learning_test(self, X, y, shap=True):
-        iaml = IAML(max_duration=60, max_workers=2)
+        iaml = IAML(max_duration=60, max_workers=8)
         outputs = iaml.fit(X, y, verbose=2)
         
         self.assertTrue(isinstance(outputs[0], Candidate))

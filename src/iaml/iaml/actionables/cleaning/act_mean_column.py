@@ -9,7 +9,7 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
 
-@is_step('cleaning')
+@is_step('cleaning', 'baseline_cleaning')
 class ActMeanColumn(Actionable):
     """
     [STEP] Fill missing values with mean

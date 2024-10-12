@@ -58,7 +58,9 @@ class ROCAUCPlot(MetricPlot):
         
         self._binary_image = io.BytesIO()
         
-        pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0] 
+        pos_label = None
+        if not(y.dtype == 'int' or y.dtype == 'bool'):
+            pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0] 
         
         # Predict probabilities
         y_prob = estimator.predict_proba(X)[:, 1]
