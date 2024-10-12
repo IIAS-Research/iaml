@@ -41,14 +41,6 @@ class AccuracyMetric(Metric):
     def __str__(self) -> str:
         return 'accuracy'
     
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Accuracy classification score.'
-    
     # Get one label (numpy.array or pd.series) and return true is classes is balanced
     def __is_balanced(self, y):
         class_count = Counter(y)

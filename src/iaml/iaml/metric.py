@@ -10,6 +10,7 @@ class Metric:
     [METRIC] Parent of all others Metrics, implement the default behavior
     """
     refs = []
+    description_long = ""
 
     @classmethod
     def get_refs(cls):
@@ -19,13 +20,14 @@ class Metric:
         if hasattr(cls, 'refs'):
             return [Reference(ref, cls.__name__) for ref in cls.refs]
         return []
-
-
+    
     def explain(self) -> str:
+        """Describe metric
+
+        Returns:
+            str: Metric description
         """
-        Return str explanation of the metric
-        """
-        return "Here is an explanation of how this metrics work"
+        return self.description_long
     
     def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs):
         """

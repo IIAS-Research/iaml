@@ -57,14 +57,6 @@ class BalancedAccuracyMetric(Metric):
         }
     ]
     
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Compute the balanced accuracy.'
-    
     def __str__(self):
         return 'balanced_accuracy'
     

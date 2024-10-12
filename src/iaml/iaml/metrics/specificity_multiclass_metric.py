@@ -42,15 +42,6 @@ class SpecificityMulticlassMetric(Metric):
     def __str__(self):
         return 'specificity_multiclass'    
     
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Calculate specificity in a multiclass conext, where each instance belongs \
-            to just one of several classes'
-    
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
         Does this metric is suitable for this candidate ?

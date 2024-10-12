@@ -41,15 +41,6 @@ class SpecificityMultilabelMetric(Metric):
         }
     ]
 
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Compute specificity for each label separately, \
-            then averaged to obtain an overall measure.'
-    
     def _str__(self):
         return 'specificity_multilabel'
     
