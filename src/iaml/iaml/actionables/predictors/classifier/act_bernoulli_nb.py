@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Bernoulli NB
+[STEP] Bernoulli NB
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActBernoulliNb(Predictor):
     """
-    [STEP] Learn : Bernoulli NB
+    [STEP] Bernoulli NB
     """
-    name = "Learn : Bernoulli NB"
+    name = "Bernoulli NB"
     description = textwrap.dedent('''\
         BernoulliNB is a tool that helps computers predict categories 
         by analyzing binary features, even if the input isn't strictly binary.''')

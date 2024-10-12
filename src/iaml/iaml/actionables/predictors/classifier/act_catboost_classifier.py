@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  CatBoost
+[STEP]  CatBoost
 """
 import textwrap
 from catboost import CatBoostClassifier

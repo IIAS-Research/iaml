@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  Random Forest Regressor
+[STEP]  Random Forest Regressor
 """
 import textwrap
 from sklearn.ensemble import RandomForestRegressor
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActRandomForestRegressor(Predictor):
     """
-    [STEP] Learn :  Random Forest Regressor
+    [STEP]  Random Forest Regressor
     """
-    name = "Learn : Random Forest Regressor"
+    name = "Random Forest Regressor"
     description = textwrap.dedent('''\
         RandomForestRegressor is a machine learning algorithm that 
         models the relationship between input features and a continuous output 

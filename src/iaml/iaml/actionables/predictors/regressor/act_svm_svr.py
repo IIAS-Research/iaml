@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  SVM Regressor
+[STEP]  SVM Regressor
 """
 import textwrap
 from sklearn import svm
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActSVMSVR(Predictor):
     """
-    [STEP] Learn :  SVM Regressor
+    [STEP]  SVM Regressor
     """
-    name = "Learn : SVM Regression"
+    name = "SVM Regression"
     description = textwrap.dedent('''\
         SVM Regressor is a machine learning algorithm that models the relationship 
         between input features and a continuous output variable using a support vector machine 

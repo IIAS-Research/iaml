@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  AdaBoost Regressor
+[STEP]  AdaBoost Regressor
 """
 import textwrap
 from sklearn.ensemble import AdaBoostRegressor
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActAdaBoostRegressor(Predictor):
     """
-    [STEP] Learn :  AdaBoost Regressor
+    [STEP]  AdaBoost Regressor
     """
-    name = "Learn : AdaBoost Regressor"
+    name = "AdaBoost Regressor"
     description = textwrap.dedent('''\
         AdaBoostRegressor is a powerful tool that combines many simple models 
         to make accurate predictions for continuous outcomes.''')

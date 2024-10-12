@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  XGBoost Regressor
+[STEP]  XGBoost Regressor
 """
 import textwrap
 from sklearn.ensemble import GradientBoostingRegressor
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActXGBoostRegressor(Predictor):
     """
-    [STEP] Learn :  XGBoost Regressor
+    [STEP]  XGBoost Regressor
     """
-    name = "Learn : XGBoost Regressor"
+    name = "XGBoost Regressor"
     description = textwrap.dedent('''\
         GradientBoostingRegressor is a machine learning algorithm that models the 
         relationship between input features and a continuous output variable using 

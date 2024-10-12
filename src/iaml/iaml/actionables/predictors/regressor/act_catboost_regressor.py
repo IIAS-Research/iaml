@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  CatBoost Regressor
+[STEP]  CatBoost Regressor
 """
 import textwrap
 from catboost import CatBoostRegressor
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActCatBoostRegressor(Predictor):
     """
-    [STEP] Learn :  CatBoost Regressor
+    [STEP]  CatBoost Regressor
     """
-    name = "Learn : CatBoost Regressor"
+    name = "CatBoost Regressor"
     description = textwrap.dedent('''\
         CatBoostRegressor is a powerful tool that helps computers make accurate 
         predictions for continuous outcomes by learning from both positive and 

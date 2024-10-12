@@ -1,6 +1,6 @@
 
 """
-[STEP] Learn :  Cox
+[STEP]  Cox
 """
 import textwrap
 from sksurv.linear_model import CoxPHSurvivalAnalysis
@@ -14,9 +14,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'survival', 'baseline_predictor')
 class ActCox(Predictor):
     """
-    [STEP] Learn :  Cox
+    [STEP]  Cox
     """
-    name = "Learn : CoxPHSurvivalAnalysis"
+    name = "CoxPHSurvivalAnalysis"
     description = textwrap.dedent('''\
         CoxPHSurvivalAnalysis is a survival analysis algorithm 
         that estimates the effect of covariates on the likelihood of an event 

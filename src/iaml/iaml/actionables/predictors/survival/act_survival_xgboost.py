@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Gradient Boosting Survival Analysis
+[STEP] Gradient Boosting Survival Analysis
 """
 import textwrap
 from sksurv.ensemble import GradientBoostingSurvivalAnalysis
@@ -13,9 +13,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'survival')
 class ActGradientBoostingSurvivalAnalysis(Predictor):
     """
-    [STEP] Learn : Gradient Boosting Survival Analysis
+    [STEP] Gradient Boosting Survival Analysis
     """
-    name = "Learn : GradientBoostingSurvivalAnalysis"
+    name = "GradientBoostingSurvivalAnalysis"
     description = textwrap.dedent('''\
         GradientBoostingSurvivalAnalysis is a survival analysis algorithm 
         that uses gradient boosting to estimate the survival function over time. 

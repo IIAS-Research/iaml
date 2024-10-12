@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Gaussian Process Regressor
+[STEP] Gaussian Process Regressor
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActGaussianProcessRegressor(Predictor):
     """
-    [STEP] Learn : Gaussian Process Regressor
+    [STEP] Gaussian Process Regressor
     """
-    name = "Learn : Gaussian Process Regressor"
+    name = "Gaussian Process Regressor"
     description = textwrap.dedent('''\
         GaussianProcessRegressor is a machine learning algorithm 
         that makes predictions for regression tasks using Gaussian processes.''')

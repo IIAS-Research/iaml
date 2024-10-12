@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  XGBoost
+[STEP]  XGBoost
 """
 import textwrap
 from sklearn.ensemble import GradientBoostingClassifier
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActXGBoost(Predictor):
     """
-    [STEP] Learn :  XGBoost
+    [STEP]  XGBoost
     """
-    name = "Learn : XGBoost"
+    name = "XGBoost"
     description = textwrap.dedent('''\
         GradientBoostingClassifier is a machine learning algorithm that models the 
         relationship between input features and a categorical output variable using 

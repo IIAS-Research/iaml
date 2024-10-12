@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Quadratic Discriminant Analysis
+[STEP] Quadratic Discriminant Analysis
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActQuadraticDiscriminantAnalysis(Predictor):
     """
-    [STEP] Learn : Quadratic Discriminant Analysis
+    [STEP] Quadratic Discriminant Analysis
     """
-    name = "Learn : Quadratic Discriminant Analysis"
+    name = "Quadratic Discriminant Analysis"
     description = textwrap.dedent('''\
         QuadraticDiscriminantAnalysis is a machine learning algorithm 
         that models the relationship between input features and a categorical 

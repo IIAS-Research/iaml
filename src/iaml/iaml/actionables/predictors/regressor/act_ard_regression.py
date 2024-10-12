@@ -1,5 +1,5 @@
 """
-[STEP] Learn : ARD Regression
+[STEP] ARD Regression
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActARDRegression(Predictor):
     """
-    [STEP] Learn : ARD Regression
+    [STEP] ARD Regression
     """
-    name = "Learn : ARD Regression"
+    name = "ARD Regression"
     description = textwrap.dedent('''\
         ARDRegression is a powerful tool that helps computers make accurate 
         predictions by giving each feature its own importance weight.''')

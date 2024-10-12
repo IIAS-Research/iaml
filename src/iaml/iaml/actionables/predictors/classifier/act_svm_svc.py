@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  SVM Classifier
+[STEP]  SVM Classifier
 """
 import textwrap
 from sklearn import svm
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActSVMSVC(Predictor):
     """
-    [STEP] Learn :  SVM Classifier
+    [STEP]  SVM Classifier
     """
-    name = "Learn : SVM Classification"
+    name = "SVM Classification"
     description = textwrap.dedent('''\
         SVM Classifier is a machine learning algorithm that models the relationship 
         between input features and a categorical output variable using a support vector machine 

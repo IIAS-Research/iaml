@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  Linear Regression
+[STEP]  Linear Regression
 """
 import textwrap
 from sklearn.linear_model import LinearRegression

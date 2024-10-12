@@ -1,5 +1,5 @@
 """
-[STEP] Learn : SurvivalTree
+[STEP] SurvivalTree
 """
 import textwrap
 from sksurv.tree import SurvivalTree
@@ -13,9 +13,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'survival')
 class ActSurvivalTree(Predictor):
     """
-    [STEP] Learn : SurvivalTree
+    [STEP] SurvivalTree
     """
-    name = "Learn : SurvivalTree"
+    name = "SurvivalTree"
     description = textwrap.dedent('''\
         SurvivalTree is a decision tree algorithm tailored for survival analysis. 
         It constructs a tree structure based on the log-rank test, where each split 

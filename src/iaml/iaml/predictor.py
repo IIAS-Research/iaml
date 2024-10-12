@@ -24,7 +24,7 @@ class Model(metaclass=ABCMeta):
 
 class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
     """
-    [STEP] Learn : Abstract learning step
+    [STEP] Abstract learning step
     
     Also acts as an interface with traditional scikit-learn models
     for better integration with IAMLPipeline.

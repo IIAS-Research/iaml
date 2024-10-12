@@ -1,5 +1,5 @@
 """
-[STEP] Learn : SGD Regressor
+[STEP] SGD Regressor
 """
 import textwrap
 from sklearn.linear_model import SGDRegressor
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActSGDRegressor(Predictor):
     """
-    [STEP] Learn : SGD Regressor
+    [STEP] SGD Regressor
     """
-    name = "Learn : SGD Regressor"
+    name = "SGD Regressor"
     description = textwrap.dedent('''\
         SGDRegressor is a machine learning algorithm that models 
         the relationship between input features and a continuous output variable 

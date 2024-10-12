@@ -1,5 +1,5 @@
 """
-[STEP] Learn : MLP Classifier
+[STEP] MLP Classifier
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActMLPClassifier(Predictor):
     """
-    [STEP] Learn : MLP Classifier
+    [STEP] MLP Classifier
     """
-    name = "Learn : MLP Classifier"
+    name = "MLP Classifier"
     description = textwrap.dedent('''\
         MLPClassifier is a machine learning algorithm that models the relationship 
         between input features and a categorical output variable using a 

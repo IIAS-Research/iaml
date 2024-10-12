@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Extra Survival Trees
+[STEP] Extra Survival Trees
 """
 import textwrap
 from sksurv.ensemble import ExtraSurvivalTrees
@@ -13,9 +13,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'survival')
 class ActExtraSurvivalTrees(Predictor):
     """
-    [STEP] Learn : Extra Survival Trees
+    [STEP] Extra Survival Trees
     """
-    name = "Learn : ExtraSurvivalTrees"
+    name = "ExtraSurvivalTrees"
     description = textwrap.dedent('''\
         ExtraSurvivalTrees is an ensemble learning method for survival 
         analysis based on extremely randomized trees. It fits multiple decision trees 
