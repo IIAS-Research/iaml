@@ -1,5 +1,5 @@
 """
-[STEP] Learn : HistGradient Boosting Regressor
+[STEP] HistGradient Boosting Regressor
 """
 
 import textwrap
@@ -13,9 +13,9 @@ from ....decorators.all import is_step
 @is_step('disabled')
 class ActHistGradientBoostingRegressor(Predictor):
     """
-    [STEP] Learn : HistGradient Boosting Regressor
+    [STEP] HistGradient Boosting Regressor
     """
-    name = "Learn : HistGradient Boosting Regressor"
+    name = "HistGradient Boosting Regressor"
     description = textwrap.dedent('''\
         HistGradientBoostingRegressor is a machine learning algorithm 
         that makes predictions for regression tasks using histogram-based gradient boosting.''')
@@ -37,7 +37,7 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'Carl Edward Rasmussen',
                 'Christopher K. I. Williams'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.7551/mitpress/3206.001.0001',
             'publisher': 'MIT Press 2006'
         }
     ]

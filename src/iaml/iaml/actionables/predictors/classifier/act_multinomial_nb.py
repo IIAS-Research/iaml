@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Multinomial NB
+[STEP] Multinomial NB
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActMultinomialNB(Predictor):
     """
-    [STEP] Learn : Multinomial NB
+    [STEP] Multinomial NB
     """
-    name = "Learn : Multinomial NB"
+    name = "Multinomial NB"
     description = textwrap.dedent('''\
         MultinomialNB is a machine learning algorithm that models 
         the relationship between input features and a categorical output variable 
@@ -34,7 +34,7 @@ class ActMultinomialNB(Predictor):
                 'Prabhakar Raghaban',
                 'Hinrich Schütze'
             ],
-            'doi': '',
+            'doi': "https://doi.org/10.1017/CBO9780511809071",
             'publisher': 'Cambridge University Press'
         }
     ]

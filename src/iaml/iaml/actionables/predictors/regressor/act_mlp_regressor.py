@@ -1,5 +1,5 @@
 """
-[STEP] Learn : MLP Regressor
+[STEP] MLP Regressor
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActMLPRegressor(Predictor):
     """
-    [STEP] Learn : MLP Regressor
+    [STEP] MLP Regressor
     """
-    name = "Learn : MLP Regressor"
+    name = "MLP Regressor"
     description = textwrap.dedent('''\
         MLPRegressor is a machine learning algorithm that models the 
         relationship between input features and a continuous output variable using 
@@ -51,6 +51,7 @@ class ActMLPRegressor(Predictor):
             )
         }
     ]
+    
     def __init__(self):
         self.configuration:dict = {
             'activation': {

@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  Random Forest
+[STEP]  Random Forest
 """
 import textwrap
 from sklearn.ensemble import RandomForestClassifier
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActRandomForest(Predictor):
     """
-    [STEP] Learn :  Random Forest
+    [STEP]  Random Forest
     """
-    name = "Learn : Random Forest"
+    name = "Random Forest"
     description = textwrap.dedent('''\
         RandomForestClassifier is a machine learning algorithm that models 
         the relationship between input features and a categorical output variable using 

@@ -43,7 +43,7 @@ class ActKernelPCA(Actionable):
                 'Bernhard Schölkopf',
                 'Gökhan Bakir'
             ],
-            'doi': None,
+            'doi': 'https://proceedings.neurips.cc/paper_files/paper/2003/file/ac1ad983e08ad3304a97e147f522747e-Paper.pdf',
             'publisher': 'Advances in neural information processing systems 16 (2004) page 449--456'
         },
         {

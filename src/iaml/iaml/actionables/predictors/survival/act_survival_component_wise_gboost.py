@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Componentwise Gradient Boosting Survival Analysis
+[STEP] Componentwise Gradient Boosting Survival Analysis
 """
 import textwrap
 from sksurv.ensemble import ComponentwiseGradientBoostingSurvivalAnalysis
@@ -13,9 +13,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'survival')
 class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
     """
-    [STEP] Learn : Componentwise Gradient Boosting Survival Analysis
+    [STEP] Componentwise Gradient Boosting Survival Analysis
     """
-    name = "Learn : ComponentwiseGradientBoostingSurvivalAnalysis"
+    name = "ComponentwiseGradientBoostingSurvivalAnalysis"
     description = textwrap.dedent('''\
         ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis 
         algorithm that uses gradient boosting with componentwise (stagewise) updates 

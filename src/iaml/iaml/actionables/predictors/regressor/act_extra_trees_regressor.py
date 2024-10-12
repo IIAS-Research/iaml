@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  Extra Trees Regressor
+[STEP]  Extra Trees Regressor
 """
 import textwrap
 from sklearn.ensemble import ExtraTreesRegressor
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActExtraTreesRegressor(Predictor):
     """
-    [STEP] Learn :  Extra Trees Regressor
+    [STEP]  Extra Trees Regressor
     """
-    name = "Learn : Extra Trees Regressor"
+    name = "Extra Trees Regressor"
     description = textwrap.dedent('''\
         ExtraTreesRegressor is a machine learning algorithm that makes predictions 
         for regression tasks by combining the outputs of multiple decision trees.''')

@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Aalen's Additive Model for Survival Analysis
+[STEP] Aalen's Additive Model for Survival Analysis
 """
 import textwrap
 from lifelines import AalenAdditiveFitter
@@ -14,9 +14,9 @@ from ....decorators.all import is_step
 @is_step('disabled')
 class ActAalenAdditiveFitter(Predictor):
     """
-    [STEP] Learn : Aalen's Additive Model for Survival Analysis
+    [STEP] Aalen's Additive Model for Survival Analysis
     """
-    name = "Learn : AalenAdditiveFitter"
+    name = "AalenAdditiveFitter"
     description = textwrap.dedent('''\
         Aalen's Additive Model is a semi-parametric survival analysis model 
         that estimates survival time as a function of covariates, using a linear combination 

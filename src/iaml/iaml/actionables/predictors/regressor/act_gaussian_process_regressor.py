@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Gaussian Process Regressor
+[STEP] Gaussian Process Regressor
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'regressor')
 class ActGaussianProcessRegressor(Predictor):
     """
-    [STEP] Learn : Gaussian Process Regressor
+    [STEP] Gaussian Process Regressor
     """
-    name = "Learn : Gaussian Process Regressor"
+    name = "Gaussian Process Regressor"
     description = textwrap.dedent('''\
         GaussianProcessRegressor is a machine learning algorithm 
         that makes predictions for regression tasks using Gaussian processes.''')
@@ -30,7 +30,7 @@ class ActGaussianProcessRegressor(Predictor):
                 'Carl Edward Rasmussen',
                 'Christopher K. I. Williams'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.7551/mitpress/3206.001.0001',
             'publisher': 'MIT Press 2006'
         }
     ]

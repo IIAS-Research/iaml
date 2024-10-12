@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  Logistic Regression Classifier
+[STEP]  Logistic Regression Classifier
 """
 import textwrap
 from sklearn.linear_model import LogisticRegression
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'fast_predictor', 'classifier', 'baseline_predictor')
 class ActLogisticRegression(Predictor):
     """
-    [STEP] Learn :  Logistic Regression Classifier
+    [STEP]  Logistic Regression Classifier
     """
-    name = "Learn : Logistic Regression Classifier"
+    name = "Logistic Regression Classifier"
     description = textwrap.dedent('''\
         LogisticRegression is a machine learning algorithm 
         that models the relationship between input features and a binary 

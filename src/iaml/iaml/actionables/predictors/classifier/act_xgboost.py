@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  XGBoost
+[STEP]  XGBoost
 """
 import textwrap
 from sklearn.ensemble import GradientBoostingClassifier
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActXGBoost(Predictor):
     """
-    [STEP] Learn :  XGBoost
+    [STEP]  XGBoost
     """
-    name = "Learn : XGBoost"
+    name = "XGBoost"
     description = textwrap.dedent('''\
         GradientBoostingClassifier is a machine learning algorithm that models the 
         relationship between input features and a categorical output variable using 
@@ -28,7 +28,7 @@ class ActXGBoost(Predictor):
             'name': 'Stochastic Gradient Boosting',
             'year': 1999,
             'authors': [
-              'Jerome H. Friedman'  
+                'Jerome H. Friedman'  
             ],
             'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2',
             'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
@@ -37,7 +37,7 @@ class ActXGBoost(Predictor):
             'year': 2001,
             'name': 'Greedy Function Approximation: A Gradient Boosting Machine',
             'authors': [
-              'Jerome H. Friedman'  
+                'Jerome H. Friedman'  
             ],
             'doi': 'https://doi.org/10.1214/aos/1013203451',
             'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'

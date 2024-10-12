@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Random Survival Forest
+[STEP] Random Survival Forest
 """
 import textwrap
 from sksurv.ensemble import RandomSurvivalForest
@@ -13,9 +13,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'survival')
 class ActRandomSurvivalForest(Predictor):
     """
-    [STEP] Learn : Random Survival Forest
+    [STEP] Random Survival Forest
     """
-    name = "Learn : RandomSurvivalForest"
+    name = "RandomSurvivalForest"
     description = textwrap.dedent('''\
         RandomSurvivalForest is a survival analysis algorithm 
         that uses an ensemble of decision trees to estimate the survival function 

@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Gaussian NB
+[STEP] Gaussian NB
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActGaussianNb(Predictor):
     """
-    [STEP] Learn : Gaussian NB
+    [STEP] Gaussian NB
     """
-    name = "Learn : Gaussian NB"
+    name = " Gaussian NB"
     description = textwrap.dedent('''\
         GaussianNB is a machine learning algorithm that makes predictions 
         based on the Gaussian (normal) distribution of the input features.''')
@@ -28,16 +28,8 @@ class ActGaussianNb(Predictor):
         It is a simple and fast algorithm that works well for many classification problems, 
         especially when the number of features is much larger than the number of samples.''')  
     
-    refs = [
-        {
-            'year': 1763,
-            'name': None,
-            'authors': [
-            ],
-            'doi': None,
-            'publisher': None
-        }
-    ]
+    refs = []
+    
     def __init__(self):
         self.configuration:dict = {
             'var_smoothing': {

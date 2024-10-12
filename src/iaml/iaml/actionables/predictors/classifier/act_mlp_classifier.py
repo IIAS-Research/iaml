@@ -1,5 +1,5 @@
 """
-[STEP] Learn : MLP Classifier
+[STEP] MLP Classifier
 """
 
 import textwrap
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActMLPClassifier(Predictor):
     """
-    [STEP] Learn : MLP Classifier
+    [STEP] MLP Classifier
     """
-    name = "Learn : MLP Classifier"
+    name = "MLP Classifier"
     description = textwrap.dedent('''\
         MLPClassifier is a machine learning algorithm that models the relationship 
         between input features and a categorical output variable using a 
@@ -43,7 +43,7 @@ class ActMLPClassifier(Predictor):
                 'Xavier Glorot',
                 'Yoshua Bengio'
             ],
-            'doi': '',
+            'doi': "https://www.semanticscholar.org/paper/Understanding-the-difficulty-of-training-deep-Glorot-Bengio/ea9d2a2b4ce11aaf85136840c65f3bc9c03ab649",
             'publisher': (
                 'Proceedings of the Thirteenth International Conference on '
                 'Artificial Intelligence and Statistics page 249--256'

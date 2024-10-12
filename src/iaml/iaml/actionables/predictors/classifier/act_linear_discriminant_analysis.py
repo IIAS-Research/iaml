@@ -1,5 +1,5 @@
 """
-[STEP] Learn : Linear Discriminant Analysis
+[STEP] Linear Discriminant Analysis
 """
 import textwrap
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActLinearDiscriminantAnalysis(Predictor):
     """
-    [STEP] Learn : Linear Discriminant Analysis
+    [STEP] Linear Discriminant Analysis
     """
-    name = "Learn : Linear Discriminant Analysis"
+    name = "Linear Discriminant Analysis"
     description = textwrap.dedent('''\
         LinearDiscriminantAnalysis is a machine learning algorithm that finds
         a linear combination of features that maximizes the separation between 
@@ -33,7 +33,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
             'authors': [
                 'Sir Ronald Aylmer Fisher'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.1111/j.1469-1809.1936.tb02137.x',
             'publisher': 'Annals of Eugenics Vol.7 page 179--188'
         }
     ]

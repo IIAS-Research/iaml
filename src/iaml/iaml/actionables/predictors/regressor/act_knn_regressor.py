@@ -1,5 +1,5 @@
 """
-[STEP] Learn : KNN
+[STEP] KNN
 """
 import textwrap
 from sklearn.neighbors import KNeighborsRegressor
@@ -11,9 +11,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'fast_predictor', 'regressor')
 class ActKNNRegressor(Predictor):
     """
-    [STEP] Learn : KNN
+    [STEP] KNN
     """
-    name = "Learn : KNN"
+    name = "KNN"
     description = textwrap.dedent('''\
         KNeighborsRegressor is a machine learning algorithm that makes 
         predictions for regression tasks using k-nearest neighbors.''')
@@ -34,7 +34,7 @@ class ActKNNRegressor(Predictor):
                 'Evelyn Fix',
                 'Joseph Lawson Hodges Jr.'
             ],
-            'doi': '',
+            'doi': 'https://doi.org/10.2307/1403797',
             'publisher': 'Technical Report 4, USAF School of Aviation Medicine, Randolph Field'
         },
         {

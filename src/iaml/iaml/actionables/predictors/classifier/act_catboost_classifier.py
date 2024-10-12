@@ -1,5 +1,5 @@
 """
-[STEP] Learn :  CatBoost
+[STEP]  CatBoost
 """
 import textwrap
 from catboost import CatBoostClassifier
@@ -12,9 +12,9 @@ from ....decorators.all import is_step
 @is_step('predictor', 'tabular', 'classifier')
 class ActCatBoost(Predictor):
     """
-    [STEP] Learn :  CatBoost
+    [STEP]  CatBoost Classifier
     """
-    name = "Learn : CatBoost"
+    name = "CatBoost Classifier"
     description = textwrap.dedent('''\
         CatBoostClassifier is a powerful tool that helps computers make accurate 
         predictions by learning from both positive and negative examples simultaneously.''')
