@@ -43,8 +43,8 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
     
     @capture
     def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
-                X_train:pd.DataFrame=None, y_train:pd.Series=None, 
-                baseline_estimator=None, transform:bool=True,
+                X_train:pd.DataFrame=None, y_train:pd.Series=None,
+                transform:bool=True,
                 **kwargs) -> MetricPlot:
         """
         Compute Kaplan-Meier survival plot with model predictions for comparison using sksurv.
@@ -71,32 +71,7 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         time, survival_prob = kaplan_meier_estimator(*zip(*y_train))
         plt.step(time, survival_prob, where="post", label="Observed Train", color='blue', linestyle="--")
         
-        # Baseline
-        try:
-            # COX
-            if baseline_estimator is None:
-                if X_train is not None and y_train is not None:
-                    transform = True
-                    baseline_estimator = CoxPHSurvivalAnalysis()
-                    X_train, y_train = Dataset.fix_survival(estimator.transform(X_train), y_train)
-                    
-                    baseline_estimator.fit(X_train, y_train)
-
-            if transform:
-                pred_surv_fn = baseline_estimator.predict_survival_function(estimator.transform(X))
-            else:
-                pred_surv_fn = baseline_estimator.predict_survival_function(X)
-
-            mean_survival_prob = np.mean([fn.y for fn in pred_surv_fn], axis=0)
-            mean_survival_time = pred_surv_fn[0].x 
-            
-            model_name = baseline_estimator.name if hasattr(baseline_estimator, 'name') \
-                else str(baseline_estimator)
-            plt.step(mean_survival_time, mean_survival_prob, where="post", 
-                label=f"Baseline model ({model_name})", color="red", linestyle="--")
-        except RuntimeError:
-            Logger().error(traceback.format_exc())
-                
+        
         # Current model
         survival_predictions = estimator.predict_survival_function(X)
 

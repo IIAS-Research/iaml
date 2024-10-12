@@ -34,8 +34,8 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
 
     @capture
     def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
-                X_train:pd.DataFrame=None, y_train:pd.Series=None, 
-                baseline_estimator=None, transform:bool=True,
+                X_train:pd.DataFrame=None, y_train:pd.Series=None,
+                transform:bool=True,
                 **kwargs) -> MetricPlot:
         """
         Compute cumulative hazard plot with model predictions for comparison using sksurv.
@@ -55,32 +55,6 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         # Observed cumulative hazard using nelson_aalen_estimator
         time, cumulative_hazard = nelson_aalen_estimator(event, time)
         plt.step(time, cumulative_hazard, where="post", label="Observed", color='blue')
-
-        # Baseline model (CoxPH)
-        try:
-            if baseline_estimator is None:
-                if X_train is not None and y_train is not None:
-                    transform = True
-                    baseline_estimator = CoxPHSurvivalAnalysis()
-                    X_train, y_train = Dataset.fix_survival(estimator.transform(X_train), y_train)
-                    baseline_estimator.fit(X_train, y_train)
-
-            if transform:
-                pred_hazard_fn_cox = baseline_estimator.predict_cumulative_hazard_function(
-                    estimator.transform(X)
-                    )
-            else:
-                pred_hazard_fn_cox = baseline_estimator.predict_cumulative_hazard_function(X)
-
-            mean_hazard_prob_cox = np.mean([fn.y for fn in pred_hazard_fn_cox], axis=0)
-            mean_hazard_time_cox = pred_hazard_fn_cox[0].x
-
-            model_name = baseline_estimator.name if hasattr(baseline_estimator, 'name') \
-                else str(baseline_estimator)
-            plt.step(mean_hazard_time_cox, mean_hazard_prob_cox, where="post", 
-                    label=f"Baseline model ({model_name})", color="red", linestyle="--")
-        except RuntimeError:
-            Logger().error(traceback.format_exc())
 
         # Current model prediction
         hazard_predictions = estimator.predict_cumulative_hazard_function(X)

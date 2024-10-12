@@ -167,6 +167,72 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def __callback(self, callback, **kwargs):
         if callback and callable(callback):
             callback(**kwargs)
+            
+    def baseline(self,
+            X:pd.DataFrame,
+            y:pd.DataFrame,
+            *args,
+            groups:pd.DataFrame = None,
+            groups_columns: List[str] = None,
+            generation_sample_size=200,
+            verbose=1,
+            **kwargs) -> Candidate:
+        """
+        Run a very basic pipeline to train a model baseline 
+        
+        Args:
+            X (pd.DataFrame): Training features 
+            y (pd.DataFrame): Training labels
+            groups (pd.DataFrame) : Dataframe used to split data by groups (default None)
+            patience (int) : Max generation without improvement (default None)
+            generation_sample_size (int) : Size of the sample dataset used to generate first 
+                                            generation of candidates (default 200)
+
+        Returns:
+            Candidate: Baseline candidate
+        """
+        # Avoid [] dangerous default value in the signature
+        if groups_columns is None:
+            groups_columns = []
+            
+        # Create a baseline pipeline
+        baseline_pipe = MetaOrderedStep(tag="Main") # First step -> Contain all pipeline's stages 
+        baseline_pipe.add_step(MetaStep(tag='baseline_cleaning'))
+        baseline_pipe.add_step(MetaExplorerStep(tag='baseline_predictor'))
+            
+        Logger().verbose = verbose # Set logger verbose
+        
+        if isinstance(y, pd.DataFrame):
+            y = y.values.ravel()
+        
+        dataset:Dataset = Dataset(
+            deepcopy(X),
+            deepcopy(y),
+            groups=groups,
+            groups_columns=groups_columns
+        )
+            
+        ### INITIAL GENERATE CANDIDATE 
+        init_candidate:Candidate = Candidate(
+            dataset.sample(generation_sample_size),
+            main_metric=self.main_metric)
+
+        # Select metrics used to evaluate performances
+        for metric \
+            in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+            init_candidate.add_metric(metric)
+
+        # Generate candidates
+        candidates = baseline_pipe.run(init_candidate)
+            
+        # Remove candidate without predictor
+        candidates = [candidate for candidate in candidates \
+            if candidate.pipeline.predictor is not None]
+        
+        for candidate in candidates:
+            candidate.pipeline.fit(dataset.X, dataset.y)
+        
+        return candidates
 
 
     ##################

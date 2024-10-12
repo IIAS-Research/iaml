@@ -9,7 +9,7 @@ from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
 
-@is_step('cleaning')
+@is_step('cleaning', 'baseline_cleaning')
 class ActDropDateColumn(Actionable):
     """
     Find and drop data column

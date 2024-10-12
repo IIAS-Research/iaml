@@ -8,7 +8,7 @@ from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'fast_predictor', 'classifier')
+@is_step('predictor', 'tabular', 'fast_predictor', 'classifier', 'baseline_predictor')
 class ActLogisticRegression(Predictor):
     """
     [STEP] Learn :  Logistic Regression Classifier

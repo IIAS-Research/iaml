@@ -8,7 +8,7 @@ from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'fast_predictor', 'regressor')
+@is_step('predictor', 'tabular', 'fast_predictor', 'regressor', 'baseline_predictor')
 class ActLinearRegression(Predictor):
     """
     [STEP] Learn :  Linear Regression
