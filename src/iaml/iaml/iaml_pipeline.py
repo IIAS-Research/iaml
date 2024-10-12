@@ -522,5 +522,14 @@ class IAMLPipeline(Pipeline):
 
         references = [reference for step in self.steps 
             for reference in step[1].references] \
-            + [reference for metric in self.metrics for reference in metric.get_refs()]
+            + [reference for metric in self.metrics for reference in metric.get_refs()] \
+            + [Reference({
+                'year': 2017,
+                'name': 'A Unified Approach to Interpreting Model Predictions',
+                'authors': [
+                    'Scott M. Lundberg', 'Su-In Lee'
+                ],
+                'doi': 'https://doi.org/10.48550/arXiv.1705.07874',
+                'publisher': 'arXiv preprint arXiv:1705.07874'
+            }, 'Shap')]
         return Reference.bibliography(references, structured)
