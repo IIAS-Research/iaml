@@ -40,15 +40,6 @@ class PrecisionMetric(Metric):
     def __str__(self):
         return 'precision'
     
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Compute the precision: The precision is the ratio tp / (tp + fp) \
-            where tp is the number of true positives and fp the number of false positives.'
-    
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
         Does this metric is suitable for this candidate ?

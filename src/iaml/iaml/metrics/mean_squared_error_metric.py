@@ -39,14 +39,6 @@ class MeanSquaredErrorMetric(Metric):
 
     def __str__(self):
         return 'mean_squared_error'
-    
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Mean squared error regression loss.'
         
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """

@@ -42,16 +42,6 @@ class RecallMetric(Metric):
     def __str__(self):
         return 'recall'
     
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'The recall is the ratio tp / (tp + fn) where tp is the number \
-            of true positives and fn the number of false negatives. The recall is \
-            intuitively the ability of the classifier to find all the positive samples.'
-    
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
         Does this metric is suitable for this candidate ?

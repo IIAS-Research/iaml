@@ -45,17 +45,6 @@ class IntegratedBrierScoreMetric(Metric):
             'publisher': ' Statistics in Medicine, vol. 18, no. 17-18, pp. 2529–2545'
         }
     ]
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Computes the Integrated Brier Score (IBS) using sksurv, which evaluates the \
-                prediction accuracy of a survival model by comparing the predicted probabilities \
-                of survival with the actual survival status over time. Lower values indicate better \
-                model performance. 0.25 is considered neutral for a balanced binary classification \
-                problem.'
 
     def __str__(self):
         return 'integrated_brier_score'

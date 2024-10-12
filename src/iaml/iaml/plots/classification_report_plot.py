@@ -13,7 +13,7 @@ class ClassificationReportPlot(MetricPlot):
     [PLOT] Classification Report Plot
     """
     
-    title = "Here is the plot title"
+    title = "Classification report"
     description = textwrap.dedent("""
         The Classification Report is a visual tool to evaluate the performance of a machine learning model 
         on classification tasks, such as diagnosing medical conditions. This plot provides key metrics for 

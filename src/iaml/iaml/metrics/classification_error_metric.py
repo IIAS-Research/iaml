@@ -57,17 +57,6 @@ class ClassificationErrorMetric(Metric):
         }
     ]
 
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Computes the classification error, if accuracy is relevant then the \
-            classification error is calculated by 1 - accuracy otherwise if balanced \
-            accuracy is relevant then the classification error is \
-            calculated by 1 - balanced _accuracy.'
-    
     def __str__(self):
         return 'classification_error'
     

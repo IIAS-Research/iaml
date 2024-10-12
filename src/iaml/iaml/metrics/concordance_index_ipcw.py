@@ -46,18 +46,6 @@ class ConcordanceIndexIPCWMetric(Metric):
         }
     ]
 
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Computes the Concordance Index (C-index) using IPCW, which measures the \
-                predictive accuracy of a survival model. The C-index is the proportion \
-                of all pairs of subjects whose predicted survival times are correctly \
-                ordered. IPCW adjusts for censored data. A value of 0.5 indicates \
-                random predictions, and a value of 1 indicates perfect predictions.'
-
     def __str__(self):
         return 'concordance_index_ipcw'
     

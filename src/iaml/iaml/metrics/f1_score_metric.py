@@ -40,16 +40,6 @@ class F1ScoreMetric(Metric):
 
     def __str__(self):
         return 'f1_score'
-    
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Compute the F1 score, also known as balanced F-score or F-measure. \
-            The F1 score can be interpreted as a harmonic mean of the precision and recall'
-    
             
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """

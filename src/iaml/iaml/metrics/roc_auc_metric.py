@@ -37,15 +37,7 @@ class RocAucMetric(Metric):
             'publisher': 'Radiology. 143 (1): 29-36.'
         }
     ]
-    
-    def explain(self) -> str:
-        """Describe metric
 
-        Returns:
-            str: Metric description
-        """
-        return 'Compute the ROC AUC.'
-    
     def __str__(self):
         return 'ROC AUC'
     

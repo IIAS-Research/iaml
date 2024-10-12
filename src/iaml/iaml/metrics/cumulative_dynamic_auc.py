@@ -67,18 +67,6 @@ class CumulativeDynamicAUCMetric(Metric):
         }
     ]
 
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Computes the time-dependent Cumulative Dynamic Area Under the ROC Curve (AUC) \
-                for survival models. The time-dependent AUC measures the model’s ability to \
-                distinguish between subjects who experience the event before a given time and \
-                those who do not, considering censored data. Higher values indicate \
-                better discrimination, with 1 being perfect.'
-
     def __str__(self):
         return 'cumulative_dynamic_auc'
     

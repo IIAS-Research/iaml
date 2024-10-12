@@ -40,14 +40,6 @@ class MeanAbsoluteErrorMetric(Metric):
 
     def __str__(self):
         return 'mean_absolute_error'
-    
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Mean absolute error regression loss.'
         
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """

@@ -45,16 +45,6 @@ class ConcordanceIndexMetric(Metric):
         }
     ]
 
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Computes the concordance index using sksurv, a common metric used to evaluate \
-                the prediction accuracy of survival models. It measures the proportion of \
-                correctly ordered event times predicted by the model.'
-
     def __str__(self):
         return 'concordance_index'
 

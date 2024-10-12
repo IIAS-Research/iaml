@@ -40,14 +40,6 @@ class MedianAbsoluteErrorMetric(Metric):
     def __str__(self):
         return 'median_absolute_error'
     
-    def explain(self) -> str:
-        """Describe metric
-
-        Returns:
-            str: Metric description
-        """
-        return 'Median absolute error regression loss.'
-    
     def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
         """
         Does this metric is suitable for this candidate ?
