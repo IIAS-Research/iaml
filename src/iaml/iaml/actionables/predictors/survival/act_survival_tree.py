@@ -119,8 +119,8 @@ class ActSurvivalTree(Predictor):
             **self.passthrough_parameters()
         )
         
-        y = np.array(dataset.y, dtype=[('event', 'bool'), ('time', 'float')])
-        self.model.fit(dataset.X, y)
+        X, y = dataset.to_survival()
+        self.model.fit(X, y)
         
         return self
     

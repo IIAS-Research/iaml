@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from ..plot import MetricPlot, capture
 from ..logger import Logger
+from ..dataset import Dataset
 
 class CumulativeHazardModelComparisonPlot(MetricPlot):
     """
@@ -61,8 +62,8 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
                 if X_train is not None and y_train is not None:
                     transform = True
                     baseline_estimator = CoxPHSurvivalAnalysis()
-                    y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
-                    baseline_estimator.fit(estimator.transform(X_train), y_train)
+                    X_train, y_train = Dataset.fix_survival(estimator.transform(X_train), y_train)
+                    baseline_estimator.fit(X_train, y_train)
 
             if transform:
                 pred_hazard_fn_cox = baseline_estimator.predict_cumulative_hazard_function(

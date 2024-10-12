@@ -7,6 +7,7 @@ from typing import Iterator, TYPE_CHECKING, List
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 
 
 from .data_type import DataType
@@ -283,6 +284,18 @@ class Dataset:
                 new_types[column] = self.columns_types[column]
                 
         self.columns_types = new_types
+        
+    def to_survival(self):
+        return Dataset.fix_survival(self.X, self.y)
+    
+    @classmethod 
+    def fix_survival(cls, X, y):
+        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
+        X = deepcopy(X)
+        X[X.select_dtypes(include=['float64']).columns] = \
+                X.select_dtypes(include=['float64']).astype('float32')
+        
+        return X, y
         
     @classmethod
     def fix_y_survival(cls, y, y_train):

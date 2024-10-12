@@ -11,6 +11,7 @@ from sksurv.nonparametric import kaplan_meier_estimator
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 from ..plot import MetricPlot, capture
 from ..logger import Logger
+from ..dataset import Dataset
 
 class KaplanMeierModelComparisonPlot(MetricPlot):
     """
@@ -56,6 +57,9 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         - groups: Optional Series indicating different groups for stratified survival analysis
         """
         self._binary_image = io.BytesIO()
+        
+        X_train, y_train = Dataset.fix_survival(X_train, y_train)
+        X, y = Dataset.fix_survival(X, y)
 
         # Fit the Kaplan-Meier model on observed data
         event, time = zip(*y)
@@ -63,6 +67,9 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         # Observed data
         time, survival_prob = kaplan_meier_estimator(event, time)
         plt.step(time, survival_prob, where="post", label="Observed", color='blue')
+        # Observed data
+        time, survival_prob = kaplan_meier_estimator(*zip(*y_train))
+        plt.step(time, survival_prob, where="post", label="Observed Train", color='blue', linestyle="--")
         
         # Baseline
         try:
@@ -71,9 +78,9 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
                 if X_train is not None and y_train is not None:
                     transform = True
                     baseline_estimator = CoxPHSurvivalAnalysis()
-                    y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
+                    X_train, y_train = Dataset.fix_survival(estimator.transform(X_train), y_train)
                     
-                    baseline_estimator.fit(estimator.transform(X_train), y_train)
+                    baseline_estimator.fit(X_train, y_train)
 
             if transform:
                 pred_surv_fn = baseline_estimator.predict_survival_function(estimator.transform(X))
