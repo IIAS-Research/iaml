@@ -290,7 +290,7 @@ class Dataset:
     
     @classmethod 
     def fix_survival(cls, X, y):
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
+        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float32')])
         X = deepcopy(X)
         X[X.select_dtypes(include=['float64']).columns] = \
                 X.select_dtypes(include=['float64']).astype('float32')

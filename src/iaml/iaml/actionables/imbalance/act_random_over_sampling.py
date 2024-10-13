@@ -10,7 +10,7 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
-@is_step('normalize')
+@is_step('imbalance')
 class ActRandomOverSampling(Actionable):
     """
     [STEP] Random Over Sampling
