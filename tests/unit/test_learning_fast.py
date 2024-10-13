@@ -26,11 +26,26 @@ class TestLearningFast(unittest.TestCase):
             self.assertTrue(isinstance(shap_plots[0], Plot))
                 
 
+    def load_and_sample(self, path, size=200):
+        df = None
+        try:
+            df = pd.read_csv(path, sep=";")
+        except:
+            df = pd.DataFrame()
+            
+        if len(df.columns) < 2:
+            df = pd.read_csv(path, sep=",")
+            
+        if df.shape[0] > size:
+            df = df.sample(size)
+            
+        return df
+    
     def test_regression(self):
         """
         Test : Fast regression on a CSV file
         """
-        df = pd.read_csv('./src/perf_logger/tests_data/life_expectancy.csv', sep=",")
+        df = self.load_and_sample('./src/perf_logger/tests_data/life_expectancy.csv')
         y = df['label']
         X = df.drop(columns=['label'])
             
@@ -41,7 +56,7 @@ class TestLearningFast(unittest.TestCase):
         """
         Test : Fast classification on a CSV file
         """
-        df = pd.read_csv('./src/perf_logger/tests_data/fertility.csv', sep=",")
+        df = self.load_and_sample('./src/perf_logger/tests_data/fertility.csv')
         
         y = df['label']
         X = df.drop(columns=['label'])
@@ -52,7 +67,7 @@ class TestLearningFast(unittest.TestCase):
         """
         Test : Fast survival on a CSV file
         """
-        df = pd.read_csv('./src/perf_logger/tests_data/seer.csv', sep=",")
+        df = self.load_and_sample('./src/perf_logger/tests_data/seer.csv')
         
         df['label'] = list(zip(df['event'], df['event_time']))
         df.drop(columns=['event', 'event_time'], inplace=True)

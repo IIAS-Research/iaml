@@ -42,8 +42,11 @@ class Candidate:
         self.dataset = dataset
         
         self.metrics = copy(metrics) if metrics is not None else []
-        self.pipeline = iaml_pipeline \
-            or IAMLPipeline(
+        
+        if iaml_pipeline is not None:
+            self.pipeline = iaml_pipeline
+        else:
+            self.pipeline = IAMLPipeline(
                 estimator_type=dataset.needed_estimator,
                 original_dataset=dataset.X.copy()
             )
@@ -123,10 +126,13 @@ class Candidate:
         Returns:
             Candidate: New Candidate
         """
+        if iaml_pipeline is None:
+            iaml_pipeline = self.pipeline.copy()
+            
         return Candidate(
             dataset or deepcopy(self.dataset),
             metrics or copy(self.metrics),
-            iaml_pipeline or self.pipeline.copy(),
+            iaml_pipeline=iaml_pipeline,
             stacked_path=self.stacked_path)
         
     def to_input(self,
@@ -165,7 +171,7 @@ class Candidate:
                 self.pipeline.add_resample(instance)
                 # Resample in Dataset used in pipeline generation step
                 self.dataset = self.dataset.resample(instance.resample)
-                
+        
         return self.to_output()
         
     def add_metric(self, metric:'Metric') -> None:
@@ -222,7 +228,7 @@ class Candidate:
                 if not from_cache:
                     train_ds =  train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
                     test_ds =  test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
-                    
+                
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
                 
             try:

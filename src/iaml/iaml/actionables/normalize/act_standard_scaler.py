@@ -10,7 +10,8 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
 
-@is_step('normalize')
+# TODO Fix this step
+# @is_step('normalize')
 class ActStandardScaler(Actionable):
     """
     [STEP] Standard Scaler

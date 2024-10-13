@@ -142,10 +142,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.first_step.add_step(MetaStep(tag='features_selection',
             name='Features Selection',
             description='Decrease number of column to improve models performances'))
-        self.first_step.add_step(MetaStep(tag='normalize',
+        self.first_step.add_step(MetaExplorerStep(tag='normalize',
             name='Features Normalization',
             description='Normalize data to help model to give the same interest to each column'))
-        self.first_step.add_step(MetaExplorerStep(tag='imbalance',
+        self.first_step.add_step(MetaStep(tag='imbalance',
             name='Handle Imbalanced Data',
             description= (
                 'Balance the dataset to ensure the model does not favor the majority class'
@@ -321,10 +321,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             for metric \
                 in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
                 self.init_candidate.add_metric(metric)
-
+            
             # Generate candidates
             candidates = self.__run(self.init_candidate, *args, **kwargs)
-            
+
             # Remove candidate without predictor
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
@@ -358,7 +358,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         imposed time limit. Try increasing the processing time')
                 raise RuntimeError('Undefined error. IAML was unable to create pipeline \
                     based on your data')
-
+            
             ### FINETUNING
             candidates = self.__optimize(dataset,
                                         gen0_candidates,
@@ -366,7 +366,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                                         max_duration=remain_time(),
                                         patience=patience,
                                         callback=callback)
-
+            
             ### FINAL FIT
             self.executor.shutdown()
 
