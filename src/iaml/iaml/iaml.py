@@ -145,6 +145,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.first_step.add_step(MetaStep(tag='normalize',
             name='Features Normalization',
             description='Normalize data to help model to give the same interest to each column'))
+        self.first_step.add_step(MetaExplorerStep(tag='imbalance',
+            name='Handle Imbalanced Data',
+            description= (
+                'Balance the dataset to ensure the model does not favor the majority class'
+                'over the minority class')
+            ))
+
         
         if self.preprocessor:
             self.first_step.add_step(
@@ -567,7 +574,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """
         metrics = []
 
-        for metric_sub_class in Metric.__subclasses__():
+        for metric_sub_class in Metric.all_subclasses():
             # Instantiate a subclass
             metric = metric_sub_class()
             # Verify if a subclass is suitable or not

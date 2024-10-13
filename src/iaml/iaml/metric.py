@@ -11,6 +11,13 @@ class Metric:
     """
     refs = []
     description_long = ""
+    
+    @classmethod
+    def all_subclasses(cls):
+        subclasses = cls.__subclasses__()
+        for subclass in subclasses:
+            subclasses += subclass.all_subclasses()
+        return subclasses
 
     @classmethod
     def get_refs(cls):

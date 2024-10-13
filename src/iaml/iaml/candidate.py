@@ -52,7 +52,7 @@ class Candidate:
             if self.pipeline.estimator_type == "classifier":
                 self.main_metric = 'balanced_accuracy'
             elif self.pipeline.estimator_type == "survival":
-                self.main_metric = 'concordance_index'
+                self.main_metric = 'integrated_brier_score_loss'
             else:
                 self.main_metric = 'r2_score'
         else:
