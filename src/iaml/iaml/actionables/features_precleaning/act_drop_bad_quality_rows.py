@@ -33,6 +33,10 @@ class ActDropBadQualityRows(Actionable):
                 'description': "Row with less or equal proportion of empty column will \
                     be drop. 0 will never never drop a row",
                 'default': 0.3
+            },
+            'min_size': {
+                'description': "Minimal size of the resulting dataset. If new dataset is smaller than this value, old one will be restored",
+                'default': 20
             }
         }
     
@@ -59,7 +63,8 @@ class ActDropBadQualityRows(Actionable):
             pd.DataFrame: The cleaned dataframe.
         """
         threshold = self.get_config('empty_threshold') * X.shape[1]  # 40% of the total columns
-        return X.dropna(thresh=X.shape[1] - threshold)
+        new_X = X.dropna(thresh=X.shape[1] - threshold)
+        return new_X if new_X.shape[0] >= self.get_config('min_size') else X
 
     def resample(self, X: pd.DataFrame, y: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
