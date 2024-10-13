@@ -48,7 +48,7 @@ job:test:full:
     - test
     - calcul
   script:
-    - 'uv run ./tests/tests.py'
+    - 'uv run ./tests/tests.py integration'
 
 # Uncomment et complet below to enable CD
 # job:deploy:
