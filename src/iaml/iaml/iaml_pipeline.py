@@ -78,8 +78,6 @@ class IAMLPipeline(Pipeline):
     @property
     def steps(self):
         """
-        Steps used to fit pipeline (same as steps property but with resamplers)
-
         Returns:
             list[tuple[str, object]]: list of steps
         """
@@ -93,7 +91,7 @@ class IAMLPipeline(Pipeline):
         Returns:
             list[tuple[str, object]]: list of steps
         """
-        return [item for item in [*self.transformers, *self.resamplers, self.predictor] \
+        return [item for item in [*self.resamplers, *self.transformers, self.predictor] \
             if item is not None]
     
     @steps.setter
@@ -205,10 +203,11 @@ class IAMLPipeline(Pipeline):
         """
         if groups_columns is None:
             groups_columns = []
-        
+            
         dataset = Dataset(X, y, groups_columns=groups_columns)
         
-        for _, step in [*self.transformers, *self.resamplers]:
+        for _, step in [*self.resamplers, *self.transformers]:
+            # FIT
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
                 from_cache = Cache().from_cache(f"fit_{step.fingerprint()}", dataset.X)
                 if from_cache:
@@ -227,14 +226,15 @@ class IAMLPipeline(Pipeline):
                             continue
             else:
                 step.fit(dataset.X, dataset.y, **kwargs)
-                
+            
+            # APPLY TRANSFORM / RESAMPLE
             dataset_from_cache = Cache().from_cache(f"apply_{step.fingerprint()}", dataset.X)
             if dataset_from_cache:
                 dataset = dataset_from_cache
             else:
                 prev_X = dataset.X.copy()
                 if hasattr(step, 'transform'):
-                    dataset = Dataset(step.transform(dataset.X), y)
+                    dataset = Dataset(step.transform(dataset.X), dataset.y)
                 elif hasattr(step, 'resample'):
                     dataset = Dataset(*step.resample(dataset.X, dataset.y))
                 Cache().add_to_cache(f"apply_{step.fingerprint()}", prev_X, dataset)
@@ -283,7 +283,7 @@ class IAMLPipeline(Pipeline):
             self.resamplers.append((str(instance), instance))
         else:
             raise ValueError("Step must implement resample method")
-                
+    
     def set_model(self, instance) -> None:
         """
         Set the predict model (Step) of the Pipeline

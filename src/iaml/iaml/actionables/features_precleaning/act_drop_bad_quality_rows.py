@@ -75,6 +75,7 @@ class ActDropBadQualityRows(Actionable):
         X_clean = self.__transform(X.reset_index(drop=True))
         y_aligned = y[X_clean.index]  # Align y with the cleaned X
         X_clean.reset_index(drop=True, inplace=True)
+        
         return X_clean, y_aligned
 
     def priorize(self, candidate: Candidate = None) -> float:

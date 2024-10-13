@@ -560,8 +560,8 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         Returns:
             str: Markdown text.
         """
-        if not self.explanations:
-            return ''
+        # if not self.explanations:
+        #     return ''
 
         confs = '\n'.join([
             f'| **{k}** | {v["description"]} | {v["value"]} |'
