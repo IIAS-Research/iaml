@@ -142,10 +142,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.first_step.add_step(MetaStep(tag='features_selection',
             name='Features Selection',
             description='Decrease number of column to improve models performances'))
-        self.first_step.add_step(MetaStep(tag='normalize',
+        self.first_step.add_step(MetaExplorerStep(tag='normalize',
             name='Features Normalization',
             description='Normalize data to help model to give the same interest to each column'))
-        self.first_step.add_step(MetaExplorerStep(tag='imbalance',
+        self.first_step.add_step(MetaStep(tag='imbalance',
             name='Handle Imbalanced Data',
             description= (
                 'Balance the dataset to ensure the model does not favor the majority class'
