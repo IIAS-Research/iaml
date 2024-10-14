@@ -3,6 +3,7 @@
 """
 import textwrap
 import pandas as pd
+import numpy as np
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
@@ -43,7 +44,11 @@ class ActMeanColumn(Actionable):
             values = dataset.X[column]
             nan_values_count = values.isnull().sum()
 
-            self.columns.append((column, values.mean()))
+            mean = values.mean()
+            if np.isnan(mean):
+                mean = 0
+                
+            self.columns.append((column, mean))
             explain.append((
                 nan_values_count,
                 len(values),
@@ -70,7 +75,7 @@ class ActMeanColumn(Actionable):
             pd.DataFrame: Transformed dataset
         """
         for name, mean in self.columns:
-            X[name] = X[name].fillna(mean)
+            X[name] = X[name].fillna(mean)    
         
         return X
         
