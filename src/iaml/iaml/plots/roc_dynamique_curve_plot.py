@@ -68,8 +68,9 @@ class ROCDynamiqueCurvePlot(MetricPlot):
         plt.xlabel("Temps de suivi")
         plt.ylabel("AUC dynamique cumulative")
         plt.title('ROC dynamique curve')
-        plt.axhline(np.nanmean(aucs), color='r', linestyle='--',
-            label=f'Mean AUC = {np.nanmean(aucs):.2f}')
+        # plt.axhline(np.nanmean(aucs), color='r', linestyle='--',
+        #     label=f'Mean AUC = {np.nanmean(aucs):.2f}')
+        plt.ylim([0, 1])
         plt.legend()
         plt.grid(True)
 
