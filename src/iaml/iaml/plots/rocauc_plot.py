@@ -91,4 +91,4 @@ class ROCAUCPlot(MetricPlot):
         """
         Does this plot is usable for a given type_of_target ?
         """
-        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
+        return type_of_target in ['binary']
