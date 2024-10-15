@@ -68,8 +68,8 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         time, survival_prob = kaplan_meier_estimator(event, time)
         plt.step(time, survival_prob, where="post", label="Observed", color='blue')
         # Observed data
-        time, survival_prob = kaplan_meier_estimator(*zip(*y_train))
-        plt.step(time, survival_prob, where="post", label="Observed Train", color='blue', linestyle="--")
+        # time, survival_prob = kaplan_meier_estimator(*zip(*y_train))
+        # plt.step(time, survival_prob, where="post", label="Observed Train", color='blue', linestyle="--")
         
         
         # Current model
