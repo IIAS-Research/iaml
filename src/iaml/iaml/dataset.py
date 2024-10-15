@@ -191,7 +191,7 @@ class Dataset:
                             groups=X[self.groups.columns])
         return self.decline(*resampler(self.X, self.y))
         
-    def split(self, splitter: callable, *args, **kwargs) -> Iterator[tuple['Dataset', 'Dataset']]: 
+    def split(self, splitter: callable, keep_group_in_train=False, *args, **kwargs) -> Iterator[tuple['Dataset', 'Dataset']]: 
         """
         Use splitter to split dataset into a list of tuple (train set, test set) 
 
@@ -201,13 +201,24 @@ class Dataset:
         # Split the dataset as many times as the splitter requires it
         for i_train, i_test in splitter(self.X, self.y, *args, **kwargs):
             X_train = self.X.iloc[i_train].copy()
+            if self.has_groups:
+                groups = self.groups.iloc[i_train].copy()
+            else:
+                groups = None
             X_test = self.X.iloc[i_test].copy()
             y_train = self.__y[i_train].copy()
             y_test = self.__y[i_test].copy()
 
-            ds_train = self.decline(X_train, y_train)
+            ds_train = self.decline(X_train, y_train, groups=groups)
             ds_test = self.decline(X_test, y_test)
             yield (ds_train, ds_test)
+            
+    def X_with_groups(self):
+        if self.has_groups:
+            return self.X.reset_index(drop=True).join(self.groups.reset_index(drop=True))
+        else:
+            return self.X
+            
         
     def get_columns_names_by_type(self, types:list[DataType]) -> list[str]:
         """
