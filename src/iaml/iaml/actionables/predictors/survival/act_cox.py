@@ -68,7 +68,7 @@ class ActCox(Predictor):
             'alpha': {
                 'description': 'Regularization strength. Higher values specify \
                     stronger regularization. alpha=0 means no regularization.',
-                'default': 0,
+                'default': 1,
                 'range': [0, 100],
                 'passthrough': False
             },
