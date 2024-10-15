@@ -11,7 +11,7 @@ from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'survival', 'baseline_predictor')
+@is_step('predictor', 'tabular', 'survival')
 class ActCox(Predictor):
     """
     [STEP]  Cox
