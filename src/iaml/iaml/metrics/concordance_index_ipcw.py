@@ -14,7 +14,7 @@ class ConcordanceIndexIPCWMetric(Metric):
     [METRIC] Concordance Index with Inverse Probability of Censoring 
     Weights (IPCW) for Survival Models
     """
-    name = 'Concordance Index with Inverse Probability of Censoring Weights for Survival Models'
+    name = 'C-Index IPC'
     description = textwrap.dedent('''\
         The Concordance Index with Inverse Probability of Censoring Weights (IPCW) 
         evaluates survival models by measuring how well they predict the order of events, 
