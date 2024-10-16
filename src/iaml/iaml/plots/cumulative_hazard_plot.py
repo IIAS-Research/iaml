@@ -69,6 +69,7 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         plt.title("Cumulative Hazard Curve vs Model Predicted")
         plt.xlabel("Time")
         plt.ylabel("Cumulative Hazard")
+        plt.ylim([0, 1])
         plt.legend()
 
         plt.savefig(self._binary_image, format='png')

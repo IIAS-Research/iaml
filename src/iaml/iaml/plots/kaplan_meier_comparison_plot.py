@@ -85,6 +85,7 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         plt.title("Kaplan-Meier Curve vs Model Predicted Survival")
         plt.xlabel("Time")
         plt.ylabel("Survival Probability")
+        plt.ylim([0, 1])
         plt.legend()
         
         plt.savefig(self._binary_image, format='png')
