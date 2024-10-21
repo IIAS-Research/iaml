@@ -11,7 +11,7 @@ from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'survival', 'baseline_predictor')
+@is_step('predictor', 'tabular', 'survival')
 class ActCox(Predictor):
     """
     [STEP]  Cox
@@ -68,7 +68,7 @@ class ActCox(Predictor):
             'alpha': {
                 'description': 'Regularization strength. Higher values specify \
                     stronger regularization. alpha=0 means no regularization.',
-                'default': 0,
+                'default': 1,
                 'range': [0, 100],
                 'passthrough': False
             },

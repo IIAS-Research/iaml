@@ -13,7 +13,7 @@ class BrierScoreMetric(Metric):
     """
     [METRIC] Brier Score for Survival Models
     """
-    name = 'Brier Score for Survival Models'
+    name = 'Brier Score'
     description = textwrap.dedent('''\
         The Brier Score is a metric used to assess the accuracy of survival models, 
         which predict the likelihood of an event, such as death or disease, occurring within a specific timeframe. 

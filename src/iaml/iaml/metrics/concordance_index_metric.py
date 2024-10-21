@@ -10,7 +10,7 @@ class ConcordanceIndexMetric(Metric):
     """
     [METRIC] Concordance Index for Survival Models using sksurv
     """
-    name = 'Concordance Index for Survival Models using sksurv'
+    name = 'Concordance Index'
     description = textwrap.dedent('''\
         The Concordance Index for Survival Models using sksurv measures how well 
         a survival model predicts the order of events, such as survival times. A higher index 

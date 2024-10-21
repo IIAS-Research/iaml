@@ -10,7 +10,7 @@ from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'survival')
+@is_step('predictor', 'tabular', 'survival', 'baseline_predictor')
 class ActSurvivalTree(Predictor):
     """
     [STEP] SurvivalTree

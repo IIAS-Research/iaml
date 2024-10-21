@@ -12,7 +12,7 @@ class CumulativeDynamicAUCMetric(Metric):
     """
     [METRIC] Cumulative Dynamic AUC for Survival Models
     """
-    name = 'Concordance Index for Survival Models'
+    name = 'Cumulative AUC'
     description = textwrap.dedent('''\
         The Cumulative Dynamic AUC (Area Under the Curve) for Survival Models measures the accuracy of a survival model 
         in predicting the probability of an event over time. A higher AUC indicates better predictive performance.
