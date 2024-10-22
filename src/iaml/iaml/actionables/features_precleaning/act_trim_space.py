@@ -64,17 +64,18 @@ class ActTrimSpaces(Actionable):
             X = X.rename(columns=lambda x: x.lstrip())
             for col in X.columns:
                 if isinstance(X[col].dtype, str) or is_object_dtype(X[col]):
+                    # X.loc[X[col].str.strip().notnull(), col] = X[col].astype(str).str.lstrip()
                     X[col] = X[col].astype(str).str.lstrip()
-                    if X[col].isnull().values.any():
-                        print(f"{col=} Contains NAN after RTRIM")
+                    # if X[col].isnull().values.any():
+                    #     print(f"{col=} Contains NAN after RTRIM")
 
-        if self.get_config('right_trim'):
-            X = X.rename(columns=lambda x: x.rstrip())
-            for col in X.columns:
-                if isinstance(X[col].dtype, str) or is_object_dtype(X[col]):
-                    X[col] = X[col].astype(str).str.rstrip()
-                    if X[col].isnull().values.any():
-                        print(f"{col=} Contains NAN after RTRIM")
+        # if self.get_config('right_trim'):
+        #     X = X.rename(columns=lambda x: x.rstrip())
+        #     for col in X.columns:
+        #         if isinstance(X[col].dtype, str) or is_object_dtype(X[col]):
+        #             X[col] = X[col].astype(str).str.rstrip()
+        #             if X[col].isnull().values.any():
+        #                 print(f"{col=} Contains NAN after RTRIM")
         return X
 
     def priorize(self, candidate: Candidate = None) -> float:
