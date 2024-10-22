@@ -379,8 +379,8 @@ class Candidate:
             # Verify if a subclass is suitable or not
             if plot_sub_class.suitable(self.dataset.type_of_target):
                 plot = plot_sub_class(self.pipeline,
-                    X_test, y_test,
-                    X_train=X_train, y_train=y_train, **kwargs)
+                    deepcopy(X_test), deepcopy(y_test),
+                    X_train=deepcopy(X_train), y_train=deepcopy(y_train), **kwargs)
                 plots.append(plot)
                 
         return plots
