@@ -25,7 +25,7 @@ class IAMLPipeline(Pipeline):
     Based on Scikit-learn Pipeline but for IAML Pipelines !
     Transform, resample and then predict from Candidate instance 
     """
-    
+
     def __init__(
         self,
         steps: list[tuple[str, 'Step']] = None,
@@ -53,14 +53,14 @@ class IAMLPipeline(Pipeline):
         self.resamplers:list[tuple[str, object]] = []
         self.predictor:tuple[str, object] = None
         self.metrics = []
-        
+
         if estimator_type not in ['classifier', 'regressor', 'survival']:
             raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
                 survival or regressor")
         self.__estimator_type = estimator_type
-        
+
         super().__init__(steps) # split steps into transformers, resamplers and predictor
-        
+
     @property
     def _estimator_type(self):
         """
@@ -240,7 +240,7 @@ class IAMLPipeline(Pipeline):
                 Cache().add_to_cache(f"apply_{step.fingerprint()}", prev_X, dataset)
                 
         return dataset.X, dataset.y
-        
+
     @property
     def explanations(self):
         """
@@ -249,7 +249,7 @@ class IAMLPipeline(Pipeline):
         Returns:
             list[str]: List of markdown explanations
         """
-        return [step.explain() for _, step in self.training_steps]
+        return [ e for _, step in self.training_steps if (e := step.explain()) is not None ]
     
     @property
     def model(self) -> 'Step':
@@ -445,7 +445,7 @@ class IAMLPipeline(Pipeline):
         """
         return ' '.join(x.title() for x in str(self.model[0]).split('_'))
 
-    
+
     def explain_model(self, X: 'pd.DataFrame', nsamples: int = 20):
         """
         Explains the model by computing SHAP values on the fitted model.

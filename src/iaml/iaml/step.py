@@ -552,7 +552,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         self.__description = value
         return self.description
-    
+
     def explain(self, explanations_limit: int = 20) -> str:
         """
         Renders the explanation as Markdown text.
@@ -562,13 +562,15 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         # if not self.explanations:
         #     return ''
+        explanations = '\n'.join([ f' - {p}' for p in self.explanations[:explanations_limit] ])
+
+        if len(explanations) == 0:
+            return None
 
         confs = '\n'.join([
             f'| **{k}** | {v["description"]} | {v["value"]} |'
             for k, v in self.configuration.items()
         ])
-
-        explanations = '\n'.join([ f' - {p}' for p in self.explanations[:explanations_limit] ])
 
         explanations_left = len(self.explanations) - explanations_limit
 
@@ -589,7 +591,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
 {f" - *and **{explanations_left}** more explanations...*" if explanations_left > 0 else ""}
 ''' if len(explanations) > 0 else ""}
         """
-        
 
 ## Other methods
 def same_types(a:dict, b:dict) -> bool:

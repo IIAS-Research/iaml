@@ -60,6 +60,7 @@ class ActMeanColumn(Actionable):
                 (**{v[0]}** out of **{v[1]}** values (**{v[2]:.2f}**%)
                 were missing in train data)."""
             for (c, mean), v in zip(self.columns, explain)
+            if v[0] > 0 # hide processings that affected no values
         ]
         
         return self
