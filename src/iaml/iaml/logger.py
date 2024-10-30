@@ -2,6 +2,7 @@
 Singleton used by Automed to generate nice logs
 """
 from enum import Enum
+import multiprocess.queues
 import rich.console
 import rich.progress
 import multiprocess
@@ -24,7 +25,7 @@ class Logger(metaclass=MetaSingleton):
     def __init__(self, verbose:int = 1) -> None:
         """
         Args:
-            verbose (int, optional): 
+            verbose (int, optional):
                 0 -> No print
                 1 -> Progressbar only
                 2 -> progressbar + infos
@@ -36,7 +37,11 @@ class Logger(metaclass=MetaSingleton):
         self.console:rich.console = rich.console.Console(log_path=False)
         self.progress:rich.progress = rich.progress.Progress(console=self.console)
         self.verbose:int = verbose
-        self.log_queue = multiprocess.Queue()
+
+        self.main_process_name = multiprocess.current_process().name
+        self.default_log_queue = multiprocess.Queue()
+        self.log_queue = self.default_log_queue
+        self.auto_print = True
         
     @property
     def verbose(self) -> int:
@@ -55,19 +60,19 @@ class Logger(metaclass=MetaSingleton):
     def verbose(self, value:int) -> int:
         self.__verbose = max(min(value, 4), -1)
         
-        self.console.quiet = self.__verbose == 0
-        
         return self.__verbose
     
     def __log(self, log_type, *text: list[str]) -> None:
         """
         Show text in console
         """
-        if multiprocess.current_process().name == 'MainProcess':
-            self.console.log(*text)
-        else:
+        if self.auto_print:
             self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
-                
+        else:
+            self.log_queue.put((log_type, *text))
+
+    def __print(self, log_type, *text: list[str]) -> None:
+        self.console.log(*text)
 
     def info(self, *text: list[str]) -> None:
         """
@@ -82,22 +87,35 @@ class Logger(metaclass=MetaSingleton):
         """
         if self.verbose > 2:
             self.__log(LogType.WARNING, *text)
-            
+
     def error(self, *text: list[str]) -> None:
         """
         Show info text in console
         """
         if self.verbose > 3 or self.verbose == -1:
             self.__log(LogType.ERROR, *text)
-    
+
+    def set_queue(self, queue: multiprocess.queues.Queue | None) -> None:
+        """
+        Sets a custom queue to this logger so that messages can be intercepted.
+
+        Args:
+            queue (multiprocess.Queue, optional):
+                Custom queue to send logs to.
+        """
+        if queue is not None:
+            self.auto_print = False
+            self.log_queue = queue
+        else:
+            self.auto_print = True
+            self.log_queue = self.default_log_queue
 
     def print_queue(self):
         """
         Print all texts from subProcess
         """
-        if multiprocess.current_process().name == 'MainProcess':
-            while not self.log_queue.empty():
-                try:
-                    self.__log(*self.log_queue.get(block=False))
-                except Empty:
-                    break
+        while not self.log_queue.empty():
+            try:
+                self.__print(*self.log_queue.get(block=False))
+            except Empty:
+                break

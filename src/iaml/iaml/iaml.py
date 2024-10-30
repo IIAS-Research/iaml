@@ -4,6 +4,7 @@
 
 import time
 import math
+import multiprocess
 import multiprocessing
 from typing import List
 import pandas as pd
@@ -178,12 +179,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def baseline(self,
             X:pd.DataFrame,
             y:pd.DataFrame,
-            *args,
             groups:pd.DataFrame = None,
             groups_columns: List[str] = None,
             generation_sample_size=200,
-            verbose=1,
-            **kwargs) -> Candidate:
+            verbose=1) -> Candidate:
         """
         Run a very basic pipeline to train a model baseline 
         
@@ -263,7 +262,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def fit(self,
             X:pd.DataFrame,
             y:pd.DataFrame,
-            *args,
             groups:pd.DataFrame = None,
             groups_columns: List[str] = None,
             patience:int=-1,
@@ -271,7 +269,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             n_candidates=1,
             callback:callable = None,
             verbose=1,
-            **kwargs) -> list[Candidate]:
+            log_queue: multiprocess.Queue=None) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -290,11 +288,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         # Avoid [] dangerous default value in the signature
         if groups_columns is None:
             groups_columns = []
-            
+
         self.check_pipeline() # Raise error if the pipeline is not valid
-        
+
         Logger().verbose = verbose # Set logger verbose
-        
+        if log_queue is not None:
+            Logger().set_queue(log_queue)
+
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
         
@@ -323,7 +323,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 self.init_candidate.add_metric(metric)
             
             # Generate candidates
-            candidates = self.__run(self.init_candidate, *args, **kwargs)
+            candidates = self.__run(self.init_candidate)
 
             # Remove candidate without predictor
             candidates = [candidate for candidate in candidates \
@@ -384,9 +384,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             return fit_candidates
         except TerminatedError:
-            print('IAML was terminated.')
+            Logger().info('IAML was terminated.')
         except Exception as ex:
-            print("Error during fit")
+            Logger().error('Error during fit')
             raise ex
         finally:
             self.executor.shutdown()
