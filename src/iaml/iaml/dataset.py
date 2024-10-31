@@ -43,11 +43,11 @@ class Dataset:
         self.__X:pd.DataFrame = X.drop(columns=groups_columns)
         
         # Make sure y is either None or single column
-        # Or same size as X since we build Dataset from baseline function that ravel the Y
-        if y is None or len(y) == len(X):
-            self.__y:np.array = np.array(y)
-        else:
-            raise ValueError("IAML only handle single column labels !")
+        if isinstance(y, pd.DataFrame):
+            if len(y.columns) > 1:
+                raise ValueError("IAML only handle single column labels !")
+            y = y.values.ravel()
+        self.__y:np.array = np.array(y)
         
         if groups_columns:
             self.groups = X[groups_columns]

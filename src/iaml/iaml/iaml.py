@@ -208,9 +208,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
         Logger().verbose = verbose # Set logger verbose
         
-        if isinstance(y, pd.DataFrame):
-            y = y.values.ravel()
-        
         dataset:Dataset = Dataset(
             deepcopy(X),
             deepcopy(y),
