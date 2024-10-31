@@ -299,9 +299,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return self.max_duration - (time.monotonic() - start_time)
 
         try:
-            if isinstance(y, pd.DataFrame):
-                y = y.values.ravel()
-            
             dataset:Dataset = Dataset(
                 deepcopy(X),
                 deepcopy(y),
