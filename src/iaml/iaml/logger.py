@@ -38,11 +38,9 @@ class Logger(metaclass=MetaSingleton):
         self.progress:rich.progress = rich.progress.Progress(console=self.console)
         self.verbose:int = verbose
 
-        self.main_process_name = multiprocess.current_process().name
-        self.default_log_queue = multiprocess.Queue()
-        self.log_queue = self.default_log_queue
-        self.auto_print = True
-        
+        self.log_queue = multiprocess.Queue()
+        self.callback = None
+
     @property
     def verbose(self) -> int:
         """
@@ -59,19 +57,16 @@ class Logger(metaclass=MetaSingleton):
     @verbose.setter
     def verbose(self, value:int) -> int:
         self.__verbose = max(min(value, 4), -1)
-        
+
         return self.__verbose
     
     def __log(self, log_type, *text: list[str]) -> None:
         """
         Show text in console
         """
-        if self.auto_print:
-            self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
-        else:
-            self.log_queue.put((log_type, *text))
+        self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
 
-    def __print(self, log_type, *text: list[str]) -> None:
+    def __print(self, *text: list[str]) -> None:
         self.console.log(*text)
 
     def info(self, *text: list[str]) -> None:
@@ -95,20 +90,15 @@ class Logger(metaclass=MetaSingleton):
         if self.verbose > 3 or self.verbose == -1:
             self.__log(LogType.ERROR, *text)
 
-    def set_queue(self, queue: multiprocess.queues.Queue | None) -> None:
+    def set_callback(self, callback: callable) -> None:
         """
-        Sets a custom queue to this logger so that messages can be intercepted.
+        Sets a custom callback to this logger so that messages can be intercepted.
 
         Args:
-            queue (multiprocess.Queue, optional):
-                Custom queue to send logs to.
+            callback (callable, optional):
+                Callback to send logs to.
         """
-        if queue is not None:
-            self.auto_print = False
-            self.log_queue = queue
-        else:
-            self.auto_print = True
-            self.log_queue = self.default_log_queue
+        self.callback = callback
 
     def print_queue(self):
         """
@@ -116,6 +106,10 @@ class Logger(metaclass=MetaSingleton):
         """
         while not self.log_queue.empty():
             try:
-                self.__print(*self.log_queue.get(block=False))
+                messages = self.log_queue.get(block=False)
+                if self.callback is not None:
+                    self.callback(*messages)
+                else:
+                    self.__print(*messages)
             except Empty:
                 break

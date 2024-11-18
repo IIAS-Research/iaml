@@ -269,7 +269,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             n_candidates=1,
             callback:callable = None,
             verbose=1,
-            log_queue: multiprocess.Queue=None) -> list[Candidate]:
+            log_callback: callable = None) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -292,8 +292,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.check_pipeline() # Raise error if the pipeline is not valid
 
         Logger().verbose = verbose # Set logger verbose
-        if log_queue is not None:
-            Logger().set_queue(log_queue)
+        if log_callback is not None:
+            Logger().set_callback(log_callback)
 
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
@@ -329,7 +329,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
             Logger().info(f"{len(candidates)} generated pipelines")
-            
+
             ### INITIAL EVALUATION
             # Evaluate candidates
             gen0_candidates = []
