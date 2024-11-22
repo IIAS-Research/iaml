@@ -83,12 +83,11 @@ class StepWrapper(Step):
         Returns:
             list[dict]: All children configurations
         """
-        to_return = Step.all_configurations(self)
+        to_return = super().all_configurations()
         to_return = to_return + self.step.all_configurations()
         
         return to_return
-    
-    
+
     def json_pipeline(self) -> dict:
         """
         Create a JSON pipeline
@@ -97,11 +96,10 @@ class StepWrapper(Step):
             dict: JSON pipeline
         """
         return {
-            **Step.json_pipeline(self),
+            **super().json_pipeline(),
             'children': [self.step.json_pipeline()]
         }
-    
-    
+
     def all_steps(self) -> list[Step]:
         """
         Recursive function to get all steps in a pipeline
@@ -110,7 +108,6 @@ class StepWrapper(Step):
             list[Step]: All children Step
         """
         return [self.step, *self.step.all_steps()]
-        
 
     @runner
     def run(self, candidate:Candidate) -> Candidate:

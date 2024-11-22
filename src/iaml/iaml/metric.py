@@ -10,7 +10,7 @@ class Metric:
     [METRIC] Parent of all others Metrics, implement the default behavior
     """
     refs = []
-    description_long = ""
+    _description_long = ""
     
     @classmethod
     def all_subclasses(cls):
@@ -34,7 +34,7 @@ class Metric:
         Returns:
             str: Metric description
         """
-        return self.description_long
+        return self._description_long
     
     def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs):
         """

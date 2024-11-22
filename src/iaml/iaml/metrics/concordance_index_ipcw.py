@@ -15,12 +15,12 @@ class ConcordanceIndexIPCWMetric(Metric):
     Weights (IPCW) for Survival Models
     """
     name = 'C-Index IPC'
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         The Concordance Index with Inverse Probability of Censoring Weights (IPCW) 
         evaluates survival models by measuring how well they predict the order of events, 
         like survival times, while accounting for censored data. A higher index indicates 
         better predictive accuracy.''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         The Concordance Index with Inverse Probability of Censoring Weights (IPCW) 
         assesses survival models by focusing on the ranking of survival times. It addresses the issue of censored 
         data—when some outcomes are not fully observed—by applying weights based on the probability of censoring. 

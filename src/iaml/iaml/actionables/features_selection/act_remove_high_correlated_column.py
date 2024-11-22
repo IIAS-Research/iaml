@@ -15,21 +15,22 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     [STEP] Remove High Correlated Columns
     """
     name = "Remove High Correlated Columns"
-    description = "Remove columns that have high correlation with each other"
-    description_long = textwrap.dedent('''\
-        Removing high correlated columns helps to reduce multicollinearity 
-        in a dataset. When two columns are highly correlated, they contain 
-        redundant information. By removing one of them, we can simplify the 
-        model and improve its performance. This step typically involves 
-        computing a correlation matrix and removing columns that have a 
-        correlation above a certain threshold.
+    _description = "Remove columns that have high correlation with each other"
+    _description_long = textwrap.dedent('''\
+        Removing high correlated columns helps to reduce multicollinearity
+        in a dataset. When two columns are highly correlated, they contain
+        redundant information. By removing one of them, we can simplify the
+        model and improve its performance. This step typically involves
+        computing a correlation matrix and removing columns that have a
+        correlation above {threshold:.0%}.
     ''')
     
     def __init__(self):
         self.configuration:dict = {
             'threshold': {
-                'description': 'If two columns is correlated over this value, only one \
-                    will be kept',
+                'description': textwrap.dedent('''\
+                    If two columns is correlated over this value, only one
+                    will be kept.'''),
                 'default': 0.9
             }
         }
@@ -56,7 +57,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         return self
     
     def __get_columns(self, dataset:Dataset) -> list:
-        # Compute correlation matrix 
+        # Compute correlation matrix
         corr_matrix = dataset.X.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
         

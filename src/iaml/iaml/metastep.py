@@ -22,12 +22,11 @@ class MetaStep(Step):
     There is children classes of MetaStep to execute Steps in a different way
     """
     name = "Steps group"
-    description = 'Execute steps one by one'
-    description_long = None
+    _description = 'Execute steps one by one'
+    _description_long = None
     
     def __init__(self,  *args, tag=None, wrap=None, name=None, description=None, **kwargs):
         self.steps:list[Step] = [] # Initialize steps to empty
-        
             
         # If there is a tag -> add all Steps with this tag
         if tag:
@@ -37,7 +36,7 @@ class MetaStep(Step):
         if name:
             self.name = name
         if name:
-            self.description = description
+            self._description = description
         
     @classmethod
     def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
@@ -136,13 +135,12 @@ class MetaStep(Step):
             list[dict]: All configurations
         """
         to_return = Step.all_configurations(self)
-        
+
         for step in self.steps:
             to_return = to_return + step.all_configurations()
-            
+
         return to_return
-    
-    
+
     def json_pipeline(self) -> dict:
         """
         Create JSON pipeline
@@ -155,7 +153,6 @@ class MetaStep(Step):
             'children': [ step.json_pipeline() for step in self.steps ]
         }
 
-    
     def all_steps(self) -> Step:
         """
         Recursive function to get all steps in a pipeline

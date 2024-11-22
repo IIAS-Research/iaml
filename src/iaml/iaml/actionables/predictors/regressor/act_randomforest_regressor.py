@@ -14,17 +14,17 @@ class ActRandomForestRegressor(Predictor):
     [STEP]  Random Forest Regressor
     """
     name = "Random Forest Regressor"
-    description = textwrap.dedent('''\
-        RandomForestRegressor is a machine learning algorithm that 
-        models the relationship between input features and a continuous output 
+    _description = textwrap.dedent('''\
+        RandomForestRegressor is a machine learning algorithm that
+        models the relationship between input features and a continuous output
         variable using a collection of decision trees.''')
-    description_long = textwrap.dedent('''\
-        RandomForestRegressor is a type of ensemble learning algorithm 
-        that models the relationship between input features and a continuous output variable 
-        using a collection of decision trees. It works by building multiple decision trees on 
-        random subsets of the input features and data, and then averaging the predictions of each 
+    _description_long = textwrap.dedent('''\
+        RandomForestRegressor is a type of ensemble learning algorithm
+        that models the relationship between input features and a continuous output variable
+        using a collection of decision trees. It works by building multiple decision trees on
+        random subsets of the input features and data, and then averaging the predictions of each
         tree to make the final prediction.''')
-    
+
     refs = [
         {
             'year': 2001,
@@ -73,8 +73,9 @@ class ActRandomForestRegressor(Predictor):
                 'range': [2, 20]
             },
             'bootstrap': {
-                'description': 'Whether bootstrap samples are used when building trees. \
-                    If False, the whole dataset is used to build each tree.',
+                'description': textwrap.dedent('''\
+                    Whether bootstrap samples are used when building trees. If
+                    False, the whole dataset is used to build each tree.'''),
                 'default': False
             },
             'criterion': {

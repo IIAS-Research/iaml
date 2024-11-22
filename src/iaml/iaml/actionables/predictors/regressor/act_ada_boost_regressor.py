@@ -14,13 +14,13 @@ class ActAdaBoostRegressor(Predictor):
     [STEP]  AdaBoost Regressor
     """
     name = "AdaBoost Regressor"
-    description = textwrap.dedent('''\
-        AdaBoostRegressor is a powerful tool that combines many simple models 
+    _description = textwrap.dedent('''\
+        AdaBoostRegressor is a powerful tool that combines many simple models
         to make accurate predictions for continuous outcomes.''')
-    description_long = textwrap.dedent('''\
-        AdaBoostRegressor is an ensemble learning technique 
-        used for regression problems. It works by combining multiple weak learners 
-        (simple models) into a strong learner. ''')
+    _description_long = textwrap.dedent('''\
+        AdaBoostRegressor is an ensemble learning technique
+        used for regression problems. It works by combining multiple weak learners
+        (simple models) into a strong learner.''')
     refs = [
         {
             'year': 1995,
@@ -44,8 +44,9 @@ class ActAdaBoostRegressor(Predictor):
                 'range': [0.01, 2.0]
             },
             'loss': {
-                'description': 'The loss function to use when updating the weights \
-                    after each boosting iteration.',
+                'description': textwrap.dedent('''\
+                    The loss function to use when updating the weights after
+                    each boosting iteration.'''),
                 'default': "linear",
                 'categorical': ["linear", "square", "exponential"]
             },

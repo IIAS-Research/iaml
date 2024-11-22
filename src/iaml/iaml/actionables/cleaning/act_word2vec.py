@@ -25,10 +25,10 @@ class ActWord2Vec(Actionable):
     [STEP] Vectorize textual column with Word2Vec
     """
     name = "Word2Vec"
-    description = "Process Word2Vec algorithm over a list of columns"
-    description_long = textwrap.dedent('''\
+    _description = "Process Word2Vec algorithm over a list of columns"
+    _description_long = textwrap.dedent('''\
         Word2Vec is a word embedding algorithm auto-supervised algorithm.
-        This means we don't need labelled data as the algorithm discover 
+        This means we don't need labelled data as the algorithm discove
         the ground truth by himself''')
     
     refs = [
@@ -84,7 +84,7 @@ class ActWord2Vec(Actionable):
         """
         Convert the preprocessed text data to a vector representation using
         the Word2Vec model by calculating the aveerage of the word vectors
-        present in the sentence and returns this average vector. This gives 
+        present in the sentence and returns this average vector. This gives
         a vector representation of the whole sentence.
         
         Args:

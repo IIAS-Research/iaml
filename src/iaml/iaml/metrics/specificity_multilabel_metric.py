@@ -13,11 +13,11 @@ class SpecificityMultilabelMetric(Metric):
     """
 
     name= "Specificity Multilabel"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Multilabel specificity is a metric used to evaluate the performance of a classification model that 
         predicts multiple labels for each instance. It measures how well the model identifies negative cases 
         for each label individually.''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Multilabel specificity assesses how effectively a classification model identifies negative cases for 
         multiple labels. It calculates specificity for each label separately by determining the true negatives 
         and false positives for that label. After calculating the specificity for all labels, these values are 

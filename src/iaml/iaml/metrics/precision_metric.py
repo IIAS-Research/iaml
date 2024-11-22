@@ -13,11 +13,11 @@ class PrecisionMetric(Metric):
     """
 
     name = "Precision"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Precision measures the accuracy of positive predictions made by a model. 
         It indicates the proportion of true positive results among all positive predictions.
         ''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Precision evaluates how many of the predicted positive cases are actually correct. 
         It is calculated as the number of true positives divided by the sum of true positives and false positives. 
         For example, if a model predicts 10 positive cases, and 7 of them are correct, the precision would be 70%. 

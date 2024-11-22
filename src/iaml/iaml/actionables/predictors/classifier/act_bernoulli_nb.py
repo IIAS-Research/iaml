@@ -15,11 +15,11 @@ class ActBernoulliNb(Predictor):
     [STEP] Bernoulli NB
     """
     name = "Bernoulli NB"
-    description = textwrap.dedent('''\
-        BernoulliNB is a tool that helps computers predict categories 
+    _description = textwrap.dedent('''\
+        BernoulliNB is a tool that helps computers predict categories
         by analyzing binary features, even if the input isn't strictly binary.''')
-    description_long = textwrap.dedent('''\
-        BernoulliNB is a type of Naive Bayes classifier specifically 
+    _description_long = textwrap.dedent('''\
+        BernoulliNB is a type of Naive Bayes classifier specifically
         designed for binary features. While it's primarily meant for binary inputs,
         scikit-learn implements it in a way that can handle non-binary data.''')
     
@@ -54,18 +54,21 @@ class ActBernoulliNb(Predictor):
     def __init__(self):
         self.configuration:dict = {
             'alpha': {
-                'description': 'Additive (Laplace/Lidstone) \
-                    smoothing parameter (set alpha=0 and force_alpha=True, for no smoothing).',
+                'description': textwrap.dedent('''\
+                    Additive (Laplace/Lidstone) smoothing parameter (set
+                    alpha=0 and force_alpha=True, for no smoothing).'''),
                 'default': 1.0,
                 'range': [0.01, 100.0]
-                },
+            },
             'fit_prior': {
-                'description': 'Whether to learn class prior probabilities \
-                    or not. If false, a uniform prior will be used.',
+                'description': textwrap.dedent('''\
+                    Whether to learn class prior probabilities or not. If
+                    false, a uniform prior will be used.'''),
                 'default': True,
                 'categorical': [True, False]
-                }
             }
+        }
+
         self.model:BernoulliNB = None
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument

@@ -16,27 +16,26 @@ class ActDateConverter(Actionable):
     [STEP] Convert Short text to date if possible
     """
     name = 'Text to Date Converter'
-    description = 'Convert Text to Date if possible'
-    description_long = textwrap.dedent('''\
-        Try to convert all text of a column to date. 
+    _description = 'Convert Text to Date if possible'
+    _description_long = textwrap.dedent('''\
+        Try to convert all text of a column to date.
         If more than {authorized_error_ratios}% of the rows return errors, then the
-        column is not converted. As converting to date is time consuming, we will 
+        column is not converted. As converting to date is time consuming, we will
         perform the test on {sample_size}.
         ''')
     
     def __init__(self):
         self.configuration:dict = {
-            'authorized_error_ratios':
-                {
+            'authorized_error_ratios': {
                 'default': 0.05,
-                'description': 'Over this ratios, the column will not be converted into date'
-                },
-            'sample_size':
-                {
+                'description': 'Over this ratios, the column will not be converted into date.'
+            },
+            'sample_size': {
                 'default': 200,
-                'description': 'Convert date is time consuming. \
-                    To save time, date detection will be done on a random sample. \
-                    Set to -1 to detect on the whole dataset'
+                'description': textwrap.dedent('''\
+                    Convert date is time consuming. To save time, date
+                    detection will be done on a random sample.
+                    Set to -1 to detect on the whole dataset.''')
                 }
             }
         self.columns:list[str] = None

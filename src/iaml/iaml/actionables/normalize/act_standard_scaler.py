@@ -17,15 +17,15 @@ class ActStandardScaler(Actionable):
     [STEP] Standard Scaler
     """
     name = "Standard Scaler"
-    description = textwrap.dedent('''\
-        StandardScaler helps computers understand complex data by transforming 
+    _description = textwrap.dedent('''\
+        StandardScaler helps computers understand complex data by transforming
         it into numbers centered around zero with a standard deviation of one.''')
-    description_long = textwrap.dedent('''\
-        StandardScaler is a machine learning technique used to standardize numerical 
-        features by removing the mean and scaling to unit variance. 
-        It works by calculating the mean and standard deviation for each feature in the training data, 
-        then transforming all values such that they have a mean of zero and a variance of one. 
-        This transformation helps to center data and is particularly useful in algorithms that assume 
+    _description_long = textwrap.dedent('''\
+        StandardScaler is a machine learning technique used to standardize numerical
+        features by removing the mean and scaling to unit variance.
+        It works by calculating the mean and standard deviation for each feature in the training data,
+        then transforming all values such that they have a mean of zero and a variance of one.
+        This transformation helps to center data and is particularly useful in algorithms that assume
         normality of features, like many machine learning models.''')
     
     def __init__(self):
@@ -49,7 +49,7 @@ class ActStandardScaler(Actionable):
             values = dataset.X[self.columns]
             self.scaler = StandardScaler()
             self.scaler.fit(values)
-        else: 
+        else:
             self.scaler = None
         return self
         

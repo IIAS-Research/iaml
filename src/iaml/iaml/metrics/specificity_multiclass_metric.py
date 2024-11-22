@@ -13,11 +13,11 @@ class SpecificityMulticlassMetric(Metric):
     """
 
     name= "Specificity Multiclass"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Multiclass specificity is a metric used to evaluate the performance of a classification model
         with multiple classes. It measures how well the model identifies the negative cases for each
         class by considering true negatives and false positives.''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Multiclass specificity assesses how effectively a classification model identifies negative cases
         across multiple classes. For each class, it calculates the number of true negatives (correctly 
         identified negatives) and false positives (incorrectly identified positives). 

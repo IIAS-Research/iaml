@@ -15,11 +15,11 @@ class ActKernelPCA(Actionable):
     [STEP] Apply KernelPCA for dimensionality reduction
     """
     name = "KernelPCA"
-    description = "Perform Kernel Principal Component Analysis (KernelPCA) on a dataset"
-    description_long = textwrap.dedent('''\
-        KernelPCA is a dimensionality reduction technique that extends Principal Component Analysis (PCA) 
-        using kernel methods. It projects data into a higher-dimensional space before performing PCA, 
-        enabling it to capture complex, non-linear structures in the data. KernelPCA is useful for reducing 
+    _description = "Perform Kernel Principal Component Analysis (KernelPCA) on a dataset"
+    _description_long = textwrap.dedent('''\
+        KernelPCA is a dimensionality reduction technique that extends Principal Component Analysis (PCA)
+        using kernel methods. It projects data into a higher-dimensional space before performing PCA,
+        enabling it to capture complex, non-linear structures in the data. KernelPCA is useful for reducing
         dimensionality while preserving intricate patterns and relationships within the data.
     ''')
 
@@ -76,28 +76,29 @@ class ActKernelPCA(Actionable):
                 'description': 'Kernel used for PCA.',
                 'default': 'rbf',
                 'categorical': ['poly', 'rbf', 'sigmoid', 'cosine']
-                },
+            },
             'n_components': {
                 'description': 'Number of components to keep.',
                 'default': 100,
                 'range': [10, 2000]
-                },
+            },
             'coef0': {
-                'description': 'Independent term in poly and sigmoid kernels. \
-                    Ignored by other kernels.',
+                'description': textwrap.dedent('''\
+                    Independent term in poly and sigmoid kernels. Ignored by
+                    other kernels.'''),
                 'default': 1.0,
                 'range': [-1.0, 1.0]
-                },
+            },
             'degree': {
                 'description': 'Degree for poly kernels. Ignored by other kernels.',
                 'default': 3,
                 'range': [2, 5]
-                },
+            },
             'random_state': {
                 'description': 'Random State',
                 'default': 42
-                }
             }
+        }
         
         self.optimizable = True
         self.preprocessor = None
@@ -118,8 +119,8 @@ class ActKernelPCA(Actionable):
         try:
             self.preprocessor = KernelPCA(**self.passthrough_parameters())
             self.preprocessor.fit(dataset.X)
-        except ValueError: 
-            higher_gamma = 1/dataset.X.shape[1] + 0.05
+        except ValueError:
+            higher_gamma = 1 / dataset.X.shape[1] + 0.05
             self.preprocessor = KernelPCA(gamma=higher_gamma, **self.passthrough_parameters())
             self.preprocessor.fit(dataset.X)
             

@@ -4,7 +4,6 @@
 """
 import textwrap
 from sksurv.linear_model import CoxPHSurvivalAnalysis
-import numpy as np
 
 from ....predictor import Predictor
 from ....candidate import Candidate
@@ -17,20 +16,20 @@ class ActCox(Predictor):
     [STEP]  Cox
     """
     name = "CoxPHSurvivalAnalysis"
-    description = textwrap.dedent('''\
-        CoxPHSurvivalAnalysis is a survival analysis algorithm 
-        that estimates the effect of covariates on the likelihood of an event 
+    _description = textwrap.dedent('''\
+        CoxPHSurvivalAnalysis is a survival analysis algorithm
+        that estimates the effect of covariates on the likelihood of an event
         occurring over time, using the Cox proportional hazards model.''')
-    description_long = textwrap.dedent('''\
-        CoxPHSurvivalAnalysis is a survival analysis method 
-        that models the relationship between multiple input features (covariates) 
-        and the time until a particular event happens. The algorithm is based on 
-        the Cox proportional hazards model, which assumes that the hazard or risk 
-        of an event is a product of a baseline hazard and a factor that depends on 
-        the covariates. This model is commonly used in medical research to study 
-        how factors such as age, treatment, or health conditions influence survival 
-        rates, or in engineering to predict equipment failure. Unlike many other 
-        models, it doesn't predict the exact time of the event but estimates the 
+    _description_long = textwrap.dedent('''\
+        CoxPHSurvivalAnalysis is a survival analysis method
+        that models the relationship between multiple input features (covariates)
+        and the time until a particular event happens. The algorithm is based on
+        the Cox proportional hazards model, which assumes that the hazard or risk
+        of an event is a product of a baseline hazard and a factor that depends on
+        the covariates. This model is commonly used in medical research to study
+        how factors such as age, treatment, or health conditions influence survival
+        rates, or in engineering to predict equipment failure. Unlike many other
+        models, it doesn't predict the exact time of the event but estimates the
         risk over time, handling cases where the event has not yet occurred (censored data).''')
 
     refs = [
@@ -66,15 +65,17 @@ class ActCox(Predictor):
     def __init__(self):
         self.configuration: dict = {
             'alpha': {
-                'description': 'Regularization strength. Higher values specify \
-                    stronger regularization. alpha=0 means no regularization.',
+                'description': textwrap.dedent('''\
+                    Regularization strength. Higher values specify stronger
+                    regularization. alpha=0 means no regularization.'''),
                 'default': 1,
                 'range': [0, 100],
                 'passthrough': False
             },
             'ties': {
-                'description': 'Method for handling tied event times in the data. \
-                    "breslow" is the most common method.',
+                'description': textwrap.dedent('''\
+                    Method for handling tied event times in the data.
+                    "breslow" is the most common method.'''),
                 'default': 'breslow',
                 'categorical': ['breslow', 'efron']
             },
@@ -85,8 +86,9 @@ class ActCox(Predictor):
                 'passthrough': False
             },
             'tol': {
-                'description': 'Tolerance for stopping criteria. \
-                    Determines the precision of the solution.',
+                'description': textwrap.dedent('''\
+                    Tolerance for stopping criteria. Determines the precision
+                    of the solution.'''),
                 'default': 1e-09,
                 'range': [1e-12, 1e-03],
                 'passthrough': False
