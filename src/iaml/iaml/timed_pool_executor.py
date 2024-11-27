@@ -31,12 +31,17 @@ def process_daemon(
     """
     Will be run by TimedPoolExecutor -> Daemon process able to handle actions
 
-    Args:
-        to_run_queue (multiprocess.Queue): List of action to run
-        queue (multiprocess.Queue): Queue used to send result
-        error_queue (multiprocess.Queue): Queue used to raise errors
-        finally_queue (multiprocess.Queue): Queue used for every run (success or fail).
-            Used to count number of ran actions
+    Parameters
+    ----------
+    to_run_queue : multiprocess.Queue
+        List of action to run
+    queue : multiprocess.Queue
+        Queue used to send result
+    error_queue : multiprocess.Queue
+        Queue used to raise errors
+    finally_queue : multiprocess.Queue
+        Queue used for every run (success or fail).
+        Used to count number of ran actions
     """
     result = None
     
@@ -68,7 +73,20 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 callback:callable=None,
                 sliding_stages:bool=True,
                 debug:bool=False):
+        """
+        Initialize a TimedPoolExecutor
         
+        Parameters
+        ----------
+        max_workers : int
+            The maximum number of parallel workers
+        callback : callable
+            The function to call when jobs' done
+        sliding_stages : bool
+            ??
+        debug : bool
+            Are we in debug mode ?
+        """
         self.max_workers = min(max_workers, multiprocess.cpu_count())
         self.debug = debug # If true, task will be done without using any process.  Easier to debug
         self.stop_flag:bool = False # Used to stop thread
@@ -130,14 +148,14 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
     
     def shutdown(self) -> None:
         """
-            Shutdown TimedPoolExecutor : Kill subprocess and thread
+        Shutdown TimedPoolExecutor : Kill subprocess and thread
         """
         self.stop_flag = True # Main daemon thread will kill process
         self.main_daemon.join()
 
     def __collect_results(self) -> None:
         """
-            Collect results from queues and run callback
+        Collect results from queues and run callback
         """
         while True:
             result, callback_id = self.result_queue.get()
@@ -158,7 +176,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         
     def __print_errors(self) -> None:
         """
-            Collect and print error from error_queue
+        Collect and print error from error_queue
         """
         while True:
             error, callback_id = self.error_queue.get()
@@ -221,8 +239,10 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         Submit a new task to sub process
 
-        Args:
-            target (callable): Method to run
+        Parameters
+        ----------
+        target : callable
+            Method to run
         """
         if self.stop_flag:
             raise TerminatedError("Job submission failed: Executor is currently \
@@ -274,8 +294,10 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         Set the method call to when a task finish
 
-        Args:
-            callback (callable): callback method
+        Parameters
+        ----------
+        callback : callable
+            callback method
         """
         self.callbacks.append(callback)
         
@@ -284,12 +306,17 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         Wait until all the task are finished or timeout is reach
         If timeout is reach -> Remaining tasks will be kill without sending results
 
-        Args:
-            timeout (int): Maximum seconds to wait
-            reset (bool, optional): Reset the instance after join(). Defaults to True.
+        Parameters
+        ----------
+        timeout : int
+            Maximum seconds to wait
+        reset : bool
+            Reset the instance after join(). Defaults to True.
 
-        Returns:
-            list: All finished task results
+        Returns
+        -------
+        List
+            All finished task results
         """
         start_time = time.monotonic()
         def remain_time():

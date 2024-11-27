@@ -11,7 +11,7 @@ import sys
 import json
 from hashlib import md5
 from typing import TYPE_CHECKING
-from typing import Any, List
+from typing import Any, List, Dict
 from copy import deepcopy
 from multipledispatch import dispatch
 from .dataset import Dataset
@@ -53,6 +53,14 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     can_be_disabled = True
     
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
+        """
+        Initialize a step
+        
+        Parameters
+        ----------
+        use_cache : bool
+            Do we use caching for this step
+        """
         self.tags:set = None # Will be set by is_step
         self.__use_cache:bool = use_cache # Activate or not the cache of results.
         self.caches:list = [] # Cached results
@@ -76,19 +84,26 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             self.references = [Reference(ref, type(self).__name__) for ref in self.refs]
 
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> 'Step':
+    def from_pipeline(cls, pipeline: Dict, *args, **kwargs) -> 'Step':
         """
         Load any kind of Step (Step, MetaStep, Wrapper, etc) from json pipeline
 
-        Args:
-            pipeline (dict): Pipeline in JSON Format
+        Parameters
+        ----------
+        pipeline: Dict
+            Pipeline in JSON Format
 
-        Raises:
-            TypeError: invalid pipeline -> missing step attribute
-            TypeError: invalid pipeline -> step does not exist
+        Raises
+        ------
+        TypeError
+            invalid pipeline -> missing step attribute
+        TypeError
+            invalid pipeline -> step does not exist
 
-        Returns:
-            Step: First Step of the loaded pipeline
+        Returns
+        -------
+        Step
+            First Step of the loaded pipeline
         """
         step = None
         if 'step' not in pipeline:
@@ -116,11 +131,29 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     def enable(self) -> bool:
         """
         Does the step is enabled ?
+        
+        Returns
+        -------
+        bool
+            Wether the step is enabled or not
         """
         return self.__enable
     
     @enable.setter
     def enable(self, value: bool) -> bool:
+        """
+        Set the state of the Step
+        
+        Parameters
+        ----------
+        value : bool
+            The state to change the step to
+        
+        Returns
+        -------
+        bool
+            The new Step state
+        """
         # If can_be_disabled = False -> Value will always be True
         self.__enable = value or not self.can_be_disabled
         return self.enable
@@ -133,11 +166,15 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Have to be overwrote. Check if a step is suitable for a given Candidate
 
-        Args:
-            candidate (Candidate): Candidate to test
+        Parameters
+        ----------
+        dataset : Dataset
+            Dataset to test
 
-        Returns:
-            bool: Is it suitable ?
+        Returns
+        -------
+        bool
+            Is it suitable ?
         """
         return True
     
@@ -146,29 +183,38 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         When a Step contain others ones, this will help to setup everything
         (increment parents steps)
 
-        Args:
-            child (Step): Step to configure
+        Parameters
+        ----------
+        child : Step
+            Step to configure
 
-        Returns:
-            Step: Configured step
+        Returns
+        -------
+        Step
+            Configured step
         """
-
         child.configure_parents(self)
-        
         return child
 
     def configure_parents(self, *parents):
         """
         Backpropagates the parents to the children.
+        
+        Parameters
+        ----------
+        parents : Tuple[Step]
+            Tuple of parent steps to add to the children
         """
         self.parents_steps.extend(map(id, parents))
         
-    def step_with_same_tags(self):
+    def step_with_same_tags(self) -> List['Step']:
         """
         Explore available steps and return step with the same tags as the current one
 
-        Returns:
-            list: list of step with the same tags
+        Returns
+        -------
+        List[Step]
+            list of step with the same tags
         """
         return [key for key, tags in Step.available_steps.items() if self.tags == set(tags)]
             
@@ -188,12 +234,17 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Configure one parameter
 
-        Args:
-            key (str): Name of the parameter
-            value (any): Value to set 
+        Parameters
+        ----------
+        key : str
+            Name of the parameter
+        value : Any
+            Value to set 
 
-        Raises:
-            Exception: _description_
+        Raises
+        ------
+        AttributeError
+            Key doesn't exists
         """
         if key in self.configuration:
             self.configuration[key]['value'] = value
@@ -201,27 +252,33 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             raise AttributeError(f"Configurable Key '{key}' does not exist.")
         
     @dispatch(dict)
-    def configure(self, config:dict): # pylint: disable=function-redefined
+    def configure(self, config: Dict[str, Any]): # pylint: disable=function-redefined
         """
         Configure several parameters with a dictionary
 
-        Args:
-            config (dict): key as parameter name, value as value to set
+        Parameters
+        ----------
+        config : Dict[str, Any]
+            key as parameter name, value as value to set
         """
         for key, value in config.items():
             self.configure(key, value)
             
-    def passthrough_parameters(self, default:bool=True):
+    def passthrough_parameters(self, default:bool=True) -> Dict[str, Any]:
         """
         Get all configuration elements that have to be passed to the next step
         or to the model
 
-        Args:
-            default (bool, optional): default behavior for configuration elements
-                without "passthrough" key. Defaults to True.
+        Parameters
+        ----------
+        default : bool
+            default behavior for configuration elements
+            without "passthrough" key. Defaults to True.
 
-        Returns:
-            dict: Configuration elements to pass through
+        Returns
+        -------
+        Dict[str, Any]
+            Configuration elements to pass through
         """
         parameters = {}
         for key, value in self.configuration.items():
@@ -233,49 +290,90 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
                 
         return parameters
             
-    def all_configurations(self) -> list[dict]:
+    def all_configurations(self) -> List[Dict[str, Dict]]:
         """Recursive function (last one here) to get all configurations in a pipeline
 
-        Returns:
-            list[dict]: list of all configurations
+        Returns
+        -------
+        List[Dict[str, Dict]]
+            list of all configurations
         """
         return [{
             'step_id': id(self),
             'configuration': self.configuration
         }]
     
-    def resume_configuration(self) -> dict:
+    def resume_configuration(self) -> Dict:
         """
         Resume a configuration -> No meta data, only "key: value"
 
-        Returns:
-            dict: Configuration resume
+        Returns
+        -------
+        Dict
+            Configuration resume
         """
         return Step.__resume_a_configuration(self.configuration)
     
     def serializable_resume_configuration(self) -> dict:
-        """Used by fingerprint methods"""
+        """
+        Used by fingerprint methods
+        
+        Returns
+        -------
+        Dict
+            Serializable configuration
+        """
         return {key: value.__name__ if callable(value) else value \
             for key, value in self.resume_configuration().items()}
     
     @classmethod
-    def __resume_a_configuration(cls, config:dict):
+    def __resume_a_configuration(cls, config: Dict) -> Dict:
+        """
+        Resume a configuration
+        
+        Parameters
+        ----------
+        config : Dict
+            The configuration to make a resume for
+        
+        Returns
+        -------
+        Dict
+            The configuration Resume
+        """
         return {k: Step.__get_a_value(v) for k, v in config.items()}
     
     @classmethod
-    def __get_a_value(cls, elem:dict) -> any:
+    def __get_a_value(cls, elem: Dict) -> Any:
+        """
+        Get a specific value from configuration
+        
+        Parameters
+        ----------
+        elem : Dict
+            The element we want the value
+            
+        Returns
+        -------
+        Any
+            The element value or it's default value
+        """
         return elem['value'] if 'value' in elem.keys() else elem['default']
     
-    def get_config(self, key:str) -> any:
+    def get_config(self, key: str) -> Any:
         """
         Get value of a configuration key.
         Very useful to easily get configuration in inherit Step methods
 
-        Args:
-            key (str): Parameter to get
+        Parameters
+        ----------
+        key : str
+            Parameter to get
 
-        Returns:
-            any: Value of parameter
+        Returns
+        -------
+        Any
+            Value of parameter
         """
         param:dict = self.configuration[key]
         return param['value'] if 'value' in param else param['default']
@@ -288,14 +386,18 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         for param in self.configuration.values():
             param['value'] = param['default']
             
-    def check_configuration(self, fix=True) -> bool:
+    def check_configuration(self, fix: bool = True) -> bool:
         """Check if configuration is valid
 
-        Args:
-            fix (bool, optional): If True, invalide configuration will be fix. Defaults to True.
+        Parameters
+        ----------
+        fix : bool
+            If True, invalid configuration will be fix. Defaults to True.
 
-        Returns:
-            bool: Is configuration valid ?
+        Returns
+        -------
+        bool
+            Is configuration valid ?
         """
         for key, config in self.configuration.items():
             if 'categorical' in config:
@@ -313,11 +415,13 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
                         return False
         return True
     
-    def all_steps(self):
+    def all_steps(self) -> List:
         """Recursive function (last one here) to get all steps in a pipeline
 
-        Returns:
-            list: always empty
+        Returns
+        -------
+        List
+            always empty
         """
         return [self]
         
@@ -332,11 +436,15 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         If a previous run with same candidate & configuration was cached, return it
         Else return None
 
-        Args:
-            candidate (Candidate): Try to find this candidate in cache
+        Parameters
+        ----------
+        candidate : Candidate
+            Try to find this candidate in cache
 
-        Returns:
-            Candidate: Cached candidate or None
+        Returns
+        -------
+        Candidate
+            Cached candidate or None
         """
         if not self.use_cache:
             return None
@@ -351,12 +459,17 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Add an candidate, candidate pair to cache
 
-        Args:
-            candidate (Candidate): Candidate to add
-            candidate (Candidate): Result candidate to add
+        Parameters
+        ----------
+        input_candidate : Candidate
+            Candidate to add
+        output_candidate : Candidate
+            Result candidate to add
 
-        Returns:
-            bool: Success ? 
+        Returns
+        -------
+        bool
+            Success ? 
         """
         if not self.use_cache:
             return False
@@ -378,8 +491,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     def use_cache(self) -> bool:
         """Does cache is enable ?
 
-        Returns:
-            bool: True if enable
+        Returns
+        -------
+        bool
+            True if enable
         """
         return self.__use_cache
     
@@ -388,14 +503,20 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Enable / Disable caching
 
-        Args:
-            value (bool): Value to set
+        Parameters
+        ----------
+        value : bool
+            Value to set
 
-        Raises:
-            ValueError: Value must be a boolean
+        Raises
+        ------
+        ValueError
+            Value must be a boolean
 
-        Returns:
-            bool: New use_cache value
+        Returns
+        -------
+        bool
+            New use_cache value
         """
         if isinstance(value, bool):
             self.__use_cache = value
@@ -405,12 +526,14 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     
     
     
-    def json_pipeline(self) -> dict:
+    def json_pipeline(self) -> Dict[str, Any]:
         """
         Return a JSON formatted Step
 
-        Returns:
-            dict: Step in a json format
+        Returns
+        -------
+        Dict[str, Any] 
+            Step in a json format
         """
         return {
             'step': self.__class__.__name__,
@@ -422,12 +545,14 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             'children': []
         }
 
-    def conf_to_rich_str_list(self) -> list:
+    def conf_to_rich_str_list(self) -> List[str]:
         """
         Get configuration in a list of rich string format
 
-        Returns:
-            list: Configurations for rich logger
+        Returns
+        -------
+        List[str]
+            Configurations for rich logger
         """
         conf = [ f'{name}={conf["value"]}' for name, conf in self.configuration.items() ]
         
@@ -438,8 +563,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Step in a rich formatted string
 
-        Returns:
-            str: Step description in a rich formatted string
+        Returns
+        -------
+        str
+            Step description in a rich formatted string
         """
         conf = self.conf_to_rich_str_list()
 
@@ -454,6 +581,11 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Returns a rough estimation of the total count of steps for a given
         pipeline.
+        
+        Returns
+        -------
+        int
+            ?
         """
         return 1
     
@@ -464,57 +596,73 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     # Base on the dataset (or not) priorize usefulness of this actionable.
     # Result is a value between 0 and 1. 0 stand for not useful
     #
-    def priorize(self, candidate:'Candidate'=None) -> float: # pylint: disable=unused-argument
+    def priorize(self, candidate:'Candidate' = None) -> float: # pylint: disable=unused-argument
         """
         Try to evaluate the priorities level of himself on an candidate  
 
-        Args:
-            candidate (Candidate, optional): Candidate used to compute priorities. Defaults to None.
+        Parameters
+        ----------
+        candidate : Candidate
+            Candidate used to compute priorities. Defaults to None.
 
-        Returns:
-            float: Continuous value 0 to 1 
+        Returns
+        -------
+        float
+            Continuous value 0 to 1 
         """
         return 0.0
     
     #######
     # RUN #
     #######
-    def fit(self, dataset:Dataset) -> 'Step':  # pylint: disable=unused-argument
+    def fit(self, dataset: Dataset) -> 'Step':  # pylint: disable=unused-argument
         """
         Fit Step on a Dataset.
 
-        Args:
-            dataset (Dataset): Features and labels
+        Parameters
+        ----------
+        dataset : Dataset
+            Features and labels
 
-        Returns:
-            Step: fitted step 
+        Returns
+        -------
+        Step
+            fitted step 
         """
         return self
     
     @runner  
-    def run(self, candidate:'Candidate') -> 'Candidate':
+    def run(self, candidate: 'Candidate') -> 'Candidate':
         """
         Run the step on candidate data
 
-        Args:
-            candidate (Candidate): Candidate informations 
+        Parameters
+        ----------
+        candidate : Candidate
+            Candidate informations 
 
-        Returns:
-            Candidate: transformed Candidate 
+        Returns
+        -------
+        Candidate
+            transformed Candidate 
         """
         self.fit(candidate.dataset)
         return candidate.add_to_pipeline(self)
     
     @classmethod
-    def find_steps_by_tag(cls, tag:str) -> list['Step']:
+    def find_steps_by_tag(cls, tag:str) -> List['Step']:
         """
         Find all available Step with a specific Tag
 
-        Args:
-            tag (str): Tag to search for
+        Parameters
+        ----------
+        tag : str
+            Tag to search for
 
-        Returns:
-            list[Step]: Found Steps
+        Returns
+        -------
+        List[Step]
+            Found Steps
         """
         return set(filter(lambda key: tag in cls.available_steps[key], cls.available_steps.keys()))
     
@@ -523,8 +671,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Return a md5 hash that can by use to compare Step 
 
-        Returns:
-            str: md5 sting
+        Returns
+        -------
+        str
+            md5 sting
         """
         to_hash = f"{str(self.__class__)} = \
             {json.dumps(self.serializable_resume_configuration(), sort_keys=True)}"
@@ -538,17 +688,29 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Formats the description of a step with its configuration.
 
-        Returns:
-            str: Formatted description.
+        Returns
+        -------
+        str
+            Formatted description.
         """
         conf = { k: v['value'] for k, v in self.configuration.items() }
 
         return self.__description.format(**conf)
 
     @description.setter
-    def description(self, value:str) -> str:
+    def description(self, value: str) -> str:
         """
         Description setter
+        
+        Parameters
+        ----------
+        value : str
+            The new description
+        
+        Returns
+        -------
+        str
+            The new description
         """
         self.__description = value
         return self.description
@@ -557,8 +719,15 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         Renders the explanation as Markdown text.
 
-        Returns:
-            str: Markdown text.
+        Parameters
+        ----------
+        explanations_limit : int
+            Maximum number of explanations to provide
+
+        Returns
+        -------
+        str
+            Markdown text.
         """
         # if not self.explanations:
         #     return ''
@@ -593,17 +762,22 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
 
 ## Other methods
-def same_types(a:dict, b:dict) -> bool:
+def same_types(a: Dict, b: Dict) -> bool:
     """
     Deep check of two dict. 
     Return true if both have same keys and values
 
-    Args:
-        a (dict): To compare with b
-        b (dict): To compare with a
+    Parameters
+    ----------
+    a : Dict
+        To compare with b
+    b : Dict
+        To compare with a
 
-    Returns:
-        bool: same types ?
+    Returns
+    -------
+    bool
+        same types ?
     """
     if len(a.keys()) != len(b.keys()):
         return False

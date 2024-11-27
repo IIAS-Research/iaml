@@ -9,17 +9,56 @@ from .dataset import Dataset
 
 
 def predict(X:pd.DataFrame) -> pd.DataFrame:
-    """VoidStep : Do nothing"""
+    """
+    VoidStep : Do nothing
+    
+    Parameters
+    ----------
+    X: pd.DataFrame
+        The dataframe we predict on
+    
+    Returns
+    -------
+    pd.DataFrame
+        The dataframe returned
+    """
     return X
 
 
 def transform(dataset:Dataset) -> Dataset:
-    """VoidStep : Do nothing"""
+    """
+    VoidStep : Do nothing
+    
+    Parameters
+    ----------
+    dataset: Dataset
+        The Dataset object we transform
+    
+    Returns
+    -------
+    Dataset
+        The transformed Dataset
+    """
     return dataset
 
 
 def resample(X:pd.DataFrame,y:List) -> Tuple[pd.DataFrame, List]:
-    """VoidStep : Do nothing"""
+    """
+    VoidStep : Do nothing
+    
+    
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The dataframe to resample
+    y : List
+        The dataframe target to resample
+    
+    Returns
+    -------
+    Tuple[pd.DataFrame, List]
+        The resampled X and y
+    """
     return X, y
 
 
@@ -30,6 +69,19 @@ class VoidStep(Step):
     """
     name = "VoidStep"
     def __init__(self, *args, step_to_mimic:Step=None, **kwargs):  # pylint: disable=unused-argument
+        """
+        VoidStep : Do nothing
+        
+        
+        Parameters
+        ----------
+        args : Tuple
+            Optionnal parameters
+        step_to_mimic : Step
+            A specific step to mimic
+        kwargs : Dict[str, Any]
+            Optionnal dictionnary parameters
+        """
         if step_to_mimic:
             self.tags = step_to_mimic.tags
             self.step_to_mimic = step_to_mimic
@@ -48,14 +100,20 @@ class VoidStep(Step):
         """
         Load any VoidStep from json pipeline
 
-        Args:
-            pipeline (dict): Pipeline in a JSON format
+        Parameters
+        ----------
+        pipeline : Dict
+            Pipeline in a JSON format
 
-        Raises:
-            TypeError: invalid pipeline: VoidStep must have a Step to mimic
+        Raises
+        ------
+        TypeError
+            Invalid pipeline: VoidStep must have a Step to mimic
 
-        Returns:
-            Step: Step created from Json pipeline
+        Returns
+        -------
+        Step
+            Step created from Json pipeline
         """
         if not 'step_to_mimic' in pipeline:
             raise TypeError('invalid pipeline: VoidStep must have a Step to mimic')
@@ -71,12 +129,12 @@ class VoidStep(Step):
         """
         Create JSON pipeline
 
-        Returns:
-            dict: Pipeline in JSON format
+        Returns
+        -------
+        Dict
+            Pipeline in JSON format
         """
         return {
             **Step.json_pipeline(self),
             'step_to_mimic': self.step_to_mimic.json_pipeline()
         }
-
-    
