@@ -6,6 +6,7 @@ The order of Step is defined by the priorize() method
 
 There is children classes of MetaStep to execute Steps in a different way
 """
+from typing import Dict, List, Tuple
 from .step import Step
 from .candidate import Candidate
 from .decorators.all import is_step, runner
@@ -26,6 +27,20 @@ class MetaStep(Step):
     description_long = None
     
     def __init__(self,  *args, tag=None, wrap=None, name=None, description=None, **kwargs):
+        """
+        Initialize a MetaStep
+        
+        Parameters
+        ----------
+        tag : Any | None
+            The tag of the meta step
+        wrap : Any | None
+            If exist, will wrap Steps with it.
+        name : Any | None
+            name of the MetaStep
+        description : Any | None
+            Description of the MetaStep
+        """
         self.steps:list[Step] = [] # Initialize steps to empty
         
             
@@ -40,18 +55,24 @@ class MetaStep(Step):
             self.description = description
         
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
+    def from_pipeline(cls, pipeline: Dict, *args, **kwargs) -> Step:
         """
         Load any MetaStep from json pipeline
 
-        Args:
-            pipeline (dict): Pipeline in a JSON format
+        Parameters
+        ----------
+        pipeline : Dict
+            Pipeline in a JSON format
 
-        Raises:
-            TypeError: invalid pipeline: MetaStep must have at least one child
+        Raises
+        ------
+        TypeError
+            invalid pipeline: MetaStep must have at least one child
 
-        Returns:
-            Step: Step created from Json pipeline
+        Returns
+        -------
+        Step
+            Step created from Json pipeline
         """
         metastep = super().from_pipeline(pipeline)
         
@@ -67,25 +88,34 @@ class MetaStep(Step):
         
         return metastep
     
-    def configure_parents(self, *parents) -> None:
+    def configure_parents(self, *parents: Tuple[Step]) -> None:
         """
         Back propagate child to parents
+        
+        Parameters
+        ----------
+        parents : Tuple[Step]
+            parent steps to configure
         """
         for step in self.steps:
             step.configure_parents(*parents)
         
         super().configure_parents(*parents)
     
-    def add_step(self, step:Step) -> None:
+    def add_step(self, step: Step) -> None:
         """
         Add one step to the MetaStep. 
         step must be a Step inherited class
 
-        Args:
-            step (Step): Step to add
+        Parameters
+        ----------
+        step : Step
+            Step to add
 
-        Raises:
-            ValueError: step must be an occurrence of step (or inherited classes)
+        Raises
+        ------
+        ValueError
+            step must be an occurrence of step (or inherited classes)
         """
         if Step in step.__class__.__mro__:
             step = self.configure_child(step)
@@ -99,12 +129,14 @@ class MetaStep(Step):
         else:
             raise ValueError("step must be an occurrence of step (or inherited classes)")
         
-    def add_steps(self, steps:list[Step]) -> None:
+    def add_steps(self, steps: List[Step]) -> None:
         """
         Add a list of Steps
 
-        Args:
-            steps_list (list[Step]): _description_
+        Parameters
+        ----------
+        steps_list : List[Step]
+            List of step to add to this MetaStep
         """
         for step in steps:
             self.add_step(step)
@@ -114,9 +146,12 @@ class MetaStep(Step):
         Add all Step with this tag to the MetaStep
         Wrap -> If exist, will wrap Steps with it. Check WrapperStep to know more 
 
-        Args:
-            tag (str): tag to search Steps
-            wrap (StepWrapper, optional): Wrap Step in it. Defaults to None.
+        Parameters
+        ----------
+        tag : str
+            tag to search Steps
+        wrap : StepWrapper
+            Wrap Step in it. Defaults to None.
         """
         steps_to_add = Step.find_steps_by_tag(tag)
         
@@ -128,12 +163,14 @@ class MetaStep(Step):
         for step in steps_to_add:
             self.add_step(step)
             
-    def all_configurations(self) -> list[dict]:
+    def all_configurations(self) -> List[Dict]:
         """
         Get configurations of all the steps and children steps 
 
-        Returns:
-            list[dict]: All configurations
+        Returns
+        -------
+        List[Dict]
+            All configurations
         """
         to_return = Step.all_configurations(self)
         
@@ -143,12 +180,14 @@ class MetaStep(Step):
         return to_return
     
     
-    def json_pipeline(self) -> dict:
+    def json_pipeline(self) -> Dict:
         """
         Create JSON pipeline
 
-        Returns:
-            dict: Pipeline in JSON format
+        Returns
+        -------
+        Dict
+            Pipeline in JSON format
         """
         return {
             **Step.json_pipeline(self),
@@ -156,12 +195,14 @@ class MetaStep(Step):
         }
 
     
-    def all_steps(self) -> Step:
+    def all_steps(self) -> List[Step]:
         """
         Recursive function to get all steps in a pipeline
 
-        Returns:
-            list[Step]: Children steps
+        Returns
+        -------
+        List[Step]
+            Children steps
         """
         children = []
         for step in self.steps:
@@ -170,15 +211,19 @@ class MetaStep(Step):
         return [self, *children]
     
     @runner
-    def run(self, candidate:Candidate) -> Candidate:
+    def run(self, candidate: Candidate) -> Candidate:
         """
         Run steps self ordered by "priorize" function
 
-        Args:
-            candidate (Candidate): Imput data
+        Parameters
+        ----------
+        candidate : Candidate
+            Imput data
 
-        Returns:
-            Candidate: Results
+        Returns
+        -------
+        Candidate
+            Results
         """
         steps_to_run = self.steps.copy()
         
@@ -186,17 +231,22 @@ class MetaStep(Step):
         
     
     def __recursive_run(self,
-                        remain_steps:list[Step],
-                        candidates:list[Candidate]) -> list[Candidate]:
+                        remain_steps: List[Step],
+                        candidates: List[Candidate]) -> List[Candidate]:
         """
         Recursive_run to manage Step with several candidates 
 
-        Args:
-            remain_steps (list[Step]): Remaining Steps
-            candidates (Candidate): Candidate of previous Step
+        Parameters
+        ----------
+        remain_steps : List[Step]
+            Remaining Steps
+        candidates : Candidate
+            Candidate of previous Step
 
-        Returns:
-            list[Candidate]: Results
+        Returns
+        -------
+        List[Candidate]
+            Results
         """
         output_candidates = []
         if remain_steps:
@@ -222,8 +272,10 @@ class MetaStep(Step):
         """
         Create a rich format string to describe step
 
-        Returns:
-            str: Step in rich format
+        Returns
+        -------
+        str
+            Step in rich format
         """
         conf = super().conf_to_rich_str_list()
         conf.append(f'steps={",".join({ step.__class__.__name__ for step in self.steps })}')
@@ -234,6 +286,11 @@ class MetaStep(Step):
         """
         Returns a rough estimation of the total count of steps for a given
         pipeline.
+        
+        Returns
+        -------
+        int
+            Number of step for a given pipeline
         """
         return 1 + sum(map(lambda child: child.count_steps(), self.steps))
     
@@ -242,11 +299,29 @@ class MetaStep(Step):
     def enable(self) -> bool:
         """
         Does the step is enabled ? -> Enable if at least a child is enabled
+        
+        Returns
+        -------
+        bool
+            Enabled ?
         """
         return any(step.enable for step in self.steps) if hasattr(self, 'steps') else False
     
     @enable.setter
     def enable(self, value: bool) -> bool:
+        """
+        Set enabled attributes
+        
+        Parameters
+        ----------
+        value : bool
+            The new value of the enabled attributes
+            
+        Returns
+        -------
+        bool
+            The value we just set
+        """
         if hasattr(self, 'steps'):
             for step in self.steps:
                 step.enable = value
