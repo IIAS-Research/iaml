@@ -2,6 +2,7 @@
 StepWrapper is a direct child of Step and will wrap and execute another step.
 Wrap with StepWrapper is useless, use children classes
 """
+from typing import Dict, List
 from .step import Step
 from .decorators.all import is_step, runner
 from .candidate import Candidate
@@ -14,23 +15,37 @@ class StepWrapper(Step):
     StepWrapper is a direct child of Step and will wrap and execute another step.
     Wrap with StepWrapper is useless, use children classes
     """
-    def __init__(self, step:Step):
+    def __init__(self, step: Step):
+        """
+        Initialize the step wrapper
+        
+        Parameters
+        ----------
+        step : Step
+            The step to initialize
+        """
         self.step:Step = step
         
     
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
+    def from_pipeline(cls, pipeline: Dict, *args, **kwargs) -> Step:
         """
         Load any kind of StepWrapper
 
-        Args:
-            pipeline (dict): JSON pipeline
+        Parameters
+        ----------
+        pipeline : Dict
+            JSON pipeline
 
-        Raises:
-            TypeError: invalid pipeline: StepWrapper must have exactly one child
+        Raises
+        ------
+        TypeError
+            invalid pipeline: StepWrapper must have exactly one child
 
-        Returns:
-            Step: Loaded step
+        Returns
+        -------
+        Step
+            Loaded step
         """
         if 'children' not in pipeline or len(pipeline['children']) != 1:
             raise TypeError('invalid pipeline: StepWrapper must have exactly one child')
@@ -44,6 +59,11 @@ class StepWrapper(Step):
     def configure_parents(self, *parents) -> None:
         """
         Back propagate steps to parents
+        
+        Parameters
+        ----------
+        parents : Tuple[Step]
+            Tuple of parents to configure
         """
         self.step.configure_parents(*parents)
         super().configure_parents(*parents)
@@ -53,11 +73,15 @@ class StepWrapper(Step):
         """
         Set wrapped step
 
-        Args:
-            step (Step): Step to wrap
+        Parameters
+        ----------
+        step : Step
+            Step to wrap
 
-        Raises:
-            ValueError: Step must be an occurrence of step (or inherited classes)
+        Raises
+        ------
+        ValueError
+            Step must be an occurrence of step (or inherited classes)
         """
         if Step in step.__class__.__mro__:
             self.step = step
@@ -68,20 +92,26 @@ class StepWrapper(Step):
         """
         Is suitable if the wrapped step is
 
-        Args:
-            candidate (Candidate): Candidate data
+        Parameters
+        ----------
+        candidate : Candidate
+            Candidate data
 
-        Returns:
-            bool: Suitable?
+        Returns
+        -------
+        bool
+            Suitable?
         """
         return self.step.suitable(dataset)
     
-    def all_configurations(self) -> list[dict]:
+    def all_configurations(self) -> List[Dict]:
         """
         Get configuration of all children Steps
 
-        Returns:
-            list[dict]: All children configurations
+        Returns
+        -------
+        List[Dict]
+            All children configurations
         """
         to_return = Step.all_configurations(self)
         to_return = to_return + self.step.all_configurations()
@@ -89,12 +119,14 @@ class StepWrapper(Step):
         return to_return
     
     
-    def json_pipeline(self) -> dict:
+    def json_pipeline(self) -> Dict:
         """
         Create a JSON pipeline
 
-        Returns:
-            dict: JSON pipeline
+        Returns
+        -------
+        Dict
+            JSON pipeline
         """
         return {
             **Step.json_pipeline(self),
@@ -102,12 +134,14 @@ class StepWrapper(Step):
         }
     
     
-    def all_steps(self) -> list[Step]:
+    def all_steps(self) -> List[Step]:
         """
         Recursive function to get all steps in a pipeline
 
-        Returns:
-            list[Step]: All children Step
+        Returns
+        -------
+        List[Step]
+            All children Step
         """
         return [self.step, *self.step.all_steps()]
         
@@ -116,6 +150,16 @@ class StepWrapper(Step):
     def run(self, candidate:Candidate) -> Candidate:
         """
         This wrapper is useless. Only run the step
+        
+        Parameters
+        ----------
+        candidate : Candidate
+            The candidate the step will run on
+        
+        Returns
+        -------
+        Candidate
+            The transformed candidate
         """
         return self.step.run(candidate) 
     
@@ -123,13 +167,26 @@ class StepWrapper(Step):
         """
         Returns a rough estimation of the total count of steps for a given
         pipeline.
+        
+        Returns
+        -------
+        int
+            Number of steps for a given pipeline
         """
         return 1 + self.step.count_steps()
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate=None) -> float:
         """
         Try to priorize himself
 
-        Return : continuous between 0 and 1
+        Parameters
+        ----------
+        candidate : Candidate
+            The candidate we try to priorize
+
+        Returns
+        -------
+        float
+            continuous between 0 and 1
         """
         return self.step.priorize(candidate)

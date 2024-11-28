@@ -15,6 +15,14 @@ class Reference:  # pylint: disable=too-few-public-methods
         """
         Instantiate all properties provided to the specific reference
         such as year of publication, authors, doi ...
+        
+        Parameters
+        ----------
+        properties : Dict
+            A dictionnary of properties for this Reference
+        
+        step_name : str
+            The step_name attached to this reference
         """
         setattr(self, 'step', step_name)
         for k, v in properties.items():
@@ -48,14 +56,21 @@ class Reference:  # pylint: disable=too-few-public-methods
         return structured
     
     @classmethod
-    def bibliography(cls, references: list, structured: bool) -> str | List[Dict]:
+    def bibliography(cls, references: List, structured: bool) -> str | List[Dict]:
         """
         Format a bibliography in a string from a list of references
 
-        Params:
-            references : List of References
-        Returns:
-            str: Formatted bibliography
+        Parameters
+        ----------
+        references : List
+            List of References
+        structured : bool
+            Wether we want a string bibliography or a list of references
+
+        Returns
+        -------
+        str | List[Dict]
+            Bibliography in string or List format
         """
         if structured:
             return [vars(r) for r in references]
