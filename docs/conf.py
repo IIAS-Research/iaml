@@ -18,6 +18,14 @@ extensions = [
 ]
 
 autoapi_dirs = ['../src/iaml/iaml']
+autoapi_options = [
+    'members',
+    'undoc-members',
+    'show-inheritance',
+    'show-module-summary',
+    'special-members',
+    'imported-members'
+]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
