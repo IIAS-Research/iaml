@@ -1,63 +1,43 @@
 """
 [STEP] Void step -> Just a step that do nothing and can be mutated to siblings
 """
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 import pandas as pd
 from .step import Step
 from .decorators.all import is_step
 from .dataset import Dataset
 
 
-def predict(X:pd.DataFrame) -> pd.DataFrame:
+def predict(X: pd.DataFrame) -> pd.DataFrame:
     """
     VoidStep : Do nothing
     
-    Parameters
-    ----------
-    X: pd.DataFrame
-        The dataframe we predict on
+    :param pd.DataFrame X: The dataframe we predict on
     
-    Returns
-    -------
-    pd.DataFrame
-        The dataframe returned
+    :return: The dataframe returned
     """
     return X
 
 
-def transform(dataset:Dataset) -> Dataset:
+def transform(dataset: Dataset) -> Dataset:
     """
     VoidStep : Do nothing
     
-    Parameters
-    ----------
-    dataset: Dataset
-        The Dataset object we transform
+    :param Dataset dataset: The Dataset object we transform
     
-    Returns
-    -------
-    Dataset
-        The transformed Dataset
+    :return: The transformed Dataset
     """
     return dataset
 
 
-def resample(X:pd.DataFrame,y:List) -> Tuple[pd.DataFrame, List]:
+def resample(X: pd.DataFrame, y: List) -> Tuple[pd.DataFrame, List]:
     """
     VoidStep : Do nothing
     
+    :param pd.DataFrame X: The dataframe to resample
+    :param List y: The dataframe target to resample
     
-    Parameters
-    ----------
-    X : pd.DataFrame
-        The dataframe to resample
-    y : List
-        The dataframe target to resample
-    
-    Returns
-    -------
-    Tuple[pd.DataFrame, List]
-        The resampled X and y
+    :return: The resampled X and y
     """
     return X, y
 
@@ -66,21 +46,15 @@ def resample(X:pd.DataFrame,y:List) -> Tuple[pd.DataFrame, List]:
 class VoidStep(Step):
     """
     [STEP] Void step -> Just a step that do nothing and can be mutated to siblings
+    
+    :param Tuple, optional args: Additional parameters
+    :param Step, optional step_to_mimic: The step to mimic, if provided
+    :param Dict, optional kwargs: Additional parameters
+
     """
     name = "VoidStep"
-    def __init__(self, *args, step_to_mimic:Step=None, **kwargs):  # pylint: disable=unused-argument
-        """
-        VoidStep : Do nothing
-        
-        
-        Parameters
-        ----------
-        args : Tuple
-            Optionnal parameters
-        step_to_mimic : Step
-            A specific step to mimic
-        kwargs : Dict[str, Any]
-            Optionnal dictionnary parameters
+    def __init__(self, *args, step_to_mimic: Step = None, **kwargs) -> None:  # pylint: disable=unused-argument
+        """VoidStep : Do nothing
         """
         if step_to_mimic:
             self.tags = step_to_mimic.tags
@@ -96,24 +70,14 @@ class VoidStep(Step):
                 self.resample = resample
                 
     @classmethod
-    def from_pipeline(cls, pipeline:dict, *args, **kwargs) -> Step:
-        """
-        Load any VoidStep from json pipeline
+    def from_pipeline(cls, pipeline: Dict, *args, **kwargs) -> Step:
+        """Load any VoidStep from json pipeline
 
-        Parameters
-        ----------
-        pipeline : Dict
-            Pipeline in a JSON format
+        :param Dict pipeline: Pipeline in a JSON format
 
-        Raises
-        ------
-        TypeError
-            Invalid pipeline: VoidStep must have a Step to mimic
+        :raise TypeError: Invalid pipeline: VoidStep must have a Step to mimic
 
-        Returns
-        -------
-        Step
-            Step created from Json pipeline
+        :return: Step created from Json pipeline
         """
         if not 'step_to_mimic' in pipeline:
             raise TypeError('invalid pipeline: VoidStep must have a Step to mimic')
@@ -125,14 +89,10 @@ class VoidStep(Step):
         return step
     
     
-    def json_pipeline(self) -> dict:
-        """
-        Create JSON pipeline
+    def json_pipeline(self) -> Dict:
+        """Create JSON pipeline
 
-        Returns
-        -------
-        Dict
-            Pipeline in JSON format
+        :return: Pipeline in JSON format
         """
         return {
             **Step.json_pipeline(self),

@@ -1,23 +1,17 @@
 """
 Try to figure out the type of target
 """
+from typing import List, Tuple, Any
 import numpy as np
 from sklearn.utils.multiclass import type_of_target as sk_type_of_target
-from typing import List, Tuple, Any
+
 
 def type_of_target(y: List) -> str:
-    """
-    Try to figure out the type of target
+    """Try to figure out the type of target
 
-    Parameters
-    ----------
-    y : List
-        Dataset's target
+    :param List y: Dataset's target
 
-    Returns
-    -------
-    str
-        type of target (binary, continuous, multi-label, etc.)
+    :return: type of target (binary, continuous, multi-label, etc.)
     """
     y = np.array(y)
     
@@ -30,22 +24,15 @@ def type_of_target(y: List) -> str:
     return sk_type_of_target(y)
 
 def is_survival(y: List[Tuple[Any, Any]]) -> bool:
-    """
-    Checks if the input data represents survival data.
+    """Checks if the input data represents survival data.
     
     Survival data is expected to be a list of tuples where:
     - The first element of each tuple is binary-like
     - The second element of each tuple is numeric (int or float).
     
-    Parameters
-    ----------
-    y : List[Tuple[Any, Any]]
-        each tuple contains two elements (binary-like, numeric).
+    :param List[Tuple[Any, Any]] y: each tuple contains two elements (binary-like, numeric).
     
-    Returns
-    -------
-    bool
-        True if the data meets the survival data requirements, False otherwise.
+    :return: True if the data meets the survival data requirements, False otherwise.
     """
     
     # Ensure all elements are tuples of length 2
