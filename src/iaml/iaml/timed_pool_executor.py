@@ -8,9 +8,11 @@ import random
 import signal
 import time
 import traceback
+from typing import Any, List
 import warnings
 import threading
 import multiprocess
+import multiprocess.managers
 import multiprocess.process
 
 from .logger import Logger
@@ -24,23 +26,16 @@ class TerminatedError(RuntimeError):
 
 
 def process_daemon(
-    to_run_queue:multiprocess.Queue,
-    queue:multiprocess.Queue,
-    error_queue:multiprocess.Queue,
-    finally_queue:multiprocess.Queue):
-    """
-    Will be run by TimedPoolExecutor -> Daemon process able to handle actions
+    to_run_queue: multiprocess.Queue,
+    queue: multiprocess.Queue,
+    error_queue: multiprocess.Queue,
+    finally_queue: multiprocess.Queue) -> None:
+    """Will be run by TimedPoolExecutor -> Daemon process able to handle actions
 
-    Parameters
-    ----------
-    to_run_queue : multiprocess.Queue
-        List of action to run
-    queue : multiprocess.Queue
-        Queue used to send result
-    error_queue : multiprocess.Queue
-        Queue used to raise errors
-    finally_queue : multiprocess.Queue
-        Queue used for every run (success or fail).
+    :param multiprocess.Queue to_run_queue: List of action to run
+    :param multiprocess.Queue queue: Queue used to send result
+    :param multiprocess.Queue error_queue: Queue used to raise errors
+    :param multiprocess.Queue finally_queue: Queue used for every run (success or fail).
         Used to count number of ran actions
     """
     result = None
@@ -63,58 +58,71 @@ def process_daemon(
             
 
 class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
+    """TimedPoolExecutor will run *max_workers* new process and will send them actions
+    to run.
+    Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
+    
+    :param int, optional max_workers: Maximum number of parallel workers
+    :param callable, optional callback: Function call when the worker is done
+    :param bool, optional sliding_stages: Wait for all workers to end, or not
+    :param bool, optional debug: Are we in debug mode ?
     """
-        TimedPoolExecutor will run *max_workers* new process and will send them actions
-        to run.
-        Compare to ProcessPoolExecutor, this one allow us to kill process quickly after timeout
-    """
-    def __init__(self,
-                max_workers:int=None,
-                callback:callable=None,
-                sliding_stages:bool=True,
-                debug:bool=False):
+    def __init__(
+        self,
+        max_workers: int = None,
+        callback: callable = None,
+        sliding_stages: bool = True,
+        debug: bool = False) -> None:
+        """Initialize a TimedPoolExecutor
         """
-        Initialize a TimedPoolExecutor
+        self.max_workers: int = min(max_workers, multiprocess.cpu_count())
+        """Maximum number of workers allowed to work in parallel"""
+
+        self.debug: bool = debug
+        """If true, task will be done without using any process. Easier to debug"""
+
+        self.stop_flag: bool = False
+        """Used to stop thread"""
+
+        self.sliding_stages: bool = sliding_stages
+        """If True, don't wait for all workers to end, leaving empty cpu cores"""
+
+        # Daemon THREAD (& not Process) 
+        self.main_daemon: threading.Thread = None
+        """Main runnng thread with a infinite loop to catch results of sub process"""
+
+        self.daemons_collectors: List[threading.Thread] = None
+        """List of running daemons"""
+
+        self.manager: multiprocess.Manager = multiprocess.Manager()
+        """Manager object handling multiprocess Queues"""
+
+        self.to_run_queue: multiprocess.Manager.Queue = self.manager.Queue()
+        """Queue used to exchange data with sub process"""
         
-        Parameters
-        ----------
-        max_workers : int
-            The maximum number of parallel workers
-        callback : callable
-            The function to call when jobs' done
-        sliding_stages : bool
-            ??
-        debug : bool
-            Are we in debug mode ?
-        """
-        self.max_workers = min(max_workers, multiprocess.cpu_count())
-        self.debug = debug # If true, task will be done without using any process.  Easier to debug
-        self.stop_flag:bool = False # Used to stop thread
-        self.sliding_stages = sliding_stages
-        
-        # Daemon THREAD (& not Process) with a infinite loop to catch results of sub process
-        self.main_daemon = None
-        self.daemons_collectors = None
-        
-        # Queue used to exchange data with sub process
-        self.manager = multiprocess.Manager()
-        self.to_run_queue = self.manager.Queue()
-        self.error_queue = self.manager.Queue()
-        self.result_queue = self.manager.Queue()
-        self.finally_queue = self.manager.Queue()
-        
-        # Method to call after each run
-        self.callbacks = [callback]
-        
-        # List of all result since last reset
-        self.results = []
-        
-        # Count -> Help TimedPoolExecutor to know if everything is finished
-        self.submit_count = 0
-        self.finished_run = 0
-        
-        # List of sub process
-        self.process: list[multiprocess.Process] = []
+        self.error_queue: multiprocess.Manager.Queue  = self.manager.Queue()
+        """Queue used to exchange data with sub process"""
+
+        self.result_queue: multiprocess.Manager.Queue  = self.manager.Queue()
+        """Queue used to exchange data with sub process"""
+
+        self.finally_queue: multiprocess.Manager.Queue  = self.manager.Queue()
+        """Queue used to exchange data with sub process"""
+
+        self.callbacks: List[callable] = [callback]
+        """Method to call after each run"""
+
+        self.results: List = []
+        """List of all result since last reset"""
+
+        self.submit_count: int = 0
+        """Count -> Help TimedPoolExecutor to know if everything is finished"""
+
+        self.finished_run: int = 0
+        """Count -> Help TimedPoolExecutor to know if everything is finished"""
+
+        self.process: List[multiprocess.Process] = []
+        """List of sub processes"""
         
         # Create and start sub process (will only wait until first submit)
         for _ in range(max_workers):
@@ -141,21 +149,18 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             signal.signal(signal.SIGTERM, lambda *_: self.shutdown())
         
     def __del__(self):
-        """
-        When delete -> TimedPoolExecutor kill all these daemons
+        """When delete -> TimedPoolExecutor kill all these daemons
         """
         self.shutdown()
     
     def shutdown(self) -> None:
-        """
-        Shutdown TimedPoolExecutor : Kill subprocess and thread
+        """Shutdown TimedPoolExecutor : Kill subprocess and thread
         """
         self.stop_flag = True # Main daemon thread will kill process
         self.main_daemon.join()
 
     def __collect_results(self) -> None:
-        """
-        Collect results from queues and run callback
+        """Collect results from queues and run callback
         """
         while True:
             result, callback_id = self.result_queue.get()
@@ -175,8 +180,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         
         
     def __print_errors(self) -> None:
-        """
-        Collect and print error from error_queue
+        """Collect and print error from error_queue
         """
         while True:
             error, callback_id = self.error_queue.get()
@@ -188,8 +192,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             self.callbacks[callback_id](None)
     
     def __keep_running(self) -> None:
-        """
-        Daemon THREAD process. Infinite loop to catch results & errors
+        """Daemon THREAD process. Infinite loop to catch results & errors
         """
         while True:
             if self.stop_flag:
@@ -212,8 +215,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             time.sleep(0.5)
     
     def __run_daemon(self) -> None:
-        """
-        Start the daemon THREAD
+        """Start the daemon THREAD
         """
         self.stop_flag = False
         if not self.main_daemon or not self.main_daemon.is_alive():
@@ -223,8 +225,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             self.__run_collectors()
             
     def __run_collectors(self) -> None:
-        """
-        Start collector daemons
+        """Start collector daemons
         """
         self.daemons_collectors = [
             threading.Thread(target=self.__print_errors),
@@ -235,14 +236,12 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             collector.start()
                 
         
-    def submit(self, target:callable, *args, **kwargs) -> None:
-        """
-        Submit a new task to sub process
+    def submit(self, target: callable, *args, **kwargs) -> None:
+        """Submit a new task to sub process
 
-        Parameters
-        ----------
-        target : callable
-            Method to run
+        :param callable target: Method to run
+        :param Tuple, optional args: parameters passed to the callable
+        :param Dict, optional kwargs: parameters passed to the callable
         """
         if self.stop_flag:
             raise TerminatedError("Job submission failed: Executor is currently \
@@ -255,14 +254,14 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             self.submit_count += 1
         
     def __finished(self) -> bool:
-        """
-        Are all the submitted tasks finished?
+        """Are all the submitted tasks finished?
+        
+        :return: True if all tasks are finished
         """
         return self.finished_run >= self.submit_count
     
     def reset(self):
-        """
-        Reset all queues, callback, results, etc. 
+        """Reset all queues, callback, results, etc. 
         Allow to reuse this instance of TimedPoolExecutor without restarting subProcess
         """
         if not self.sliding_stages:
@@ -273,8 +272,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.results = []
         
     def __join_collectors(self):
-        """
-        Join collector thread.
+        """Join collector thread.
         Stop and start thread, used when we want to sync with thread to collect all data 
         """
         
@@ -290,33 +288,21 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.__run_collectors()
         
                 
-    def set_callback(self, callback:callable) -> None:
-        """
-        Set the method call to when a task finish
+    def set_callback(self, callback: callable) -> None:
+        """Set the method call to when a task finish
 
-        Parameters
-        ----------
-        callback : callable
-            callback method
+        :param callable callback: callback method
         """
         self.callbacks.append(callback)
         
-    def join(self, timeout:int, reset:bool=True) -> list:
-        """
-        Wait until all the task are finished or timeout is reach
+    def join(self, timeout: int, reset: bool = True) -> List:
+        """Wait until all the task are finished or timeout is reach
         If timeout is reach -> Remaining tasks will be kill without sending results
 
-        Parameters
-        ----------
-        timeout : int
-            Maximum seconds to wait
-        reset : bool
-            Reset the instance after join(). Defaults to True.
+        :param int timeout: Maximum seconds to wait
+        :param bool, optional reset: Reset the instance after join(). Defaults to True.
 
-        Returns
-        -------
-        List
-            All finished task results
+        :return: All finished task results
         """
         start_time = time.monotonic()
         def remain_time():
