@@ -3,10 +3,11 @@
 """
 import base64
 from functools import wraps
-from typing import Any, Dict
+from typing import Any, Dict, TYPE_CHECKING
 import matplotlib.pyplot as plt
 import pandas as pd
-from .iaml_pipeline import IAMLPipeline
+if TYPE_CHECKING:
+    from .iaml_pipeline import IAMLPipeline
 class Plot:
     """
     [PLOT] Parent of all others Plot, implement the default behavior
@@ -41,7 +42,7 @@ class Plot:
         """
         return base64.b64encode(self.image).decode()
         
-    def _compute(self, estimator: IAMLPipeline, X: pd.DataFrame, y: pd.DataFrame, **kwargs):
+    def _compute(self, estimator: 'IAMLPipeline', X: pd.DataFrame, y: pd.DataFrame, **kwargs):
         """
         Compute plot given X, y. 
         Must be overwrote by children classes
