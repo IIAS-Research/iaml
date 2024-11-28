@@ -15,17 +15,12 @@ author = 'Rudy MERIEUX, Robin BOURACHOT, Hugo RUELLET'
 
 extensions = [
     'autoapi.extension',
+    'sphinx.ext.autodoc.typehints',
 ]
 
+autoclass_content = 'both'
+
 autoapi_dirs = ['../src/iaml/iaml']
-autoapi_options = [
-    'members',
-    'undoc-members',
-    'show-inheritance',
-    'show-module-summary',
-    'special-members',
-    'imported-members'
-]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

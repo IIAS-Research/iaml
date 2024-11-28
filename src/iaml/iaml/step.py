@@ -6,6 +6,7 @@ needed attributes and methods to children classes.
 
 There is also decorators needed to create a Step. See it under Step class.
 """
+from __future__ import annotations
 
 import sys
 import json
@@ -24,8 +25,7 @@ if TYPE_CHECKING:
 
 class Step: # pylint: disable=too-many-public-methods, too-many-instance-attributes
     """
-    Step class is use to create new kinds of steps by inheritance and give all needed
-    attributes and methods to children classes. 
+    This class is the base for all IAML steps.
     
     Attributes:
         STATIC available_steps (dict) : Reference of all available Steps to create pipeline
@@ -43,7 +43,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     # It will be a reference of all available Steps to create pipeline
     available_steps = {}
     
-    
     # Name and description of the Step. Useful to explain pipeline to users
     name = "Step" 
     refs = None
@@ -55,7 +54,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     def __init__(self, *args, use_cache:bool=True, **kwargs): # pylint: disable=unused-argument
         """
         Initialize a step
-        
+
         Parameters
         ----------
         use_cache : bool
@@ -68,10 +67,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.is_interchangeable:bool = False # Can be mutate into another step with the same tags
         self.enable:bool = True # A disable step, only take input and push it into output
         self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
-        
-        # Configuration of the Step. Each Step can have one configuration and will save it here.
-        # Step give many method to help user to configure Steps
+
         self.configuration:dict = {}
+        """Step give many method to help user to configure Steps
+        Configuration of the Step. Each Step can have one configuration and will save it here."""
         
         self.parents_steps:list[Step] = [] # List all the previous steps before this one
         
@@ -87,23 +86,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     def from_pipeline(cls, pipeline: Dict, *args, **kwargs) -> 'Step':
         """
         Load any kind of Step (Step, MetaStep, Wrapper, etc) from json pipeline
-
-        Parameters
-        ----------
-        pipeline: Dict
-            Pipeline in JSON Format
-
-        Raises
-        ------
-        TypeError
-            invalid pipeline -> missing step attribute
-        TypeError
-            invalid pipeline -> step does not exist
-
-        Returns
-        -------
-        Step
-            First Step of the loaded pipeline
         """
         step = None
         if 'step' not in pipeline:
@@ -130,94 +112,60 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     @property
     def enable(self) -> bool:
         """
-        Does the step is enabled ?
-        
-        Returns
-        -------
-        bool
-            Wether the step is enabled or not
+        Tells whether the step is enabled.
+
+        :return: Whether the step is enabled
         """
         return self.__enable
     
     @enable.setter
     def enable(self, value: bool) -> bool:
         """
-        Set the state of the Step
-        
-        Parameters
-        ----------
-        value : bool
-            The state to change the step to
-        
-        Returns
-        -------
-        bool
-            The new Step state
+        Sets the state of the step.
+
+        :param value: State of the step (True if enabled, False if disabled)
         """
         # If can_be_disabled = False -> Value will always be True
         self.__enable = value or not self.can_be_disabled
-        return self.enable
-        
-            
+
     def __str__(self):
         return self.name
     
-    def suitable(self, dataset:Dataset) -> bool: # pylint: disable=unused-argument
+    def suitable(self, dataset: Dataset) -> bool: # pylint: disable=unused-argument
         """
-        Have to be overwrote. Check if a step is suitable for a given Candidate
+        Evaluates whether the step is suitable to run with the given dataset.
 
-        Parameters
-        ----------
-        dataset : Dataset
-            Dataset to test
-
-        Returns
-        -------
-        bool
-            Is it suitable ?
+        :param dataset: Dataset to evaluate on
+        :return: Whether the step is suitable to run
         """
         return True
     
-    def configure_child(self, child:'Step') -> 'Step':
+    def configure_child(self, child: 'Step') -> 'Step':
         """
-        When a Step contain others ones, this will help to setup everything
-        (increment parents steps)
+        When working with steps that can have children, setups the child with the parent.
 
-        Parameters
-        ----------
-        child : Step
-            Step to configure
-
-        Returns
-        -------
-        Step
-            Configured step
+        :param child: Step to configure with the parent
+        :return: Configured step
         """
         child.configure_parents(self)
+
         return child
 
-    def configure_parents(self, *parents):
+    def configure_parents(self, *parents) -> None:
         """
         Backpropagates the parents to the children.
-        
-        Parameters
-        ----------
-        parents : Tuple[Step]
-            Tuple of parent steps to add to the children
+
+        :param parents: Parent steps to add to the children
         """
         self.parents_steps.extend(map(id, parents))
         
     def step_with_same_tags(self) -> List['Step']:
         """
-        Explore available steps and return step with the same tags as the current one
+        Returns the steps that have the same tags as this step.
 
-        Returns
-        -------
-        List[Step]
-            list of step with the same tags
+        :return: List of steps
         """
-        return [key for key, tags in Step.available_steps.items() if self.tags == set(tags)]
-            
+        return [ key for key, tags in Step.available_steps.items() if self.tags == set(tags) ]
     
     ################
     # Configurable #
@@ -232,19 +180,11 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     @dispatch(str, object)
     def configure(self, key:str, value:Any) -> None:
         """
-        Configure one parameter
+        Configures a parameter.
 
-        Parameters
-        ----------
-        key : str
-            Name of the parameter
-        value : Any
-            Value to set 
-
-        Raises
-        ------
-        AttributeError
-            Key doesn't exists
+        :param key: Name (or key) of the parameter to set
+        :param value: New value for the parameter
+        :raise AttributeError: When the key is invalid
         """
         if key in self.configuration:
             self.configuration[key]['value'] = value
@@ -254,31 +194,23 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     @dispatch(dict)
     def configure(self, config: Dict[str, Any]): # pylint: disable=function-redefined
         """
-        Configure several parameters with a dictionary
+        Configures several parameters at once.
 
-        Parameters
-        ----------
-        config : Dict[str, Any]
-            key as parameter name, value as value to set
+        :param config: Dictionary of parameters' names and values
         """
         for key, value in config.items():
             self.configure(key, value)
-            
-    def passthrough_parameters(self, default:bool=True) -> Dict[str, Any]:
+
+    def passthrough_parameters(self, default: bool = True) -> Dict[str, Any]:
         """
-        Get all configuration elements that have to be passed to the next step
-        or to the model
+        Constructs a dictionary of parameters' names and values.
 
-        Parameters
-        ----------
-        default : bool
-            default behavior for configuration elements
-            without "passthrough" key. Defaults to True.
+        :param default: Default behavior when trying to passthrough configurations from one step
+            which have no "passthrough" key. When "passthrough" is undefined and "default" is set
+            to False, the configuration will not be returned; otherwise, the default value for that
+            configuration will be returned.
 
-        Returns
-        -------
-        Dict[str, Any]
-            Configuration elements to pass through
+        :return: A dictionary view of the configuration with parameters' names and values
         """
         parameters = {}
         for key, value in self.configuration.items():
@@ -291,18 +223,17 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         return parameters
             
     def all_configurations(self) -> List[Dict[str, Dict]]:
-        """Recursive function (last one here) to get all configurations in a pipeline
-
-        Returns
-        -------
-        List[Dict[str, Dict]]
-            list of all configurations
+        """
+        Retrieves the signature (id and configuration) of the step. This should be overloaded in
+        steps which have children to also return the children's configuration.
+        
+        :return: List of all configurations as objects
         """
         return [{
             'step_id': id(self),
             'configuration': self.configuration
         }]
-    
+
     def resume_configuration(self) -> Dict:
         """
         Resume a configuration -> No meta data, only "key: value"
@@ -329,39 +260,28 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     @classmethod
     def __resume_a_configuration(cls, config: Dict) -> Dict:
         """
-        Resume a configuration
-        
-        Parameters
-        ----------
-        config : Dict
-            The configuration to make a resume for
-        
-        Returns
-        -------
-        Dict
-            The configuration Resume
+        Summarizes a configuration, and uses the default value for each configuration which have no
+        value yet.
+
+        :param config: Step's configuration
+        :return: The configuration to make a "summary" for
         """
-        return {k: Step.__get_a_value(v) for k, v in config.items()}
+        return { k: Step.__get_a_value(v) for k, v in config.items() }
     
     @classmethod
-    def __get_a_value(cls, elem: Dict) -> Any:
+    def __get_a_value(cls, elem: dict) -> Any:
         """
-        Get a specific value from configuration
-        
-        Parameters
-        ----------
-        elem : Dict
-            The element we want the value
-            
-        Returns
-        -------
-        Any
-            The element value or it's default value
+        Retrieves a value from the configuration, and uses the default value for that configuration
+        if it has no value.
+
+        :param elem: Step's configuration item
+        :return: Value or default value
         """
         return elem['value'] if 'value' in elem.keys() else elem['default']
     
     def get_config(self, key: str) -> Any:
         """
+        Retrieves 
         Get value of a configuration key.
         Very useful to easily get configuration in inherit Step methods
 
@@ -431,7 +351,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     #####################
     # Results of run() can by stored in cache to avoid compute it several time
     
-    def from_cache(self, candidate:'Candidate') -> 'Candidate':
+    def from_cache(self, candidate: Candidate) -> Candidate:
         """
         If a previous run with same candidate & configuration was cached, return it
         Else return None
@@ -455,7 +375,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
                 return cache['output']
         return None
     
-    def add_cache(self, input_candidate:'Candidate', output_candidate:'Candidate') -> bool:
+    def add_cache(self, input_candidate:Candidate, output_candidate:Candidate) -> bool:
         """
         Add an candidate, candidate pair to cache
 
@@ -579,74 +499,47 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     
     def count_steps(self) -> int:
         """
-        Returns a rough estimation of the total count of steps for a given
-        pipeline.
+        Returns a rough estimation of the total count of steps for a given pipeline.
         
-        Returns
-        -------
-        int
-            ?
+        :return: Number of steps
         """
         return 1
     
     ############
     # Priorize #
     ############
-    #
-    # Base on the dataset (or not) priorize usefulness of this actionable.
-    # Result is a value between 0 and 1. 0 stand for not useful
-    #
-    def priorize(self, candidate:'Candidate' = None) -> float: # pylint: disable=unused-argument
+    def priorize(self, candidate: Candidate = None) -> float: # pylint: disable=unused-argument
         """
-        Try to evaluate the priorities level of himself on an candidate  
+        Evaluates the priority of the step within a pipeline. 0 means the execution of the step
+        should not be prioritized, and 1 means it should be executed early in the pipeline.
 
-        Parameters
-        ----------
-        candidate : Candidate
-            Candidate used to compute priorities. Defaults to None.
-
-        Returns
-        -------
-        float
-            Continuous value 0 to 1 
+        :param Candidate, optional candidate: Candidate on which the priority should be evaluated.
+        :return: Value between 0 and 1.
         """
-        return 0.0
+        return 0
     
     #######
     # RUN #
     #######
     def fit(self, dataset: Dataset) -> 'Step':  # pylint: disable=unused-argument
         """
-        Fit Step on a Dataset.
+        Fit the step on the given dataset.
 
-        Parameters
-        ----------
-        dataset : Dataset
-            Features and labels
-
-        Returns
-        -------
-        Step
-            fitted step 
+        :param dataset: Features and labels
+        :return: Fitted step
         """
         return self
     
     @runner  
-    def run(self, candidate: 'Candidate') -> 'Candidate':
+    def run(self, candidate: Candidate) -> Candidate:
         """
-        Run the step on candidate data
+        Runs the step for a given candidate.
 
-        Parameters
-        ----------
-        candidate : Candidate
-            Candidate informations 
-
-        Returns
-        -------
-        Candidate
-            transformed Candidate 
+        :param candidate: Candidate to run the step for
+        :return: Run candidate 
         """
         self.fit(candidate.dataset)
+
         return candidate.add_to_pipeline(self)
     
     @classmethod
