@@ -61,15 +61,8 @@ class ShapPlot(Plot):
         examples from the medical field, to help non-experts interpret how machine learning 
         models make predictions.
 
-        Parameters:
-        -----------
-        key : str
-            The type of SHAP plot ('force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar').
-
-        Returns:
-        --------
-        tuple[str]:
-            A title and description of the SHAP plot type, explaining what it shows and how it 
+        :param str key: The type of SHAP plot ('force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar').
+        :return: A title and description of the SHAP plot type, explaining what it shows and how it 
             relates to model predictions.
         """
         features = shap_values.feature_names
