@@ -84,6 +84,11 @@ class Cache(metaclass=MetaSingleton):
         """
         Add something to cache
         
+        Parameters
+        ----------
+        fingerprint : str
+            fingerprint of the newly added object to cache
+        
         """
         if self.__disable:
             return None
