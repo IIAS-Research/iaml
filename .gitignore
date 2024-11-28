@@ -28,6 +28,8 @@ __pycache__
 
 # Documentation
 public/
+/docs/_build/
+/docs/autoapi/
 
 # Environments
 .env
@@ -37,7 +39,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
 
 # Vscode
 .vscode/*
