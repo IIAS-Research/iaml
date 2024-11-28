@@ -1,13 +1,14 @@
 """
-Singleton used by Automed to cache results
+Singleton used by IAML to cache results
 """
 from copy import deepcopy
+from typing import Any, List
 import pandas as pd
 from .meta_singleton import MetaSingleton
 
 class Cache(metaclass=MetaSingleton):
     """
-    Singleton used by Automed to cache results
+    Singleton used by IAML to cache results
     """
     
     def __init__(self) -> None:
@@ -27,23 +28,43 @@ class Cache(metaclass=MetaSingleton):
         """
         self.__disable = False
         
-    def __get_from_fingerprint(self, fingerprint:str) -> list:
+    def __get_from_fingerprint(self, fingerprint: str) -> List:
         return [item for item in self.saved if item[0] == fingerprint]
         
-    def __delete(self, fingerprint:str, dataset) -> None:
-        """Delete item from cache"""
+    def __delete(self, fingerprint: str, dataset: pd.DataFrame) -> None:
+        """
+        Delete item from cache
+        
+        Parameters
+        ----------
+        fingerprint : str
+            Fingerprint used to identify task
+        dataset : pd.DataFrame
+            _description_
+        
+        """
         for idx, item in enumerate(self.saved):
             old_fingerprint, input_data, _ = item
             if old_fingerprint == fingerprint and dataset.equals(input_data):
                 del self.saved[idx]
                 break
         
-    def from_cache(self, fingerprint:str, dataset:pd.DataFrame) -> any:  
+    def from_cache(self, fingerprint: str, dataset: pd.DataFrame) -> Any:  
         """
         Get data from cache
         
-        Args:
-            fingerprint (bool): Fingerprint used to identify task
+        Parameters
+        ----------
+        fingerprint : str
+            Fingerprint used to identify task
+        dataset : pd.DataFrame
+            _description_
+        
+        Returns
+        -------
+        Any
+            cached data
+        
         """
         if self.__disable:
             return None
@@ -59,9 +80,10 @@ class Cache(metaclass=MetaSingleton):
         
         return None
 
-    def add_to_cache(self, fingerprint:str, dataset:pd.DataFrame, output:any) -> None:
+    def add_to_cache(self, fingerprint: str, dataset: pd.DataFrame, output: Any) -> None:
         """
         Add something to cache
+        
         """
         if self.__disable:
             return None

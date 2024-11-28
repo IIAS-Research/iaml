@@ -1,6 +1,7 @@
 """
 [METASTEP] Explore all sub steps in Thread and return one candidate by Sub Step
 """
+from typing import Dict
 from .metastep import MetaStep
 from .candidate import Candidate
 from .step import Step
@@ -20,32 +21,38 @@ class MetaExplorerStep(MetaStep):
     description = 'Execute all steps and keep the best result'
     description_long = None
     
-    def __init__(self, *args, also_explore_without:bool=False, **kwargs):  # pylint: disable=unused-argument
+    def __init__(self, *args, also_explore_without: bool=False, **kwargs):  # pylint: disable=unused-argument
         self.candidate = []
         self.also_explore_without = also_explore_without
     
-    def json_pipeline(self) -> dict:
+    def json_pipeline(self) -> Dict:
         """
         Create a JSON format of the pipeline
 
-        Returns:
-            dict: Pipeline in JSON format
+        Returns
+        -------
+        Dict
+            Pipeline in JSON format
         """
         json = Step.json_pipeline(self)
         json['children'] = list(map(lambda step: step.json_pipeline(), self.steps))
         return json
         
     
-    def add_step(self, step:Step) -> None:
+    def add_step(self, step: Step) -> None:
         """
         Add one step to the MetaStep. 
         step must be a Step inherited class
 
-        Args:
-            step (Step): Step to add
+        Parameters
+        ----------
+        step : Step
+            Step to add
 
-        Raises:
-            ValueError: step must be an occurrence of step (or inherited classes)
+        Raises
+        ------
+        ValueError
+            step must be an occurrence of step (or inherited classes)
         """
         if Step in step.__class__.__mro__:
             step.is_interchangeable = True
@@ -61,15 +68,19 @@ class MetaExplorerStep(MetaStep):
         
     # Explore all steps
     @runner
-    def run(self, candidate:Candidate) -> Candidate:
+    def run(self, candidate: Candidate) -> Candidate:
         """
         Run all children Step in threads 
 
-        Args:
-            candidate (Candidate): Candidate data
+        Parameters
+        ----------
+        candidate : Candidate
+            Candidate data
 
-        Returns:
-            Candidate: Result candidate
+        Returns
+        -------
+        Candidate
+            Result candidate
         """
         output = []
         

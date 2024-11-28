@@ -2,6 +2,7 @@
 Singleton used by Automed to generate nice logs
 """
 from enum import Enum
+from typing import List
 import rich.console
 import rich.progress
 import multiprocess
@@ -21,9 +22,10 @@ class Logger(metaclass=MetaSingleton):
     """
     Singleton used by Automed to generate nice logs
     """
-    def __init__(self, verbose:int = 1) -> None:
+    def __init__(self, verbose: int = 1) -> None:
         """
-        Args:
+        Parameters
+        ----------
             verbose (int, optional): 
                 0 -> No print
                 1 -> Progressbar only
@@ -41,6 +43,9 @@ class Logger(metaclass=MetaSingleton):
     @property
     def verbose(self) -> int:
         """
+        Returns
+        -------
+        int
             Logger's verbosity
                 0 -> No print
                 1 -> Progressbar only
@@ -52,16 +57,36 @@ class Logger(metaclass=MetaSingleton):
         return self.__verbose
     
     @verbose.setter
-    def verbose(self, value:int) -> int:
+    def verbose(self, value: int) -> int:
+        """
+        Set logger verbosity
+        
+        Parameters
+        ----------
+        value : int
+            The new logger verbosity
+        
+        Returns
+        -------
+        int
+            The new logger verbosity
+        """
         self.__verbose = max(min(value, 4), -1)
         
         self.console.quiet = self.__verbose == 0
         
         return self.__verbose
     
-    def __log(self, log_type, *text: list[str]) -> None:
+    def __log(self, log_type: LogType, *text: List[str]) -> None:
         """
         Show text in console
+        
+        Parameters
+        ----------
+        log_type : LogType
+            Logger type
+        text : List[str]
+            Text to log
         """
         if multiprocess.current_process().name == 'MainProcess':
             self.console.log(*text)
@@ -69,23 +94,38 @@ class Logger(metaclass=MetaSingleton):
             self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
                 
 
-    def info(self, *text: list[str]) -> None:
+    def info(self, *text: List[str]) -> None:
         """
         Show info text in console
+        
+        Parameters
+        ----------
+        text : List[str]
+            Text to log in console
         """
         if self.verbose > 1:
             self.__log(LogType.INFO, *text)
             
-    def warning(self, *text: list[str]) -> None:
+    def warning(self, *text: List[str]) -> None:
         """
         Show warning text in console
+
+        Parameters
+        ----------
+        text : List[str]
+            Text to log in console
         """
         if self.verbose > 2:
             self.__log(LogType.WARNING, *text)
             
-    def error(self, *text: list[str]) -> None:
+    def error(self, *text: List[str]) -> None:
         """
         Show info text in console
+
+        Parameters
+        ----------
+        text : List[str]
+            Text to log in console
         """
         if self.verbose > 3 or self.verbose == -1:
             self.__log(LogType.ERROR, *text)

@@ -1,6 +1,7 @@
 """
     Singleton used by IAML to dispatch cores to process
 """
+from typing import List
 import psutil
 import multiprocess
 from .meta_singleton import MetaSingleton
@@ -28,6 +29,11 @@ class CoreDispatcher(metaclass=MetaSingleton):
     def available_cores(self) -> set[int]:
         """
         All cores minus booked ones
+        
+        Returns
+        -------
+        set[int]
+            Set of available cpu cores
         """
         avail = self.__all_cores
         for book in self.books:
@@ -35,16 +41,21 @@ class CoreDispatcher(metaclass=MetaSingleton):
             
         return avail
     
-    def __book_cpu(self, pids:set[int], number:int) -> None:
+    def __book_cpu(self, pids: set[int], number: int) -> None:
         """
         Affiliate CPU cores to process
 
-        Args:
-            pids (set[int]): pids to set affinity with
-            number (int): Number of cores to book
+        Parameters
+        ----------
+        pids : set[int]
+            pids to set affinity with
+        number : int
+            Number of cores to book
 
-        Raises:
-            RuntimeError: Not enough CPU cores available
+        Raises
+        ------
+        RuntimeError
+            Not enough CPU cores available
         """
         self.__free_cores()
         with self.manager.Lock():
@@ -63,16 +74,18 @@ class CoreDispatcher(metaclass=MetaSingleton):
             process.cpu_affinity(to_book)
         
     def affiliate(self, 
-            pids:list[int], 
-            core_number=1) -> None:
+            pids: List[int], 
+            core_number: int=1) -> None:
         """
         Run process with CPU affinity
 
-        Args:
-            pids:list[int]: Process to affiliate with CPU cores. Defaults to 1.
-            process_number (int, optional): number of process to run 
-                (each process run the same target). Defaults to 1.
-
+        Parameters
+        ----------
+        pids : List[int]
+            Process to affiliate with CPU cores.
+        process_number : int
+            number of process to run 
+            (each process run the same target). Defaults to 1.
         """
         test_process = psutil.Process(pids[0])
         if hasattr(test_process, 'cpu_affinity'):

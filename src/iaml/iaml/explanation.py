@@ -1,7 +1,7 @@
 """
 Enables steps to "explain" their processings and prediction results.
 """
-from typing import TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING
 import textwrap
 import numpy as np
 import shap
@@ -19,9 +19,23 @@ class Explanation:
     def __init__(
             self,
             step: 'Step',
-            processings: list[str] = None,
-            metrics: dict['Metric', float] = None,
+            processings: List[str] = None,
+            metrics: Dict['Metric', float] = None,
             shap_values: shap.Explanation = None) -> None:
+        """
+        Initialize explanation
+        
+        Parameters
+        ----------
+        step : Step
+            Step to explain
+        processings : List[str]
+            Processing descriptions
+        metrics : Dict[Metric, float]
+            Metrics to append to the explanation
+        shap_values : shap.Explanation
+            shap value to append to the explanation
+        """
         if processings is None:
             processings = []
 
@@ -38,8 +52,10 @@ class Explanation:
         """
         Formats the description of a step with its configuration.
 
-        Returns:
-            str: Formatted description.
+        Returns
+        -------
+        str
+            Formatted description.
         """
         conf = { k: v['value'] for k, v in self.step.configuration.items() }
 
@@ -49,8 +65,10 @@ class Explanation:
         """
         Adds a processing description to the list of processings.
 
-        Args:
-            processing (str): Processing description.
+        Parameters
+        ----------
+        processing : str
+            Processing description.
         """
         self.processings.append(processing)
 
@@ -58,9 +76,12 @@ class Explanation:
         """
         Adds a metric description to the list of metrics.
 
-        Args:
-            metric (Metric): Metric.
-            value (float): Metric value.
+        Parameters
+        ----------
+        metric : Metric
+            Metric.
+        value : float
+            Metric value.
         """
         self.metrics[metric] = value
     
@@ -72,17 +93,31 @@ class Explanation:
         """
         Plot SHAP values.
 
-        Args:
-            plot (str): Plot to generate (one of "force", "scatter",
-                "beeswarm", "heatmap", "bar"). Refer to the SHAP
-                documentation for more details on these plots.
-            ps (slice, optional): Specify the indexes of the SHAP values
-                to plot. Defaults to all predictions. If plot is
-                "force" or "waterfall", it will pick the first
-                prediction matching the provided slice (defaults to
-                first of all).
-            scatter_feature (str, optional): Specify the feature to
-                plot in the scatter plot (defaults to first).
+        Parameters
+        ----------
+        plot : str
+            Plot to generate (one of "force", "scatter",
+            "beeswarm", "heatmap", "bar"). Refer to the SHAP
+            documentation for more details on these plots.
+        ps : slice
+            Specify the indexes of the SHAP values
+            to plot. Defaults to all predictions. If plot is
+            "force" or "waterfall", it will pick the first
+            prediction matching the provided slice (defaults to
+            first of all).
+        scatter_feature : str
+            Specify the feature to
+            plot in the scatter plot (defaults to first).
+        
+        Raises
+        ------
+        RuntimeError
+            Cannot generate plots for this explanation without SHAP values.
+        
+        Returns
+        -------
+        ShapPlot
+            object containing shap plot
         """
         if self.shap_values is None:
             raise RuntimeError('Cannot generate plots for this explanation without SHAP values.')
@@ -95,15 +130,20 @@ class Explanation:
             
         return shap_plot
     
-    def to_plots(self, plots:list=None) -> list:
-        """Generate several plots
+    def to_plots(self, plots: List[str]=None) -> List[ShapPlot]:
+        """
+        Generate several plots
 
-        Args:
-            plots (list[str], optional): LIst of plot to generate . 
-                Defaults to ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar'].
+        Parameters
+        ----------
+        plots : List[str]
+            List of plot to generate . 
+            Defaults to ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar'].
 
-        Returns:
-            list: List of plots
+        Returns
+        -------
+        List[ShapPlot]
+            List of plots
         """
         if plots is None:
             plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
@@ -115,7 +155,9 @@ class Explanation:
         Markdown text.
 
         Returns
-            str: Markdown document.
+        -------
+        str
+            Markdown document.
         """
         confs = '\n'.join([
             f'| **{k}** | {v["description"]} | {v["value"]} |'
@@ -133,13 +175,17 @@ class Explanation:
         """
         Renders the processings for this explanation as Markdown text.
 
-        Args:
-            processings_limit (int, optional): Limit the number of
-                processings that are displayed in the Markdown document
-                (defaults to 20).
+        Parameters
+        ----------
+        processings_limit : int
+            Limit the number of
+            processings that are displayed in the Markdown document
+            (defaults to 20).
         
-        Returns:
-            str: Markdown document.
+        Returns
+        -------
+        str
+            Markdown document.
         """
         processings = '\n'.join([ f' - {p}' for p in self.processings[:processings_limit] ])
         processings_left = len(self.processings) - processings_limit
@@ -155,7 +201,9 @@ class Explanation:
         Renders model metrics for this explanation as Markdown text.
 
         Returns
-            str: Markdown document.
+        -------
+        str
+            Markdown document.
         """
         metrics = '\n'.join([
             f'| `{m}` | **{v:.4f}** | *{m.explain()}* |'
@@ -174,7 +222,9 @@ class Explanation:
         Renders SHAP values for this explanation as Markdown text.
 
         Returns
-            str: Markdown document.
+        -------
+        str
+            Markdown document.
         """
         feature_impacts = ""
         if self.shap_values is not None:
@@ -191,12 +241,14 @@ class Explanation:
             {feature_impacts}
             """) if self.shap_values is not None else ""
         
-    def features_impacts(self) -> list:
+    def features_impacts(self) -> List[Dict[str, str]]:
         """
         Return features impacts
 
-        Returns:
-            list[dict['name', 'value']] : name and impact of each feature
+        Returns
+        -------
+        List[Dict['name', 'value']]
+            name and impact of each feature
         """
         if self.shap_values is not None:
             feature_names = self.shap_values.feature_names
@@ -205,13 +257,20 @@ class Explanation:
                 for key, value in list(zip(feature_names, feature_values))]
         return []
 
-    def to_markdown_plots(self, plots: list[str] = None) -> str:
+    def to_markdown_plots(self, plots: List[str] = None) -> str:
         """
         Generates SHAP plots for this explanation, and renders them as
         Markdown text.
 
+        Parameters
+        ----------
+        plots : List[str]
+            List of plots to generate
+
         Returns
-            str: Markdown text.
+        -------
+        str
+            Markdown text.
         """
         if plots is None:
             plots = ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']
@@ -234,12 +293,17 @@ class Explanation:
         """
         Renders the explanation as Markdown text.
 
-        Args:
-            processings_limit (int, optional): Limit the number of
-                processings that are displayed in the Markdown document
-                (defaults to 20).
-        Returns:
-            str: Markdown document.
+        Parameters
+        ----------
+        processings_limit : int
+            Limit the number of
+            processings that are displayed in the Markdown document
+            (defaults to 20).
+        
+        Returns
+        -------
+        str
+            Markdown document
         """
         if len(self.processings) == 0 and len(self.metrics) == 0 and self.shap_values is None:
             return ''
