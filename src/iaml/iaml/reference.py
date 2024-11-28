@@ -6,31 +6,25 @@ from typing import List, Dict
 
 
 class Reference:  # pylint: disable=too-few-public-methods
-    """
-    Reference class.
+    """Reference class.
     Contain all needed data to provide a reference for a step
+    
+    :param Dict properties: a dictionnary of properties for a reference object
+    :param str step_name: The step_name attached to this reference
     """
     
     def __init__(self, properties: Dict, step_name: str) -> None:
-        """
-        Instantiate all properties provided to the specific reference
+        """Instantiate all properties provided to the specific reference
         such as year of publication, authors, doi ...
-        
-        Parameters
-        ----------
-        properties : Dict
-            A dictionnary of properties for this Reference
-        
-        step_name : str
-            The step_name attached to this reference
         """
         setattr(self, 'step', step_name)
         for k, v in properties.items():
             setattr(self, k, v)
     
     def __str__(self) -> str:
-        """
-        Return a simple string containing reference information
+        """Return a simple string containing reference information
+        
+        :return: The reference representation
         """
         structured = ''
         try:
@@ -56,25 +50,16 @@ class Reference:  # pylint: disable=too-few-public-methods
         return structured
     
     @classmethod
-    def bibliography(cls, references: List, structured: bool) -> str | List[Dict]:
-        """
-        Format a bibliography in a string from a list of references
+    def bibliography(cls, references: List['Reference'], structured: bool) -> str | List[Dict]:
+        """Format a bibliography in a string from a list of references
 
-        Parameters
-        ----------
-        references : List
-            List of References
-        structured : bool
-            Wether we want a string bibliography or a list of references
+        :param List[Reference] references: List of References
+        :param bool structured: Wether we want a string bibliography or a list of references
 
-        Returns
-        -------
-        str | List[Dict]
-            Bibliography in string or List format
+        :return: Bibliography in string or List format
         """
         if structured:
             return [vars(r) for r in references]
         spacing = len(str(len(references)))
         return '\n'.join([f"[{i+1:>{spacing}}]  {str(reference)}\n" \
             for i, reference in enumerate(references)])
-        
