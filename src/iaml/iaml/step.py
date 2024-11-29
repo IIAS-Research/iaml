@@ -89,6 +89,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         :param dict pipeline: Pipeline to import.
         :param optional \\*args: Args to pass to the Step's constructor.
         :param optional \\**kwargs: Kwargs to pass to the Step's constructor.
+        :raise TypeError: invalid pipeline: missing step attribute
+        :raise TypeError: invalid pipeline: step does not exist
+        :return: A step
         """
         step = None
         if 'step' not in pipeline:
@@ -121,7 +124,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         return self.__enable
 
     @enable.setter
-    def enable(self, value: bool) -> bool:
+    def enable(self, value: bool) -> None:
         """Sets the state of the step.
 
         :param value: State of the step (True if enabled, False if disabled).
@@ -154,7 +157,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
 
         return child
 
-    def configure_parents(self, *parents: list[Step]) -> None:
+    def configure_parents(self, *parents: list['Step']) -> None:
         """Backpropagates the parents to the children.
 
         :param list[Step] parents: Parent steps to add to the children.
@@ -192,7 +195,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             raise AttributeError(f"Configurable Key '{key}' does not exist.")
 
     @dispatch(dict)
-    def configure(self, config: dict[str, Any]): # pylint: disable=function-redefined
+    def configure(self, config: dict[str, Any]) -> None: # pylint: disable=function-redefined
         """Configures several parameters at once.
 
         :param dict[str, Any] config: Dictionary of parameters' names and values.
@@ -478,7 +481,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         return self.__description.format(**conf)
 
     @description.setter
-    def description(self, value: str) -> str:
+    def description(self, value: str) -> None:
         """Sets the description of this step.
 
         :param str value: New description.
