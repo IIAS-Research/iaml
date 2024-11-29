@@ -107,9 +107,9 @@ class MetricPlot(Plot):
         self,
         estimator:'IAMLPipeline',
         X: pd.DataFrame,
-        y: pd.Series, 
+        y: pd.Series,
         X_train: pd.DataFrame = None,
-        y_train: pd.Series = None, 
+        y_train: pd.Series = None,
         **kwargs) -> None:
         """Initialize a metric plot
         

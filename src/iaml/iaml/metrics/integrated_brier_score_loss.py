@@ -1,8 +1,6 @@
 """[METRIC] Integrated Brier Score Loss for Survival Models"""
 import textwrap
 import pandas as pd
-import numpy as np
-from ..dataset import Dataset
 from .integrated_brier_score import IntegratedBrierScoreMetric
 
 
@@ -24,7 +22,7 @@ class IntegratedBrierScoreLossMetric(IntegratedBrierScoreMetric):
 
     def __str__(self) -> str:
         return 'integrated_brier_score_loss'
-    
+
     def compute(
         self,
         y: pd.DataFrame,

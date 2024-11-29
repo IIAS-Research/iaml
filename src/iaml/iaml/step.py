@@ -93,7 +93,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         step = None
         if 'step' not in pipeline:
             raise TypeError("invalid pipeline: missing step attribute")
-        
+
         step_class = getattr(sys.modules['iaml'], pipeline['step']) # Get class from string
         if Step in step_class.__mro__:
             if step_class == cls:
@@ -203,10 +203,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     def passthrough_parameters(self, default: bool = True) -> dict[str, Any]:
         """Constructs a dictionary of parameters' names and values.
 
-        :param bool default: Default behavior when trying to passthrough configurations from one step
-            which have no "passthrough" key. When "passthrough" is undefined and "default" is set
-            to False, the configuration will not be returned; otherwise, the default value for that
-            configuration will be returned.
+        :param bool default: Default behavior when trying to passthrough configurations from
+            one step which have no "passthrough" key. When "passthrough" is undefined and "default" 
+            is set to False, the configuration will not be returned; otherwise, the default value 
+            for that configuration will be returned.
         :return: A dictionary view of the configuration with parameters' names and values.
         """
         parameters = {}

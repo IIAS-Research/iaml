@@ -5,7 +5,7 @@ from .brier_score import BrierScoreMetric
 from .classification_error_metric import ClassificationErrorMetric
 from .concordance_index_ipcw import ConcordanceIndexIPCWMetric
 from .concordance_index_metric import ConcordanceIndexMetric
-# from .cumulative_dynamic_auc import CumulativeDynamicAUCMetric # TODO Does this metric is usefull ? 
+# from .cumulative_dynamic_auc import CumulativeDynamicAUCMetric # TODO Is this metric usefull?
 from .f1_score_metric import F1ScoreMetric
 from .integrated_brier_score_loss import IntegratedBrierScoreLossMetric
 from .integrated_brier_score import IntegratedBrierScoreMetric
