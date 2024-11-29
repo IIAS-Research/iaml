@@ -1,7 +1,5 @@
-"""
-All metrics to evaluate models
-"""
-from .accuracy_metric import *
+"""All metrics to evaluate models"""
+from .accuracy_metric import AccuracyMetric
 from .balanced_accuracy_metric import *
 from .classification_error_metric import *
 from .f1_score_metric import *

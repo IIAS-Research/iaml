@@ -43,7 +43,7 @@ class Plot:
         :return: b64 string image.
         """
         return base64.b64encode(self.image).decode()
-        
+ 
     def _compute(
         self,
         estimator: 'IAMLPipeline',
@@ -57,10 +57,9 @@ class Plot:
         :param pd.DataFrame X: The dataset we wanna compute plot on.
         :param pd.Series y: The dataset target we wanna compute plot on.
         :param optional \\**kwargs: Additional parameters for plotting.
-        :raise NotImplementedError: Subclass should be called instead of abstract class.
         """
         raise NotImplementedError('Subclass must implement abstract method')
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         """Does this plot is usable for a given type_of_target ?
@@ -84,11 +83,11 @@ class Plot:
                 data = self.b64_image
             case _:
                 raise AttributeError('Invalide Data Format')
-        
+
         return {'title': self.title,
             'description': self.description,
             'image': data}
-        
+
     def to_markdown(self) -> str:
         """Return plot as markdown format
         
@@ -96,14 +95,14 @@ class Plot:
         """
         base64_md = f"![{self.title}](data:image/png;base64,{self.b64_image})"
         return "\n\n".join([f"# {self.title}", self.description, base64_md])
-    
+
 
 class MetricPlot(Plot):
     """To be used by performance Explainer"""
 
     def __init__(
         self,
-        estimator:'IAMLPipeline', 
+        estimator:'IAMLPipeline',
         X: pd.DataFrame,
         y: pd.Series, 
         X_train: pd.DataFrame = None,
@@ -119,7 +118,7 @@ class MetricPlot(Plot):
         :param optional \\**kwargs: Additional arguments for plot computing.
         """
         self._compute(estimator, X, y, X_train=X_train, y_train=y_train, **kwargs)
-    
+
     def _compute(
         self,
         estimator: 'IAMLPipeline',
@@ -137,7 +136,6 @@ class MetricPlot(Plot):
         :param pd.DataFrame, optional X_train: The dataframe used for training.
         :param pd.Series, optional y_train: The dataframe target used for training.
         :param optional \\**kwargs: Additional parameters for plotting.
-        :raise NotImplementedError: Subclass should be called instead of abstract class.
         :return: A MetricPlot object.
         """
         raise NotImplementedError('Subclass must implement abstract method')
@@ -154,5 +152,5 @@ def capture(func) -> Any:
         ret = func(*args, **kwargs)
         plt.close()
         return ret
-    
+
     return wrapper
