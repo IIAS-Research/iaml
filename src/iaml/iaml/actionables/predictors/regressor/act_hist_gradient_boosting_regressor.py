@@ -42,7 +42,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'l2_regularization': {
                 'description': 'The L2 regularization parameter. \
                     Use 0 for no regularization (default).',
@@ -92,7 +92,7 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'range': [8, 25]
                 }
             }
-        self.model:HistGradientBoostingRegressor = None
+        self.model: HistGradientBoostingRegressor = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -111,7 +111,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -123,7 +123,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         """
         return dataset.type_of_target == 'continuous'
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

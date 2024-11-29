@@ -91,7 +91,7 @@ class ActAalenAdditiveFitter(Predictor):
         return 0.5  # neutral
     
     
-    def predict(self, X:pd.DataFrame) -> list[float]:
+    def predict(self, X: pd.DataFrame) -> list[float]:
         """
         Apply prediction model on DataFrame
 

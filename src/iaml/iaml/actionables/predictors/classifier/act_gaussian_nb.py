@@ -31,7 +31,7 @@ class ActGaussianNb(Predictor):
     refs = []
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'var_smoothing': {
                 'description': 'Portion of the largest variance of all \
                     features that is added to variances for calculation stability.',
@@ -39,7 +39,7 @@ class ActGaussianNb(Predictor):
                 'range': [1e-11, 1e-4]
             },
         }
-        self.model:GaussianNB = None
+        self.model: GaussianNB = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -58,7 +58,7 @@ class ActGaussianNb(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -71,7 +71,7 @@ class ActGaussianNb(Predictor):
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

@@ -49,7 +49,7 @@ class ActKNNRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'metric': {
                 'description': 'Can be minkowski or manhattan',
                 'default': 'minkowski',
@@ -67,7 +67,7 @@ class ActKNNRegressor(Predictor):
                 'categorical': ['uniform', 'distance']
             }
         }
-        self.model:KNeighborsRegressor = None
+        self.model: KNeighborsRegressor = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -88,7 +88,7 @@ class ActKNNRegressor(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -100,7 +100,7 @@ class ActKNNRegressor(Predictor):
         """
         return dataset.type_of_target in ['continuous']
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

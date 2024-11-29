@@ -1,7 +1,5 @@
-"""
-[STEP] Fill missing values with mean
-"""
-import textwrap
+"""[STEP] Fill missing values with mean"""
+
 import pandas as pd
 import numpy as np
 from ...actionable import Actionable
@@ -13,9 +11,8 @@ from ...data_type import DataType
 
 @is_step('cleaning', 'baseline_cleaning')
 class ActMeanColumn(Actionable):
-    """
-    [STEP] Fill missing values with the mean.
-    """
+    """[STEP] Fill missing values with the mean."""
+
     name = 'Fill missing values'
     description = 'Fill missing values with the mean of non-missing values.'
     description_long = description
@@ -24,7 +21,7 @@ class ActMeanColumn(Actionable):
     def __init__(self):
         self.columns: list[str] = None
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         self.columns = []
         explain = []
 
@@ -53,17 +50,16 @@ class ActMeanColumn(Actionable):
 
         return self
 
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Fill NA values with the mean.
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Fill NA values with the mean.
 
-        :param pd.DataFrame x: DataFrame to transform
-        :return: Transformed dataset
+        :param pd.DataFrame x: DataFrame to transform.
+        :return: Transformed dataset.
         """
         for name, mean in self.columns:
             X[name] = X[name].fillna(mean)
 
         return X
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         return 1 - (candidate.dataset.X.isnull().sum().min() / len(candidate.dataset.X))

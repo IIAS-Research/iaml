@@ -39,7 +39,7 @@ class ActMultinomialNB(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'alpha': {
                 'description': 'Additive (Laplace/Lidstone) \
                     smoothing parameter (set alpha=0 and force_alpha=True, for no smoothing).',
@@ -53,7 +53,7 @@ class ActMultinomialNB(Predictor):
                 'categorical': [True, False]
                 }
             }
-        self.model:MultinomialNB = None
+        self.model: MultinomialNB = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -72,7 +72,7 @@ class ActMultinomialNB(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate ?
         Dataset must contain only positive values
@@ -87,7 +87,7 @@ class ActMultinomialNB(Predictor):
         return not((dataset.X < 0).any().any()) \
             and dataset.type_of_target in ['binary', 'multiclass']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

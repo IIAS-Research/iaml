@@ -38,7 +38,7 @@ class ActRBFSampler(Actionable):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'n_components': {
                 'description': 'Number of components to keep.',
                 'default': 100,
@@ -53,7 +53,7 @@ class ActRBFSampler(Actionable):
         self.optimizable = True
         self.preprocessor = None
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Fit Features agglomerations
 
@@ -70,7 +70,7 @@ class ActRBFSampler(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply RBFSampler
 
@@ -83,7 +83,7 @@ class ActRBFSampler(Actionable):
         return pd.DataFrame(self.preprocessor.transform(X))
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

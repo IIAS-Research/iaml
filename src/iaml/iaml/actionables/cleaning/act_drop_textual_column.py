@@ -1,6 +1,5 @@
-"""
-[STEP] Drop Textual Column
-"""
+"""[STEP] Drop Textual Column"""
+
 import textwrap
 import pandas as pd
 from ...actionable import Actionable
@@ -12,9 +11,8 @@ from ...decorators.all import is_step
 
 @is_step('cleaning', 'baseline_cleaning')
 class ActDropTextualColumn(Actionable):
-    """
-    [STEP] Drop Textual Column
-    """
+    """[STEP] Drop Textual Column"""
+
     name = 'Remove textual columns'
     description = 'Remove all columns containing textual data from the dataset'
     description_long = textwrap.dedent('''\
@@ -24,9 +22,9 @@ class ActDropTextualColumn(Actionable):
     can_be_disabled = False
 
     def __init__(self):
-        self.columns_to_drop:list[str] = None
+        self.columns_to_drop: list[str] = None
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         self.columns_to_drop = list(set(
             dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]) + \
             list(dataset.X.select_dtypes(include='object').columns)
@@ -39,11 +37,10 @@ class ActDropTextualColumn(Actionable):
         return self
 
     def transform(self, X) -> pd.DataFrame:
-        """
-        Drop columns.
+        """Drop columns.
 
-        :param pd.DataFrame X: DataFrame to transform
-        :return: Transformed DataFrame
+        :param pd.DataFrame X: DataFrame to transform.
+        :return: Transformed DataFrame.
         """
         return X.drop(self.columns_to_drop, axis=1)
 

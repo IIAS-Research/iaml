@@ -28,9 +28,8 @@ class ActMinMaxScaler(Actionable):
         which can improve the performance of many machine learning algorithms.''')
     
     def __init__(self):
-        self.configuration:dict = {}
-        self.columns:list[str] = None
-        self.scaler:MinMaxScaler = None
+        self.columns: list[str] = None
+        self.scaler: MinMaxScaler = None
     
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
@@ -52,7 +51,7 @@ class ActMinMaxScaler(Actionable):
             self.scaler = None
         return self
         
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply min max scaler
 
@@ -67,7 +66,7 @@ class ActMinMaxScaler(Actionable):
         return X
 
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

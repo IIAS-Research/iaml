@@ -51,7 +51,7 @@ class ActLogisticRegression(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'random_state': {
                 'description': 'random_state',
                 'default': 42
@@ -73,7 +73,7 @@ class ActLogisticRegression(Predictor):
                 'categorical': [None, 'balanced']
             }
         }
-        self.model:LogisticRegression = None
+        self.model: LogisticRegression = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -93,11 +93,11 @@ class ActLogisticRegression(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

@@ -37,7 +37,7 @@ class ActAdaBoostRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'learning_rate': {
                 'description': 'Weight applied to each regressor at each boosting iteration',
                 'default': 0.1,
@@ -59,7 +59,7 @@ class ActAdaBoostRegressor(Predictor):
                 'default': 42
             }
         }
-        self.model:AdaBoostRegressor = None
+        self.model: AdaBoostRegressor = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -77,10 +77,10 @@ class ActAdaBoostRegressor(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'continuous'
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

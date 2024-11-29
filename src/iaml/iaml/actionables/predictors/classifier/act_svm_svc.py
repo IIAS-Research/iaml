@@ -48,7 +48,7 @@ class ActSVMSVC(Predictor):
         },
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'kernel': {
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
@@ -69,7 +69,7 @@ class ActSVMSVC(Predictor):
                 'range': [1e-05, 0.1]
             }
         }
-        self.model:svm.SVC = None
+        self.model: svm.SVC = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -90,11 +90,11 @@ class ActSVMSVC(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

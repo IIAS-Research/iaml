@@ -21,10 +21,10 @@ class MetaPredictor(Predictor):
         """
         super().__init__()
         self.configuration = {}
-        self.metrics:list = candidates[0].metrics
-        self.estimator_type:str = candidates[0].pipeline._estimator_type
+        self.metrics: list = candidates[0].metrics
+        self.estimator_type: str = candidates[0].pipeline._estimator_type
         self.model = None
-        self.estimators:list = [(f'{idx} - {candidate.pipeline.predictor[0]}', candidate.pipeline) \
+        self.estimators: list = [(f'{idx} - {candidate.pipeline.predictor[0]}', candidate.pipeline) \
             for idx, candidate in enumerate(candidates)]
         
     def to_candidate(self) -> Candidate:
@@ -47,7 +47,7 @@ class MetaPredictor(Predictor):
         
         return candidate 
     
-    def suitable(self, type_of_target:str) -> bool:  # pylint: disable=unused-argument, arguments-renamed
+    def suitable(self, type_of_target: str) -> bool:  # pylint: disable=unused-argument, arguments-renamed
         """
         Does this meta predictor is usable given type of target ?
         

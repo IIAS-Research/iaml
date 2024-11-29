@@ -1,6 +1,5 @@
-"""
-[STEP] One hot encoding categorical features
-"""
+"""[STEP] One hot encoding categorical features"""
+
 import textwrap
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
@@ -13,9 +12,8 @@ from ...decorators.all import is_step
 
 @is_step('cleaning')
 class ActOnehot(Actionable):
-    """
-    [STEP] One hot encoding categorical features
-    """
+    """[STEP] One hot encoding categorical features"""
+
     name = 'One hot encoding categorical features'
     description = 'Encode categorical data to numerical values using One Hot Encoding Algorithm'
     description_long = textwrap.dedent('''\
@@ -25,11 +23,10 @@ class ActOnehot(Actionable):
         this step will create binary columns "A_coffee", "A_tea" and "A_water".''')
 
     def __init__(self):
-        self.configuration:dict = {}
-        self.columns:list[str] = None
-        self.encoder:OneHotEncoder = None
+        self.columns: list[str] = None
+        self.encoder: OneHotEncoder = None
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         self.columns = dataset.get_columns_names_by_type(DataType.CATEGORICAL)
         values = dataset.X[self.columns]
         self.encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False).fit(values)
@@ -44,12 +41,11 @@ class ActOnehot(Actionable):
 
         return self
 
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply One Hot Encoding to dataframe
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Apply One Hot Encoding to dataframe.
 
-        :param pd.DataFrame x: DataFrame to transform
-        :return: Transformed dataset
+        :param pd.DataFrame x: DataFrame to transform.
+        :return: Transformed dataset.
         """
         # Without Reset index, the join with OHE will create NAN (index mismatch)
         X = X.reset_index(drop=True)

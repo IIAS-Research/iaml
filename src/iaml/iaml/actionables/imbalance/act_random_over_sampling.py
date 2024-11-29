@@ -38,8 +38,7 @@ class ActRandomOverSampling(Actionable):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {}
-        self.resampler:RandomOverSampler = None
+        self.resampler: RandomOverSampler = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -55,7 +54,7 @@ class ActRandomOverSampling(Actionable):
         self.resampler.fit(dataset.X, dataset.y)
         return self
     
-    def resample(self, X:pd.DataFrame, y:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def resample(self, X: pd.DataFrame, y: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Apply Random Over Sampling
 
@@ -68,7 +67,7 @@ class ActRandomOverSampling(Actionable):
         """
         return self.resampler.fit_resample(X, y)
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 
@@ -76,5 +75,5 @@ class ActRandomOverSampling(Actionable):
         """
         return 1
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['binary', 'multiclass']

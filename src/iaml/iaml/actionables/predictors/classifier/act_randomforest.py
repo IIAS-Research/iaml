@@ -34,7 +34,7 @@ class ActRandomForest(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -75,7 +75,7 @@ class ActRandomForest(Predictor):
                 'categorical': ['gini', 'entropy', 'log_loss']
             }
         }
-        self.model:RandomForestClassifier = None
+        self.model: RandomForestClassifier = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -93,11 +93,11 @@ class ActRandomForest(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

@@ -27,7 +27,7 @@ class ActNystroem(Actionable):
 
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'kernel': {
                 'description': 'Kernel map to be approximated.',
                 'default': 'rbf',
@@ -64,7 +64,7 @@ class ActNystroem(Actionable):
         self.preprocessor = None
 
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Fit Features agglomerations
 
@@ -81,7 +81,7 @@ class ActNystroem(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply Nystroem
 
@@ -94,7 +94,7 @@ class ActNystroem(Actionable):
         return pd.DataFrame(self.preprocessor.transform(X))
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

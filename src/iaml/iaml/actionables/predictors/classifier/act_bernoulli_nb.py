@@ -52,7 +52,7 @@ class ActBernoulliNb(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'alpha': {
                 'description': 'Additive (Laplace/Lidstone) \
                     smoothing parameter (set alpha=0 and force_alpha=True, for no smoothing).',
@@ -66,7 +66,7 @@ class ActBernoulliNb(Predictor):
                 'categorical': [True, False]
                 }
             }
-        self.model:BernoulliNB = None
+        self.model: BernoulliNB = None
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -85,7 +85,7 @@ class ActBernoulliNb(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -98,7 +98,7 @@ class ActBernoulliNb(Predictor):
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

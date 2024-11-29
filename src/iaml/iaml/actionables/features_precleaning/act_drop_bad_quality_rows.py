@@ -28,7 +28,7 @@ class ActDropBadQualityRows(Actionable):
     refs = []
 
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'empty_threshold': {
                 'description': "Row with less or equal proportion of empty column will \
                     be drop. 0 will never never drop a row",

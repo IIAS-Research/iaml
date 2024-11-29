@@ -55,7 +55,7 @@ class ActXGBoostRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -101,7 +101,7 @@ class ActXGBoostRegressor(Predictor):
                 'range': [2, 20]
             }
         }
-        self.model:GradientBoostingRegressor = None
+        self.model: GradientBoostingRegressor = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -119,10 +119,10 @@ class ActXGBoostRegressor(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

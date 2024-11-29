@@ -27,7 +27,7 @@ class ActPCA(Actionable):
     ''')
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'n_components': {
                 'description': 'Number of components to keep.',
                 'default': 0.999,
@@ -43,7 +43,7 @@ class ActPCA(Actionable):
         self.preprocessor = None
 
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Find columns to convert
 
@@ -58,7 +58,7 @@ class ActPCA(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply PCA
 
@@ -71,7 +71,7 @@ class ActPCA(Actionable):
         return pd.DataFrame(self.preprocessor.transform(X))
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

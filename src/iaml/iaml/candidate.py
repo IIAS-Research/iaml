@@ -1,6 +1,8 @@
 """
 Candidate is used to exchange data between Steps  
 """
+from __future__ import annotations
+
 import traceback
 from typing import TYPE_CHECKING, List, Dict
 from copy import copy, deepcopy
@@ -14,6 +16,7 @@ from .splitters import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .plot import MetricPlot
 from .logger import Logger
+
 if TYPE_CHECKING:
     from .metric import Metric
     from .step import Step
@@ -33,11 +36,11 @@ class Candidate:
     """
     
     def __init__(self,
-                dataset:Dataset=None,
-                metrics:list['Metric']=None,
-                iaml_pipeline:'IAMLPipeline'=None,
-                stacked_path:list=None,
-                main_metric:'Metric'=None):
+                dataset: Dataset = None,
+                metrics: list[Metric] = None,
+                iaml_pipeline: IAMLPipeline = None,
+                stacked_path: list = None,
+                main_metric: 'Metric' = None):
 
         self.dataset = dataset
         
@@ -63,7 +66,7 @@ class Candidate:
             
         self.computed_metrics = {}
         self.stacked_path = copy(stacked_path) if stacked_path is not None else []
-        self.is_meta:bool = False
+        self.is_meta: bool = False
         
     def add_stack(self, stack:'Step'):
         """
@@ -112,9 +115,9 @@ class Candidate:
         return id(self) == id(other)
         
     def to_output(self,
-                dataset:Dataset=None,
-                metrics:'Metric'=None,
-                iaml_pipeline:'IAMLPipeline'=None) -> 'Candidate':
+                dataset: Dataset = None,
+                metrics: Metric = None,
+                iaml_pipeline: IAMLPipeline = None) -> 'Candidate':
         """
         Create a copy of current instance and assign parameters values to attributes 
 
@@ -136,9 +139,9 @@ class Candidate:
             stacked_path=self.stacked_path)
         
     def to_input(self,
-                dataset:Dataset=None,
-                metrics:'Metric'=None,
-                iaml_pipeline:'IAMLPipeline'=None) -> 'Candidate':
+                dataset: Dataset = None,
+                metrics: Metric = None,
+                iaml_pipeline: IAMLPipeline = None) -> 'Candidate':
         """
         Create a copy of current instance and assign parameters values to attributes 
 
@@ -190,8 +193,11 @@ class Candidate:
             name = f"{main_metric} : {name}"
         return name
     
-    def training_evaluate(self, dataset:Dataset, \
-                splitter:callable=random_splitter) -> dict:
+    def training_evaluate(
+        self,
+        dataset: Dataset,
+        splitter: callable = random_splitter
+    ) -> dict:
         """
         Evaluate pipeline model with self.metrics on dataset
         If evaluate is called in training process, result will be cached in
@@ -207,16 +213,16 @@ class Candidate:
         """
         if not self.pipeline.have_model:
             return None
-        metrics:list[dict] = []
+        metrics: list[dict] = []
         
         # without cache !
-        from_cache:bool = True
-        to_cache:list = True
+        from_cache: bool = True
+        to_cache: list = True
         splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
         if not splitted_datasets or self.is_meta: # Cannot use cache with meta for now
             from_cache = False
-            to_cache:list = []
-            splitted_datasets:list[tuple[Dataset, Dataset]] = splitter(dataset)
+            to_cache: list = []
+            splitted_datasets: list[tuple[Dataset, Dataset]] = splitter(dataset)
 
         for train_ds, test_ds in splitted_datasets:
             copied_pipe = deepcopy(self.pipeline)
@@ -254,7 +260,7 @@ class Candidate:
         return self.computed_metrics
     
     
-    def evaluate(self, X:pd.DataFrame, y:np.array) -> dict:
+    def evaluate(self, X: pd.DataFrame, y: np.array) -> dict:
         """
         Evaluate pipeline performances with self.metrics
 
@@ -272,10 +278,13 @@ class Candidate:
     
         
     def __compute_metrics(self,
-            X_test:pd.DataFrame, y_test:np.array, pipeline=None, 
-            X_train=None, y_train=None,
-            **kwargs) -> dict:
-        
+        X_test: pd.DataFrame,
+        y_test: np.array,
+        pipeline=None, 
+        X_train=None,
+        y_train=None,
+        **kwargs
+    ) -> dict:
         if pipeline is None: # Is no pipeline in args -> Use the main one
             pipeline = self.pipeline
             
@@ -347,7 +356,7 @@ class Candidate:
             f'| `{m}` | **{self.__metric_value(m):.4f}** | *{m.explain()}* |'
             for m in self.metrics
         ])
-        results_explain:str = textwrap.dedent(f'''
+        results_explain: str = textwrap.dedent(f'''
             ### Results
             | Metric name | Computed value | Description |
             | ----------- | -------------- | ----------- |
@@ -356,8 +365,14 @@ class Candidate:
         
         return [*self.pipeline.explanations, results_explain]
     
-    def explain_model_performance(self, X_test:pd.DataFrame, y_test:list,
-            X_train:pd.DataFrame=None, y_train:list=None, **kwargs) -> list[MetricPlot]:
+    def explain_model_performance(
+        self,
+        X_test: pd.DataFrame,
+        y_test: list,
+        X_train: pd.DataFrame = None,
+        y_train: list = None,
+        **kwargs
+    ) -> list[MetricPlot]:
         """
         Return a list of plot that explain models performances
 

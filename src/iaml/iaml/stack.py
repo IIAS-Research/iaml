@@ -15,13 +15,13 @@ class Stack:
     def __init__(self, step_class: Step, configuration: Dict, step_id: int) -> None:
         """Initialize a stack
         """
-        self.step_class:Step = step_class
+        self.step_class: Step = step_class
         """The step used in this Stack"""
 
-        self.configuration:Dict = configuration
+        self.configuration: dict = configuration
         """The step configuration"""
 
-        self.step_id:int = step_id
+        self.step_id: int = step_id
         """The step id"""
         
     def __str__(self) -> str:

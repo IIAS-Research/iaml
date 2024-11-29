@@ -56,4 +56,5 @@ class SpecificityMultilabelMetric(Metric):
             specificity_per_label.append(specificity)
 
         mean_specificity = np.mean(specificity_per_label)
+
         return mean_specificity

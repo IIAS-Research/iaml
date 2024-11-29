@@ -1,6 +1,5 @@
-"""
-[STEP] Transform string column to date
-"""
+"""[STEP] Transform string column to date"""
+
 import textwrap
 import pandas as pd
 import numpy as np
@@ -13,9 +12,8 @@ from ...decorators.all import is_step
 
 @is_step('cleaning')
 class ActSplitDate(Actionable):
-    """
-    [STEP] Transform string column to date
-    """
+    """[STEP] Transform string column to date"""
+
     name = 'Create Date Elements columns'
     descrption = textwrap.dedent('''\
         Transform a textual date column into multiple columns
@@ -34,7 +32,7 @@ class ActSplitDate(Actionable):
     def __init__(self):
         self.columns: list[str] = None
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         self.columns = dataset.get_columns_names_by_type(DataType.DATE)
 
         self.explanations = [
@@ -44,12 +42,11 @@ class ActSplitDate(Actionable):
 
         return self
 
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Split dates columns into columns -> weekday, mount, year, hour, minute, second.
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Split dates columns into columns (weekday, mount, year, hour, minute, second).
 
-        :param pd.DataFrame x: DataFrame to transform
-        :return: Transformed dataset
+        :param pd.DataFrame x: DataFrame to transform.
+        :return: Transformed dataset.
         """
         for column in self.columns:
             # Day
@@ -64,9 +61,8 @@ class ActSplitDate(Actionable):
 
         return X
 
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return bool(dataset.get_columns_names_by_type(DataType.DATE))
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5
-    

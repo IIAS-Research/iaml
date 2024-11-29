@@ -35,7 +35,7 @@ class ActARDRegression(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'alpha_1': {
                 'description': 'Hyper-parameter : shape parameter for the Gamma \
                     distribution prior over the alpha parameter.',
@@ -73,7 +73,7 @@ class ActARDRegression(Predictor):
                 'range': [1e-05, 0.1]
                 }
             }
-        self.model:ARDRegression = None
+        self.model: ARDRegression = None
   
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -92,7 +92,7 @@ class ActARDRegression(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -104,7 +104,7 @@ class ActARDRegression(Predictor):
         """
         return dataset.type_of_target == 'continuous'
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

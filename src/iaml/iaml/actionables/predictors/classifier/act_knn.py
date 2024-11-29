@@ -50,7 +50,7 @@ class ActKNN(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'metric': {
                 'description': 'Can be minkowski or manhattan',
                 'default': 'minkowski',
@@ -68,7 +68,7 @@ class ActKNN(Predictor):
                 'categorical': ['uniform', 'distance']
             }
         }
-        self.model:KNeighborsClassifier = None
+        self.model: KNeighborsClassifier = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -89,11 +89,11 @@ class ActKNN(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

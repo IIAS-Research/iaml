@@ -48,7 +48,7 @@ class ActSVMSVR(Predictor):
         },
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'kernel': {
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
@@ -65,7 +65,7 @@ class ActSVMSVR(Predictor):
                 'range': [1e-05, 0.1]
             }
         }
-        self.model:svm.SVR = None
+        self.model: svm.SVR = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -86,10 +86,10 @@ class ActSVMSVR(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

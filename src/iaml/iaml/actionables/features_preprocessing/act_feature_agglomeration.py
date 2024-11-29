@@ -27,7 +27,7 @@ class ActFeatureAgglomeration(Actionable):
     ''')
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'n_clusters': {
                 'description': 'The number of clusters to find',
                 'default': 25,
@@ -56,7 +56,7 @@ class ActFeatureAgglomeration(Actionable):
         self.preprocessor = None
 
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Fit Features agglomerations
 
@@ -74,7 +74,7 @@ class ActFeatureAgglomeration(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply FeatureAgglomeration
 
@@ -87,7 +87,7 @@ class ActFeatureAgglomeration(Actionable):
         return pd.DataFrame(self.preprocessor.transform(X))
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

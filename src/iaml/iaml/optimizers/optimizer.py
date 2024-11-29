@@ -10,7 +10,7 @@ class Optimizer:
     optimize parameters and return a new pool of candidate
     """
     def __init__(self):
-        self.__finished:bool = False
+        self.__finished: bool = False
         """Is the optimization done ?"""
 
     @property

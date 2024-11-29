@@ -2,6 +2,8 @@
 Based on Scikit-learn Pipeline but for IAML Pipelines !
 Transform, resample and then predict from Candidate instance 
 """
+from __future__ import annotations
+
 import pickle
 from copy import deepcopy
 from hashlib import md5
@@ -30,7 +32,7 @@ class IAMLPipeline(Pipeline):
         self,
         steps: list[tuple[str, 'Step']] = None,
         original_dataset: pd.DataFrame = None,
-        estimator_type:str = None
+        estimator_type: str = None
     ) -> None:
         """
         Args:
@@ -49,9 +51,9 @@ class IAMLPipeline(Pipeline):
             steps = []
 
         self.original_dataset = original_dataset
-        self.transformers:list[tuple[str, object]] = []
-        self.resamplers:list[tuple[str, object]] = []
-        self.predictor:tuple[str, object] = None
+        self.transformers: list[tuple[str, object]] = []
+        self.resamplers: list[tuple[str, object]] = []
+        self.predictor: tuple[str, object] = None
         self.metrics = []
 
         if estimator_type not in ['classifier', 'regressor', 'survival']:
@@ -95,7 +97,7 @@ class IAMLPipeline(Pipeline):
             if item is not None]
     
     @steps.setter
-    def steps(self, values:list[tuple[str, object]]) -> list[tuple[str, object]]:
+    def steps(self, values: list[tuple[str, object]]) -> list[tuple[str, object]]:
         self.transformers = []
         self.resamplers = []
         self.predictor = None
@@ -105,7 +107,7 @@ class IAMLPipeline(Pipeline):
             
         return self.steps
             
-    def __add_step(self, step:tuple[str, object]) -> None:
+    def __add_step(self, step: tuple[str, object]) -> None:
         _, instance = step
         if hasattr(instance, 'predict') and callable(instance.predict):
             self.predictor = step
@@ -161,11 +163,15 @@ class IAMLPipeline(Pipeline):
         
         return False
         
-    def fit(self, X:pd.DataFrame, y:pd.DataFrame=None, 
-            only_predictor:bool=False, 
-            groups_columns: List[str] = None, 
-            metrics: list['Metric'] | None = None,
-            **kwargs) -> 'IAMLPipeline':
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y: pd.DataFrame = None, 
+        only_predictor: bool = False, 
+        groups_columns: List[str] = None, 
+        metrics: list[Metric] | None = None,
+        **kwargs,
+    ) -> 'IAMLPipeline':
         """
         Fit Pipeline on new data (or with new parameters)
         
@@ -192,8 +198,13 @@ class IAMLPipeline(Pipeline):
         
         return self
     
-    def fit_transform(self, X:pd.DataFrame, y:pd.DataFrame=None,
-            groups_columns: List[str] = None, **kwargs) -> 'IAMLPipeline':
+    def fit_transform(
+        self,
+        X: pd.DataFrame,
+        y: pd.DataFrame = None,
+        groups_columns: List[str] = None,
+        **kwargs
+    ) -> 'IAMLPipeline':
         """
         Fit Pipeline and transform data 
         
@@ -323,7 +334,10 @@ class IAMLPipeline(Pipeline):
         """
         return bool(self.predictor)
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame: # pylint: disable=arguments-differ
+    def transform(
+        self,
+        X: pd.DataFrame,
+    ) -> pd.DataFrame: # pylint: disable=arguments-differ
         """Apply transformers without predict
 
         Args:
@@ -337,7 +351,12 @@ class IAMLPipeline(Pipeline):
             
         return X
     
-    def predict(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
+    def predict(
+        self,
+        X: pd.DataFrame,
+        model_only: bool = False,
+        **kwargs,
+    ) -> list:
         """
         Run all the steps to predict labels from candidate data
 
@@ -360,7 +379,12 @@ class IAMLPipeline(Pipeline):
         
         return self.predictor[1].predict(X)
     
-    def predict_survival_function(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
+    def predict_survival_function(
+        self,
+        X: pd.DataFrame,
+        model_only: bool = False,
+        **kwargs
+    ) -> list:
         """
         Run all the steps to predict survival function  from candidate data
 
@@ -383,7 +407,12 @@ class IAMLPipeline(Pipeline):
         
         return self.predictor[1].predict_survival_function(X)
     
-    def predict_proba(self, X:pd.DataFrame, model_only:bool = False, **kwargs) -> list:
+    def predict_proba(
+        self,
+        X: pd.DataFrame,
+        model_only: bool = False,
+        **kwargs
+    ) -> list:
         """
         Run all the steps to predict labels from candidate data
 

@@ -61,6 +61,6 @@ class ClassificationErrorMetric(Metric):
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
         return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
 
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
+    def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:
         balanced_accuracy = BalancedAccuracyMetric().compute(y, y_pred)
         return 1 - balanced_accuracy
