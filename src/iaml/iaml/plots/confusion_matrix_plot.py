@@ -1,20 +1,20 @@
-"""
-[PLOT] Confusion Matrix Plot
-"""
+"""[PLOT] Confusion Matrix Plot"""
 import textwrap
 import io
+from typing import TYPE_CHECKING
 import pandas as pd
 from yellowbrick.classifier import ConfusionMatrix
 
 from ..plot import MetricPlot, capture
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
 
 class ConfusionMatrixPlot(MetricPlot):
-    """
-    [PLOT] Confusion Matrix Plot
-    """
+    """[PLOT] Confusion Matrix Plot"""
     
-    title = "Confusion Matrix"
-    description = textwrap.dedent("""
+    title: str = "Confusion Matrix"
+    description: str = textwrap.dedent("""
         The Confusion Matrix is a powerful visualization tool used to assess how well a classification model 
         is performing, particularly in identifying different medical conditions or diagnostic categories. 
         It provides a clear breakdown of true positive, false positive, true negative, and false negative rates.
@@ -33,13 +33,14 @@ class ConfusionMatrixPlot(MetricPlot):
         """)
     
     @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
-            **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y.
-        """
+    def _compute(
+        self,
+        estimator: 'IAMLPipeline', 
+        X: pd.DataFrame,
+        y: pd.DataFrame,
+        X_train: pd.DataFrame = None,
+        y_train: pd.DataFrame = None,
+        **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
         self.__visualizer = ConfusionMatrix(estimator, is_fitted=True)
         
@@ -53,7 +54,4 @@ class ConfusionMatrixPlot(MetricPlot):
     
     @classmethod
     def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
         return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']

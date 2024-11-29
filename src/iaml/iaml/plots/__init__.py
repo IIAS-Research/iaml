@@ -1,6 +1,4 @@
-"""
-All plots
-"""
+"""All plots"""
 
 # Classifier
 from .class_prediction_error_plot import ClassPredictionErrorPlot

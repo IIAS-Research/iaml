@@ -1,20 +1,21 @@
-"""
-[PLOT] ROC-AUC Plot
-"""
+"""[PLOT] ROC-AUC Plot"""
 import textwrap
 import io
+from typing import TYPE_CHECKING
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
 from ..plot import MetricPlot, capture
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
+
 class ROCAUCPlot(MetricPlot):
-    """
-    [PLOT] ROC-AUC Plot
-    """
+    """[PLOT] ROC-AUC Plot"""
     
-    title = "Receiver Operating Characteristic - Area Under the Curve"
-    description = textwrap.dedent("""
+    title: str = "Receiver Operating Characteristic - Area Under the Curve"
+    description: str = textwrap.dedent("""
         The ROC-AUC (Receiver Operating Characteristic - Area Under the Curve) plot is a widely used 
         tool to assess the performance of a classification model, especially in the healthcare domain. 
         It provides a graphical representation of the model's ability to distinguish between classes, 
@@ -50,12 +51,14 @@ class ROCAUCPlot(MetricPlot):
         """)
     
     @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y, **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y.
-        """
-        
+    def _compute(
+        self,
+        estimator: 'IAMLPipeline', 
+        X: pd.DataFrame,
+        y: pd.Series,
+        X_train: pd.DataFrame = None,
+        y_train: pd.Series = None,
+        **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
         
         pos_label = None
@@ -87,8 +90,5 @@ class ROCAUCPlot(MetricPlot):
         return self
     
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
+    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target in ['binary']

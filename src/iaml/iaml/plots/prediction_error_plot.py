@@ -3,18 +3,20 @@
 """
 import textwrap
 import io
+from typing import TYPE_CHECKING
 import pandas as pd
 from yellowbrick.regressor import PredictionError
 
 from ..plot import MetricPlot, capture
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
 
 class PredictionErrorPlot(MetricPlot):
-    """
-    [PLOT] Prediction Error Plot
-    """
+    """[PLOT] Prediction Error Plot"""
     
-    title = "Prediction Error"
-    description = textwrap.dedent("""
+    title: str = "Prediction Error"
+    description: str = textwrap.dedent("""
         The Prediction Error Plot is a diagnostic tool used to visualize the performance of regression models. 
         It helps assess how well a model's predictions align with the actual values in a continuous prediction 
         setting, such as predicting medical measurements like blood pressure, heart rate, or glucose levels.
@@ -33,13 +35,14 @@ class PredictionErrorPlot(MetricPlot):
         """)
     
     @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
-            **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y.
-        """
+    def _compute(
+        self,
+        estimator:'IAMLPipeline', 
+        X: pd.DataFrame,
+        y: pd.Series,
+        X_train: pd.DataFrame = None,
+        y_train: pd.Series = None,
+        **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
         self.__visualizer = PredictionError(estimator, is_fitted=True)
     
@@ -53,7 +56,4 @@ class PredictionErrorPlot(MetricPlot):
     
     @classmethod
     def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
         return type_of_target == 'continuous'

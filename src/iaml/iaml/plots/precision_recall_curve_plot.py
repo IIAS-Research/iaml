@@ -3,19 +3,21 @@
 """
 import textwrap
 import io
+from typing import TYPE_CHECKING
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, average_precision_score
 
 from ..plot import MetricPlot, capture
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
 
 class PrecisionRecallCurvePlot(MetricPlot):
-    """
-    [PLOT] Precision-Recall Curve Plot
-    """
+    """[PLOT] Precision-Recall Curve Plot"""
     
-    title = "Precision-Recall Curve"
-    description = textwrap.dedent("""
+    title: str = "Precision-Recall Curve"
+    description: str = textwrap.dedent("""
         The Precision-Recall Curve is a valuable visualization tool for evaluating the performance of 
         a classification model, particularly in healthcare where identifying the correct balance between 
         precision (positive predictive value) and recall (sensitivity or true positive rate) is critical.
@@ -35,9 +37,12 @@ class PrecisionRecallCurvePlot(MetricPlot):
         """)
     
     @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            **kwargs) -> MetricPlot:
+    def _compute(
+        self,
+        estimator: 'IAMLPipeline', 
+        X: pd.DataFrame,
+        y: pd.Series,
+        **kwargs) -> MetricPlot:
         """
         Compute plot given X, y.
         """
@@ -76,7 +81,4 @@ class PrecisionRecallCurvePlot(MetricPlot):
     
     @classmethod
     def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target?
-        """
         return type_of_target in ['binary']

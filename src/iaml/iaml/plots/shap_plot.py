@@ -1,22 +1,37 @@
-"""
-[PLOT] Wrap Shap Plot 
-"""
+"""[PLOT] Wrap Shap Plot """
 import textwrap
 import io
+from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import shap
 
-
 from ..plot import Plot
 
+
 class ShapPlot(Plot):
+    """[PLOT] Wrap Shap Plot
+    
+    :param str plot_key: The kind of shap plot to use.
+    :param shap.Explanation | shap.Cohorts | dict[shap.Explanation] shaps_values: Values used
+            by the shap library to compute data.
+    :param optional \\*args: Additional parameters.
+    :param slice, optional ps: Used to slice shaps_values. Default is None.
+    :param optional scatter_feature: Used to select specific shaps_values. Default is None.
+    :param optional \\**kwargs: Additional parameters.
+    
     """
-    [PLOT] Wrap Shap Plot 
-    """
-    def __init__(self, plot_key, shaps_values, *args, ps=None, scatter_feature=None, **kwargs):
-        
-        self.key = plot_key
+    def __init__(
+        self,
+        plot_key: str,
+        shaps_values: shap.Explanation | shap.Cohorts | dict[shap.Explanation],
+        *args,
+        ps: slice = None,
+        scatter_feature: Any | shap.Cohorts | None = None,
+        **kwargs) -> None:
+        self.key: str = plot_key
+        """The kind of shap plot to perform"""
+
         if ps is None:
             ps = slice(0, len(shaps_values))
             
@@ -39,13 +54,22 @@ class ShapPlot(Plot):
             
         
         plt.savefig(self._binary_image, bbox_inches='tight')
-        # self._binary_image.seek(0)
         plt.close()
         
     @classmethod
-    def all(cls, shaps_values, *args, **kwargs) -> list:
-        """
-        Get instance for all kind of Shap Plot
+    def all(
+        cls,
+        shaps_values: shap.Explanation | shap.Cohorts | dict[shap.Explanation],
+        *args,
+        **kwargs) -> list['ShapPlot']:
+        """Get instance for all kind of Shap Plot
+
+        :param shap.Explanation | shap.Cohorts | dict[shap.Explanation] shaps_values: Values used
+            by the shap library to compute data.
+        :param optional \\*args: Additional parameters.
+        :param optional \\**kwargs: Additional parameters.
+        
+        :return: list of computed ShapPlot.
         """
         plots = []
         for key in ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']:
@@ -53,7 +77,10 @@ class ShapPlot(Plot):
             
         return plots
     
-    def __plots_informations(self, key:str, shap_values) -> tuple[str]:
+    def __plots_informations(
+        self,
+        key: str,
+        shap_values: shap.Explanation | shap.Cohorts | dict[shap.Explanation]) -> tuple[str]:
         """
         Returns the title and description for various SHAP plot types in simple terms.
 
@@ -61,7 +88,16 @@ class ShapPlot(Plot):
         examples from the medical field, to help non-experts interpret how machine learning 
         models make predictions.
 
-        :param str key: The type of SHAP plot ('force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar').
+        :param str key: The type of SHAP plot
+
+            * force
+            * waterfall
+            * beeswarm
+            * scatter
+            * heatmap
+            * bar
+        :param shap.Explanation | shap.Cohorts | dict[shap.Explanation] shap_values: Values used
+            by the shap library to compute data.
         :return: A title and description of the SHAP plot type, explaining what it shows and how it 
             relates to model predictions.
         """

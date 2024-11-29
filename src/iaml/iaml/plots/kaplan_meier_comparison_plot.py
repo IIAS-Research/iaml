@@ -3,23 +3,22 @@
 """
 import textwrap
 import io
-import traceback
+from typing import TYPE_CHECKING
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.nonparametric import kaplan_meier_estimator
-from sksurv.linear_model import CoxPHSurvivalAnalysis
 from ..plot import MetricPlot, capture
-from ..logger import Logger
 from ..dataset import Dataset
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
 
 class KaplanMeierModelComparisonPlot(MetricPlot):
-    """
-    [PLOT] Kaplan-Meier Model Comparison Survival
-    """
+    """[PLOT] Kaplan-Meier Model Comparison Survival"""
     
-    title = "Kaplan-Meier Model Comparison"
-    description = textwrap.dedent("""
+    title: str = "Kaplan-Meier Model Comparison"
+    description: str = textwrap.dedent("""
         The Kaplan-Meier Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
         survival models by comparing predicted survival curves against the observed survival data.
 
@@ -42,20 +41,14 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         """)
     
     @capture
-    def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
-                X_train:pd.DataFrame=None, y_train:pd.Series=None,
-                transform:bool=True,
-                **kwargs) -> MetricPlot:
-        """
-        Compute Kaplan-Meier survival plot with model predictions for comparison using sksurv.
-        
-        Parameters:
-        - model: The survival model used to make predictions (e.g., CoxPH from sksurv)
-        - X: The input data used for making predictions
-        - durations: Series of observed survival times
-        - event_observed: Series indicating whether the event occurred (1) or was censored (0)
-        - groups: Optional Series indicating different groups for stratified survival analysis
-        """
+    def _compute(
+        self,
+        estimator: 'IAMLPipeline',
+        X: pd.DataFrame,
+        y: pd.Series, 
+        X_train: pd.DataFrame = None,
+        y_train: pd.Series=None,
+        **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
         
         X_train, y_train = Dataset.fix_survival(X_train, y_train)
@@ -63,15 +56,11 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
 
         # Fit the Kaplan-Meier model on observed data
         event, time = zip(*y)
-        
+
         # Observed data
         time, survival_prob = kaplan_meier_estimator(event, time)
         plt.step(time, survival_prob, where="post", label="Observed", color='blue')
-        # Observed data
-        # time, survival_prob = kaplan_meier_estimator(*zip(*y_train))
-        # plt.step(time, survival_prob, where="post", label="Observed Train", color='blue', linestyle="--")
-        
-        
+
         # Current model
         survival_predictions = estimator.predict_survival_function(X)
 
@@ -95,7 +84,4 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
     
     @classmethod
     def suitable(cls, type_of_target:str) -> bool:
-        """
-        Does this plot is usable for a given type_of_target?
-        """
         return type_of_target in ['survival']

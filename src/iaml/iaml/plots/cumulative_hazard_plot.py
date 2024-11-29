@@ -1,25 +1,21 @@
-"""
-[PLOT] Cumulative Hazard Model Comparison Plot using sksurv
-"""
+"""[PLOT] Cumulative Hazard Model Comparison Plot using sksurv"""
 import io
-import traceback
+from typing import TYPE_CHECKING
 import textwrap
 from sksurv.nonparametric import nelson_aalen_estimator
-from sksurv.linear_model import CoxPHSurvivalAnalysis
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from ..plot import MetricPlot, capture
-from ..logger import Logger
-from ..dataset import Dataset
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
 
 class CumulativeHazardModelComparisonPlot(MetricPlot):
-    """
-    [PLOT] Cumulative Hazard Model Comparison Plot using sksurv
-    """
+    """[PLOT] Cumulative Hazard Model Comparison Plot using sksurv"""
 
-    title = "Cumulative Hazard"
-    description = textwrap.dedent("""
+    title: str = "Cumulative Hazard"
+    description: str = textwrap.dedent("""
         The Cumulative Hazard Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
         survival models by comparing predicted cumulative hazard functions against the observed cumulative hazards.
 
@@ -33,20 +29,14 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         """)
 
     @capture
-    def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
-                X_train:pd.DataFrame=None, y_train:pd.Series=None,
-                transform:bool=True,
-                **kwargs) -> MetricPlot:
-        """
-        Compute cumulative hazard plot with model predictions for comparison using sksurv.
-        
-        Parameters:
-        - estimator: The survival model used to make predictions (e.g., CoxPH from sksurv)
-        - X: The input data used for making predictions
-        - y: Series of observed survival times and event indicators
-        - X_train: Optional training data used to fit a baseline model
-        - y_train: Optional survival times and event indicators for the training set
-        """
+    def _compute(
+        self,
+        estimator: 'IAMLPipeline',
+        X: pd.DataFrame,
+        y: pd.Series, 
+        X_train: pd.DataFrame = None,
+        y_train: pd.Series = None,
+        **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
 
         # Fit the cumulative hazard model on observed data
@@ -78,8 +68,5 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         return self
     
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:
-        """
-        Does this plot is usable for a given type_of_target?
-        """
+    def suitable(cls, type_of_target: str) -> bool:
         return type_of_target in ['survival']

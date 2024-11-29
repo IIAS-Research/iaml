@@ -1,8 +1,6 @@
-"""
-StepWrapper is a direct child of Step and will wrap and execute another step.
+"""StepWrapper is a direct child of Step and will wrap and execute another step.
 Wrap with StepWrapper is useless, use children classes
 """
-from typing import Dict, List
 from .step import Step
 from .decorators.all import is_step, runner
 from .candidate import Candidate
@@ -15,28 +13,18 @@ class StepWrapper(Step):
     Wrap with StepWrapper is useless, use children classes
     """
     def __init__(self, step: Step):
-        self.step:Step = step
+        self.step: Step = step
+        """The step to wrap"""
         
     
     @classmethod
-    def from_pipeline(cls, pipeline: Dict, *args, **kwargs) -> Step:
+    def from_pipeline(cls, pipeline: dict, *args, **kwargs) -> Step:
         """
-        Load any kind of StepWrapper
+        Load any kind of StepWrapper. The step must have exactly one child
 
-        Parameters
-        ----------
-        pipeline : Dict
-            JSON pipeline
-
-        Raises
-        ------
-        TypeError
-            invalid pipeline: StepWrapper must have exactly one child
-
-        Returns
-        -------
-        Step
-            Loaded step
+        :param dict pipeline: JSON pipeline.
+        :raise TypeError: invalid pipeline: StepWrapper must have exactly one child.
+        :return: Loaded step.
         """
         if 'children' not in pipeline or len(pipeline['children']) != 1:
             raise TypeError('invalid pipeline: StepWrapper must have exactly one child')
@@ -55,9 +43,8 @@ class StepWrapper(Step):
     def wrap(self, step: Step) -> None:
         """Set wrapped step
 
-        :param Step step: Step to wrap
-
-        :raise ValueError: Step must be an occurrence of step (or inherited classes)
+        :param Step step: Step to wrap.
+        :raise ValueError: Step must be an occurrence of step (or inherited classes).
         """
         if Step in step.__class__.__mro__:
             self.step = step
@@ -67,26 +54,26 @@ class StepWrapper(Step):
     def suitable(self, dataset:Dataset) -> bool:
         return self.step.suitable(dataset)
     
-    def all_configurations(self) -> List[Dict]:
+    def all_configurations(self) -> list[dict]:
         to_return = Step.all_configurations(self)
         to_return = to_return + self.step.all_configurations()
         
         return to_return
     
     
-    def json_pipeline(self) -> Dict:
+    def json_pipeline(self) -> dict:
         return {
             **Step.json_pipeline(self),
             'children': [self.step.json_pipeline()]
         }
     
     
-    def all_steps(self) -> List[Step]:
+    def all_steps(self) -> list[Step]:
         return [self.step, *self.step.all_steps()]
         
 
     @runner
-    def run(self, candidate:Candidate) -> Candidate:
+    def run(self, candidate: Candidate) -> Candidate:
         return self.step.run(candidate) 
     
     def count_steps(self) -> int:
