@@ -26,16 +26,16 @@ class ActRemoveHighCorrelatedColumn(Actionable):
     ''')
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'threshold': {
                 'description': 'If two columns is correlated over this value, only one \
                     will be kept',
                 'default': 0.9
             }
         }
-        self.to_drop:list[str] = None
+        self.to_drop: list[str] = None
     
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Find high correlated columns to drop
 
@@ -55,7 +55,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         
         return self
     
-    def __get_columns(self, dataset:Dataset) -> list:
+    def __get_columns(self, dataset: Dataset) -> list:
         # Compute correlation matrix 
         corr_matrix = dataset.X.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool_))
@@ -66,7 +66,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         return ([ c for c, v in corr.items() if len(v) > 0 ], corr)
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Drop high correlated column
 
@@ -80,7 +80,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
 
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 
@@ -88,6 +88,6 @@ class ActRemoveHighCorrelatedColumn(Actionable):
         """
         return 0.5
 
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return self.__get_columns(dataset)[0]
     

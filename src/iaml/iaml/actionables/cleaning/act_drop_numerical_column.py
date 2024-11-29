@@ -1,6 +1,5 @@
-"""
-[STEP] Drop Numerical Column
-"""
+"""[STEP] Drop Numerical Column"""
+
 import textwrap
 import pandas as pd
 from ...actionable import Actionable
@@ -12,9 +11,8 @@ from ...decorators.all import is_step
 
 @is_step('cleaning')
 class ActDropNumericalColumn(Actionable):
-    """
-    [STEP] Drop Numerical Column
-    """
+    """[STEP] Drop Numerical Column"""
+
     name = 'Remove numerical columns'
     description = textwrap.dedent('''\
         Remove numerical columns where the proportion of empty rows
@@ -54,19 +52,18 @@ class ActDropNumericalColumn(Actionable):
 
         return self
 
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Drop columns.
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Drop columns.
 
-        :param pd.DataFrame X: DataFrame to transform
-        :return: Transformed DataFrame
+        :param pd.DataFrame X: DataFrame to transform.
+        :return: Transformed DataFrame.
         """
         return X.drop(self.columns_to_drop, axis=1)
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0
 
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         for column in dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = dataset.X[column]
             nan_values_count = values.isnull().sum()

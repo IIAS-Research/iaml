@@ -53,7 +53,7 @@ class ActMLPRegressor(Predictor):
     ]
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'activation': {
                 'description': 'Activation function for the hidden layer.',
                 'default': 'relu',
@@ -83,7 +83,7 @@ class ActMLPRegressor(Predictor):
                 'range': [0.0001, 0.5]
                 }
             }
-        self.model:MLPRegressor = None
+        self.model: MLPRegressor = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -107,7 +107,7 @@ class ActMLPRegressor(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -119,7 +119,7 @@ class ActMLPRegressor(Predictor):
         """
         return dataset.type_of_target == "continuous"
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

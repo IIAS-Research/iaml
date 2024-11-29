@@ -14,12 +14,12 @@ class StackingClassifier(MetaPredictor):
         super().__init__(candidates)
         self.model = SKStackingClassifier(estimators=self.estimators)
     
-    def fit(self, dataset:Dataset):
+    def fit(self, dataset: Dataset):
         self.model.fit(dataset.X, dataset.y)
         return self        
         
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=arguments-differ
+    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=arguments-differ
         """
         Does this meta predictor is usable given type of target ?
         """

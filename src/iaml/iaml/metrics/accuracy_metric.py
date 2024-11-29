@@ -51,7 +51,7 @@ class AccuracyMetric(Metric):
         threshold = 0.20 * ideal_count
         return not any(abs(count - ideal_count) > threshold for count in class_count.values())
 
-    def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target:str) -> bool:
+    def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
         return type_of_target in ['binary', 'multiclass'] and not self.__is_balanced(y)
 
     def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:

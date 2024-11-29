@@ -57,7 +57,7 @@ class IntegratedBrierScoreMetric(Metric):
         self,
         y: pd.DataFrame,
         y_pred: pd.DataFrame,
-        y_train:pd.DataFrame=None,
+        y_train: pd.DataFrame = None,
         **kwargs) -> float:
         """Compute the Integrated Brier Score (IBS) with the predicted data.
 

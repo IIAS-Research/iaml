@@ -79,7 +79,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         if self.first_candidate_pool is None:
             self.first_candidate_pool = candidates[0:6]
 
-        nb_to_keep:int = round(self.number_of_candidate / 4)
+        nb_to_keep: int = round(self.number_of_candidate / 4)
         mutate_ratio = self.__mutate_ratio
         self.generation_count += 1
 
@@ -107,13 +107,13 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         :return: Newly generated Candidate
         """
         # Deepcopy to avoid editing other Steps of the same generation
-        new_candidate:Candidate = deepcopy(candidate)
+        new_candidate: Candidate = deepcopy(candidate)
 
         for current_step in new_candidate.pipeline.optimizable_step:
 
             # If interchangeable -> 1/2 to change the step
             if current_step.is_interchangeable and bool(random.getrandbits(1)):
-                new_step:Step = random.choice(current_step.step_with_same_tags())()
+                new_step: Step = random.choice(current_step.step_with_same_tags())()
                 new_step.is_interchangeable = True
                 new_candidate.pipeline.replace_step(current_step, new_step)
                 current_step = new_step
@@ -174,8 +174,8 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         :param Candidate candidate: Candidate used for the mutation.
         :return: Newly created Candidate.
         """
-        new_candidate:Candidate = deepcopy(candidate)
-        step_to_mutate:Step = random.choice(new_candidate.pipeline.optimizable_step)
+        new_candidate: Candidate = deepcopy(candidate)
+        step_to_mutate: Step = random.choice(new_candidate.pipeline.optimizable_step)
 
         mutable_keys = self.__config_keys(step_to_mutate)
         if step_to_mutate.is_interchangeable:
@@ -188,7 +188,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         random_key: str = random.choice(mutable_keys)
 
         if random_key == "interchange": # Mutate by interchanging the step with sibling
-            new_step:Step = random.choice(step_to_mutate.step_with_same_tags())()
+            new_step: Step = random.choice(step_to_mutate.step_with_same_tags())()
             new_step.is_interchangeable = True
             new_candidate.pipeline.replace_step(step_to_mutate, new_step)
             return candidate
@@ -250,10 +250,10 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         :param list[Candidate] candidates: List of Candidate.
         :return: List of unique Candidate
         """
-        unique_candidates:list[Candidate] = []
-        unique_fingerprint:list[str] = []
+        unique_candidates: list[Candidate] = []
+        unique_fingerprint: list[str] = []
         for candidate in candidates:
-            fingerprint:str = candidate.pipeline.fingerprint()
+            fingerprint: str = candidate.pipeline.fingerprint()
             if fingerprint not in unique_fingerprint:
                 unique_candidates.append(candidate)
                 unique_fingerprint.append(fingerprint)

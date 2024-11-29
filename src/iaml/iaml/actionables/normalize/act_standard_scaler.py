@@ -29,9 +29,8 @@ class ActStandardScaler(Actionable):
         normality of features, like many machine learning models.''')
     
     def __init__(self):
-        self.configuration:dict = {}
-        self.columns:list[str] = None
-        self.scaler:StandardScaler = None
+        self.columns: list[str] = None
+        self.scaler: StandardScaler = None
     
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
@@ -53,7 +52,7 @@ class ActStandardScaler(Actionable):
             self.scaler = None
         return self
         
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply standard scaler
 
@@ -68,7 +67,7 @@ class ActStandardScaler(Actionable):
         return X
 
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

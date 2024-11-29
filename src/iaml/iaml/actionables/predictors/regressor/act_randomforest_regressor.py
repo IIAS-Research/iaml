@@ -42,7 +42,7 @@ class ActRandomForestRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             # 'max_depth': { # Disable before probably better with no limit in regression
             #     'description': 'Max depth of each tree',
             #     'default': 15,
@@ -83,7 +83,7 @@ class ActRandomForestRegressor(Predictor):
                 'categorical': ["poisson", "friedman_mse", "absolute_error", "squared_error"]
             }
         }
-        self.model:RandomForestRegressor = None
+        self.model: RandomForestRegressor = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -101,10 +101,10 @@ class ActRandomForestRegressor(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

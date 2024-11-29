@@ -37,7 +37,7 @@ class ActSGDRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'alpha': {
                 'description': 'Constant that multiplies the regularization term.',
                 'default': 0.0001,
@@ -88,7 +88,7 @@ class ActSGDRegressor(Predictor):
                 'categorical': ["l1", "l2", "elasticnet"]
                 }
             }
-        self.model:SGDRegressor = None
+        self.model: SGDRegressor = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -107,7 +107,7 @@ class ActSGDRegressor(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -119,7 +119,7 @@ class ActSGDRegressor(Predictor):
         """
         return dataset.type_of_target == 'continuous'
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

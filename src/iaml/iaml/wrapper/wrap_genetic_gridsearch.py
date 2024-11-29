@@ -27,11 +27,11 @@ class WrapGeneticGridSearch(StepWrapper):
     def __init__(self, step: Step):
         # Set of configuration key to ignore. 
         # For example, random_state is not a parameter to optimize
-        step_ignored_configs:list[str] = [ k for k, v in step.learning_configuration.items() \
+        step_ignored_configs: list[str] = [ k for k, v in step.learning_configuration.items() \
             if 'no_gridsearch' in v and v['no_gridsearch'] ]
-        self.ignored_configs:list[str] = set(['random_state', *step_ignored_configs]) 
+        self.ignored_configs: list[str] = set(['random_state', *step_ignored_configs]) 
         
-        self.configuration:dict = {
+        self.configuration = {
             'initial_modificator': {
                 'description': 'Maximum multiplier of default value to generate \
                     the first generation of steps',
@@ -56,7 +56,7 @@ class WrapGeneticGridSearch(StepWrapper):
         
     # pylint: disable=too-many-locals
     @runner
-    def run(self, candidate:Candidate) -> list[Candidate]:
+    def run(self, candidate: Candidate) -> list[Candidate]:
         """
         Will iterate over generation to find best parameters
         
@@ -153,7 +153,7 @@ class WrapGeneticGridSearch(StepWrapper):
             Step: Generated step with random configuration
         """
         # Deepcopy to avoid editing other Steps of the same generation
-        new_step:Step = deepcopy(self.step) 
+        new_step: Step = deepcopy(self.step)
         
         for key in self.__config_keys(): # For each configuration key, we'll choose a random value
             config = new_step.learning_configuration[key]
@@ -195,7 +195,7 @@ class WrapGeneticGridSearch(StepWrapper):
             
     
     # Randomly mutate Step
-    def random_mutation(self, step:Step) -> Step:
+    def random_mutation(self, step: Step) -> Step:
         """
         Randomly mutate some parameters of the step
 

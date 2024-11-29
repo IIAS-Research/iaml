@@ -42,7 +42,7 @@ class MetaStep(Step):
         name: str = None,
         description: str = None,
         **kwargs) -> None:
-        self.steps:list[Step] = [] # Initialize steps to empty
+        self.steps: list[Step] = [] # Initialize steps to empty
         """List of steps"""
 
         # If there is a tag -> add all Steps with this tag

@@ -28,8 +28,7 @@ class ActLinearRegression(Predictor):
     refs = []
     
     def __init__(self):
-        self.configuration:dict = {}
-        self.model:LinearRegression = None
+        self.model: LinearRegression = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -47,10 +46,10 @@ class ActLinearRegression(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

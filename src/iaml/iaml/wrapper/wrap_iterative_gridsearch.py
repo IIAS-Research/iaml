@@ -15,8 +15,8 @@ class WrapIterativeGridSearch(StepWrapper):
     [WRAPPER] Wrap a step to apply an Iterative Grid Search implementation
     """
     name = "Wrap : Iterative GridSearch"
-    def __init__(self, step:Step):
-        self.configuration:dict = {
+    def __init__(self, step: Step):
+        self.configuration = {
             'modificator': {
                 'description': 'Value modificator for each iteration',
                 'default': 0.5
@@ -30,12 +30,12 @@ class WrapIterativeGridSearch(StepWrapper):
                 'default': 3
             }
         }
-        self.step:Step = step
+        self.step: Step = step
         
     to_avoid = ['random_state']
     
     @runner
-    def run(self, candidate:Candidate) -> list[Candidate]:
+    def run(self, candidate: Candidate) -> list[Candidate]:
         """
         Iterative GridSearch
             Numeric values
@@ -83,38 +83,38 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
     """
     # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     def __init__(self,
-        step:Step,
-        modificator_rate:float,
-        value_range:list=None,
-        patience:int=5,
-        copy_config:dict=None,
-        key:str=None,
-        value:any=None,
-        max_iterations:int=10,
-        number_of_results:int=10,
+        step: Step,
+        modificator_rate: float,
+        value_range: list = None,
+        patience: int = 5,
+        copy_config: dict = None,
+        key: str = None,
+        value: any = None,
+        max_iterations: int = 10,
+        number_of_results: int = 10,
         minimal_range_diff=None,
-        best_result:int=-1) -> None:
-        
+        best_result: int = -1
+    ) -> None:
         self.step = step
         self.modificator_rate = modificator_rate
         self.patience = patience
-        
+
         self.config = (copy_config or deepcopy(step.configuration))
-        
+
         if key:
             self.key = key
         elif any(self.config.keys()):
             self.key = list(self.config.keys())[0]
         else:
             self.key = None
-        
-        self.max_iterations=max_iterations
+
+        self.max_iterations = max_iterations
         self.count_iterations = -1
         self.iterations_without_improvement = 0
         self.children = []
         self.ways = []
         self.values = []
-        
+
         if self.key:
             self.value = (value or self.config[self.key]['value'])
         
@@ -269,7 +269,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         return self.values[self.count_iterations]
     
     # Stack, compute and save results
-    def __stack_results(self, results:list[Candidate]) -> None:
+    def __stack_results(self, results: list[Candidate]) -> None:
         if not any(results):
             return None
         
@@ -296,11 +296,8 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         self.candidates = self.candidates[:self.number_of_results]
         
         return None
-        
-        
-        
-    
-    def run(self, candidate:Candidate) \
+
+    def run(self, candidate: Candidate) \
         -> tuple[list[Candidate], list['GridIteration']]:
         """
         Run and Stack results

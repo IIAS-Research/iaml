@@ -40,7 +40,7 @@ class SpecificityMulticlassMetric(Metric):
         return 'specificity_multiclass'
 
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
-        return type_of_target in ['multiclass']
+        return type_of_target == 'multiclass'
 
     def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:
         # Specificity is calculated by summing the true negartives and false
@@ -51,4 +51,5 @@ class SpecificityMulticlassMetric(Metric):
         for i in range(len(cm)):
             total_tn += np.sum(cm) - np.sum(cm[i, :]) - np.sum(cm[:, i]) + cm[i, i]
             total_fp += np.sum(cm[:, i]) - cm[i, i]
+
         return total_tn / (total_tn + total_fp)

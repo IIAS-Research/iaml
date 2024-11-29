@@ -28,7 +28,7 @@ class ActPolynomialFeatures(Actionable):
         might not be straightforward or linear.''')
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'include_bias': {
                 'description': 'If True (default), then include a bias \
                     column, the feature in which all polynomial powers are zero',
@@ -49,7 +49,7 @@ class ActPolynomialFeatures(Actionable):
         self.preprocessor = None
 
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Fit Features agglomerations
 
@@ -66,7 +66,7 @@ class ActPolynomialFeatures(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply PolynomialFeatures
 
@@ -79,7 +79,7 @@ class ActPolynomialFeatures(Actionable):
         return pd.DataFrame(self.preprocessor.transform(X))
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

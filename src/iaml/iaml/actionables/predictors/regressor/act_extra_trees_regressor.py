@@ -39,7 +39,7 @@ class ActExtraTreesRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -80,7 +80,7 @@ class ActExtraTreesRegressor(Predictor):
                 'default': 42
             }
         }
-        self.model:ExtraTreesRegressor = None
+        self.model: ExtraTreesRegressor = None
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -98,10 +98,10 @@ class ActExtraTreesRegressor(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'continuous'
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

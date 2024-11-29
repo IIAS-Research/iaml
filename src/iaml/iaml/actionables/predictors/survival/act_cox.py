@@ -92,7 +92,7 @@ class ActCox(Predictor):
                 'passthrough': False
             }
         }
-        self.model:CoxPHSurvivalAnalysis = None
+        self.model: CoxPHSurvivalAnalysis = None
         
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
@@ -114,10 +114,10 @@ class ActCox(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'survival'
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

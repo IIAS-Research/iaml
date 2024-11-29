@@ -26,7 +26,7 @@ class ActSelectPercentile(Actionable):
         This helps reduce the number of variables while keeping the most informative ones.''')
     
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'score_func': {
                 'description': 'function taking two arrays X and y, \
                     and returning a pair of arrays',
@@ -44,7 +44,7 @@ class ActSelectPercentile(Actionable):
         self.preprocessor = None
 
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Fit Features agglomerations
 
@@ -61,7 +61,7 @@ class ActSelectPercentile(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply SelectPercentile
 
@@ -73,13 +73,13 @@ class ActSelectPercentile(Actionable):
         """
         return pd.DataFrame(self.preprocessor.transform(X))
         
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         # Negative values are not supported
         return not((dataset.X < 0).any().any()) \
             and dataset.type_of_target in \
                 ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

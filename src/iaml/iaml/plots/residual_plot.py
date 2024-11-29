@@ -56,5 +56,5 @@ class ResidualsPlot(MetricPlot):
         return self
     
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target == 'continuous'

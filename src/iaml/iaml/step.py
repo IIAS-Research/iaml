@@ -4,8 +4,9 @@ This class is not really use in Pipeline, run function doesn't do anything.
 Step class is use to create new kinds of steps by inheritance and give all
 needed attributes and methods to children classes. 
 
-There is also decorators needed to create a Step. See it under Step class.
+There are also decorators needed to create a Step. See it under Step class.
 """
+
 from __future__ import annotations
 
 import sys
@@ -32,16 +33,19 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     available_steps: dict[Step, tuple[str]] = {}
     """Static list of all registered steps within IAML."""
 
-    name = 'Step'
+    name: str = 'Step'
     """Step's name."""
 
-    refs = None
+    refs: list[dict[str, Any]] = None
     """List of references for this step."""
 
-    __description = ''
-    """Step's description."""
+    __description: str = ''
+    """Short description of the step."""
 
-    can_be_disabled = True
+    __description_long: str = ''
+    """Longer description of the step."""
+
+    can_be_disabled: bool = True
     """Whether this step can be disabled."""
 
     def __init__(self, *args, use_cache: bool = True, **kwargs): # pylint: disable=unused-argument

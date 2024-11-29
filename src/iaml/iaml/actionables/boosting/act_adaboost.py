@@ -1,8 +1,7 @@
-"""
-STEP
-Apply AdaBoost on models
-"""
+"""Apply AdaBoost on models"""
+
 from sklearn.ensemble import AdaBoostClassifier
+from typing import Any
 
 from ...actionable import Actionable
 from ...decorators.all import runner
@@ -10,15 +9,15 @@ from ...candidate import Candidate
 
 
 class ActAdaBoost(Actionable):
-    """
-    Apply Adaboost on models
-    
+    """Apply Adaboost on models
+
     Configuration:
         * `random_state`: Random seed (defaults to 42).
         * `n_estimator`: Number of estimators (defaults to 2000).
     """
-    name = "AdaBoost Classifier"
-    refs = [
+
+    name: str = "AdaBoost Classifier"
+    refs: list[dict[str, Any]] = [
         {
             'year': 1995,
             'name': (
@@ -57,5 +56,5 @@ class ActAdaBoost(Actionable):
 
         return candidate.to_output(None, None, model)
 
-    def priorize(self, _: Candidate = None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5

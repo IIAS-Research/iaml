@@ -48,15 +48,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         fit_candidate (Candidate): last Candidate sent to the first step 
     """
     def __init__(self, # pylint: disable=too-many-arguments
-                max_workers:int=None,
-                max_stage_duration:int=None,
-                metalearner:bool=None,
-                splitter=None,
-                max_duration:int=-1,
-                time_before_sample_use:int=None,
-                preprocessor:bool=False,
-                main_metric:Metric=None):
-        
+        max_workers: int = None,
+        max_stage_duration: int = None,
+        metalearner: bool = None,
+        splitter=None,
+        max_duration: int = -1,
+        time_before_sample_use: int = None,
+        preprocessor: bool = False,
+        main_metric: Metric = None,
+    ) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
         
@@ -95,24 +95,24 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         else:
             self.time_before_sample_use = math.inf
         
-        self.candidates:list[Candidate] = None
-        self.init_candidate:Candidate = None
-        self.first_step:Step = None # Will be the first Step of the pipeline (probably a MetaStep
+        self.candidates: list[Candidate] = None
+        self.init_candidate: Candidate = None
+        self.first_step: Step = None # Will be the first Step of the pipeline (probably a MetaStep
         self.last_stage_candidates = []
         
         self.executor = None
         
         self.default_pipeline() # Load default pipeline
-        self.max_workers = max_workers if (max_workers is not None and max_workers > 0 ) \
+        self.max_workers = max_workers if (max_workers is not None and max_workers > 0) \
             else multiprocessing.cpu_count()
         
-        self.chosen_candidate:Candidate = None
+        self.chosen_candidate: Candidate = None
         WorkerManager(max_workers=self.max_workers)
 
     def __del__(self):
         del self.executor
 
-    def load_pipeline(self, pipeline:dict) -> None:
+    def load_pipeline(self, pipeline: dict) -> None:
         """Load any kind of pipeline
 
         Args:
@@ -176,14 +176,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             callback(**kwargs)
             
     def baseline(self,
-            X:pd.DataFrame,
-            y:pd.DataFrame,
-            *args,
-            groups:pd.DataFrame = None,
-            groups_columns: List[str] = None,
-            generation_sample_size=200,
-            verbose=1,
-            **kwargs) -> Candidate:
+        X: pd.DataFrame,
+        y: pd.DataFrame,
+        *args,
+        groups: pd.DataFrame = None,
+        groups_columns: List[str] = None,
+        generation_sample_size=200,
+        verbose=1,
+        **kwargs
+    ) -> Candidate:
         """
         Run a very basic pipeline to train a model baseline 
         
@@ -212,15 +213,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         if isinstance(y, pd.DataFrame):
             y = y.values.ravel()
         
-        dataset:Dataset = Dataset(
+        dataset: Dataset = Dataset(
             deepcopy(X),
             deepcopy(y),
             groups=groups,
-            groups_columns=groups_columns
-        )
+            groups_columns=groups_columns)
             
         ### INITIAL GENERATE CANDIDATE 
-        init_candidate:Candidate = Candidate(
+        init_candidate: Candidate = Candidate(
             dataset.sample(generation_sample_size),
             main_metric=self.main_metric)
 
@@ -261,17 +261,18 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     ###########
 
     def fit(self,
-            X:pd.DataFrame,
-            y:pd.DataFrame,
-            *args,
-            groups:pd.DataFrame = None,
-            groups_columns: List[str] = None,
-            patience:int=-1,
-            generation_sample_size=200,
-            n_candidates=1,
-            callback:callable = None,
-            verbose=1,
-            **kwargs) -> list[Candidate]:
+        X: pd.DataFrame,
+        y: pd.DataFrame,
+        *args,
+        groups: pd.DataFrame = None,
+        groups_columns: List[str] = None,
+        patience: int = -1,
+        generation_sample_size=200,
+        n_candidates=1,
+        callback: callable = None,
+        verbose=1,
+        **kwargs,
+    ) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
         Args:
@@ -305,15 +306,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             if isinstance(y, pd.DataFrame):
                 y = y.values.ravel()
             
-            dataset:Dataset = Dataset(
+            dataset: Dataset = Dataset(
                 deepcopy(X),
                 deepcopy(y),
                 groups=groups,
-                groups_columns=groups_columns
-            )
+                groups_columns=groups_columns)
             
             ### INITIAL GENERATE CANDIDATE 
-            self.init_candidate:Candidate = Candidate(
+            self.init_candidate: Candidate = Candidate(
                 dataset.sample(generation_sample_size),
                 main_metric=self.main_metric)
 
@@ -419,13 +419,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
     
     def __run_evaluations(self,
-                        candidates:Candidate,
-                        dataset:Dataset,
-                        timeout:int=None,
-                        stage_number:int=None,
-                        callback=None) -> None:
-        
-        new_candidates:list[Candidate] = []
+        candidates: Candidate,
+        dataset: Dataset,
+        timeout: int = None,
+        stage_number: int = None,
+        callback=None
+    ) -> None:
+        new_candidates: list[Candidate] = []
         start_time = time.monotonic()
         with Logger().progress as progress:
             task = progress.add_task(
@@ -486,22 +486,23 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             
     
     def __optimize(self,
-                    dataset:Dataset,
-                    candidates:list[Candidate],
-                    optimizer:Optimizer=Optimizer(),
-                    patience:int=5,
-                    max_duration:int=-1,
-                    callback=None) -> list[Candidate]:
+        dataset: Dataset,
+        candidates: list[Candidate],
+        optimizer: Optimizer = Optimizer(),
+        patience: int = 5,
+        max_duration: int = -1,
+        callback=None
+    ) -> list[Candidate]:
         if not candidates:
             return []
-        
+
         # init
         candidates.sort(reverse=True)
-        best_result:float = candidates[0].get_main_metric_value()
-        iterations_without_improvement:int = 0
-        iterations_count:int = 0
-        duration:int = 0
-        starting_time:int = time.monotonic() # seconds
+        best_result: float = candidates[0].get_main_metric_value()
+        iterations_without_improvement: int = 0
+        iterations_count: int = 0
+        duration: int = 0
+        starting_time: int = time.monotonic() # seconds
         
         # If there is not, define an arbitrary stop condition
         if max_duration == -1 and patience == -1:
@@ -519,7 +520,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 # Generate metapredictor
                 if len(candidates) > 1:
                     for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
-                        meta_candidate:MetaPredictor = metapredictor(
+                        meta_candidate: MetaPredictor = metapredictor(
                             [candidate for candidate in candidates if not candidate.is_meta][0:5]
                             ).to_candidate()
                         candidates.append(meta_candidate)
@@ -543,7 +544,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             candidates = [candidate for candidate in candidates if candidate.computed_metrics]
             
             # Improvement ?
-            new_best:float = candidates[0].get_main_metric_value()
+            new_best: float = candidates[0].get_main_metric_value()
             if new_best > best_result:
                 best_result = new_best
                 iterations_without_improvement = 0
@@ -561,7 +562,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         
 
-    def __metrics_selection(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str):
+    def __metrics_selection(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str):
         """Select metrics used to evaluate performances
 
         Args:
@@ -582,14 +583,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 metrics.append(metric)
         return metrics
     
-    def __meta_predictor_iter(self, type_of_target:str):
+    def __meta_predictor_iter(self, type_of_target: str):
         for subclass in MetaPredictor.__subclasses__():
             # Verify if a subclass is suitable or not
             if subclass.suitable(type_of_target):
                 yield subclass
 
     # Execute all the pipeline steps
-    def __run(self, candidate:Candidate) -> list[Candidate]:
+    def __run(self, candidate: Candidate) -> list[Candidate]:
         """Run pipeline
 
         Args:
@@ -624,7 +625,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         return self.first_step.all_configurations()
 
     # Configure one to many steps with a dict configuration
-    def configure_all(self, configs:dict) -> None:
+    def configure_all(self, configs: dict) -> None:
         """Configure one to many steps with a dict configuration
 
         Args:
@@ -633,7 +634,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         all_steps = self.__all_steps()
 
         for step_id, config in configs.items():
-            current_step:Step = self.__find_step_by_id(all_steps, step_id)
+            current_step: Step = self.__find_step_by_id(all_steps, step_id)
             if current_step:
                 for key, value in config:
                     current_step.configure(key, value)
@@ -646,7 +647,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """
         return self.first_step.all_steps()
 
-    def __find_step_by_id(self, step_list:list[Step], step_id:int) -> Step:
+    def __find_step_by_id(self, step_list: list[Step], step_id: int) -> Step:
         """_summary_
 
         Args:
@@ -662,7 +663,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         return None
 
 
-def process_executor(candidate:Candidate, *args, **kwargs) -> 'Candidate':
+def process_executor(candidate: Candidate, *args, **kwargs) -> 'Candidate':
     """
     Wrap candidate training to run it in subprocess
 

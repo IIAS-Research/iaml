@@ -44,7 +44,7 @@ class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
     
     def __init__(self):
         super().__init__()
-        self.optimizable:bool = True
+        self.optimizable: bool = True
         self.model = None
     
     @runner

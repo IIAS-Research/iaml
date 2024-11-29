@@ -25,11 +25,11 @@ class Dataset:
     """
     
     def __init__(self,
-        X:pd.DataFrame,
-        y:list=None,
+        X: pd.DataFrame,
+        y: list = None,
         groups: pd.DataFrame = None,
         groups_columns: List[str] = None,
-        columns_types:dict=None
+        columns_types: dict = None
     ):
         if groups is not None and groups_columns:
             raise ValueError("groups and groups_columns are not None. Only one must be set")
@@ -40,9 +40,9 @@ class Dataset:
         if groups_columns is None:
             groups_columns = []
             
-        self.__X:pd.DataFrame = X.drop(columns=groups_columns)
+        self.__X: pd.DataFrame = X.drop(columns=groups_columns)
         
-        self.__y:np.array = np.array(y)
+        self.__y: np.array = np.array(y)
         
         if groups_columns:
             self.groups = X[groups_columns]
@@ -61,7 +61,7 @@ class Dataset:
                 columns=['groups']
                 )
 
-        self.columns_types:dict = columns_types if columns_types else {}
+        self.columns_types: dict = columns_types if columns_types else {}
         self.__detect_columns_types()
 
         if y is not None:
@@ -99,7 +99,7 @@ class Dataset:
         """
         return self.__y
 
-    def copy(self, deep:bool=True) -> 'Dataset':
+    def copy(self, deep: bool = True) -> 'Dataset':
         """
         Copy Dataset into a new instance
 
@@ -154,7 +154,7 @@ class Dataset:
                 
         return self.decline(self.X.iloc[test_idx], self.y[test_idx])
     
-    def transform(self, method:callable) -> None:
+    def transform(self, method: callable) -> None:
         """
         Apply transform method to X or y data based on the method signature
 
@@ -174,7 +174,7 @@ class Dataset:
         """
         return self.groups is not None and not self.groups.empty
     
-    def resample(self, resampler:callable) -> 'Dataset':
+    def resample(self, resampler: callable) -> 'Dataset':
         """
         Apply a resampler on X, y and groups data. 
 
@@ -230,7 +230,7 @@ class Dataset:
             return self.X
             
         
-    def get_columns_names_by_type(self, types:list[DataType]) -> list[str]:
+    def get_columns_names_by_type(self, types: list[DataType]) -> list[str]:
         """
         Get names of all the columns with DataType in types
 
@@ -249,7 +249,7 @@ class Dataset:
             if type in types
         ]
 
-    def __detect_data_type(self, column_name:str) -> DataType:
+    def __detect_data_type(self, column_name: str) -> DataType:
         """
         Detect data type of a column
 
@@ -260,7 +260,7 @@ class Dataset:
             DataType: Type of the columns
         """
         column_value = self.X[column_name]
-        detected:DataType = None
+        detected: DataType = None
         if column_value.dtype == object:
             if (len(column_value.unique()) / len(column_value) < 0.05 \
                 or len(column_value.unique()) < 7):

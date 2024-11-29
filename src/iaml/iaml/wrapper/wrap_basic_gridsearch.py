@@ -11,11 +11,11 @@ class WrapBasicGridSearch(StepWrapper):
     """
     [WRAPPER] Wrap a step to apply Grid Search configuration parameters
     """
-    
-    to_avoid:list[str] = ['random_state'] # List of ignored key
+
+    to_avoid: list[str] = ['random_state'] # List of ignored key
 
     @runner
-    def run(self, candidate:Candidate) -> list[Candidate]:
+    def run(self, candidate: Candidate) -> list[Candidate]:
         """
         Super basic GridSearch.
             Numeric values -> 11 runs with 10% (50% to 150%)

@@ -37,7 +37,7 @@ class ActCatBoost(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'iterations': {
                 'description': 'The maximum number of trees that can be built.',
                 'default': 1000,
@@ -85,8 +85,8 @@ class ActCatBoost(Predictor):
             }
         }
 
-        self.model:CatBoostClassifier = None
-        self.label_encoder:LabelEncoder = LabelEncoder()
+        self.model: CatBoostClassifier = None
+        self.label_encoder: LabelEncoder = LabelEncoder()
         
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -116,11 +116,11 @@ class ActCatBoost(Predictor):
         
         return self
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

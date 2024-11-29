@@ -50,7 +50,7 @@ class ConcordanceIndexMetric(Metric):
     def compute(
         self,
         y: pd.DataFrame,
-        y_pred:pd.DataFrame,
+        y_pred: pd.DataFrame,
         **kwargs) -> float:
         event, time = zip(*y)
 

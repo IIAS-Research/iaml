@@ -51,7 +51,7 @@ class ActPowerTransformer(Actionable):
         
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'method': {
                 'description': 'The power transform method.',
                 'default': 'yeo-johnson',
@@ -67,7 +67,7 @@ class ActPowerTransformer(Actionable):
         self.optimizable = True
         self.preprocessor = None
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Find columns to convert
 
@@ -84,7 +84,7 @@ class ActPowerTransformer(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply PowerTransformer
 
@@ -98,7 +98,7 @@ class ActPowerTransformer(Actionable):
         return pd.DataFrame(self.preprocessor.transform(X))
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

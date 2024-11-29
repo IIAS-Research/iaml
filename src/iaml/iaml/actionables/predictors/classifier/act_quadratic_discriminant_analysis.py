@@ -47,14 +47,14 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'reg_param': {
                 'description': 'Regularizes the per-class covariance estimates by transforming S2',
                 'default': 0.0001,
                 'range': [0.0001, 1.0]
                 }
             }
-        self.model:QuadraticDiscriminantAnalysis = None
+        self.model: QuadraticDiscriminantAnalysis = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -73,7 +73,7 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -86,7 +86,7 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

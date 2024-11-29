@@ -27,7 +27,7 @@ class ActTrimSpaces(Actionable):
     refs = []
 
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'left_trim': {
                 'description': "Trim all columns leading spaces",
                 'default': True

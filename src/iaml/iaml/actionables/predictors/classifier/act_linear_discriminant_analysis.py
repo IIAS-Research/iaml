@@ -38,7 +38,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'tol': {
                 'description': 'Absolute threshold for a singular value of X to be considered \
                     significant, used to estimate the rank of X. ',
@@ -46,7 +46,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
                 'range': [1e-05, 0.1]
                 }
             }
-        self.model:LinearDiscriminantAnalysis = None
+        self.model: LinearDiscriminantAnalysis = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -65,7 +65,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -78,7 +78,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

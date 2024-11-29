@@ -23,7 +23,7 @@ class ActRemoveLowVarianceColumn(Actionable):
         overfitting.''')
 
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'threshold': {
                 'description': 'Columns with variance lower than this value will be dropped.',
                 'default': 1e-10
@@ -56,7 +56,7 @@ class ActRemoveLowVarianceColumn(Actionable):
         
         return self
     
-    def __get_columns(self, dataset:Dataset) -> list:
+    def __get_columns(self, dataset: Dataset) -> list:
         # Set up VarianceThreshold selector with the user-defined threshold
         threshold_value = self.get_config('threshold')
         selector = VarianceThreshold(threshold=threshold_value)
@@ -92,6 +92,6 @@ class ActRemoveLowVarianceColumn(Actionable):
         """
         return 0.5
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'survival' and self.__get_columns(dataset)
     

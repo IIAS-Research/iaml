@@ -51,7 +51,7 @@ class ActMLPClassifier(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'activation': {
                 'description': 'Activation function for the hidden layer.',
                 'default': 'relu',
@@ -81,7 +81,7 @@ class ActMLPClassifier(Predictor):
                 'range': [0.0001, 0.5]
                 }
             }
-        self.model:MLPClassifier = None
+        self.model: MLPClassifier = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -105,7 +105,7 @@ class ActMLPClassifier(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -118,7 +118,7 @@ class ActMLPClassifier(Predictor):
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

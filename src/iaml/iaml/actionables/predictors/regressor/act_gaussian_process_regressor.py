@@ -35,14 +35,14 @@ class ActGaussianProcessRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'alpha': {
                 'description': 'Value added to the diagonal of the kernel matrix during fitting.',
                 'default': 1e-14,
                 'range': [1e-08, 1.0]
                 }
             }
-        self.model:GaussianProcessRegressor = None
+        self.model: GaussianProcessRegressor = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         """
@@ -61,7 +61,7 @@ class ActGaussianProcessRegressor(Predictor):
         return self
     
     
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         """
         Does this step suitable for this candidate
 
@@ -73,7 +73,7 @@ class ActGaussianProcessRegressor(Predictor):
         """
         return dataset.type_of_target == 'continuous'
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 

@@ -33,7 +33,7 @@ class MetaOrderedStep(MetaStep):
         Candidate
             transformed data
         """
-        current_candidate:Candidate = candidate
+        current_candidate: Candidate = candidate
         for step in self.steps:
             current_candidate = step.run(current_candidate)
         

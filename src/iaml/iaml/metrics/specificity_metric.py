@@ -36,8 +36,9 @@ class SpecificityMetric(Metric):
         return 'specificity'
 
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
-        return type_of_target in ['binary']
+        return type_of_target == 'binary'
 
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
+    def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:
         tn, fp, _, _ = confusion_matrix(y, y_pred).ravel()
+
         return tn / (tn + fp) if (tn + fp) != 0 else 0

@@ -28,13 +28,13 @@ class Logger(metaclass=MetaSingleton):
         * -1 -> error and progressbar
     """
     def __init__(self, verbose: int = 1) -> None:
-        self.console:rich.console = rich.console.Console(log_path=False)
+        self.console: rich.console = rich.console.Console(log_path=False)
         """Console used by the logger"""
 
-        self.progress:rich.progress = rich.progress.Progress(console=self.console)
+        self.progress: rich.progress = rich.progress.Progress(console=self.console)
         """Progress bar used by the logger"""
 
-        self.verbose:int = verbose
+        self.verbose: int = verbose
         """Loagger verbosity"""
 
         self.log_queue = multiprocess.Queue()

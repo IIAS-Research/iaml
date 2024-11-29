@@ -51,7 +51,7 @@ class StepWrapper(Step):
         else:
             raise ValueError("Step must be an occurrence of step (or inherited classes)")
         
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return self.step.suitable(dataset)
     
     def all_configurations(self) -> list[dict]:

@@ -71,7 +71,7 @@ class ActKernelPCA(Actionable):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'kernel': {
                 'description': 'Kernel used for PCA.',
                 'default': 'rbf',
@@ -103,7 +103,7 @@ class ActKernelPCA(Actionable):
         self.preprocessor = None
 
 
-    def fit(self, dataset:Dataset) -> Actionable:
+    def fit(self, dataset: Dataset) -> Actionable:
         """
         Find columns to convert
 
@@ -126,7 +126,7 @@ class ActKernelPCA(Actionable):
         return self
     
     
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply KernelPCA
 
@@ -140,7 +140,7 @@ class ActKernelPCA(Actionable):
         return pd.DataFrame(self.preprocessor.transform(X))
         
     
-    def priorize(self, candidate:Candidate=None) -> float:
+    def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself
 
