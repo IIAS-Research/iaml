@@ -1,6 +1,5 @@
 """Singleton used by IAML to generate nice logs"""
 from enum import Enum
-from typing import List
 import rich.console
 import rich.progress
 import multiprocess
@@ -17,8 +16,7 @@ class LogType(Enum):
 
 
 class Logger(metaclass=MetaSingleton):
-    """
-    Singleton used by IAML to generate nice logs
+    """Singleton used by IAML to generate nice logs
     
     :param int, optional verbose: Logger verbosity. Default to 1.
     
@@ -61,7 +59,7 @@ class Logger(metaclass=MetaSingleton):
         self.console.quiet = self.__verbose == 0
         return self.__verbose
 
-    def __log(self, log_type: LogType, *text: List[str]) -> None:
+    def __log(self, log_type: LogType, *text: list[str]) -> None:
         """Show text in console
         
         :param LogType log_type: Logger type
@@ -80,7 +78,7 @@ class Logger(metaclass=MetaSingleton):
         if self.verbose > 1:
             self.__log(LogType.INFO, *text)
 
-    def warning(self, *text: List[str]) -> None:
+    def warning(self, *text: list[str]) -> None:
         """Show warning text in console
 
         :param list[str] \\*text: Warning Text to log in console
@@ -88,7 +86,7 @@ class Logger(metaclass=MetaSingleton):
         if self.verbose > 2:
             self.__log(LogType.WARNING, *text)
 
-    def error(self, *text: List[str]) -> None:
+    def error(self, *text: list[str]) -> None:
         """Show info text in console
 
         :param list[str] \\*text: Error Text to log in console
