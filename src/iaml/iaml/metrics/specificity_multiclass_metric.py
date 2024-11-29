@@ -1,31 +1,28 @@
-"""
-[METRIC] Specificity Multiclass
-"""
+"""[METRIC] Specificity Multiclass"""
+from typing import Any
 import textwrap
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 import numpy as np
 from ..metric import Metric
 
-class SpecificityMulticlassMetric(Metric):
-    """
-    [METRIC] Specificity Multiclass
-    """
 
-    name= "Specificity Multiclass"
-    description = textwrap.dedent('''\
+class SpecificityMulticlassMetric(Metric):
+    """[METRIC] Specificity Multiclass"""
+
+    name: str = "Specificity Multiclass"
+    description: str = textwrap.dedent('''\
         Multiclass specificity is a metric used to evaluate the performance of a classification model
         with multiple classes. It measures how well the model identifies the negative cases for each
         class by considering true negatives and false positives.''')
-    description_long = textwrap.dedent('''\
+    description_long: str = textwrap.dedent('''\
         Multiclass specificity assesses how effectively a classification model identifies negative cases
         across multiple classes. For each class, it calculates the number of true negatives (correctly 
         identified negatives) and false positives (incorrectly identified positives). 
         By summing these values for all classes, you can determine an overall specificity score. 
         A high multiclass specificity indicates that the model is good at correctly identifying non-target classes, 
         while a low score suggests it may struggle with misclassifying negative cases.''')
-    
-    refs=[
+    refs: list[dict[str, Any]] = [
         {
             'year': 2020,
             'name': 'Metrics for Multi-Class Classification: an Overview',
@@ -39,38 +36,15 @@ class SpecificityMulticlassMetric(Metric):
         }
     ]
 
-    def __str__(self):
-        return 'specificity_multiclass'    
-    
-    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
-        """
-        Does this metric is suitable for this candidate ?
-        Must be classification 
+    def __str__(self) -> str:
+        return 'specificity_multiclass'
 
-        Args:
-            X (pd.DataFrame): Features
-            y (pd.DataFrame): labels
-            type_of_target (str): Type of target
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
         return type_of_target in ['multiclass']
-    
-    
-    # Specificity is calculated by summing the true negartives and false 
-    # positives for each class, then using these totals to obtain an overall specificity"
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
-        """
-        Compute metric with predicted data
 
-        Args:
-            y (pd.DataFrame): Ground truth data
-            y_pred (pd.DataFrame): Predicted data
-
-        Returns:
-            float: computed value 
-        """
+    def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:
+        # Specificity is calculated by summing the true negartives and false
+        # positives for each class, then using these totals to obtain an overall specificity"
         cm = confusion_matrix(y, y_pred)
         total_tn = 0
         total_fp = 0

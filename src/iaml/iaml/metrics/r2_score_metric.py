@@ -1,27 +1,25 @@
-"""
-[METRIC] R2 Score
-"""
+"""[METRIC] R2 Score"""
+from typing import Any
 import textwrap
 import pandas as pd
 from sklearn.metrics import r2_score
 from ..metric import Metric
 
-class R2ScoreMetric(Metric):
-    """
-    [METRIC] R2 Score
-    """
 
-    name = "R2 Score"
-    description = textwrap.dedent('''\
+class R2ScoreMetric(Metric):
+    """[METRIC] R2 Score"""
+
+    name: str = "R2 Score"
+    description: str = textwrap.dedent('''\
         R² Score, or R-squared, measures how well a model explains the variability of the target variable. 
         It indicates the proportion of variance in the data that is predictable from the model.''')
-    description_long = textwrap.dedent('''\
+    description_long: str = textwrap.dedent('''\
         R² Score evaluates the goodness of fit of a regression model. It ranges from 0 to 1, 
         where 1 means the model perfectly explains the variability of the target variable, and 0 means it does not 
         explain any variability. To calculate R², you compare the model's predictions to the mean of the actual values. 
         For example, an R² of 0.80 means that 80% of the variance in the target variable is explained by the model. 
         This metric is useful in healthcare to assess how well a model predicts outcomes.''')
-    refs=[
+    refs: list[dict[str, Any]] = [
         {
             'year': 1985,
             'name': 'Cautionary Note about R2',
@@ -36,34 +34,12 @@ class R2ScoreMetric(Metric):
                 """)
         }
     ]
-    
-    def __str__(self):
+
+    def __str__(self) -> Any:
         return 'r2_score'
-        
-    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
-        """
-        Does this metric is suitable for this candidate ?
-        Must be regression
 
-        Args:
-            X (pd.DataFrame): Features
-            y (pd.DataFrame): labels
-            type_of_target (str): Type of target
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
         return type_of_target == 'continuous'
 
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
-        """
-        Compute metric with predicted data
-
-        Args:
-            y (pd.DataFrame): Ground truth data
-            y_pred (pd.DataFrame): Predicted data
-
-        Returns:
-            float: computed value 
-        """
+    def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:
         return r2_score(y, y_pred)

@@ -1,21 +1,19 @@
-"""
-[METRIC] Mean Squared Log Error
-"""
+"""[METRIC] Mean Squared Log Error"""
+from typing import Any
 import textwrap
 from sklearn.metrics import mean_squared_log_error
 import pandas as pd
 from ..metric import Metric
 
+
 class MeanSquaredLogErrorMetric(Metric):
-    """
-    [METRIC] Mean Squared Log Error
-    """
-    name = 'Mean Squared Log Error'
-    description = textwrap.dedent('''\
+    """[METRIC] Mean Squared Log Error"""
+    name: str = 'Mean Squared Log Error'
+    description: str = textwrap.dedent('''\
         Mean Squared Log Error (MSLE) measures the average of the squared differences 
         between the logarithm of predicted and actual values. It is useful for data with wide-ranging values.
         ''')
-    description_long = textwrap.dedent('''\
+    description_long: str = textwrap.dedent('''\
         Mean Squared Log Error (MSLE) evaluates a model's accuracy by calculating the 
         average of the squared differences between the logarithms of predicted and actual values. 
         This metric is helpful when the target variable varies greatly in scale. 
@@ -23,8 +21,7 @@ class MeanSquaredLogErrorMetric(Metric):
         square them, and then average these squared differences. This approach reduces the impact of large errors, 
         making it valuable for assessing model performance in cases where relative differences matter more than 
         absolute differences.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2021,
             'name': 'Mean Squared Error, Deconstructed',
@@ -38,35 +35,13 @@ class MeanSquaredLogErrorMetric(Metric):
         }
     ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'mean_squared_log_error'
-    
-    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
-        """
-        Does this metric is suitable for this candidate ?
-        Must be regression with no negative value
 
-        Args:
-            X (pd.DataFrame): Features
-            y (pd.DataFrame): labels
-            type_of_target (str): Type of target
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
         return type_of_target == 'continuous' and not (y < 0).any(axis=None)
-    
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
-        """
-        Compute metric with predicted data
 
-        Args:
-            y (pd.DataFrame): Ground truth data
-            y_pred (pd.DataFrame): Predicted data
-
-        Returns:
-            float: computed value 
-        """
+    def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float | None:
         try:
             return mean_squared_log_error(y, y_pred)
         except:  # pylint: disable=bare-except

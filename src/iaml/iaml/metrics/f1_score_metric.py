@@ -47,7 +47,7 @@ class F1ScoreMetric(Metric):
 
     def compute(
         self,
-        y: pd.DataFrame, 
+        y: pd.DataFrame,
         y_pred:pd.DataFrame,
         **kwargs) -> float:
         match get_type_of_target(y):

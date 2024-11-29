@@ -68,7 +68,7 @@ class IntegratedBrierScoreMetric(Metric):
         :return: Computed value
         """
         y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
-        y = Dataset.fix_y_survival(y, y_train)        
+        y = Dataset.fix_y_survival(y, y_train)
         y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
 
         # Extract time from y test
