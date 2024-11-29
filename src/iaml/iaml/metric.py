@@ -7,8 +7,17 @@ from .reference import Reference
 class Metric:
     """[METRIC] Parent of all others Metrics, implement the default behavior"""
 
-    refs: list[dict[str, Any]] = []
+    name: str = ""
+    """Name of the metric"""
+
+    description: str = ""
+    """Short description of the metric"""
+
     description_long: str = ""
+    """Long description of the metric"""
+
+    refs: list[dict[str, Any]] = []
+    """List of references for this metric."""
 
     @classmethod
     def all_subclasses(cls) -> list['Metric']:

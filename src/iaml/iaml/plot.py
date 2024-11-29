@@ -13,17 +13,20 @@ if TYPE_CHECKING:
 
 class Plot:
     """[PLOT] Parent of all others Plot, implement the default behavior"""
-    
+
     title: str = "Here is the plot title"
+    """Plot title"""
+
     description: str = "Here is an explanation of how this plot work"
-    
+    """Plot description"""
+
     def __init__(self):
         self.__visualizer: MetricPlot = None  # pylint: disable=unused-private-member
         """The class object holding data to plot"""
 
         self._binary_image: io.BytesIO = None
         """The generated plot image"""
-    
+
     @property
     def image(self) -> bytes:
         """Get binary representation of the plot image
@@ -33,9 +36,9 @@ class Plot:
         """
         if self._binary_image is not None:
             return self._binary_image.getvalue()
-        
+
         raise AttributeError("Plot must be computed before")
-    
+
     @property
     def b64_image(self) -> str:
         """Get b64 representation of the plot image
@@ -43,7 +46,7 @@ class Plot:
         :return: b64 string image.
         """
         return base64.b64encode(self.image).decode()
- 
+
     def _compute(
         self,
         estimator: 'IAMLPipeline',

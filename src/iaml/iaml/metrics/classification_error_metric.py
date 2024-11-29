@@ -1,22 +1,20 @@
-"""
-[METRIC] Classification Error
-"""
+"""[METRIC] Classification Error"""
+from typing import Any
 import textwrap
 import pandas as pd
 from .balanced_accuracy_metric import BalancedAccuracyMetric
 from ..metric import Metric
 
+
 class ClassificationErrorMetric(Metric):
-    """
-    [METRIC] Classification Error
-    """
-    name = 'Classification Error'
-    description = textwrap.dedent('''\
+    """[METRIC] Classification Error"""
+    name: str = 'Classification Error'
+    description: str = textwrap.dedent('''\
         Classification Error measures a model's performance 
         by calculating the proportion of incorrect predictions. It is defined as 1 
         minus the Balanced Accuracy Score, making it useful for imbalanced datasets.
         ''')
-    description_long = textwrap.dedent('''\
+    description_long: str = textwrap.dedent('''\
         Classification Error evaluates how well a predictive model performs 
         by measuring the proportion of incorrect predictions. It is calculated as 1 minus the Balanced 
         Accuracy Score, which gives equal importance to both positive and negative classes. 
@@ -25,7 +23,7 @@ class ClassificationErrorMetric(Metric):
         the Classification Error would be 1 - 0.80 = 0.20, or 20%. This metric helps highlight the model's shortcomings, 
         making it a valuable tool for assessing performance in medical decision-making.''')
     
-    refs=[
+    refs: list[dict[str, Any]] = [
         {
             'year': 2010,
             'name': 'The Balanced Accuracy and Its Posterior Distribution',
@@ -57,36 +55,12 @@ class ClassificationErrorMetric(Metric):
         }
     ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'classification_error'
-    
-    def suitable(self, X:pd.DataFrame, y:pd.DataFrame, type_of_target:str) -> bool:
-        """
-        Does this metric is suitable for this candidate ?
-        Must be classification
 
-        Args:
-            X (pd.DataFrame): Features
-            y (pd.DataFrame): labels
-            type_of_target (str): Type of target
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
         return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
-    
-    # Calculate the classification error using either accuracy or balanced accuracy, 
-    # depending on relevence
+
     def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
-        """
-        Compute metric with predicted data
-
-        Args:
-            y (pd.DataFrame): Ground truth data
-            y_pred (pd.DataFrame): Predicted data
-
-        Returns:
-            float: computed value 
-        """
         balanced_accuracy = BalancedAccuracyMetric().compute(y, y_pred)
         return 1 - balanced_accuracy

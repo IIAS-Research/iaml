@@ -61,7 +61,8 @@ class BrierScoreMetric(Metric):
         
         :param pd.DataFrame y: Ground truth to compute the metric.
         :param pd.DataFrame y_pred: Prediction to compute the metric.
-        :param pd.DataFrame y_train: Training ground truth. Default to None.
+        :param pd.DataFrame, optional y_train: Training ground truth. Default to None.
+        :param dict, optional \\**kwargs: Additional parameters
         :return: Computed value
         """
         y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
