@@ -9,10 +9,11 @@ from ...candidate import Candidate
 from ...dataset import Dataset
 from ...decorators.all import is_step
 
+
 @is_step('cleaning', 'baseline_cleaning')
 class ActDropDateColumn(Actionable):
     """
-    Find and drop data column
+    Finds and drops date columns.
     """
     name = 'Remove date columns'
     description = 'Remove all columns containing Date from the dataset'
@@ -21,41 +22,30 @@ class ActDropDateColumn(Actionable):
         This step is used to clean the dataset in order to perform other actions later on 
         that can't be applied to date columns.''')
     can_be_disabled = False
+
     def __init__(self):
-        self.columns_to_drop:list[str] = None
-    
+        self.columns_to_drop: list[str] = None
+
     def fit(self, dataset:Dataset) -> Actionable:
-        """
-        Find column to drop
-
-        Args:
-            dataset (Dataset): Data to fit on
-
-        Returns:
-            Candidate: Transformed candidate (with updated pipeline)
-        """
         self.columns_to_drop = dataset.get_columns_names_by_type(DataType.DATE)
 
         self.explanations = [
             f'Dropped column **`{c}`**.' for c in self.columns_to_drop
         ]
-        
+
         return self
-    
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Drop all date column of candidate dataset
 
-        Args:
-            x (pd.DataFrame): Dataset to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
-        return X.drop(self.columns_to_drop, axis=1) 
-    
+        Drop columns.
+
+        :param pd.DataFrame X: DataFrame to transform
+        :return: Transformed DataFrame
+        """
+        return X.drop(self.columns_to_drop, axis=1)
+
     def priorize(self, candidate: Candidate = None) -> float:
-        return 0 # Last cleaning action
+        return 0
 
     def suitable(self, dataset: Dataset) -> bool:
-        return bool(dataset.get_columns_names_by_type(DataType.DATE))    
+        return bool(dataset.get_columns_names_by_type(DataType.DATE))

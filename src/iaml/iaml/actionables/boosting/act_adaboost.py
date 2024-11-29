@@ -45,17 +45,17 @@ class ActAdaBoost(Actionable):
                 'default': 2000
             },
         }
-  
+
     @runner
     def run(self, candidate: Candidate) -> Candidate:
         model = AdaBoostClassifier(
             candidate.model,
             n_estimators=self.get_config('n_estimator'),
             random_state=self.get_config('random_state'))
-        
+
         model.fit(candidate.dataset.X, candidate.dataset.y)
-        
+
         return candidate.to_output(None, None, model)
-    
+
     def priorize(self, _: Candidate = None) -> float:
         return 0.5
