@@ -200,7 +200,7 @@ class Dataset:
         Use splitter to split dataset into a list of tuple (train set, test set) 
 
         Yields:
-            tuple['Dataset', 'Dataset']: Train set and Test set 
+            tuple['Dataset', 'Dataset']: Train set and Test set
         """
         # Split the dataset as many times as the splitter requires it
         y = self.y if self.type_of_target is not None else None

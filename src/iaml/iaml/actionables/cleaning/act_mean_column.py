@@ -10,33 +10,21 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
 
+
 @is_step('cleaning', 'baseline_cleaning')
 class ActMeanColumn(Actionable):
     """
-    [STEP] Fill missing values with mean
+    [STEP] Fill missing values with the mean.
     """
     name = 'Fill missing values'
-    description = textwrap.dedent('''\
-        Fill missing values with the mean of non-missing values
-        when the proportion of empty rows is lower than {empty_threshold}.''')
-    description_long = textwrap.dedent('''\
-        Fill a column missings values with the mean of the columns
-        when the proportion of empty rows is lower than {empty_threshold}.
-        Work only for numerical columns.''')
+    description = 'Fill missing values with the mean of non-missing values.'
+    description_long = description
     can_be_disabled = False
-    def __init__(self):
-        self.columns:list[str] = None
-        self.configuration:dict = {
-            'empty_threshold': {
-                'description': "Column with less or equal proportion of empty row will \
-                    be fill with mean value. 1 will always fill void values",
-                'default': 1 # TODO Review when adding new kind of imputer
-            }
-        }
-    
-    def fit(self, dataset:Dataset) -> Actionable:
-        # threshold = self.get_config('empty_threshold')
 
+    def __init__(self):
+        self.columns: list[str] = None
+
+    def fit(self, dataset:Dataset) -> Actionable:
         self.columns = []
         explain = []
 
@@ -47,7 +35,7 @@ class ActMeanColumn(Actionable):
             mean = values.mean()
             if np.isnan(mean):
                 mean = 0
-                
+
             self.columns.append((column, mean))
             explain.append((
                 nan_values_count,
@@ -62,29 +50,20 @@ class ActMeanColumn(Actionable):
             for (c, mean), v in zip(self.columns, explain)
             if v[0] > 0 # hide processings that affected no values
         ]
-        
+
         return self
-    
+
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """
-        Fill NA values with mean
+        Fill NA values with the mean.
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame x: DataFrame to transform
+        :return: Transformed dataset
         """
         for name, mean in self.columns:
-            X[name] = X[name].fillna(mean)    
-        
-        return X
-        
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
+            X[name] = X[name].fillna(mean)
 
-        Return : continuous between 0 and 1
-        """
-        return 1-(candidate.dataset.X.isnull().sum().min()/len(candidate.dataset.X))
+        return X
+
+    def priorize(self, candidate:Candidate=None) -> float:
+        return 1 - (candidate.dataset.X.isnull().sum().min() / len(candidate.dataset.X))

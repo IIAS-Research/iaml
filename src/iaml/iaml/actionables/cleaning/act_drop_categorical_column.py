@@ -10,7 +10,7 @@ from ...decorators.all import is_step
 @is_step('cleaning', 'baseline_cleaning')
 class ActDropCategoricalColumn(Actionable):
     """
-    [STEP] Drop Categorical Column
+    [STEP] Drop categorical columns
     """
     name = 'Remove categorical columns'
     description = 'Remove all columns containing categorical data from the dataset'
@@ -22,17 +22,8 @@ class ActDropCategoricalColumn(Actionable):
 
     def __init__(self):
         self.columns_to_drop: list[str] = None
-    
+
     def fit(self, dataset:Dataset) -> Actionable:
-        """
-        Find columns to drop
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Actionable: Transformed candidate
-        """
         self.columns_to_drop = list(set(
             dataset.get_columns_names_by_type([DataType.CATEGORICAL]) + \
             list(dataset.X.select_dtypes(include=['category']).columns)
@@ -42,22 +33,19 @@ class ActDropCategoricalColumn(Actionable):
             f'Dropped column **`{c}`**.' for c in self.columns_to_drop
         ]
 
-        return self    
+        return self
 
-    def transform(self, X) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Drop columns.
 
-        Args:
-            X (pd.DataFrame): DataFrame to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame X: DataFrame to transform
+        :return: Transformed DataFrame
         """
         return X.drop(self.columns_to_drop, axis=1)
-    
+
     def priorize(self, _: Candidate = None) -> float:
         return 0
-    
+
     def suitable(self, dataset: Dataset) -> bool:
-        return bool(dataset.get_columns_names_by_type([DataType.CATEGORICAL]))    
+        return bool(dataset.get_columns_names_by_type([DataType.CATEGORICAL]))

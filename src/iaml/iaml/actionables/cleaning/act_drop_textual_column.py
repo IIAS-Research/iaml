@@ -22,50 +22,33 @@ class ActDropTextualColumn(Actionable):
         This step is used to clean the dataset in order to perform other actions later on 
         that can't be applied to textual columns.''')
     can_be_disabled = False
+
     def __init__(self):
         self.columns_to_drop:list[str] = None
-    
+
     def fit(self, dataset:Dataset) -> Actionable:
-        """
-        Find columns to drop
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.columns_to_drop = list(set(
-                dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]) + \
-                list(dataset.X.select_dtypes(include='object').columns)
-            ))
+            dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]) + \
+            list(dataset.X.select_dtypes(include='object').columns)
+        ))
         
         self.explanations = [
             f'Dropped column **`{c}`**.' for c in self.columns_to_drop
         ]
 
-        return self    
+        return self
 
     def transform(self, X) -> pd.DataFrame:
         """
         Drop columns.
 
-        Args:
-            X (pd.DataFrame): DataFrame to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame X: DataFrame to transform
+        :return: Transformed DataFrame
         """
         return X.drop(self.columns_to_drop, axis=1)
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
-        return 0 # Last cleaning action
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        return bool(dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]))    
-    
+    def priorize(self, candidate: Candidate = None) -> float:
+        return 0
+
+    def suitable(self, dataset: Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]))
