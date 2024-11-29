@@ -18,7 +18,7 @@ class WorkerFuture(Future):
     """Thread Step
 
     :param Step step: The step that will be performed by the Thread
-    :param calalble task: The function to run on the thread
+    :param callable task: The function to run on the thread
     :param Tuple, optional args: callable parameters
     :param Dict, optional kwargs: callable parameters
     """

@@ -48,7 +48,7 @@ class ActAdaBoost(Actionable):
   
     @runner
     def run(self, candidate: Candidate) -> Candidate:
-        model:AdaBoostClassifier = AdaBoostClassifier(
+        model = AdaBoostClassifier(
             candidate.model,
             n_estimators=self.get_config('n_estimator'),
             random_state=self.get_config('random_state'))
@@ -57,5 +57,5 @@ class ActAdaBoost(Actionable):
         
         return candidate.to_output(None, None, model)
     
-    def priorize(self, candidate: Candidate = None) -> float:
+    def priorize(self, _: Candidate = None) -> float:
         return 0.5

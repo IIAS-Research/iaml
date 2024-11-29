@@ -9,7 +9,7 @@ There is children classes of MetaStep to execute Steps in a different way
 from typing import Dict, List, Tuple
 from .step import Step
 from .candidate import Candidate
-from .decorators.all import is_step, runner
+from .decorators.all import find_steps_by_tag, is_step, runner
 from .step_wrapper import StepWrapper
 
 @is_step('meta')
@@ -141,7 +141,7 @@ class MetaStep(Step):
         for step in steps:
             self.add_step(step)
         
-    def add_step_by_tag(self, tag:str, wrap:StepWrapper=None) -> None:
+    def add_step_by_tag(self, tag: str, wrap: StepWrapper = None) -> None:
         """
         Add all Step with this tag to the MetaStep
         Wrap -> If exist, will wrap Steps with it. Check WrapperStep to know more 
@@ -153,7 +153,7 @@ class MetaStep(Step):
         wrap : StepWrapper
             Wrap Step in it. Defaults to None.
         """
-        steps_to_add = Step.find_steps_by_tag(tag)
+        steps_to_add = find_steps_by_tag(tag)
         
         if wrap is not None:
             steps_to_add = list(map(lambda step: wrap(step()), steps_to_add))

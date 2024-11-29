@@ -94,7 +94,7 @@ class Candidate:
             return False
         
         return id(self) > id(other)
-            
+
     def __lt__(self, other:'Step'):
         if self.computed_metrics and other.computed_metrics:
             return self.get_main_metric_value() < other.get_main_metric_value()

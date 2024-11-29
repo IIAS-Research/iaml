@@ -4,8 +4,7 @@
 """
 from .meta_explorer_step import MetaExplorerStep
 from .void_step import VoidStep
-from .step import Step
-from .decorators.all import is_step
+from .decorators.all import find_steps_by_tag, is_step
 
 #
 # Inherit from MetaStep but will execute all steps at the same time. 
@@ -19,6 +18,6 @@ class MetaPartialExplorerStep(MetaExplorerStep):
     """
     name = "MetaPartialExplorerStep"
     
-    def __init__(self, *args, tag: set=None, **kwargs):  # pylint: disable=unused-argument
-        if steps := Step.find_steps_by_tag(tag):
+    def __init__(self, *args, tag: set = None, **kwargs):  # pylint: disable=unused-argument
+        if steps := find_steps_by_tag(tag):
             self.steps = [VoidStep(step_to_mimic=list(steps)[0]())]
