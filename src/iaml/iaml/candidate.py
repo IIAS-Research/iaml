@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
-from .splitter import random_splitter
+from .splitters import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .plot import MetricPlot
 from .logger import Logger

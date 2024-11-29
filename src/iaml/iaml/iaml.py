@@ -15,7 +15,7 @@ from .candidate import Candidate
 from .dataset import Dataset
 from .metric import Metric
 from .worker_manager import WorkerManager
-from .splitter import kfold_splitter
+from .splitters import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 from .meta_partial_explorer_step import MetaPartialExplorerStep

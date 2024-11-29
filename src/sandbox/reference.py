@@ -9,7 +9,7 @@ from iaml.iaml.actionables.features_preprocessing.act_power_transformer import A
 from iaml.iaml.actionables.features_preprocessing.act_rbf_sampler import ActRBFSampler
 from iaml.iaml.iaml_pipeline import IAMLPipeline
 from iaml.iaml.dataset import Dataset
-from iaml.iaml import splitter
+from iaml.iaml import splitters
 
 # # properties = {
 # #     'year': 1995,
@@ -102,7 +102,7 @@ print(len(dataset.X))
 # print(dataset.X.head())
 
 
-X = splitter.random_splitter(dataset)
+X = splitters.random_splitter(dataset)
 for train, test in X:
     print(train.y)
     print(train.X.head())
