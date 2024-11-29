@@ -41,7 +41,6 @@ class ActDropDateColumn(Actionable):
         ]
         
         return self
-        
     
     def transform(self, X:pd.DataFrame) -> pd.DataFrame:
         """
@@ -55,13 +54,8 @@ class ActDropDateColumn(Actionable):
         """
         return X.drop(self.columns_to_drop, axis=1) 
     
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0 # Last cleaning action
 
-    def suitable(self, dataset:Dataset) -> bool:
+    def suitable(self, dataset: Dataset) -> bool:
         return bool(dataset.get_columns_names_by_type(DataType.DATE))    
