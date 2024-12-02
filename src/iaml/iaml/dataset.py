@@ -27,7 +27,7 @@ class Dataset:
         having data rows for a similar ID in two different splits. Default to None.
     :param list[str], optional groups_columns: Same as groups, but with column names. 
         Default to None.
-    :param columns_types dict, optional: Specify column types instead of detecting them 
+    :param dict, optional columns_types: Specify column types instead of detecting them 
         automaticaly. Default to None.
     
     """
