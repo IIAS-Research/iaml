@@ -22,7 +22,6 @@ class ClassificationErrorMetric(Metric):
         of both classes. Then, you subtract that value from 1. For example, if the Balanced Accuracy Score is 80%, 
         the Classification Error would be 1 - 0.80 = 0.20, or 20%. This metric helps highlight the model's shortcomings, 
         making it a valuable tool for assessing performance in medical decision-making.''')
-    
     refs: list[dict[str, Any]] = [
         {
             'year': 2010,

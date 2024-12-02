@@ -76,7 +76,7 @@ class CumulativeDynamicAUCMetric(Metric):
     def compute(
         self,
         y: pd.DataFrame,
-        y_pred: pd.DataFrame, 
+        y_pred: pd.DataFrame,
         y_train: pd.DataFrame = None,
         **kwargs) -> float:
         """Compute the cumulative dynamic AUC using the predicted data.
