@@ -1,6 +1,4 @@
-"""
-    Step.run() decorator.
-"""
+"""Step.run() decorator."""
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -9,25 +7,23 @@ from ..logger import Logger
 if TYPE_CHECKING:
     from ..candidate import Candidate
 
-def runner(func) -> callable:
-    """
-    runner MUST decorate your run() method. It you manage every boring things for you.
+
+def runner(func: callable) -> callable:
+    """runner MUST decorate your run() method. It you manage every boring things for you.
+
         - Store results in cache
         - Send information to Destroyers
         - Put results in good shape
         - And maybe more
 
-    Args:
-        func (callable): decorated method
-
-    Returns:
-        callable: edited method
+    :param callable func: decorated method.
+    :return: edited method.
     """
     def runner_wrapper(self, candidates: list[Candidate]) -> list[Candidate]:
         """Wrapping decorated method
 
-        Returns:
-            list[Candidate]: All generated candidates
+        :param list[Candidate] candidates: Candidates to apply wrapper to.
+        :return: All generated candidates.
         """
         # Avoid circular import
         from ..candidate import Candidate  # pylint: disable=import-outside-toplevel
