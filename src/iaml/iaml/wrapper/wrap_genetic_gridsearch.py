@@ -22,15 +22,15 @@ class WrapGeneticGridSearch(StepWrapper):
     Each new generation will learn from the previous one
     """
     name = "Wrap : Genetic GridSearch"
-    
+
     def __init__(self, step: Step):
-        # Set of configuration key to ignore. 
+        # Set of configuration key to ignore.
         # For example, random_state is not a parameter to optimize
         step_ignored_configs: list[str] = [ k for k, v in step.learning_configuration.items() \
             if 'no_gridsearch' in v and v['no_gridsearch'] ]
         self.ignored_configs: list[str] = set(['random_state', *step_ignored_configs])
         """List of config keys to ignore."""
-        
+
         self.configuration = {
             'initial_modificator': {
                 'description': 'Maximum multiplier of default value to generate \
@@ -79,7 +79,7 @@ class WrapGeneticGridSearch(StepWrapper):
         if not any(self.__config_keys()):
             return self.step.run(candidate)
 
-        # Create the first generation of Steps. 
+        # Create the first generation of Steps.
         # This first generation is full of random Steps configurations
         generation = []
         for i in range(0, self.get_config('nb_estimators')):
@@ -160,24 +160,24 @@ class WrapGeneticGridSearch(StepWrapper):
                 if bool(random.getrandbits(1)):
                     # Negative -> Multiply value by something between 0.01 and 1
                     change_rate = random.uniform(0.01, 1)
-                    new_value = config['value']*change_rate 
+                    new_value = config['value']*change_rate
                 else:
-                    # Positive -> Multiply vaoue by something between 1 
-                    # and the max modificator in configuration 
+                    # Positive -> Multiply vaoue by something between 1
+                    # and the max modificator in configuration
                     change_rate = random.uniform(1, self.get_config('initial_modificator'))
                     new_value = config['value']*change_rate
 
-                # Value was a int ? Round it to keep it int 
-                if is_int: 
+                # Value was a int ? Round it to keep it int
+                if is_int:
                     new_value = round(new_value)
 
-                if not self.__valide_config(config, new_value): 
+                if not self.__valide_config(config, new_value):
                     # Cancel is the new value is not correct.
                     new_value = config['value']
 
             elif 'categorical' in config.keys(): # Categorial value, choose randomly one of them
                 new_value = random.choice(config['categorical'])
-            elif isinstance(config['value'], bool): 
+            elif isinstance(config['value'], bool):
                 # Bool value, choose randomly beetwen True and False
                 new_value = random.choice([True, False])
             else: # Other value ? Just keep it
@@ -208,14 +208,14 @@ class WrapGeneticGridSearch(StepWrapper):
                 self.get_config('mutation_power'))
             new_value = random_item['value']*(1+change_rate) # Apply random multiplier
 
-            # Value was a int ? Round it to keep it int 
+            # Value was a int ? Round it to keep it int
             if is_int:
                 new_value = round(new_value)
 
             if new_value == random_item['value']: # To be sure there is a mutation
                 new_value += random.choice([-1, 1])
 
-            if not self.__valide_config(random_item, new_value): 
+            if not self.__valide_config(random_item, new_value):
                 # Cancel is the new value is not correct.
                 new_value = random_item['value']
 
@@ -238,7 +238,6 @@ class WrapGeneticGridSearch(StepWrapper):
         l.extend(super().conf_to_rich_str_list())
 
         return l
-    
 
     def count_steps(self) -> int:
         """Estimation of remaining step count
@@ -290,7 +289,6 @@ class WrapGeneticGridSearch(StepWrapper):
         for step in generation:
             if id(step) == step_id:
                 return step
-        
         return None
 
     def __valide_config(self, config: dict, value: float) -> bool:
@@ -304,7 +302,7 @@ class WrapGeneticGridSearch(StepWrapper):
             return True
         return config['range'][0] <= value <= config['range'][1]
 
-    # Get configurable keys (without ignored keys)    
+    # Get configurable keys (without ignored keys)
     def __config_keys(self):
         """Get configurable keys (without ignored keys)."""
         return set(self.step.learning_configuration.keys()) - self.ignored_configs

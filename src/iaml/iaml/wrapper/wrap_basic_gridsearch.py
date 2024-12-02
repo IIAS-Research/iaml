@@ -29,7 +29,7 @@ class WrapBasicGridSearch(StepWrapper):
             if key in self.to_avoid:
                 continue
 
-            if 'categorical' in item.keys(): # Categorical 
+            if 'categorical' in item.keys(): # Categorical
                 to_explore[key] = item['categorical']
             elif type(item['value']) in [int, float]: # Numeric
                 current_value = item['value']
@@ -37,7 +37,7 @@ class WrapBasicGridSearch(StepWrapper):
                 # pylint: disable=cell-var-from-loop
                 tmp = map(lambda x: x*current_value, \
                     [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]\
-                    ) 
+                )
 
                 # Keep int
                 if isinstance(item['value'], int):
@@ -48,10 +48,10 @@ class WrapBasicGridSearch(StepWrapper):
                     tmp = filter(lambda x: item['range'][0] >= x <= item['range'][1], tmp)  # pylint: disable=cell-var-from-loop
 
                 to_explore[key] = set(tmp)
-                    
+
             elif isinstance(item['value'], bool): # Bool
                 to_explore[key] = [True, False]
-            else: # Other 
+            else: # Other
                 to_explore[key] = [item['value']]
 
         candidates = self.__recursive_run(candidate, to_explore)
@@ -74,7 +74,7 @@ class WrapBasicGridSearch(StepWrapper):
 
             for value in values:
                 self.step.configure(key, value)
-                candidate = self.__recursive_run(candidate, to_explore) 
+                candidate = self.__recursive_run(candidate, to_explore)
                 results = results + ([candidate] if isinstance(candidate, Candidate) else candidate)
 
             return results
