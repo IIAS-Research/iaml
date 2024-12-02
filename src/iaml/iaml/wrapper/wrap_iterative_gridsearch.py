@@ -1,5 +1,6 @@
 """[WRAPPER] Wrap a step to apply an Iterative Grid Search implementation"""
 from copy import deepcopy
+from typing import Any
 from ..step_wrapper import StepWrapper
 from ..candidate import Candidate
 from ..step import Step
@@ -34,9 +35,9 @@ class WrapIterativeGridSearch(StepWrapper):
 
         self.step: Step = step
         """Step to perform grid search on"""
-        
+
     to_avoid = ['random_state']
-    
+
     @runner
     def run(self, candidate: Candidate) -> list[Candidate]:
         """Iterative GridSearch
@@ -90,7 +91,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
     :param float, optional minimal_range_diff: Minimal range diff. Default to None.
     :param int, optional best_result: Best result. Default to -1.
     """
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,R0915,R0917
     def __init__(
         self,
         step: Step,
@@ -137,18 +138,18 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
 
         self.ways: list = []
         """List of ways to obtain possible values"""
-        
+
         self.values: list = []
         """List of possible values"""
 
         if self.key:
             self.value = (value or self.config[self.key]['value'])
-        
+
             self.modificator = None
             self.minimal_range_diff = None
             if minimal_range_diff:
                 self.minimal_range_diff = minimal_range_diff
-            
+
             # Type
             self.can_generate_sibling = False
             if type(self.value) in [int, float]:
@@ -157,29 +158,29 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
                     self.modificator = (value_range[0]-value_range[1])/2 * modificator_rate
                 else:
                     self.modificator = self.value * self.modificator_rate
-                    
+
                 for way_ind, way in enumerate([1, -1]):
                     way_values = [self.value+(self.modificator*ind*way) \
                         for ind in range(way_ind, self.max_iterations)]
                     if isinstance(self.value, int):
                         way_values = [round(v) for v in way_values]
-                        
+
                     if ('range' in self.config[self.key]) or value_range:
                         limits = value_range or self.config[self.key]['range']
                         way_values = list(filter(lambda x: (limits[0] < x < limits[1]), way_values))  # pylint: disable=cell-var-from-loop
-                    
+
                     self.ways.append(way_values)
-                
+
                 self.__next_way()
-                
+
                 if not self.minimal_range_diff:
                     self.minimal_range_diff = self.modificator * 0.1 # TODO improve this
-                
-            elif 'categorical' in self.config[self.key].keys(): # Categorial 
+
+            elif 'categorical' in self.config[self.key].keys(): # Categorial
                 self.values = self.config[self.key]['categorical']
             elif isinstance(self.value, bool): # Bool
                 self.values = [True, False]
-            else: # Other 
+            else: # Other
                 self.values = [self.value]
 
             self.candidates: list[Candidate] = []
@@ -298,7 +299,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         self.count_iterations = self.count_iterations + 1
         if self.done():
             self.__next_way()
-    
+
     def current_value(self) -> Any:
         """Get current value
         
