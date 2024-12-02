@@ -23,14 +23,14 @@ class Stack:
 
         self.step_id: int = step_id
         """The step id"""
-        
+
     def __str__(self) -> str:
         """Return the step name as Stack representation
         
         :return: The step name
         """
         return self.step_class.name
-    
+
     def explain(self) -> str:
         """Return explanation string of Step
         

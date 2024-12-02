@@ -12,7 +12,7 @@ class Reference:  # pylint: disable=too-few-public-methods
     :param Dict properties: a dictionnary of properties for a reference object
     :param str step_name: The step_name attached to this reference
     """
-    
+
     def __init__(self, properties: Dict, step_name: str) -> None:
         """Instantiate all properties provided to the specific reference
         such as year of publication, authors, doi ...
@@ -20,7 +20,7 @@ class Reference:  # pylint: disable=too-few-public-methods
         setattr(self, 'step', step_name)
         for k, v in properties.items():
             setattr(self, k, v)
-    
+
     def __str__(self) -> str:
         """Return a simple string containing reference information
         
@@ -48,7 +48,7 @@ class Reference:  # pylint: disable=too-few-public-methods
         except AttributeError:
             pass
         return structured
-    
+
     @classmethod
     def bibliography(cls, references: List['Reference'], structured: bool) -> str | List[Dict]:
         """Format a bibliography in a string from a list of references
