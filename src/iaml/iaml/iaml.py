@@ -3,7 +3,7 @@ from copy import deepcopy
 import time
 import math
 import multiprocessing
-from typing import List
+from typing import Iterator, TYPE_CHECKING
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
 from .step import Step
@@ -36,33 +36,43 @@ try:
 except ImportError as e:
     Logger().warning('cuDF not found: falling back to standalone pandas.')
 
-# Main class of the package
-# Useful to create & run pipeline
+if TYPE_CHECKING:
+    from .iaml_pipeline import IAMLPipeline
+
+
 class IAML:  # pylint: disable=too-many-instance-attributes
     """ Main class of the module.
     IAML will load, configure and fit machine learning pipelines
 
-    Attributes:
-        candidate (list): Candidates of the pipeline after run
-        fit_candidate (Candidate): last Candidate sent to the first step 
+    :param int, optional max_workers: Maximum parallel workers. Default to cpu count.
+    :param int, optional max_stage_duration: Maximum duration of a stage. Default to None.
+    :param bool, optional metalearner: Use a metalearner. Default to None.
+    :param callable, optional splitter: Split function to use. Default to kfold_splitter.
+    :param int, optional max_duration: Maximum training duration. Default to -1.
+    :param int | str, optional time_before_sample_use: Time before we use sampled data. 
+        Default to None.
+    :param bool, optional preprocessor: Use preprocessor. Default to False.
+    :param Metric, optional main_metric: Main Metric to use. Default to None.
     """
-    def __init__(self, # pylint: disable=too-many-arguments
+    def __init__( # pylint: disable=too-many-arguments
+        self,
         max_workers: int = None,
         max_stage_duration: int = None,
         metalearner: bool = None,
-        splitter=None,
+        splitter: callable = None,
         max_duration: int = -1,
-        time_before_sample_use: int = None,
+        time_before_sample_use: int | str = None,
         preprocessor: bool = False,
-        main_metric: Metric = None,
-    ) -> None:
+        main_metric: Metric = None) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
         self.preprocessor = preprocessor
+        """Enable / Disable preprocessor"""
 
-        # Enable / Disable Meta Learner
         self.metalearner = metalearner
+        """Enable / Disable Meta Learner"""
+
         if metalearner is None:
             if max_duration < 500 and max_duration != -1:
                 Logger().warning("Max duration under 500 seconds : \
@@ -78,13 +88,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         else:
             self.max_stage_duration = max_stage_duration
 
-        # Set splitter
         self.splitter = splitter if splitter is not None else kfold_splitter
+        """Splitter callable"""
 
         self.main_metric = main_metric
-
+        """Main metric"""
 
         self.max_duration = max_duration
+        """Maximum training duration"""
 
         if time_before_sample_use == 'auto' and max_duration:
             self.time_before_sample_use = max(max_duration / 5, 60)
@@ -94,62 +105,79 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.time_before_sample_use = math.inf
 
         self.candidates: list[Candidate] = None
+        """list of Candidates for this training"""
+
         self.init_candidate: Candidate = None
+        """Initial candidate"""
+
         self.first_step: Step = None # Will be the first Step of the pipeline (probably a MetaStep
-        self.last_stage_candidates = []
+        """Hold the first step of the pipeline"""
+
+        self.last_stage_candidates: list[Candidate] = []
+        """Hold last generated candidates"""
 
         self.executor = None
+        """Hold TimePoolExecutor"""
 
         self.default_pipeline() # Load default pipeline
         self.max_workers = max_workers if (max_workers is not None and max_workers > 0) \
             else multiprocessing.cpu_count()
+        """Hold maximum number of parallel workers"""
 
         self.chosen_candidate: Candidate = None
+        """Hold the best candidate"""
         WorkerManager(max_workers=self.max_workers)
 
     def __del__(self):
+        """Delete the TimedPoolExecutor"""
         del self.executor
 
     def load_pipeline(self, pipeline: dict) -> None:
         """Load any kind of pipeline
 
-        Args:
-            pipeline (dict): JSON description of the pipeline
+        :param dict pipeline: JSON description of the pipeline
         """
         self.first_step = Step.from_pipeline(pipeline)
 
-    def default_pipeline(self, fast=False) -> None:
+    def default_pipeline(self, fast: bool = False) -> None:
         """Load the default pipeline.
         Default pipeline is the recommended way to create classifier and regressor
 
-        Args:
-            fast (bool, optional): If true, will only load fast machine learning model.
-                                    Fast mode is use to create fast pipeline and iterate
-                                    quickly when debugging code. Defaults to False.
+        :param bool, optional fast: If true, will only load fast machine learning model.
+            Fast mode is use to create fast pipeline and iterate
+            quickly when debugging code. Defaults to False.
         """
         self.first_step = MetaOrderedStep(tag="Main") # First step -> Contain all pipeline's stages
 
-        self.first_step.add_step(MetaStep(tag='features_precleaning',
-            name='Features Precleaning',
-            description='Convert complexe columns into several. \
-                It will help model to extract informations from your data.'))
-        self.first_step.add_step(MetaStep(tag='cleaning',
-            name='Features Cleaning',
-            description='Improve data quality, handle missing values, \
-                extract information from textual columns, etc.'))
-        self.first_step.add_step(MetaStep(tag='features_selection',
-            name='Features Selection',
-            description='Decrease number of column to improve models performances'))
-        self.first_step.add_step(MetaExplorerStep(tag='normalize',
-            name='Features Normalization',
-            description='Normalize data to help model to give the same interest to each column'))
-        self.first_step.add_step(MetaStep(tag='imbalance',
-            name='Handle Imbalanced Data',
-            description= (
-                'Balance the dataset to ensure the model does not favor the majority class'
-                'over the minority class')
-            ))
-
+        self.first_step.add_step(
+            MetaStep(
+                tag='features_precleaning',
+                name='Features Precleaning',
+                description='Convert complexe columns into several. \
+                    It will help model to extract informations from your data.'))
+        self.first_step.add_step(
+            MetaStep(
+                tag='cleaning',
+                name='Features Cleaning',
+                description='Improve data quality, handle missing values, \
+                    extract information from textual columns, etc.'))
+        self.first_step.add_step(
+            MetaStep(
+                tag='features_selection',
+                name='Features Selection',
+                description='Decrease number of column to improve models performances'))
+        self.first_step.add_step(
+            MetaExplorerStep(
+                tag='normalize',
+                name='Features Normalization',
+                description='Normalize data to help model to give the same interest \
+                    to each column'))
+        self.first_step.add_step(
+            MetaStep(
+                tag='imbalance',
+                name='Handle Imbalanced Data',
+                description='Balance the dataset to ensure the model does not favor the majority \
+                    class over the minority class'))
 
         if self.preprocessor:
             self.first_step.add_step(
@@ -157,45 +185,53 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             )
         else:
             self.first_step.add_step(
-                MetaPartialExplorerStep(tag='features_preprocessing',
+                MetaPartialExplorerStep(
+                    tag='features_preprocessing',
                     name="Dimensionality Reduction (optional)",
                     description="Reduce the complexity of data and make computations \
-                        more efficient")
-            )
+                        more efficient"))
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
 
-        self.first_step.add_step(MetaExplorerStep(tag=learning_tag,
-            name="Machine learning models",
-            description="List of machine learning models IAML will try to optimize"))
+        self.first_step.add_step(
+            MetaExplorerStep(
+                tag=learning_tag,
+                name="Machine learning models",
+                description="List of machine learning models IAML will try to optimize"))
 
-    def __callback(self, callback, **kwargs):
+    def __callback(self, callback: callable, **kwargs: dict) -> None:
+        """Call callback function if defined
+        
+        :param callable callback: Function to call.
+        :param dict, optional \\**kwargs: Additional parameters.
+        """
         if callback and callable(callback):
             callback(**kwargs)
 
-    def baseline(
+    def baseline( # pylint: disable=too-many-arguments
         self,
         X: pd.DataFrame,
         y: pd.DataFrame,
-        *args,
+        *args: tuple,
         groups: pd.DataFrame = None,
-        groups_columns: List[str] = None,
-        generation_sample_size=200,
-        verbose=1,
-        **kwargs) -> Candidate:
-        """
-        Run a very basic pipeline to train a model baseline 
+        groups_columns: list[str] = None,
+        generation_sample_size: int = 200,
+        verbose: int = 1,
+        **kwargs: dict) -> Candidate:
+        """Run a very basic pipeline to train a model baseline 
         
-        Args:
-            X (pd.DataFrame): Training features 
-            y (pd.DataFrame): Training labels
-            groups (pd.DataFrame) : Dataframe used to split data by groups (default None)
-            patience (int) : Max generation without improvement (default None)
-            generation_sample_size (int) : Size of the sample dataset used to generate first 
-                                            generation of candidates (default 200)
-
-        Returns:
-            Candidate: Baseline candidate
+        :param pd.DataFrame X: Training features 
+        :param pd.DataFrame y: Training labels
+        :param tuple, optional \\*args: Additional parameters.
+        :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
+            Default to None.
+        :param list[str], optional groups_columns: List of column names used to split data by 
+            groups. Default to None.
+        :param int, optional generation_sample_size: Size of the sample dataset used to generate 
+            first generation of candidates (default 200).
+        :param int, optional verbose: Verbosity level. Default to 1.
+        :param dict, optional \\**kwargs: Additional parameters.
+        :return: Baseline candidate
         """
         # Avoid [] dangerous default value in the signature
         if groups_columns is None:
@@ -248,8 +284,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def dataset(self) -> Dataset:
         """Shortcut to get candidate Dataset
 
-        Returns:
-            Dataset: Candidate dataset defined by .fit()
+        :return: Candidate dataset defined by .fit()
         """
         return self.init_candidate.dataset
 
@@ -257,33 +292,36 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     ### RUN ###
     ###########
 
-    def fit(
+    def fit( # pylint: disable=too-many-arguments,too-many-locals
         self,
         X: pd.DataFrame,
         y: pd.DataFrame,
         *args,
         groups: pd.DataFrame = None,
-        groups_columns: List[str] = None,
+        groups_columns: list[str] = None,
         patience: int = -1,
-        generation_sample_size=200,
-        n_candidates=1,
+        generation_sample_size: int = 200,
+        n_candidates: int = 1,
         callback: callable = None,
         verbose=1,
         **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
-        Args:
-            X (pd.DataFrame): Training features 
-            y (pd.DataFrame): Training labels
-            groups (pd.DataFrame) : Dataframe used to split data by groups (default None)
-            patience (int) : Max generation without improvement (default None)
-            generation_sample_size (int) : Size of the sample dataset used to generate first 
-                                            generation of candidates (default 200)
-            n_candidates (int) : Number of candidates to return (default 1) 
-            callback (callable) : Method call after each big step of training.
-
-        Returns:
-            list[Candidate]: List of all the generated candidates. Sorted by performances.
+        :param pd.DataFrame X: Training features 
+        :param pd.DataFrame y: Training labels
+        :param tuple, optional \\*args: Additional parameters.
+        :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
+            Default to None.
+        :param list[str], optional groups_columns: List of column names used to split data by 
+            groups. Default to None.
+        :param int, optional patience: Max generation without improvement. Default to -1.
+        :param int, optional generation_sample_size: Size of the sample dataset used to generate 
+            first generation of candidates (default 200).
+        :param int, optional n_candidates: Number of candidates to return. Default to 1.
+        :param callable, optional callback: Method call after each big step of training.
+        :param int, optional verbose: Verbosity level. Default to 1.
+        :param dict, optional \\**kwargs: Additional parameters.
+        :return: List of all the generated candidates. Sorted by performances.
         """
         # Avoid [] dangerous default value in the signature
         if groups_columns is None:
@@ -389,21 +427,20 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.executor.shutdown()
 
     @property
-    def chosen_model(self):
-        """
-        Return the best model trained with fit
+    def chosen_model(self) -> 'IAMLPipeline' | None:
+        """Return the best model trained with fit
 
-        Returns:
-            IAMLPipeline: Best predictor pipeline
+        :return: Best predictor pipeline
         """
         if not self.chosen_candidate:
             return None
 
         return self.chosen_candidate.pipeline
 
-    def check_pipeline(self):
-        """
-        Raise Exception if pipeline is not valid
+    def check_pipeline(self) -> None:
+        """Raise Exception if pipeline is not valid
+        
+        :raise AttributeError: Step Pipeline must contains at least one predictor
         """
         steps = self.__all_steps()
 
@@ -413,13 +450,21 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         # TODO Others tests ?
 
-    def __run_evaluations(self,
-        candidates: Candidate,
+    def __run_evaluations(
+        self,
+        candidates: list[Candidate],
         dataset: Dataset,
         timeout: int = None,
         stage_number: int = None,
-        callback=None
-    ) -> None:
+        callback: callable = None) -> None:
+        """Evaluate candidates
+        
+        :param list[Candidate] candidates: Candidates to evaluate.
+        :param Dataset dataset: Dataset used for evaluation.
+        :param int, optional timeout: Timeout for evaluation process. Default to None.
+        :param int, optional stage_number: Stage number running. Default to None.
+        :param callable, optional callback: Method called after evaluation. Default to None.
+        """
         new_candidates: list[Candidate] = []
         start_time = time.monotonic()
         with Logger().progress as progress:
@@ -476,14 +521,24 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         return new_candidates
 
-    def __optimize(
+    def __optimize( # pylint: disable=too-many-arguments
         self,
         dataset: Dataset,
         candidates: list[Candidate],
         optimizer: Optimizer = Optimizer(),
         patience: int = 5,
         max_duration: int = -1,
-        callback=None) -> list[Candidate]:
+        callback: callable = None) -> list[Candidate]:
+        """Optimize candidates.
+        
+        :param Dataset dataset: Dataset used for optimization.
+        :param list[Candidate], optional candidates: Candidates to optimize.
+        :param Optimizer, optional optimizer: Optimizer to use.
+        :param int, optional patience: Max generation without improvement. Default to 5.
+        :param int, optional max_duration: Maximum optimization duration. Default to -1.
+        :param callable, optional callback: Method to call after optimization. Default to None.
+        :return: list of optimized candidate.
+        """
         if not candidates:
             return []
 
@@ -549,16 +604,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         return candidates
 
-    def __metrics_selection(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str):
+    def __metrics_selection(
+        self,
+        X: pd.DataFrame,
+        y: pd.DataFrame,
+        type_of_target: str) -> list[Metric]:
         """Select metrics used to evaluate performances
 
-        Args:
-            X (pd.DataFrame): Training features
-            y (pd.DataFrame): Training labels
-            type_of_target (str): type of label. Example : continuous, binary
-
-        Returns:
-            list[Metric]: List of selected metrics
+        :param pd.DataFrame X: Training features.
+        :param pd.DataFrame y: Training labels
+        :param str type_of_target: type of label. Example : continuous, binary
+        :return: List of selected metrics
         """
         metrics = []
 
@@ -570,21 +626,22 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 metrics.append(metric)
         return metrics
 
-    def __meta_predictor_iter(self, type_of_target: str):
+    def __meta_predictor_iter(self, type_of_target: str) -> Iterator[Predictor]:
+        """Yield list of suitable predictors
+        
+        :param str type_of_target: type of label. Example : continuous, binary
+        :return: Iterator of Predictor
+        """
         for subclass in MetaPredictor.__subclasses__():
             # Verify if a subclass is suitable or not
             if subclass.suitable(type_of_target):
                 yield subclass
 
-    # Execute all the pipeline steps
     def __run(self, candidate: Candidate) -> list[Candidate]:
-        """Run pipeline
+        """Run pipeline steps
 
-        Args:
-            candidate (Candidate): Data used to fit models and steps
-
-        Returns:
-            list[Candidate]: List of all the generated candidates. Sorted by performances.
+        :param Candidate candidate: Data used to fit models and steps.
+        :return: List of all the generated candidates. Sorted by performances.
         """
         Logger().info("Generate candidate...")
         self.candidates = self.first_step.run(candidate)
@@ -598,25 +655,21 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def json_pipeline(self) -> dict:
         """Create a dictionary (JSON) from the loaded Pipeline
 
-        Returns:
-            dict: Loaded Pipeline in a JSON format
+        :return: Loaded Pipeline in a JSON format
         """
         return self.first_step.json_pipeline()
 
     def all_configurations(self) -> list[dict]:
         """Return a dict with configurations of all steps. 
 
-        Returns:
-            list[dict]: Configurations of all steps. 
+        :return: Configurations of all steps. 
         """
         return self.first_step.all_configurations()
 
-    # Configure one to many steps with a dict configuration
     def configure_all(self, configs: dict) -> None:
         """Configure one to many steps with a dict configuration
 
-        Args:
-            configs (dict): key is a step_id and value is the configuration to set.
+        :param dict configs: key is a step_id and value is the configuration to set.
         """
         all_steps = self.__all_steps()
 
@@ -624,25 +677,21 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             current_step: Step = self.__find_step_by_id(all_steps, step_id)
             if current_step:
                 for key, value in config:
-                    current_step.configure(key, value)
+                    current_step.configure(key, value)  # pylint: disable=no-member
 
     def __all_steps(self) -> list[Step]:
-        """ Recursive method. Return all the pipeline's steps in a list
+        """Recursive method. Return all the pipeline's steps in a list
 
-        Returns:
-            list[Step]: All flatten pipelines's steps
+        :return: All flatten pipelines's steps
         """
         return self.first_step.all_steps()
 
-    def __find_step_by_id(self, step_list: list[Step], step_id: int) -> Step:
-        """_summary_
+    def __find_step_by_id(self, step_list: list[Step], step_id: int) -> Step | None:
+        """Find a step by id in a list of step
 
-        Args:
-            step_list (list[Step]): The step will be searched in this list
-            step_id (int): Identifier of the step
-
-        Returns:
-            Step: Found Step or None
+        :param list[Step] step_list: The step will be searched in this list.
+        :param int step_id: Identifier of the step
+        :return: Found Step or None
         """
         for step in step_list:
             if id(step) == step_id:
@@ -651,14 +700,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
 
 def process_executor(candidate: Candidate, *args, **kwargs) -> 'Candidate':
-    """
-    Wrap candidate training to run it in subprocess
+    """Wrap candidate training to run it in subprocess
 
-    Args:
-        candidate (Candidate): Not trained candidate
-
-    Returns:
-        Candidate: Trained candidate
+    :param Candidate candidate: Not trained candidate.
+    :param tuple, optional \\*args: Additional parameters.
+    :param dict, optional \\**kwargs: Additional parameters.
+    :return: Trained candidate.
     """
     # Deepcopy -> Without it, process end is never detected. Strange...
     candidate = deepcopy(candidate)
