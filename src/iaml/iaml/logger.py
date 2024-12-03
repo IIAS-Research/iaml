@@ -2,7 +2,6 @@
 Singleton used by Automed to generate nice logs
 """
 from enum import Enum
-import multiprocess.queues
 import rich.console
 import rich.progress
 import multiprocess
@@ -64,10 +63,16 @@ class Logger(metaclass=MetaSingleton):
         """
         Show text in console
         """
-        self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
+        if multiprocess.current_process().name == 'MainProcess':
+            self.__print(*text)
+        else:
+            self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
 
     def __print(self, *text: list[str]) -> None:
-        self.console.log(*text)
+        if self.callback is not None:
+            self.callback(*text)
+        else:
+            self.console.log(*text)
 
     def info(self, *text: list[str]) -> None:
         """
@@ -107,9 +112,6 @@ class Logger(metaclass=MetaSingleton):
         while not self.log_queue.empty():
             try:
                 messages = self.log_queue.get(block=False)
-                if self.callback is not None:
-                    self.callback(*messages)
-                else:
-                    self.__print(*messages)
+                self.__print(*messages)
             except Empty:
                 break
