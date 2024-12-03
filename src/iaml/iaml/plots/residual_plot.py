@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class ResidualsPlot(MetricPlot):
     """[PLOT] Residuals Plot"""
-    
+
     title: str = "Residuals Plot"
     description: str = textwrap.dedent("""
         The Residuals Plot is a diagnostic tool used to evaluate the performance of a regression model. 
@@ -35,26 +35,26 @@ class ResidualsPlot(MetricPlot):
         whether certain patterns or trends remain unexplained, which can be critical in refining models used 
         for predicting medical outcomes.
         """)
-    
+
     @capture
-    def _compute(
+    def _compute( # pylint: disable=too-many-positional-arguments
         self,
-        estimator:'IAMLPipeline', 
+        estimator:'IAMLPipeline',
         X: pd.DataFrame,
         y: pd.Series,
         X_train: pd.DataFrame = None,
         y_train: pd.Series = None,
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
-        
+
         self.__visualizer = ybResidualsPlot(estimator, is_fitted=True)
         if X_train is not None and y_train is not None:
             self.__visualizer.fit(X_train, y_train)
         self.__visualizer.score(X, y)
         self.__visualizer.poof(self._binary_image)
-        
+
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target == 'continuous'

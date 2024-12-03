@@ -1,6 +1,7 @@
 """
 [STEP] Decompose features with RBFSampler
 """
+from typing import Any
 import textwrap
 import pandas as pd
 from sklearn.kernel_approximation import RBFSampler
@@ -11,20 +12,19 @@ from ...decorators.all import is_step
 
 @is_step('features_preprocessing')
 class ActRBFSampler(Actionable):
-    """
-    [STEP] Approximate with RBFSampler
-    """
-    name = "Approximate with RBFSampler"
-    _description = textwrap.dedent('''\
+    """[STEP] Approximate with RBFSampler"""
+
+    name: str = "Approximate with RBFSampler"
+    _description: str = textwrap.dedent('''\
         RBFSampler is a tool that helps computers understand complex relationships
         between things by turning them into simpler numbers.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         RBFSampler is a machine learning technique that transforms data into
         a higher-dimensional space where it's easier for algorithms to find patterns.
         It works by creating random projections of the original data onto a new set of axes.
         This allows it to approximate the effects of a radial basis function kernel, which is a
         mathematical way of measuring similarity between data points.''')
-    refs=[
+    refs: list[dict[str, Any]] =[
         {
             'year': 2008,
             'name': 'Weighted Sums of Random Kitchen Sinks: Replacing minimization with \
@@ -37,6 +37,7 @@ class ActRBFSampler(Actionable):
             'publisher': 'Advances in Neural Information Processing Systems 21 page 1313--1320'
         }
     ]
+
     def __init__(self):
         self.configuration = {
             'n_components': {
@@ -49,7 +50,7 @@ class ActRBFSampler(Actionable):
                 'default': 42
             }
         }
-        
+
         self.optimizable = True
         self.preprocessor = None
 
@@ -63,13 +64,12 @@ class ActRBFSampler(Actionable):
         Returns:
             Candidate: Transformed candidate
         """
-        
+
         self.preprocessor = RBFSampler(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X)
-        
+
         return self
-    
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Apply RBFSampler
@@ -81,8 +81,7 @@ class ActRBFSampler(Actionable):
             pd.DataFrame: Transformed dataset
         """
         return pd.DataFrame(self.preprocessor.transform(X))
-        
-    
+
     def priorize(self, candidate: Candidate = None) -> float:
         """
         Try to priorize himself

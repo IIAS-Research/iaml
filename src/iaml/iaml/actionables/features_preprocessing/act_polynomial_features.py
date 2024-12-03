@@ -11,22 +11,20 @@ from ...decorators.all import is_step
 
 @is_step('features_preprocessing')
 class ActPolynomialFeatures(Actionable):
-    """
-    [STEP] Preprocess with PolynomialFeatures
-    """
-    name= "Preprocess with PolynomialFeatures"
-    _description = textwrap.dedent('''\
+    """[STEP] Preprocess with PolynomialFeatures"""
+    name: str = "Preprocess with PolynomialFeatures"
+    _description: str = textwrap.dedent('''\
         PolynomialFeatures creates new features by combining existing
         features mathematically. It squares, cubes, and multiplies features to
         create more complex patterns.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         PolynomialFeatures is a preprocessing technique that
         generates new features based on polynomial relationships between existing
         features. This helps capture non-linear relationships in the data that may
         not be apparent from the original features alone. PolynomialFeatures is
         particularly useful when you suspect the underlying relationship in your data
         might not be straightforward or linear.''')
-    
+
     def __init__(self):
         self.configuration = {
             'include_bias': {
@@ -44,45 +42,24 @@ class ActPolynomialFeatures(Actionable):
                 'range': [2, 5]
                 }
             }
-        
+
         self.optimizable = True
         self.preprocessor = None
 
-
     def fit(self, dataset: Dataset) -> Actionable:
-        """
-        Fit Features agglomerations
 
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
-        
         self.preprocessor = PolynomialFeatures(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X)
-        
+
         return self
-    
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply PolynomialFeatures
+        """Apply PolynomialFeatures
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame X: DataFrame to transform
+        :return: Transformed dataset
         """
         return pd.DataFrame(self.preprocessor.transform(X))
-        
-    
-    def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5

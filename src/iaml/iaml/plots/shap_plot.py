@@ -11,7 +11,7 @@ from ..plot import Plot
 
 class ShapPlot(Plot):
     """[PLOT] Wrap Shap Plot
-    
+
     :param str plot_key: The kind of shap plot to use.
     :param shap.Explanation | shap.Cohorts | dict[shap.Explanation] shaps_values: Values used
             by the shap library to compute data.
@@ -34,13 +34,13 @@ class ShapPlot(Plot):
 
         if ps is None:
             ps = slice(0, len(shaps_values))
-            
+
         if scatter_feature is None and plot_key == 'scatter':
             scatter_feature = shaps_values.feature_names[0]
-            
+
         method, self.title, self.description = self.__plots_informations(plot_key, shaps_values)
         self._binary_image = io.BytesIO()
-        
+
         if plot_key == 'scatter':
             # Prevent crash when providing a scatter feature
             shaps_values.base_values = shaps_values.base_values.squeeze()
@@ -51,11 +51,10 @@ class ShapPlot(Plot):
             method(shaps_values[ps.start], *args, show=False, **kwargs)
         else:
             method(shaps_values[ps], *args, show=False, **kwargs)
-            
-        
+
         plt.savefig(self._binary_image, bbox_inches='tight')
         plt.close()
-        
+
     @classmethod
     def all(
         cls,
@@ -74,9 +73,9 @@ class ShapPlot(Plot):
         plots = []
         for key in ['force', 'waterfall', 'beeswarm', 'scatter', 'heatmap', 'bar']:
             plots.append(cls(key, shaps_values, *args, **kwargs))
-            
+
         return plots
-    
+
     def __plots_informations(
         self,
         key: str,
@@ -103,7 +102,7 @@ class ShapPlot(Plot):
         """
         features = shap_values.feature_names
         values = shap_values[0].values
-        
+
         match key:
             case 'force':
                 force_shap, force_feature = max(zip(values, features), key=lambda v: abs(v[0]))
