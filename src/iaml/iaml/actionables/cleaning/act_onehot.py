@@ -17,8 +17,8 @@ class ActOnehot(Actionable):
     [STEP] One hot encoding categorical features
     """
     name = 'One hot encoding categorical features'
-    description = 'Encode categorical data to numerical values using One Hot Encoding Algorithm'
-    description_long = textwrap.dedent('''\
+    _description = 'Encode categorical data to numerical values using One Hot Encoding Algorithm'
+    _description_long = textwrap.dedent('''\
         Retrieve all unique values from a column, then transform
         those values to multiple binary columns.
         Exemple: If a column "A" contain 3 uniques values like "coffee", "tea" and "water",

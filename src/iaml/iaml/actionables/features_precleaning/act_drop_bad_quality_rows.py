@@ -15,27 +15,30 @@ class ActDropBadQualityRows(Actionable):
     [STEP] Drop Rows with a ratio of Empty Columns
     """
     name = "Drop Rows with Empty Columns"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         This step drops rows where the ratio of empty columns are over a threshold.
         It helps clean the dataset by removing rows with a significant
         amount of missing values.''')
-    description_long = textwrap.dedent('''\
-        In datasets, missing data is a common issue. 
+    _description_long = textwrap.dedent('''\
+        In datasets, missing data is a common issue.
         This step drops rows where the ratio of empty columns are over a threshold.
-        This ensures that rows with too many missing values 
+        This ensures that rows with too many missing values
         are not included in the analysis, improving the quality of the dataset.''')
 
     refs = []
 
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'empty_threshold': {
-                'description': "Row with less or equal proportion of empty column will \
-                    be drop. 0 will never never drop a row",
+                'description': textwrap.dedent('''\
+                    Row with less or equal proportion of empty column will be
+                    drop. 0 will never never drop a row'''),
                 'default': 0.3
             },
             'min_size': {
-                'description': "Minimal size of the resulting dataset. If new dataset is smaller than this value, old one will be restored",
+                'description': textwrap.dedent('''\
+                    Minimal size of the resulting dataset. If new dataset is
+                    smaller than this value, old one will be restored'''),
                 'default': 20
             }
         }

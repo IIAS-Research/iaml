@@ -12,11 +12,11 @@ class AccuracyMetric(Metric):
     [METRIC] Accuracy
     """
     name = 'Accuracy'
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Accuracy measures how well a model predicts outcomes by calculating the percentage 
         of correct predictions out of the total predictions. Higher accuracy means better performance.
         ''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Accuracy is a tool to evaluate how well a predictive 
         model works, especially in healthcare. 
         It shows the percentage of correct predictions made by the model.

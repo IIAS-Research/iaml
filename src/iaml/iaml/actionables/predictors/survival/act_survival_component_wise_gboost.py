@@ -16,22 +16,22 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
     [STEP] Componentwise Gradient Boosting Survival Analysis
     """
     name = "ComponentwiseGradientBoostingSurvivalAnalysis"
-    description = textwrap.dedent('''\
-        ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis 
-        algorithm that uses gradient boosting with componentwise (stagewise) updates 
-        to estimate the survival function over time. This variant of boosting allows 
-        the model to fit individual components (features) in a stagewise manner, 
-        making it a more interpretable approach for feature selection and model 
+    _description = textwrap.dedent('''\
+        ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis
+        algorithm that uses gradient boosting with componentwise (stagewise) updates
+        to estimate the survival function over time. This variant of boosting allows
+        the model to fit individual components (features) in a stagewise manner,
+        making it a more interpretable approach for feature selection and model
         refinement in survival analysis.''')
-    description_long = textwrap.dedent('''\
-        ComponentwiseGradientBoostingSurvivalAnalysis extends 
-        gradient boosting for survival analysis by applying updates one component 
-        (feature) at a time. This approach improves the model's ability to handle 
-        sparse datasets or datasets with high-dimensional features, where only 
-        a few variables may have significant effects on survival outcomes. 
-        It provides a more interpretable framework for survival analysis, 
-        as each boosting iteration focuses on fitting individual covariates 
-        rather than combining all features at once. This method is particularly 
+    _description_long = textwrap.dedent('''\
+        ComponentwiseGradientBoostingSurvivalAnalysis extends
+        gradient boosting for survival analysis by applying updates one component
+        (feature) at a time. This approach improves the model's ability to handle
+        sparse datasets or datasets with high-dimensional features, where only
+        a few variables may have significant effects on survival outcomes.
+        It provides a more interpretable framework for survival analysis,
+        as each boosting iteration focuses on fitting individual covariates
+        rather than combining all features at once. This method is particularly
         suited for feature selection and handling censored survival data.''')
     
     refs = [

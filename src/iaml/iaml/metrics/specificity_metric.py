@@ -12,11 +12,11 @@ class SpecificityMetric(Metric):
     """
 
     name= "Specificity"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Specificity is a metric used to evaluate the performance of a classification model. 
         It measures the proportion of true negatives correctly identified by the model, indicating 
         how well it can identify the negative class.''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Specificity is a metric that helps assess how well a classification model identifies the negative class. 
         For example, if you're predicting whether a medical test result is negative for a disease, specificity tells you the 
         percentage of actual negative cases that the model correctly identifies. A high specificity means the model is good at 

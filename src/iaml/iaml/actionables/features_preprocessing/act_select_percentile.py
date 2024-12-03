@@ -16,13 +16,13 @@ class ActSelectPercentile(Actionable):
     [STEP] Preprocess with SelectPercentile
     """
     name= "Preprocess with SelectPercentile"
-    description = textwrap.dedent('''\
-        SelectPercentile is a tool that helps choose important features from a 
+    _description = textwrap.dedent('''\
+        SelectPercentile is a tool that helps choose important features from a
         group of variables by looking at how well each one predicts the outcome.''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         SelectPercentile is a feature selection technique used in machine
         learning. It works by assigning scores to each feature based on how well it predicts
-        the outcome. Then, it selects only the top-scoring percentage of features. 
+        the outcome. Then, it selects only the top-scoring percentage of features.
         This helps reduce the number of variables while keeping the most informative ones.''')
     
     def __init__(self):

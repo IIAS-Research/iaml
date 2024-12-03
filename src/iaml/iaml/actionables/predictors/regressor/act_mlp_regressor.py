@@ -15,16 +15,16 @@ class ActMLPRegressor(Predictor):
     [STEP] MLP Regressor
     """
     name = "MLP Regressor"
-    description = textwrap.dedent('''\
-        MLPRegressor is a machine learning algorithm that models the 
-        relationship between input features and a continuous output variable using 
+    _description = textwrap.dedent('''\
+        MLPRegressor is a machine learning algorithm that models the
+        relationship between input features and a continuous output variable using
         a multi-layer perceptron neural network.''')
-    description_long = textwrap.dedent('''\
-        MLPRegressor is a type of neural network algorithm that models 
-        the relationship between input features and a continuous output variable using a 
-        multi-layer perceptron (MLP) neural network. 
-        It works by transforming the input features through one or more hidden 
-        layers with non-linear activation functions, and then using a final layer with 
+    _description_long = textwrap.dedent('''\
+        MLPRegressor is a type of neural network algorithm that models
+        the relationship between input features and a continuous output variable using a
+        multi-layer perceptron (MLP) neural network.
+        It works by transforming the input features through one or more hidden
+        layers with non-linear activation functions, and then using a final layer with
         a linear activation function to output a continuous value.''')
     
     refs = [
@@ -58,31 +58,34 @@ class ActMLPRegressor(Predictor):
                 'description': 'Activation function for the hidden layer.',
                 'default': 'relu',
                 'categorical': ["tanh", "relu"]
-                },
+            },
             'alpha': {
-                'description': 'Strength of the L2 regularization term. The L2 regularization \
-                    term is divided by the sample size when added to the loss.',
+                'description': textwrap.dedent('''\
+                    Strength of the L2 regularization term. The L2
+                    regularization term is divided by the sample size when
+                    added to the loss.'''),
                 'default': 0.0001,
                 'range': [1e-07, 0.1]
-                },
+            },
             'hidden_layer_count': {
-                'description': 'NUmber of hidden layer',
+                'description': 'Number of hidden layer',
                 'default': 1,
                 'range': [1, 4],
                 'passthrough': False
-                },
+            },
             'node_per_layer': {
                 'description': 'Number of node per layer',
                 'default': 32,
                 'range': [16, 256],
                 'passthrough': False
-                },
+            },
             'learning_rate_init': {
                 'description': 'Learning rate schedule for weight updates',
                 'default': 0.001,
                 'range': [0.0001, 0.5]
-                }
             }
+        }
+
         self.model:MLPRegressor = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
@@ -105,8 +108,7 @@ class ActMLPRegressor(Predictor):
         self.model.fit(dataset.X, dataset.y)
         
         return self
-    
-    
+
     def suitable(self, dataset:Dataset) -> bool:
         """
         Does this step suitable for this candidate

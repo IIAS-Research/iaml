@@ -12,11 +12,11 @@ class MeanAbsoluteErrorMetric(Metric):
     """
 
     name = 'Mean Absolute Error'
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Mean Absolute Error (MAE) evaluates the accuracy of a predictive model by calculating 
         the average of the absolute differences between predicted and actual values. It is a simple and intuitive metric 
         that helps understand how far off predictions are from the true outcomes.''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Mean Absolute Error (MAE) evaluates a model's accuracy by calculating the average of the absolute differences 
         between predicted and actual values. It provides a clear understanding of how far predictions are from true outcomes. 
         To calculate MAE, you sum the absolute errors (the differences between predicted and actual values) and divide by the 

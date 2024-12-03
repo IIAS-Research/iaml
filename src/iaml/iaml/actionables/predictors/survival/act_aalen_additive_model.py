@@ -17,19 +17,19 @@ class ActAalenAdditiveFitter(Predictor):
     [STEP] Aalen's Additive Model for Survival Analysis
     """
     name = "AalenAdditiveFitter"
-    description = textwrap.dedent('''\
-        Aalen's Additive Model is a semi-parametric survival analysis model 
-        that estimates survival time as a function of covariates, using a linear combination 
-        of time-varying covariate effects. The additive nature of the model allows it to 
+    _description = textwrap.dedent('''\
+        Aalen's Additive Model is a semi-parametric survival analysis model
+        that estimates survival time as a function of covariates, using a linear combination
+        of time-varying covariate effects. The additive nature of the model allows it to
         account for time-varying effects of covariates on the hazard function.''')
-    description_long = textwrap.dedent('''\
-        Aalen's Additive Model is a flexible alternative to the Cox 
-        Proportional Hazards model, providing time-varying covariate effects. The model 
-        uses an additive approach to model the hazard function, making fewer assumptions 
-        than proportional hazards models. It is particularly useful in situations where 
-        covariate effects are expected to vary over time, and efficiently handles censored 
-        data. The model estimates a baseline hazard function and additive contributions 
-        of covariates, allowing for a more dynamic understanding of survival probabilities 
+    _description_long = textwrap.dedent('''\
+        Aalen's Additive Model is a flexible alternative to the Cox
+        Proportional Hazards model, providing time-varying covariate effects. The model
+        uses an additive approach to model the hazard function, making fewer assumptions
+        than proportional hazards models. It is particularly useful in situations where
+        covariate effects are expected to vary over time, and efficiently handles censored
+        data. The model estimates a baseline hazard function and additive contributions
+        of covariates, allowing for a more dynamic understanding of survival probabilities
         over time.''')
     
     refs = [

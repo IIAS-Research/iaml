@@ -14,15 +14,15 @@ class ActSVMSVC(Predictor):
     [STEP]  SVM Classifier
     """
     name = "SVM Classification"
-    description = textwrap.dedent('''\
-        SVM Classifier is a machine learning algorithm that models the relationship 
-        between input features and a categorical output variable using a support vector machine 
-        (SVM). It can handle non-linearly separable data by using a kernel function to map the data 
+    _description = textwrap.dedent('''\
+        SVM Classifier is a machine learning algorithm that models the relationship
+        between input features and a categorical output variable using a support vector machine
+        (SVM). It can handle non-linearly separable data by using a kernel function to map the data
         into a higher-dimensional space.''')
-    description_long = textwrap.dedent('''\
-        SVM Classifier is a type of classification algorithm that models the 
-        relationship between input features and a categorical output variable using a support vector
-        machine (SVM). It works by finding the optimal hyperplane or boundary that separates the 
+    _description_long = textwrap.dedent('''\
+        SVM Classifier is a type of classification algorithm that models the
+        relationship between input features and a categorical output variable using a support vecto
+        machine (SVM). It works by finding the optimal hyperplane or boundary that separates the
         data into different classes with the maximum margin.''')
     
     refs = [
@@ -59,7 +59,7 @@ class ActSVMSVC(Predictor):
                 'default': 42
             },
             'class_weight': {
-                'description': 'Can be set on "balenced" to improve results on unbalenced data',
+                'description': 'Can be set on "balanced" to improve results on unbalanced data',
                 'default': None,
                 'categorical': [None, 'balanced']
             },

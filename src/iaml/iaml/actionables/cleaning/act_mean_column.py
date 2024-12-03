@@ -16,20 +16,22 @@ class ActMeanColumn(Actionable):
     [STEP] Fill missing values with mean
     """
     name = 'Fill missing values'
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Fill missing values with the mean of non-missing values
-        when the proportion of empty rows is lower than {empty_threshold}.''')
-    description_long = textwrap.dedent('''\
+        when the proportion of empty rows is lower than {empty_threshold:.0%}.''')
+    _description_long = textwrap.dedent('''\
         Fill a column missings values with the mean of the columns
         when the proportion of empty rows is lower than {empty_threshold}.
         Work only for numerical columns.''')
     can_be_disabled = False
+
     def __init__(self):
         self.columns:list[str] = None
         self.configuration:dict = {
             'empty_threshold': {
-                'description': "Column with less or equal proportion of empty row will \
-                    be fill with mean value. 1 will always fill void values",
+                'description': textwrap.dedent('''\
+                    Column with less or equal proportion of empty row will be
+                    fill with mean value. 1 will always fill void values'''),
                 'default': 1 # TODO Review when adding new kind of imputer
             }
         }

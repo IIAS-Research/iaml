@@ -16,15 +16,15 @@ class ActPowerTransformer(Actionable):
     [STEP] Preprocess with PowerTransformer
     """
     name = "Preprocess with PowerTransformer"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         PowerTransformer changes data to make it more "bell-curve" shaped.
-        It uses special math tricks to flatten out irregular distributions and make the data 
+        It uses special math tricks to flatten out irregular distributions and make the data
         behave more like a normal distribution.''')
-    description_long = textwrap.dedent('''\
-        PowerTransformer is a preprocessing technique that applies a power 
-        transformation to make data more Gaussian-like. PowerTransformer is useful when you want to apply 
-        machine learning models that assume normal distribution, 
-        even if your original data doesn't meet this assumption. 
+    _description_long = textwrap.dedent('''\
+        PowerTransformer is a preprocessing technique that applies a power
+        transformation to make data more Gaussian-like. PowerTransformer is useful when you want to apply
+        machine learning models that assume normal distribution,
+        even if your original data doesn't meet this assumption.
         It helps make your data more compatible with many common ML algorithms.''')
     refs = [
         {

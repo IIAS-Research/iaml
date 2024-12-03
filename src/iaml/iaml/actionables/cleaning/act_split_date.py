@@ -17,11 +17,11 @@ class ActSplitDate(Actionable):
     [STEP] Transform string column to date
     """
     name = 'Create Date Elements columns'
-    descrption = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Transform a textual date column into multiple columns
         for day, month, year, hour, minute, second''')
-    description_long = textwrap.dedent('''\
-        Transform a textual date column into multiple columns for 
+    _description_long = textwrap.dedent('''\
+        Transform a textual date column into multiple columns for
         day, month, year, hour, minute, second.
         Exemple:
             +---------------------+----------+------------+-----------+-----------+----------+----------+
@@ -72,7 +72,7 @@ class ActSplitDate(Actionable):
             # Hour
             X[column + '_hour'] = X[column].dt.hour.replace(np.NaN, -1)
             X[column + '_minute'] = X[column].dt.minute.replace(np.NaN, -1)
-            X[column + '_second'] = X[column].dt.second.replace(np.NaN, -1) 
+            X[column + '_second'] = X[column].dt.second.replace(np.NaN, -1)
             
         return X
     

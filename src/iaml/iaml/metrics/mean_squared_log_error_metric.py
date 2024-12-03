@@ -11,11 +11,11 @@ class MeanSquaredLogErrorMetric(Metric):
     [METRIC] Mean Squared Log Error
     """
     name = 'Mean Squared Log Error'
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Mean Squared Log Error (MSLE) measures the average of the squared differences 
         between the logarithm of predicted and actual values. It is useful for data with wide-ranging values.
         ''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Mean Squared Log Error (MSLE) evaluates a model's accuracy by calculating the 
         average of the squared differences between the logarithms of predicted and actual values. 
         This metric is helpful when the target variable varies greatly in scale. 

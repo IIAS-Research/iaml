@@ -14,10 +14,10 @@ class IntegratedBrierScoreLossMetric(IntegratedBrierScoreMetric):
     """
     
     name = 'Reverse Integrated Brier Score'
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         The Integrated Brier Score (IBS) is a measure used to evaluate how well survival 
         models predict the likelihood of an event happening over time. Here we compute 1 - IBS''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         The Integrated Brier Score (IBS) is a tool used to check how accurately survival models predict events, 
         like the time until a patient experiences a certain outcome. It compares the model's predictions with 
         real-life results over a period of time, taking into account situations where some data may be missing 

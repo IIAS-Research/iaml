@@ -11,7 +11,7 @@ import sys
 import json
 from hashlib import md5
 from typing import TYPE_CHECKING
-from typing import Any, List
+from typing import List
 from copy import deepcopy
 from multipledispatch import dispatch
 from .dataset import Dataset
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from .candidate import Candidate
     from ..iaml.reference import Reference
 
+
 class Step: # pylint: disable=too-many-public-methods, too-many-instance-attributes
     """
     Step class is use to create new kinds of steps by inheritance and give all needed
@@ -30,7 +31,8 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     Attributes:
         STATIC available_steps (dict) : Reference of all available Steps to create pipeline
         STATIC name (str) : Name of the step
-        STATIC __description (str) : Description of the step
+        STATIC _description (str) : Description of the step
+        STATIC _description_long (str) : Longer description of the step
         candidate (Candidate): Last candidate of the Step
         configuration (dict) : Configuration of the step
         self.__use_cache (bool) : Enable / Disable caching
@@ -42,13 +44,13 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     # Available steps. This will be filled be all the new Step loaded in Python environments
     # It will be a reference of all available Steps to create pipeline
     available_steps = {}
-    
-    
+
     # Name and description of the Step. Useful to explain pipeline to users
     name = "Step" 
     refs = None
-    __description = "Step description..."
-    
+    _description = ''
+    _description_long = ''
+
     # By default a Step can be disabled. This attribute can by change to force a step to stay active
     can_be_disabled = True
     
@@ -60,17 +62,15 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.is_interchangeable:bool = False # Can be mutate into another step with the same tags
         self.enable:bool = True # A disable step, only take input and push it into output
         self.optimizable:bool = False # Does the parameters of this step is optimizable in stages ?
-        
+
         # Configuration of the Step. Each Step can have one configuration and will save it here.
         # Step give many method to help user to configure Steps
-        self.configuration:dict = {}
-        
+        self.configuration: dict = {}
+
         self.parents_steps:list[Step] = [] # List all the previous steps before this one
-        
-        self.default_configuration() # Load default configuration 
-        
+
         self.references:List[Reference] = []
-        
+
         # Build a list of References from Step's references list
         if self.refs is not None:
             self.references = [Reference(ref, type(self).__name__) for ref in self.refs]
@@ -105,9 +105,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
                 if 'configuration' in pipeline:
                     for name, value in pipeline['configuration'].items():
                         step.configure(name, value['value'])
-            else: 
+            else:
                 step = step_class.from_pipeline(pipeline)
-        else: 
+        else:
             raise TypeError('invalid pipeline: step does not exist')
         
         return step
@@ -115,20 +115,19 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     @property
     def enable(self) -> bool:
         """
-        Does the step is enabled ?
+        Is the step enabled?
         """
         return self.__enable
-    
+
     @enable.setter
     def enable(self, value: bool) -> bool:
         # If can_be_disabled = False -> Value will always be True
         self.__enable = value or not self.can_be_disabled
         return self.enable
-        
-            
+
     def __str__(self):
         return self.name
-    
+
     def suitable(self, dataset:Dataset) -> bool: # pylint: disable=unused-argument
         """
         Have to be overwrote. Check if a step is suitable for a given Candidate
@@ -140,7 +139,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             bool: Is it suitable ?
         """
         return True
-    
+
     def configure_child(self, child:'Step') -> 'Step':
         """
         When a Step contain others ones, this will help to setup everything
@@ -152,7 +151,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         Returns:
             Step: Configured step
         """
-
         child.configure_parents(self)
         
         return child
@@ -170,9 +168,8 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         Returns:
             list: list of step with the same tags
         """
-        return [key for key, tags in Step.available_steps.items() if self.tags == set(tags)]
-            
-    
+        return [ key for key, tags in Step.available_steps.items() if self.tags == set(tags) ]
+
     ################
     # Configurable #
     ################
@@ -182,9 +179,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     #  
     # Each parameters have a name, a description and a default value.
     # Default value can be fixed or computed based on dataset
-    
+
     @dispatch(str, object)
-    def configure(self, key:str, value:Any) -> None:
+    def configure(self, key: str, value) -> None:
         """
         Configure one parameter
 
@@ -199,7 +196,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             self.configuration[key]['value'] = value
         else:
             raise AttributeError(f"Configurable Key '{key}' does not exist.")
-        
+
     @dispatch(dict)
     def configure(self, config:dict): # pylint: disable=function-redefined
         """
@@ -210,7 +207,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         for key, value in config.items():
             self.configure(key, value)
-            
+
     def passthrough_parameters(self, default:bool=True):
         """
         Get all configuration elements that have to be passed to the next step
@@ -321,7 +318,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         return [self]
         
-        
     #####################
     ## CACHING RESULTS ##
     #####################
@@ -366,6 +362,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             'config': deepcopy(self.resume_configuration()),
             'output': output_candidate
         })
+
         return True
     
     def reset_cache(self) -> None:
@@ -403,8 +400,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         
         raise ValueError('Value must be a boolean')
     
-    
-    
     def json_pipeline(self) -> dict:
         """
         Return a JSON formatted Step
@@ -418,7 +413,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             'description': self.description,
             'enable': self.enable,
             'can_be_disable': self.can_be_disabled,
-            'configuration': self.configuration,
+            'configuration': {
+                k: { **v, 'description': v['description'].replace('\n', ' ') }
+                for k, v in self.configuration.items() },
             'children': []
         }
 
@@ -433,7 +430,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         
         return conf
 
-
     def to_rich_str(self) -> str:
         """
         Step in a rich formatted string
@@ -447,9 +443,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             name = f'[b]{self.__class__.__name__}[/] ({", ".join(conf)})'
         else:
             name = f'[b]{self.__class__.__name__}[/]'
-        
+
         return name
-    
+
     def count_steps(self) -> int:
         """
         Returns a rough estimation of the total count of steps for a given
@@ -475,7 +471,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             float: Continuous value 0 to 1 
         """
         return 0.0
-    
+
     #######
     # RUN #
     #######
@@ -490,7 +486,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             Step: fitted step 
         """
         return self
-    
+
     @runner  
     def run(self, candidate:'Candidate') -> 'Candidate':
         """
@@ -504,7 +500,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         self.fit(candidate.dataset)
         return candidate.add_to_pipeline(self)
-    
+
     @classmethod
     def find_steps_by_tag(cls, tag:str) -> list['Step']:
         """
@@ -517,8 +513,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             list[Step]: Found Steps
         """
         return set(filter(lambda key: tag in cls.available_steps[key], cls.available_steps.keys()))
-    
-    
+
     def fingerprint(self) -> str:
         """
         Return a md5 hash that can by use to compare Step 
@@ -528,11 +523,17 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         to_hash = f"{str(self.__class__)} = \
             {json.dumps(self.serializable_resume_configuration(), sort_keys=True)}"
+
         return md5(to_hash.encode()).hexdigest()
-    
+
     ####################
     ### Explanations ###
     ####################
+    def __format_description(self, description: str) -> str:
+        return description \
+            .replace('\n', ' ') \
+            .format(**{ k: v['value'] for k, v in self.configuration.items() })
+
     @property
     def description(self) -> str:
         """
@@ -541,17 +542,17 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         Returns:
             str: Formatted description.
         """
-        conf = { k: v['value'] for k, v in self.configuration.items() }
+        return self.__format_description(self._description)
 
-        return self.__description.format(**conf)
+    @property
+    def description_long(self) -> str:
+        """
+        Formats the longer description of a step with its configuration.
 
-    @description.setter
-    def description(self, value:str) -> str:
+        Returns:
+            str: Formatted description.
         """
-        Description setter
-        """
-        self.__description = value
-        return self.description
+        return self.__format_description(self._description_long)
 
     def explain(self, explanations_limit: int = 20) -> str:
         """
@@ -560,8 +561,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         Returns:
             str: Markdown text.
         """
-        # if not self.explanations:
-        #     return ''
         explanations = '\n'.join([ f' - {p}' for p in self.explanations[:explanations_limit] ])
 
         if len(explanations) == 0:
@@ -612,4 +611,5 @@ def same_types(a:dict, b:dict) -> bool:
             return same_types(value, b[key])
         if key not in b or value != b[key]:
             return False
+
     return True

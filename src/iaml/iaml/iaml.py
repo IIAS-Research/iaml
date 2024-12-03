@@ -133,25 +133,27 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         self.first_step.add_step(MetaStep(tag='features_precleaning', 
             name='Features Precleaning',
-            description='Convert complexe columns into several. \
-                It will help model to extract informations from your data.'))
+            description=textwrap.dedent('''\
+                Converts complex columns into several columns, which helps the
+                model to extract information from your data.''')))
         self.first_step.add_step(MetaStep(tag='cleaning',
             name='Features Cleaning',
-            description='Improve data quality, handle missing values, \
-                extract information from textual columns, etc.'))
+            description=textwrap.dedent('''\
+                Improve data quality, handle missing values, extract
+                information from textual columns, etc.''')))
         self.first_step.add_step(MetaStep(tag='features_selection',
             name='Features Selection',
-            description='Decrease number of column to improve models performances'))
+            description=textwrap.dedent('''\
+                Decrease number of column to improve the models' performance.''')))
         self.first_step.add_step(MetaExplorerStep(tag='normalize',
             name='Features Normalization',
-            description='Normalize data to help model to give the same interest to each column'))
+            description=textwrap.dedent('''\
+                Normalize data to help model to give the same interest to each column''')))
         self.first_step.add_step(MetaStep(tag='imbalance',
             name='Handle Imbalanced Data',
-            description= (
-                'Balance the dataset to ensure the model does not favor the majority class'
-                'over the minority class')
-            ))
-
+            description=textwrap.dedent('''\
+                Balance the dataset to ensure the model does not favor the
+                majority class over the minority class''')))
         
         if self.preprocessor:
             self.first_step.add_step(
@@ -161,15 +163,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.first_step.add_step(
                 MetaPartialExplorerStep(tag='features_preprocessing',
                     name="Dimensionality Reduction (optional)",
-                    description="Reduce the complexity of data and make computations \
-                        more efficient")
+                    description=textwrap.dedent('''\
+                        Reduce the complexity of data and make computations
+                        more efficient'''))
             )
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
         
         self.first_step.add_step(MetaExplorerStep(tag=learning_tag,
             name="Machine learning models",
-            description="List of machine learning models IAML will try to optimize"))
+            description=textwrap.dedent('''\
+                List of machine learning models IAML will try to optimize''')))
         
     def __callback(self, callback, **kwargs):
         if callback and callable(callback):

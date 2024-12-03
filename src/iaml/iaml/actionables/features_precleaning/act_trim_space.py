@@ -15,11 +15,11 @@ class ActTrimSpaces(Actionable):
     [STEP] Trim spaces on each columns
     """
     name = "Trim columns spaces"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         This step trim spaces on each columns.
         It helps preventing errors on the dataset when casting columns with spaces''')
-    description_long = textwrap.dedent('''\
-        In datasets, columns with spaces can be an issue. 
+    _description_long = textwrap.dedent('''\
+        In datasets, columns with spaces can be an issue.
         This step remove spaces in front and back of columns values.
         This ensures that columns can be casted correctly with having spaces throwing
         an error.''')
@@ -27,7 +27,7 @@ class ActTrimSpaces(Actionable):
     refs = []
 
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'left_trim': {
                 'description': "Trim all columns leading spaces",
                 'default': True
@@ -37,7 +37,7 @@ class ActTrimSpaces(Actionable):
                 'default': True
             },
         }
-    
+
     def fit(self, dataset: Dataset):  # pylint: disable=unused-argument
         """
         Fit method does nothing for trimming spaces, but is needed for pipeline compatibility.
@@ -95,7 +95,7 @@ class ActTrimSpaces(Actionable):
         cond = (
             dataset.X.apply(
                 lambda x: (x.astype(str).str.strip() if (isinstance(x, str) or is_object_dtype(x)) else x) != x
-            ).stack().any() 
+            ).stack().any()
             or (dataset.X.columns.str.strip() != dataset.X.columns).any()
         )
         return cond

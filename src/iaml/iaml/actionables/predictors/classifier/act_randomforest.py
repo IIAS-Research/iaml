@@ -14,15 +14,15 @@ class ActRandomForest(Predictor):
     [STEP]  Random Forest
     """
     name = "Random Forest"
-    description = textwrap.dedent('''\
-        RandomForestClassifier is a machine learning algorithm that models 
-        the relationship between input features and a categorical output variable using 
+    _description = textwrap.dedent('''\
+        RandomForestClassifier is a machine learning algorithm that models
+        the relationship between input features and a categorical output variable using
         a collection of decision trees.''')
-    description_long = textwrap.dedent('''\
-        RandomForestClassifier is a type of ensemble learning algorithm that 
-        models the relationship between input features and a categorical output variable using 
-        a collection of decision trees. It works by building multiple decision trees on random 
-        subsets of the input features and data, and then using a majority vote to make 
+    _description_long = textwrap.dedent('''\
+        RandomForestClassifier is a type of ensemble learning algorithm that
+        models the relationship between input features and a categorical output variable using
+        a collection of decision trees. It works by building multiple decision trees on random
+        subsets of the input features and data, and then using a majority vote to make
         the final prediction.''')
     refs = [
         {
@@ -65,8 +65,9 @@ class ActRandomForest(Predictor):
                 'range': [2, 20]
             },
             'bootstrap': {
-                'description': 'Whether bootstrap samples are used when building trees. \
-                    If False, the whole dataset is used to build each tree.',
+                'description': textwrap.dedent('''\
+                    Whether bootstrap samples are used when building trees. If
+                    False, the whole dataset is used to build each tree.'''),
                 'default': False
             },
             'criterion': {

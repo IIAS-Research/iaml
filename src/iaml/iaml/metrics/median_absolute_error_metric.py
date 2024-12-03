@@ -12,12 +12,12 @@ class MedianAbsoluteErrorMetric(Metric):
     """
 
     name= "Median Absolute Error"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         Median Absolute Error (MedAE) is a metric used to evaluate the accuracy of a regression model. 
         It measures the median of the absolute differences between predicted values and actual values, 
         providing a robust indication of prediction errors.
         ''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         Median Absolute Error (MedAE) is a metric that helps assess the accuracy of a regression 
         model by focusing on the errors in predictions. It calculates the absolute differences between the predicted values 
         and the actual values, then finds the median of these differences. This approach makes MedAE less sensitive to outliers 

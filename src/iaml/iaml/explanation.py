@@ -33,18 +33,6 @@ class Explanation:
         self.metrics = metrics
         self.shap_values = shap_values
 
-    @property
-    def description(self) -> str:
-        """
-        Formats the description of a step with its configuration.
-
-        Returns:
-            str: Formatted description.
-        """
-        conf = { k: v['value'] for k, v in self.step.configuration.items() }
-
-        return self.step.description.format(**conf)
-    
     def add_processing(self, processing: str) -> None:
         """
         Adds a processing description to the list of processings.
@@ -238,6 +226,7 @@ class Explanation:
             processings_limit (int, optional): Limit the number of
                 processings that are displayed in the Markdown document
                 (defaults to 20).
+
         Returns:
             str: Markdown document.
         """
@@ -246,7 +235,7 @@ class Explanation:
 
         return textwrap.dedent(f"""
             ## {self.step.name}
-            **{self.description}**
+            **{self.step.description}**
 
             {self.to_markdown_conf()}
             {self.to_markdown_processings(processings_limit)}

@@ -12,11 +12,11 @@ class F1ScoreMetric(Metric):
     [METRIC] F1 Score
     """
     name = 'F1 Score'
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         F1 Score is a metric that combines precision and recall to 
         evaluate a model's performance. It is especially useful for imbalanced datasets, 
         providing a balance between false positives and false negatives.''')
-    description_long = textwrap.dedent('''\
+    _description_long = textwrap.dedent('''\
         F1 Score measures a model's performance by combining precision 
         (the accuracy of positive predictions) and recall (the ability to identify all positive cases). 
         It is calculated as the harmonic mean of precision and recall, making it particularly useful in 

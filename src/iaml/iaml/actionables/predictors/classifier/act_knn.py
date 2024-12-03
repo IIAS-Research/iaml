@@ -15,16 +15,16 @@ class ActKNN(Predictor):
     [STEP]  KNN
     """
     name = "KNN"
-    description = textwrap.dedent('''\
-        KNeighborsClassifier is a machine learning algorithm that makes 
+    _description = textwrap.dedent('''\
+        KNeighborsClassifier is a machine learning algorithm that makes
         predictions for classification tasks using k-nearest neighbors.''')
-    description_long = textwrap.dedent('''\
-        KNeighborsClassifier is a type of instance-based learning 
-        algorithm that makes predictions for new input features based on the labels 
-        of the k-nearest neighbors in the training data. 
-        It works by calculating the distance between the new input features and all 
-        the training data, and then selecting the k-nearest neighbors based on that distance.
-        The label for the new input features is then determined by a majority vote of the 
+    _description_long = textwrap.dedent('''\
+        KNeighborsClassifier is a type of instance-based learning
+        algorithm that makes predictions for new input features based on the labels
+        of the k-nearest neighbors in the training data.
+        It works by calculating the distance between the new input features and all
+        the training data, and then selecting the k-nearest neighbors based on that distance
+        The label for the new input features is then determined by a majority vote of the
         labels of the k-nearest neighbors.''')
     
     refs = [

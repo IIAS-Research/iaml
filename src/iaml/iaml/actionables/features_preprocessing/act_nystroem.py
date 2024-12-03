@@ -16,12 +16,12 @@ class ActNystroem(Actionable):
     [STEP] Apply Nystroem method for dimensionality reduction
     """
     name = "Nystroem"
-    description = "Apply the Nystroem method for dimensionality reduction over a list of columns"
-    description_long = textwrap.dedent('''\
-        The Nystroem method is a technique used for approximating kernel methods, 
+    _description = "Apply the Nystroem method for dimensionality reduction over a list of columns"
+    _description_long = textwrap.dedent('''\
+        The Nystroem method is a technique used for approximating kernel methods,
         which helps in reducing the computational cost of kernel-based algorithms.
-        It approximates a kernel map using a subset of the data, making it suitable 
-        for large datasets. This approach enables dimensionality reduction by creating 
+        It approximates a kernel map using a subset of the data, making it suitable
+        for large datasets. This approach enables dimensionality reduction by creating
         a low-rank approximation of the original kernel matrix.
     ''')
 
@@ -32,33 +32,34 @@ class ActNystroem(Actionable):
                 'description': 'Kernel map to be approximated.',
                 'default': 'rbf',
                 'categorical': ["poly", "rbf", "sigmoid", "cosine", "chi2"]
-                },
+            },
             'n_components': {
                 'description': 'Number of components to keep.',
                 'default': 100,
                 'range': [50, 10000]
-                },
+            },
             'coef0': {
                 'description': 'Zero coefficient for polynomial and sigmoid kernels.',
                 'default': 0.0,
                 'range': [-1.0, 1.0]
-                },
+            },
             'degree': {
                 'description': 'Degree of the polynomial kernel.',
                 'default': 3,
                 'range': [2, 5]
-                },
+            },
             'gamma': {
-                'description': 'Gamma parameter for the RBF, laplacian, polynomial, \
-                    exponential chi2 and sigmoid kernels.',
+                'description': textwrap.dedent('''\
+                    Gamma parameter for the RBF, laplacian, polynomial,
+                    exponential chi2 and sigmoid kernels.'''),
                 'default': 0.1,
                 'range': [3.06e-05, 8.0]
-                },
+            },
             'random_state': {
                 'description': 'Random State',
                 'default': 42
-                }
             }
+        }
         
         self.optimizable = True
         self.preprocessor = None

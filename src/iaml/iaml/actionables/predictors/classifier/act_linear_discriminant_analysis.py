@@ -14,16 +14,16 @@ class ActLinearDiscriminantAnalysis(Predictor):
     [STEP] Linear Discriminant Analysis
     """
     name = "Linear Discriminant Analysis"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         LinearDiscriminantAnalysis is a machine learning algorithm that finds
-        a linear combination of features that maximizes the separation between 
+        a linear combination of features that maximizes the separation between
         classes for classification tasks.''')
-    description_long = textwrap.dedent('''\
-        LinearDiscriminantAnalysis is a type of dimensionality reduction 
-        algorithm that finds a linear combination of features that maximizes the 
-        separation between classes for classification tasks. 
-        It works by calculating the within-class and between-class scatter matrices, 
-        and then finding the directions in the feature space that maximize the ratio of 
+    _description_long = textwrap.dedent('''\
+        LinearDiscriminantAnalysis is a type of dimensionality reduction
+        algorithm that finds a linear combination of features that maximizes the
+        separation between classes for classification tasks.
+        It works by calculating the within-class and between-class scatter matrices,
+        and then finding the directions in the feature space that maximize the ratio of
         the between-class scatter to the within-class scatter.''')
     
     refs = [
@@ -40,12 +40,14 @@ class ActLinearDiscriminantAnalysis(Predictor):
     def __init__(self):
         self.configuration:dict = {
             'tol': {
-                'description': 'Absolute threshold for a singular value of X to be considered \
-                    significant, used to estimate the rank of X. ',
+                'description': textwrap.dedent('''\
+                    Absolute threshold for a singular value of X to be
+                    considered significant, used to estimate the rank of X.'''),
                 'default': 0.0001,
                 'range': [1e-05, 0.1]
-                }
             }
+        }
+
         self.model:LinearDiscriminantAnalysis = None
     
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument

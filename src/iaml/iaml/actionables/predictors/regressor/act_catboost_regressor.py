@@ -15,12 +15,12 @@ class ActCatBoostRegressor(Predictor):
     [STEP]  CatBoost Regressor
     """
     name = "CatBoost Regressor"
-    description = textwrap.dedent('''\
-        CatBoostRegressor is a powerful tool that helps computers make accurate 
-        predictions for continuous outcomes by learning from both positive and 
+    _description = textwrap.dedent('''\
+        CatBoostRegressor is a powerful tool that helps computers make accurate
+        predictions for continuous outcomes by learning from both positive and
         negative examples simultaneously.''')
-    description_long = textwrap.dedent('''\
-        CatBoostRegressor is a gradient boosting algorithm specifically 
+    _description_long = textwrap.dedent('''\
+        CatBoostRegressor is a gradient boosting algorithm specifically
         designed for regression tasks.''')
     
     refs = [
@@ -73,7 +73,7 @@ class ActCatBoostRegressor(Predictor):
                                 'Quantile',
                                 'LogLinQuantile',
                                 'Poisson',
-                                'MAPE'] 
+                                'MAPE']
                                 #, 'Lq']
             },
             'eval_metric': {
