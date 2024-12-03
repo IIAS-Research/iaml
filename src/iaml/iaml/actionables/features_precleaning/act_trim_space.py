@@ -1,13 +1,11 @@
-"""
-[STEP] Trim spaces on each columns
-"""
+"""[STEP] Trim spaces on each columns"""
 import textwrap
+from pandas.api.types import is_object_dtype
 import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
-from pandas.api.types import is_object_dtype
 
 @is_step('features_precleaning')
 class ActTrimSpaces(Actionable):
@@ -37,17 +35,8 @@ class ActTrimSpaces(Actionable):
                 'default': True
             },
         }
-    
-    def fit(self, dataset: Dataset):  # pylint: disable=unused-argument
-        """
-        Fit method does nothing for trimming spaces, but is needed for pipeline compatibility.
-        
-        Args:
-            dataset (Dataset): The dataset to process.
 
-        Returns:
-            ActTrimSpaces: The fitted transformation step.
-        """
+    def fit(self, dataset: Dataset):  # pylint: disable=unused-argument
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -81,7 +70,7 @@ class ActTrimSpaces(Actionable):
             float: Priority score.
         """
         return 1.5
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         """
         Checks if this step is suitable for the dataset.
@@ -94,8 +83,10 @@ class ActTrimSpaces(Actionable):
         """
         cond = (
             dataset.X.apply(
-                lambda x: (x.astype(str).str.strip() if (isinstance(x, str) or is_object_dtype(x)) else x) != x
-            ).stack().any() 
+                lambda x: (
+                    x.astype(str).str.strip() if (isinstance(x, str) or is_object_dtype(x)) else x
+                ) != x
+            ).stack().any()
             or (dataset.X.columns.str.strip() != dataset.X.columns).any()
         )
         return cond

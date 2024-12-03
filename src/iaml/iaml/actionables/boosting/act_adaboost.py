@@ -1,7 +1,6 @@
 """Apply AdaBoost on models"""
-
-from sklearn.ensemble import AdaBoostClassifier
 from typing import Any
+from sklearn.ensemble import AdaBoostClassifier
 
 from ...actionable import Actionable
 from ...decorators.all import runner

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class ClassificationReportPlot(MetricPlot):
     """[PLOT] Classification Report Plot"""
-    
+
     title: str = "Classification report"
     description: str = textwrap.dedent("""
         The Classification Report is a visual tool to evaluate the performance of a machine learning model 
@@ -32,11 +32,11 @@ class ClassificationReportPlot(MetricPlot):
         Doctors and data scientists use this visualization to easily compare the model's performance on different conditions, 
         aiding in model refinement and ensuring robust diagnostic predictions.
         """)
-    
+
     @capture
     def _compute(
         self,
-        estimator: 'IAMLPipeline', 
+        estimator: 'IAMLPipeline',
         X: pd.DataFrame,
         y: pd.DataFrame,
         X_train: pd.DataFrame = None,
@@ -44,15 +44,15 @@ class ClassificationReportPlot(MetricPlot):
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
         self.__visualizer = ClassificationReport(estimator, is_fitted=True)
-        
+
         if X_train is not None and y_train is not None:
             self.__visualizer.fit(X_train, y_train)
-            
+
         self.__visualizer.score(X, y)
         self.__visualizer.poof(self._binary_image)
-        
+
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']

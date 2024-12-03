@@ -1,6 +1,4 @@
-"""
-[STEP] Decompose features with KernelPCA
-"""
+"""[STEP] Decompose features with KernelPCA"""
 import textwrap
 import pandas as pd
 from sklearn.decomposition import KernelPCA
@@ -11,9 +9,7 @@ from ...decorators.all import is_step
 
 @is_step('features_preprocessing')
 class ActKernelPCA(Actionable):
-    """
-    [STEP] Apply KernelPCA for dimensionality reduction
-    """
+    """[STEP] Apply KernelPCA for dimensionality reduction"""
     name = "KernelPCA"
     description = "Perform Kernel Principal Component Analysis (KernelPCA) on a dataset"
     description_long = textwrap.dedent('''\
@@ -43,7 +39,8 @@ class ActKernelPCA(Actionable):
                 'Bernhard Schölkopf',
                 'Gökhan Bakir'
             ],
-            'doi': 'https://proceedings.neurips.cc/paper_files/paper/2003/file/ac1ad983e08ad3304a97e147f522747e-Paper.pdf',
+            'doi': 'https://proceedings.neurips.cc/paper_files/paper/2003/file/ \
+                    ac1ad983e08ad3304a97e147f522747e-Paper.pdf',
             'publisher': 'Advances in neural information processing systems 16 (2004) page 449--456'
         },
         {
@@ -98,52 +95,30 @@ class ActKernelPCA(Actionable):
                 'default': 42
                 }
             }
-        
-        self.optimizable = True
-        self.preprocessor = None
+
+        self.optimizable: bool = True
+        self.preprocessor: bool = None
 
 
     def fit(self, dataset: Dataset) -> Actionable:
-        """
-        Find columns to convert
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
-        
-        
         try:
             self.preprocessor = KernelPCA(**self.passthrough_parameters())
             self.preprocessor.fit(dataset.X)
-        except ValueError: 
+        except ValueError:
             higher_gamma = 1/dataset.X.shape[1] + 0.05
             self.preprocessor = KernelPCA(gamma=higher_gamma, **self.passthrough_parameters())
             self.preprocessor.fit(dataset.X)
-            
+
         return self
-    
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply KernelPCA
+        """Apply KernelPCA
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame X: DataFrame to transform
+        :return: Transformed dataset
         """
-        
+
         return pd.DataFrame(self.preprocessor.transform(X))
-        
-    
-    def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5

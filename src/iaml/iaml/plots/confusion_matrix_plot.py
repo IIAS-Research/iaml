@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class ConfusionMatrixPlot(MetricPlot):
     """[PLOT] Confusion Matrix Plot"""
-    
+
     title: str = "Confusion Matrix"
     description: str = textwrap.dedent("""
         The Confusion Matrix is a powerful visualization tool used to assess how well a classification model 
@@ -31,11 +31,11 @@ class ConfusionMatrixPlot(MetricPlot):
         types of errors it makes. This information is crucial in healthcare, where reducing misdiagnoses can significantly 
         improve patient outcomes.
         """)
-    
+
     @capture
     def _compute(
         self,
-        estimator: 'IAMLPipeline', 
+        estimator: 'IAMLPipeline',
         X: pd.DataFrame,
         y: pd.DataFrame,
         X_train: pd.DataFrame = None,
@@ -43,15 +43,15 @@ class ConfusionMatrixPlot(MetricPlot):
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
         self.__visualizer = ConfusionMatrix(estimator, is_fitted=True)
-        
+
         if X_train is not None and y_train is not None:
             self.__visualizer.fit(X_train, y_train)
-            
+
         self.__visualizer.score(X, y)
         self.__visualizer.poof(self._binary_image)
-        
+
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']

@@ -38,10 +38,10 @@ class Candidate:
         stacked_path: list = None,
         main_metric: 'Metric' = None) -> None:
 
-        self.dataset = dataset
+        self.dataset: Dataset = dataset
         """Dataset used for this candidate"""
 
-        self.metrics = copy(metrics) if metrics is not None else []
+        self.metrics: list[Metric] = copy(metrics) if metrics is not None else []
         """List of metrics used to evaluate the model"""
 
         if iaml_pipeline is not None:
@@ -62,10 +62,10 @@ class Candidate:
         else:
             self.main_metric = str(main_metric)
 
-        self.computed_metrics = {}
+        self.computed_metrics: dict = {}
         """Result dictionnary for all the metrics computed"""
 
-        self.stacked_path = copy(stacked_path) if stacked_path is not None else []
+        self.stacked_path: list = copy(stacked_path) if stacked_path is not None else []
         """Stack of all steps used to build this Candidate"""
 
         self.is_meta: bool = False

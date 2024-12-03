@@ -1,5 +1,4 @@
 """[STEP] Convert Short text to date if possible"""
-
 import textwrap
 import pandas as pd
 from ...actionable import Actionable
@@ -13,9 +12,9 @@ from ...decorators.all import is_step
 class ActDateConverter(Actionable):
     """[STEP] Convert Short text to date if possible"""
 
-    name = 'Text to Date Converter'
-    description = 'Convert Text to Date if possible'
-    description_long = textwrap.dedent('''\
+    name: str = 'Text to Date Converter'
+    description: str = 'Convert Text to Date if possible'
+    description_long: str = textwrap.dedent('''\
         Try to convert all text of a column to date. 
         If more than {authorized_error_ratios}% of the rows return errors, then the
         column is not converted. As converting to date is time consuming, we will 

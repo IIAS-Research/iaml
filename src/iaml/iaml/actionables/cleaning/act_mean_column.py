@@ -1,5 +1,4 @@
 """[STEP] Fill missing values with mean"""
-
 import pandas as pd
 import numpy as np
 from ...actionable import Actionable
@@ -13,10 +12,10 @@ from ...data_type import DataType
 class ActMeanColumn(Actionable):
     """[STEP] Fill missing values with the mean."""
 
-    name = 'Fill missing values'
-    description = 'Fill missing values with the mean of non-missing values.'
-    description_long = description
-    can_be_disabled = False
+    name: str = 'Fill missing values'
+    description: str = 'Fill missing values with the mean of non-missing values.'
+    description_long: str = description
+    can_be_disabled: bool = False
 
     def __init__(self):
         self.columns: list[str] = None

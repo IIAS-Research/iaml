@@ -42,7 +42,7 @@ class IAMLPipeline(Pipeline):
         if steps is None:
             steps = []
 
-        self.original_dataset = original_dataset
+        self.original_dataset: pd.DataFrame = original_dataset
         """Original dataset used for this pipeline"""
 
         self.transformers: list[tuple[str, object]] = []
@@ -54,13 +54,13 @@ class IAMLPipeline(Pipeline):
         self.predictor: tuple[str, object] = None
         """Predictor that'll be used in this pipeline"""
 
-        self.metrics = []
+        self.metrics: list[Metric] = []
         """List of metrics that'll be computed in this pipeline"""
 
         if estimator_type not in ['classifier', 'regressor', 'survival']:
             raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
                 survival or regressor")
-        self.__estimator_type = estimator_type
+        self.__estimator_type: str = estimator_type
         """Estimator type"""
 
         super().__init__(steps) # split steps into transformers, resamplers and predictor

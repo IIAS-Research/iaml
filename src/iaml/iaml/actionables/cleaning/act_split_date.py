@@ -1,5 +1,4 @@
 """[STEP] Transform string column to date"""
-
 import textwrap
 import pandas as pd
 import numpy as np
@@ -14,19 +13,19 @@ from ...decorators.all import is_step
 class ActSplitDate(Actionable):
     """[STEP] Transform string column to date"""
 
-    name = 'Create Date Elements columns'
-    descrption = textwrap.dedent('''\
+    name: str = 'Create Date Elements columns'
+    descrption: str = textwrap.dedent('''\
         Transform a textual date column into multiple columns
         for day, month, year, hour, minute, second''')
-    description_long = textwrap.dedent('''\
+    description_long: str = textwrap.dedent('''\
         Transform a textual date column into multiple columns for 
         day, month, year, hour, minute, second.
         Exemple:
-            +---------------------+----------+------------+-----------+-----------+----------+----------+
-            | date                | date_day | date_month | date_year | date_hour | date_min | date_sec |
-            +---------------------+----------+------------+-----------+-----------+----------+----------+
-            | 2024-01-15 12:31:27 | 15       | 01         | 2024      | 12        | 31       | 27       |
-            +---------------------+----------+------------+-----------+-----------+----------+----------+
+        +-------------------+----------+------------+-----------+-----------+----------+----------+
+        |date               | date_day | date_month | date_year | date_hour | date_min | date_sec |
+        +-------------------+----------+------------+-----------+-----------+----------+----------+
+        |2024-01-15 12:31:27| 15       | 01         | 2024      | 12        | 31       | 27       |
+        +-------------------+----------+------------+-----------+-----------+----------+----------+
         ''')
 
     def __init__(self):
@@ -57,7 +56,7 @@ class ActSplitDate(Actionable):
             # Hour
             X[column + '_hour'] = X[column].dt.hour.replace(np.NaN, -1)
             X[column + '_minute'] = X[column].dt.minute.replace(np.NaN, -1)
-            X[column + '_second'] = X[column].dt.second.replace(np.NaN, -1) 
+            X[column + '_second'] = X[column].dt.second.replace(np.NaN, -1)
 
         return X
 

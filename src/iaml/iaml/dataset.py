@@ -76,7 +76,7 @@ class Dataset:
 
         self.__detect_columns_types()
 
-        self.type_of_target = None
+        self.type_of_target: str = None
         """Type of target to predict"""
 
         if y is not None:

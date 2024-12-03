@@ -1,5 +1,4 @@
 """[STEP] Drop Numerical Column"""
-
 import textwrap
 import pandas as pd
 from ...actionable import Actionable
@@ -13,11 +12,11 @@ from ...decorators.all import is_step
 class ActDropNumericalColumn(Actionable):
     """[STEP] Drop Numerical Column"""
 
-    name = 'Remove numerical columns'
-    description = textwrap.dedent('''\
+    name: str = 'Remove numerical columns'
+    description: str = textwrap.dedent('''\
         Remove numerical columns where the proportion of empty rows
         in the dataset is higher than {empty_threshold}.''')
-    description_long = textwrap.dedent('''\
+    description_long: str = textwrap.dedent('''\
         Remove numerical columns from the dataset where the proportion of empty
         rows in the dataset is higher than {empty_threshold}. This ensure that every columns will
         be relevant for the model to train on.''')

@@ -1,3 +1,4 @@
+"""[STEP] Drop categorical columns"""
 import textwrap
 import pandas as pd
 from ...actionable import Actionable
@@ -11,13 +12,13 @@ from ...decorators.all import is_step
 class ActDropCategoricalColumn(Actionable):
     """[STEP] Drop categorical columns"""
 
-    name = 'Remove categorical columns'
-    description = 'Remove all columns containing categorical data from the dataset'
-    description_long = textwrap.dedent('''\
+    name: str = 'Remove categorical columns'
+    description: str = 'Remove all columns containing categorical data from the dataset'
+    description_long: str = textwrap.dedent('''\
         Remove all columns containing categorical data from the dataset.
         This step is used to clean the dataset in order to perform other actions later on 
         that can't be applied to categorical columns.''')
-    can_be_disabled = False
+    can_be_disabled: bool = False
 
     def __init__(self):
         self.columns_to_drop: list[str] = None

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class PrecisionRecallCurvePlot(MetricPlot):
     """[PLOT] Precision-Recall Curve Plot"""
-    
+
     title: str = "Precision-Recall Curve"
     description: str = textwrap.dedent("""
         The Precision-Recall Curve is a valuable visualization tool for evaluating the performance of 
@@ -35,11 +35,11 @@ class PrecisionRecallCurvePlot(MetricPlot):
         such as minimizing missed diagnoses or reducing unnecessary treatments, making the Precision-Recall Curve an essential 
         tool for improving patient outcomes.
         """)
-    
+
     @capture
-    def _compute(
+    def _compute( # pylint: disable=arguments-differ
         self,
-        estimator: 'IAMLPipeline', 
+        estimator: 'IAMLPipeline',
         X: pd.DataFrame,
         y: pd.Series,
         **kwargs) -> MetricPlot:
@@ -47,7 +47,7 @@ class PrecisionRecallCurvePlot(MetricPlot):
         Compute plot given X, y.
         """
         self._binary_image = io.BytesIO()
-        
+
         pos_label = None
         if y.dtype == 'int':
             pos_label = 1
@@ -55,30 +55,30 @@ class PrecisionRecallCurvePlot(MetricPlot):
             pos_label = True
         else:
             pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0]
-        
+
         # Predict probabilities for the positive class
         y_prob = estimator.predict_proba(X)[:, 1]
-        
+
         # Compute Precision-Recall curve
         precision, recall, _ = precision_recall_curve(y, y_prob, pos_label=pos_label)
         average_precision = average_precision_score(y, y_prob, pos_label=pos_label)
-        
+
         # Create the Precision-Recall plot
         plt.figure()
-        plt.plot(recall, precision, color='blue', 
+        plt.plot(recall, precision, color='blue',
             lw=2, label=f'Precision-Recall curve (AP = {average_precision:.2f})')
         plt.xlabel('Recall')
         plt.ylabel('Precision')
         plt.title('Precision-Recall Curve')
         plt.legend(loc='lower left')
         plt.grid(True)
-        
+
         # Save plot to binary image
         plt.savefig(self._binary_image, format='png')
         plt.close()
-        
+
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target in ['binary']

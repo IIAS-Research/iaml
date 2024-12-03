@@ -1,5 +1,4 @@
 """[STEP] Encode string categorical target column to numeric"""
-
 # Disabled for now
 # TODO -> Rework.
 # - We can't use 'y' in transform
@@ -21,9 +20,9 @@ from ...decorators.all import is_step
 class ActCategoryStringToNumeric(Actionable):
     """Encode categorical target column to numeric"""
 
-    name = 'Textual Category To Numeric Value'
-    description ='Encode categorical text data column to numeric value'
-    description_long = textwrap.dedent('''\
+    name: str = 'Textual Category To Numeric Value'
+    description: str ='Encode categorical text data column to numeric value'
+    description_long: str = textwrap.dedent('''\
         Retrieve all unique values from a column, then transform those values to a numeric type.
         Exemple: If a column contain 3 uniques values like "coffee", "tea" and "water",
         then all the coffee values will be transformed to 0, tea to 1 and water to 2.''')

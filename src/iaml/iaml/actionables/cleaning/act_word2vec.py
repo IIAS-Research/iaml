@@ -1,5 +1,5 @@
 """[STEP] Vectorize textual columns with Word2Vec"""
-
+from typing import Any
 import textwrap
 import string
 import numpy as np
@@ -24,13 +24,13 @@ download('punkt')
 class ActWord2Vec(Actionable):
     """[STEP] Vectorize textual column with Word2Vec"""
 
-    name = "Word2Vec"
-    description = "Process Word2Vec algorithm over a list of columns"
-    description_long = textwrap.dedent('''\
+    name: str = "Word2Vec"
+    description: str = "Process Word2Vec algorithm over a list of columns"
+    description_long: str = textwrap.dedent('''\
         Word2Vec is a word embedding algorithm auto-supervised algorithm.
         This means we don't need labelled data as the algorithm discover 
         the ground truth by himself''')
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2023,
             'name': 'Efficient Estimation of Word Representations in Vector Space',

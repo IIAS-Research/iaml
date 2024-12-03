@@ -1,6 +1,4 @@
-"""
-[PLOT] Prediction Error Plot
-"""
+"""[PLOT] Prediction Error Plot"""
 import textwrap
 import io
 from typing import TYPE_CHECKING
@@ -14,7 +12,7 @@ if TYPE_CHECKING:
 
 class PredictionErrorPlot(MetricPlot):
     """[PLOT] Prediction Error Plot"""
-    
+
     title: str = "Prediction Error"
     description: str = textwrap.dedent("""
         The Prediction Error Plot is a diagnostic tool used to visualize the performance of regression models. 
@@ -33,11 +31,11 @@ class PredictionErrorPlot(MetricPlot):
         random errors (scattering of points) in the model, which is crucial in healthcare settings where accurate 
         predictions can directly impact patient care.
         """)
-    
+
     @capture
     def _compute(
         self,
-        estimator:'IAMLPipeline', 
+        estimator:'IAMLPipeline',
         X: pd.DataFrame,
         y: pd.Series,
         X_train: pd.DataFrame = None,
@@ -45,15 +43,15 @@ class PredictionErrorPlot(MetricPlot):
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
         self.__visualizer = PredictionError(estimator, is_fitted=True)
-    
+
         if X_train is not None and y_train is not None:
             self.__visualizer.fit(X_train, y_train)
-            
+
         self.__visualizer.score(X, y)
         self.__visualizer.poof(self._binary_image)
-        
+
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target == 'continuous'

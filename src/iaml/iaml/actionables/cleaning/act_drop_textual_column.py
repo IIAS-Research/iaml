@@ -1,5 +1,4 @@
 """[STEP] Drop Textual Column"""
-
 import textwrap
 import pandas as pd
 from ...actionable import Actionable
@@ -13,13 +12,13 @@ from ...decorators.all import is_step
 class ActDropTextualColumn(Actionable):
     """[STEP] Drop Textual Column"""
 
-    name = 'Remove textual columns'
-    description = 'Remove all columns containing textual data from the dataset'
-    description_long = textwrap.dedent('''\
+    name: str = 'Remove textual columns'
+    description: str = 'Remove all columns containing textual data from the dataset'
+    description_long: str = textwrap.dedent('''\
         Remove all columns containing textual data from the dataset.
         This step is used to clean the dataset in order to perform other actions later on 
         that can't be applied to textual columns.''')
-    can_be_disabled = False
+    can_be_disabled: bool = False
 
     def __init__(self):
         self.columns_to_drop: list[str] = None
@@ -29,7 +28,7 @@ class ActDropTextualColumn(Actionable):
             dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT]) + \
             list(dataset.X.select_dtypes(include='object').columns)
         ))
-        
+
         self.explanations = [
             f'Dropped column **`{c}`**.' for c in self.columns_to_drop
         ]

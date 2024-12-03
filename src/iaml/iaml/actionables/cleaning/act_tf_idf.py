@@ -1,6 +1,6 @@
 """[STEP] Vectorize textual columns with TF-IDF"""
-
 import textwrap
+from typing import Any
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from ...actionable import Actionable
@@ -14,15 +14,15 @@ from ...data_type import DataType
 class ActTfIdf(Actionable):
     """[STEP] Vectorize textual columns with TF-IDF"""
 
-    name= 'TF-IDF'
-    description = textwrap.dedent('''\
+    name: str = 'TF-IDF'
+    description: str = textwrap.dedent('''\
         Process "Term Frequency / Inversed Document Frequency"
         over a list of textual columns''')
-    description_long = textwrap.dedent('''\
+    description_long: str = textwrap.dedent('''\
         This algorithm is used to evaluate the importance of a word inside
         it\'s corpus. A word with a lot of repetitions will
         have more importance than a word appearing once.''')
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 1972,
             'name': 'A STATISTICAL INTERPRETATION OF TERM SPECIFICITY AND ITS APPLICATION \

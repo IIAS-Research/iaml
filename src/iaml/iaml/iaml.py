@@ -67,10 +67,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
-        self.preprocessor = preprocessor
+        self.preprocessor: bool = preprocessor
         """Enable / Disable preprocessor"""
 
-        self.metalearner = metalearner
+        self.metalearner: bool = metalearner
         """Enable / Disable Meta Learner"""
 
         if metalearner is None:
@@ -88,13 +88,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         else:
             self.max_stage_duration = max_stage_duration
 
-        self.splitter = splitter if splitter is not None else kfold_splitter
+        self.splitter: callable = splitter if splitter is not None else kfold_splitter
         """Splitter callable"""
 
-        self.main_metric = main_metric
+        self.main_metric: Metric = main_metric
         """Main metric"""
 
-        self.max_duration = max_duration
+        self.max_duration: int = max_duration
         """Maximum training duration"""
 
         if time_before_sample_use == 'auto' and max_duration:
@@ -116,7 +116,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.last_stage_candidates: list[Candidate] = []
         """Hold last generated candidates"""
 
-        self.executor = None
+        self.executor: TimedPoolExecutor = None
         """Hold TimePoolExecutor"""
 
         self.default_pipeline() # Load default pipeline

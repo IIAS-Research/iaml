@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class ClassPredictionErrorPlot(MetricPlot):
     """[PLOT] Class Prediction Error Plot"""
-    
+
     title: str = "Prediction Error Plot"
     description: str = textwrap.dedent("""
         The Class Prediction Error is a visualization that helps understand how well a machine 
@@ -34,11 +34,11 @@ class ClassPredictionErrorPlot(MetricPlot):
         shows where the model is making errors, making it easier to improve its accuracy, which is 
         critical in healthcare where correct predictions can have a big impact on patient outcomes.
         """)
-    
+
     @capture
     def _compute(
         self,
-        estimator: 'IAMLPipeline', 
+        estimator: 'IAMLPipeline',
         X: pd.DataFrame,
         y: pd.DataFrame,
         X_train: pd.DataFrame = None,
@@ -49,12 +49,12 @@ class ClassPredictionErrorPlot(MetricPlot):
 
         if X_train is not None and y_train is not None:
             self.__visualizer.fit(X_train, y_train)
-            
+
         self.__visualizer.score(X, y)
         self.__visualizer.poof(self._binary_image)
-        
+
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']

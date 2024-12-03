@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class KaplanMeierModelComparisonPlot(MetricPlot):
     """[PLOT] Kaplan-Meier Model Comparison Survival"""
-    
+
     title: str = "Kaplan-Meier Model Comparison"
     description: str = textwrap.dedent("""
         The Kaplan-Meier Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
@@ -39,18 +39,18 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         to this baseline, it becomes easier to gauge the improvement (or lack thereof) in predictive 
         accuracy.
         """)
-    
+
     @capture
     def _compute(
         self,
         estimator: 'IAMLPipeline',
         X: pd.DataFrame,
-        y: pd.Series, 
+        y: pd.Series,
         X_train: pd.DataFrame = None,
         y_train: pd.Series=None,
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
-        
+
         X_train, y_train = Dataset.fix_survival(X_train, y_train)
         X, y = Dataset.fix_survival(X, y)
 
@@ -65,7 +65,7 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         survival_predictions = estimator.predict_survival_function(X)
 
         mean_survival_prob = np.mean([fn.y for fn in survival_predictions], axis=0)
-        mean_survival_time = survival_predictions[0].x 
+        mean_survival_time = survival_predictions[0].x
 
         plt.step(mean_survival_time, mean_survival_prob,
             where="post", label="Model prediction", color="green")
@@ -76,12 +76,12 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         plt.ylabel("Survival Probability")
         plt.ylim([0, 1])
         plt.legend()
-        
+
         plt.savefig(self._binary_image, format='png')
         plt.close()
 
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:
         return type_of_target in ['survival']
