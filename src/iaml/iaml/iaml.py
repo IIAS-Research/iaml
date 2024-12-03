@@ -427,7 +427,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.executor.shutdown()
 
     @property
-    def chosen_model(self) -> 'IAMLPipeline' | None:
+    def chosen_model(self) -> 'IAMLPipeline':
         """Return the best model trained with fit
 
         :return: Best predictor pipeline
