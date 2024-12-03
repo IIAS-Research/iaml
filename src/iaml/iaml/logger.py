@@ -24,7 +24,7 @@ class Logger(metaclass=MetaSingleton):
     def __init__(self, verbose:int = 1) -> None:
         """
         Args:
-            verbose (int, optional): 
+            verbose (int, optional):
                 0 -> No print
                 1 -> Progressbar only
                 2 -> progressbar + infos
@@ -36,8 +36,10 @@ class Logger(metaclass=MetaSingleton):
         self.console:rich.console = rich.console.Console(log_path=False)
         self.progress:rich.progress = rich.progress.Progress(console=self.console)
         self.verbose:int = verbose
+
         self.log_queue = multiprocess.Queue()
-        
+        self.callback = None
+
     @property
     def verbose(self) -> int:
         """
@@ -54,9 +56,7 @@ class Logger(metaclass=MetaSingleton):
     @verbose.setter
     def verbose(self, value:int) -> int:
         self.__verbose = max(min(value, 4), -1)
-        
-        self.console.quiet = self.__verbose == 0
-        
+
         return self.__verbose
     
     def __log(self, log_type, *text: list[str]) -> None:
@@ -64,10 +64,15 @@ class Logger(metaclass=MetaSingleton):
         Show text in console
         """
         if multiprocess.current_process().name == 'MainProcess':
-            self.console.log(*text)
+            self.__print(*text)
         else:
             self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
-                
+
+    def __print(self, *text: list[str]) -> None:
+        if self.callback is not None:
+            self.callback(*text)
+        else:
+            self.console.log(*text)
 
     def info(self, *text: list[str]) -> None:
         """
@@ -82,22 +87,31 @@ class Logger(metaclass=MetaSingleton):
         """
         if self.verbose > 2:
             self.__log(LogType.WARNING, *text)
-            
+
     def error(self, *text: list[str]) -> None:
         """
         Show info text in console
         """
         if self.verbose > 3 or self.verbose == -1:
             self.__log(LogType.ERROR, *text)
-    
+
+    def set_callback(self, callback: callable) -> None:
+        """
+        Sets a custom callback to this logger so that messages can be intercepted.
+
+        Args:
+            callback (callable, optional):
+                Callback to send logs to.
+        """
+        self.callback = callback
 
     def print_queue(self):
         """
         Print all texts from subProcess
         """
-        if multiprocess.current_process().name == 'MainProcess':
-            while not self.log_queue.empty():
-                try:
-                    self.__log(*self.log_queue.get(block=False))
-                except Empty:
-                    break
+        while not self.log_queue.empty():
+            try:
+                messages = self.log_queue.get(block=False)
+                self.__print(*messages)
+            except Empty:
+                break
