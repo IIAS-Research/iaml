@@ -15,17 +15,17 @@ class ActGaussianNb(Predictor):
     [STEP] Gaussian NB
     """
     name = " Gaussian NB"
-    description = textwrap.dedent('''\
-        GaussianNB is a machine learning algorithm that makes predictions 
+    _description = textwrap.dedent('''\
+        GaussianNB is a machine learning algorithm that makes predictions
         based on the Gaussian (normal) distribution of the input features.''')
-    description_long = textwrap.dedent('''\
-        GaussianNB is a type of naive Bayes classifier that assumes the 
-        input features are independent and follow a Gaussian (normal) distribution. 
-        It uses Bayes' theorem to calculate the probability of each class given the 
-        input features and then makes a prediction based on the highest probability. 
-        GaussianNB is particularly useful when the input features have a continuous 
-        distribution and can be modeled well by a normal distribution. 
-        It is a simple and fast algorithm that works well for many classification problems, 
+    _description_long = textwrap.dedent('''\
+        GaussianNB is a type of naive Bayes classifier that assumes the
+        input features are independent and follow a Gaussian (normal) distribution.
+        It uses Bayes' theorem to calculate the probability of each class given the
+        input features and then makes a prediction based on the highest probability.
+        GaussianNB is particularly useful when the input features have a continuous
+        distribution and can be modeled well by a normal distribution.
+        It is a simple and fast algorithm that works well for many classification problems,
         especially when the number of features is much larger than the number of samples.''')  
     
     refs = []
@@ -33,8 +33,9 @@ class ActGaussianNb(Predictor):
     def __init__(self):
         self.configuration = {
             'var_smoothing': {
-                'description': 'Portion of the largest variance of all \
-                    features that is added to variances for calculation stability.',
+                'description': textwrap.dedent('''\
+                    Portion of the largest variance of all features that is
+                    added to variances for calculation stability.'''),
                 'default': 1e-9,
                 'range': [1e-11, 1e-4]
             },

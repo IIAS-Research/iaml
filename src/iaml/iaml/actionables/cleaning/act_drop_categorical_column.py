@@ -13,10 +13,10 @@ class ActDropCategoricalColumn(Actionable):
     """[STEP] Drop categorical columns"""
 
     name: str = 'Remove categorical columns'
-    description: str = 'Remove all columns containing categorical data from the dataset'
-    description_long: str = textwrap.dedent('''\
+    _description: str = 'Remove all columns containing categorical data from the dataset'
+    _description_long: str = textwrap.dedent('''\
         Remove all columns containing categorical data from the dataset.
-        This step is used to clean the dataset in order to perform other actions later on 
+        This step is used to clean the dataset in order to perform other actions later on
         that can't be applied to categorical columns.''')
     can_be_disabled: bool = False
 

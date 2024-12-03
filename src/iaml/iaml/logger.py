@@ -40,6 +40,9 @@ class Logger(metaclass=MetaSingleton):
         self.log_queue = multiprocess.Queue()
         """Queue used by the logger to handle log from various process"""
 
+        self.callback: callable = None
+        """Logger callback"""
+
     @property
     def verbose(self) -> int:
         """Get logger verbosity
@@ -66,9 +69,21 @@ class Logger(metaclass=MetaSingleton):
         :param list[str] \\*text: Text to log in console
         """
         if multiprocess.current_process().name == 'MainProcess':
-            self.console.log(*text)
+            self.__print(*text)
         else:
             self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
+
+
+    def __print(self, *text: list[str]) -> None:
+        """Call logger callback or show text in console
+        
+        :param list[str] \\*text: Text to log in console
+        """
+        if self.callback is not None:
+            self.callback(*text)
+        else:
+            self.console.log(*text)
+
 
     def info(self, *text: list[str]) -> None:
         """Show info text in console
@@ -95,11 +110,10 @@ class Logger(metaclass=MetaSingleton):
             self.__log(LogType.ERROR, *text)
 
     def print_queue(self):
-        """Print all texts from subProcess
-        """
-        if multiprocess.current_process().name == 'MainProcess':
-            while not self.log_queue.empty():
-                try:
-                    self.__log(*self.log_queue.get(block=False))
-                except Empty:
-                    break
+        """Print all texts from subProcess"""
+        while not self.log_queue.empty():
+            try:
+                messages = self.log_queue.get(block=False)
+                self.__print(*messages)
+            except Empty:
+                break

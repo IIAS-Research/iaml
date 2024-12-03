@@ -10,10 +10,10 @@ class R2ScoreMetric(Metric):
     """[METRIC] R2 Score"""
 
     name: str = "R2 Score"
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         R² Score, or R-squared, measures how well a model explains the variability of the target variable. 
         It indicates the proportion of variance in the data that is predictable from the model.''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         R² Score evaluates the goodness of fit of a regression model. It ranges from 0 to 1, 
         where 1 means the model perfectly explains the variability of the target variable, and 0 means it does not 
         explain any variability. To calculate R², you compare the model's predictions to the mean of the actual values. 

@@ -16,21 +16,21 @@ class ActExtraSurvivalTrees(Predictor):
     [STEP] Extra Survival Trees
     """
     name = "ExtraSurvivalTrees"
-    description = textwrap.dedent('''\
-        ExtraSurvivalTrees is an ensemble learning method for survival 
-        analysis based on extremely randomized trees. It fits multiple decision trees 
-        to the data, where each tree is built from a random subset of features and 
-        splits are selected randomly. This method provides more variance reduction 
-        and robustness, especially useful when dealing with high-dimensional or 
+    _description = textwrap.dedent('''\
+        ExtraSurvivalTrees is an ensemble learning method for survival
+        analysis based on extremely randomized trees. It fits multiple decision trees
+        to the data, where each tree is built from a random subset of features and
+        splits are selected randomly. This method provides more variance reduction
+        and robustness, especially useful when dealing with high-dimensional or
         sparse data.''')
-    description_long = textwrap.dedent('''\
-        ExtraSurvivalTrees is a variant of ensemble learning for survival 
-        analysis that uses extremely randomized trees. In this approach, multiple trees 
-        are grown by selecting random subsets of features and splitting points. 
-        Compared to other tree-based methods, this randomness helps reduce overfitting 
-        and increases model robustness. The method is particularly useful for survival 
-        datasets that contain complex, non-linear relationships between features. 
-        ExtraSurvivalTrees handles censored data and can provide interpretable models 
+    _description_long = textwrap.dedent('''\
+        ExtraSurvivalTrees is a variant of ensemble learning for survival
+        analysis that uses extremely randomized trees. In this approach, multiple trees
+        are grown by selecting random subsets of features and splitting points.
+        Compared to other tree-based methods, this randomness helps reduce overfitting
+        and increases model robustness. The method is particularly useful for survival
+        datasets that contain complex, non-linear relationships between features.
+        ExtraSurvivalTrees handles censored data and can provide interpretable models
         for survival time predictions.''')
     
     refs = [
@@ -74,8 +74,9 @@ class ActExtraSurvivalTrees(Predictor):
                 'passthrough': False
             },
             'max_features': {
-                'description': 'The number of features to consider when \
-                    looking for the best split.',
+                'description': textwrap.dedent('''\
+                    The number of features to consider when looking for the
+                    best split.'''),
                 'default': "sqrt",
                 'options': ["auto", "sqrt", "log2", None],
                 'passthrough': False

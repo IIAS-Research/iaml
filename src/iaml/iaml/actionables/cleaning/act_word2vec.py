@@ -25,10 +25,10 @@ class ActWord2Vec(Actionable):
     """[STEP] Vectorize textual column with Word2Vec"""
 
     name: str = "Word2Vec"
-    description: str = "Process Word2Vec algorithm over a list of columns"
-    description_long: str = textwrap.dedent('''\
+    _description: str = "Process Word2Vec algorithm over a list of columns"
+    _description_long: str = textwrap.dedent('''\
         Word2Vec is a word embedding algorithm auto-supervised algorithm.
-        This means we don't need labelled data as the algorithm discover 
+        This means we don't need labelled data as the algorithm discove
         the ground truth by himself''')
     refs: list[dict[str, Any]] = [
         {

@@ -15,14 +15,13 @@ class ActBernoulliNb(Predictor):
     [STEP] Bernoulli NB
     """
     name = "Bernoulli NB"
-    description = textwrap.dedent('''\
-        BernoulliNB is a tool that helps computers predict categories 
+    _description = textwrap.dedent('''\
+        BernoulliNB is a tool that helps computers predict categories
         by analyzing binary features, even if the input isn't strictly binary.''')
-    description_long = textwrap.dedent('''\
-        BernoulliNB is a type of Naive Bayes classifier specifically 
+    _description_long = textwrap.dedent('''\
+        BernoulliNB is a type of Naive Bayes classifier specifically
         designed for binary features. While it's primarily meant for binary inputs,
         scikit-learn implements it in a way that can handle non-binary data.''')
-    
     refs = [
         {
             'year': 1998,
@@ -31,7 +30,9 @@ class ActBernoulliNb(Predictor):
                 'Andrew McCallum',
                 'Kamal Nigam'
             ],
-            'doi': "https://www.semanticscholar.org/paper/A-comparison-of-event-models-for-naive-bayes-text-McCallum-Nigam/04ce064505b1635583fa0d9cc07cac7e9ea993cc",
+            'doi': "https://www.semanticscholar.org/paper/ \
+                A-comparison-of-event-models-for-naive-bayes-text-McCallum-Nigam/ \
+                    04ce064505b1635583fa0d9cc07cac7e9ea993cc",
             'publisher': (
                 'AAAI-98 workshop on learning for text categorization, '
                 '752, page 41--48. (1998)'
@@ -45,7 +46,9 @@ class ActBernoulliNb(Predictor):
                 'Ion Androutsopoulos',
                 'Georgios Paliouras'
             ],
-            'doi': "https://www.semanticscholar.org/paper/Spam-Filtering-with-Naive-Bayes-Which-Naive-Bayes-Metsis-Androutsopoulos/7f5ce28afc0c2eafd4a6ef711e399bee4056c3b8",
+            'doi': "https://www.semanticscholar.org/paper/ \
+                Spam-Filtering-with-Naive-Bayes-Which-Naive-Bayes-Metsis-Androutsopoulos/ \
+                    7f5ce28afc0c2eafd4a6ef711e399bee4056c3b8",
             'publisher': (
                 'The Third Conference on Email and Anti-Spam 2006 (CEAS)'
             )
@@ -54,54 +57,32 @@ class ActBernoulliNb(Predictor):
     def __init__(self):
         self.configuration = {
             'alpha': {
-                'description': 'Additive (Laplace/Lidstone) \
-                    smoothing parameter (set alpha=0 and force_alpha=True, for no smoothing).',
+                'description': textwrap.dedent('''\
+                    Additive (Laplace/Lidstone) smoothing parameter (set
+                    alpha=0 and force_alpha=True, for no smoothing).'''),
                 'default': 1.0,
                 'range': [0.01, 100.0]
-                },
+            },
             'fit_prior': {
-                'description': 'Whether to learn class prior probabilities \
-                    or not. If false, a uniform prior will be used.',
+                'description': textwrap.dedent('''\
+                    Whether to learn class prior probabilities or not. If
+                    false, a uniform prior will be used.'''),
                 'default': True,
                 'categorical': [True, False]
-                }
             }
+        }
         self.model: BernoulliNB = None
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit BernoulliNB on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = BernoulliNB(**self.passthrough_parameters())
-        
+
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    
+
     def suitable(self, dataset: Dataset) -> bool:
-        """
-        Does this step suitable for this candidate
-
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
-    
-    def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

@@ -10,12 +10,12 @@ class BalancedAccuracyMetric(Metric):
     """[METRIC] Balanced Accuracy"""
 
     name: str = 'Balanced Accuracy'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         Balanced Accuracy Score is a metric that evaluates a model's 
         performance by considering both positive and negative classes equally. 
         It calculates the average accuracy for each class, making it useful for imbalanced dataset.
         ''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         Balanced Accuracy Score evaluates how well a predictive 
         model performs, giving equal importance to both positive and negative classes. 
         This is important in healthcare when data is imbalanced.

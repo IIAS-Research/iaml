@@ -13,11 +13,11 @@ class ActDateConverter(Actionable):
     """[STEP] Convert Short text to date if possible"""
 
     name: str = 'Text to Date Converter'
-    description: str = 'Convert Text to Date if possible'
-    description_long: str = textwrap.dedent('''\
+    _description: str = 'Convert Text to Date if possible'
+    _description_long: str = textwrap.dedent('''\
         Try to convert all text of a column to date. 
         If more than {authorized_error_ratios}% of the rows return errors, then the
-        column is not converted. As converting to date is time consuming, we will 
+        column is not converted. As converting to date is time consuming, we will
         perform the test on {sample_size}.
     ''')
 
@@ -29,9 +29,10 @@ class ActDateConverter(Actionable):
             },
             'sample_size': {
                 'default': 200,
-                'description': 'Convert date is time consuming. \
-                    To save time, date detection will be done on a random sample. \
-                    Set to -1 to detect on the whole dataset'
+                'description': textwrap.dedent('''\
+                    Convert date is time consuming. To save time, date
+                    detection will be done on a random sample.
+                    Set to -1 to detect on the whole dataset.''')
             }
         }
 

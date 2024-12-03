@@ -18,8 +18,7 @@ class StepWrapper(Step):
 
     @classmethod
     def from_pipeline(cls, pipeline: dict, *args, **kwargs) -> Step:
-        """
-        Load any kind of StepWrapper. The step must have exactly one child
+        """Load any kind of StepWrapper. The step must have exactly one child
 
         :param dict pipeline: JSON pipeline.
         :raise TypeError: invalid pipeline: StepWrapper must have exactly one child.
@@ -59,7 +58,7 @@ class StepWrapper(Step):
 
     def json_pipeline(self) -> dict:
         return {
-            **Step.json_pipeline(self),
+            **super().json_pipeline(),
             'children': [self.step.json_pipeline()]
         }
 

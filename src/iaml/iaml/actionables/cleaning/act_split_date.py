@@ -14,10 +14,10 @@ class ActSplitDate(Actionable):
     """[STEP] Transform string column to date"""
 
     name: str = 'Create Date Elements columns'
-    descrption: str = textwrap.dedent('''\
+    _descrption: str = textwrap.dedent('''\
         Transform a textual date column into multiple columns
         for day, month, year, hour, minute, second''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         Transform a textual date column into multiple columns for 
         day, month, year, hour, minute, second.
         Exemple:

@@ -13,12 +13,12 @@ from ...decorators.all import is_step
 class ActFeatureAgglomeration(Actionable):
     """[STEP] Apply FeatureAgglomeration for dimensionality reduction"""
     name: str = "FeatureAgglomeration"
-    description: str = "Process FeatureAgglomeration algorithm over a set of features"
-    description_long: str = textwrap.dedent('''\
+    _description: str = "Process FeatureAgglomeration algorithm over a set of features"
+    _description_long: str = textwrap.dedent('''\
         FeatureAgglomeration is a clustering-based dimensionality reduction technique.
-        It groups similar features together using a hierarchical clustering approach, 
-        which can help reduce the dimensionality of the dataset while preserving 
-        essential information. This technique is unsupervised, meaning it does not 
+        It groups similar features together using a hierarchical clustering approach,
+        which can help reduce the dimensionality of the dataset while preserving
+        essential information. This technique is unsupervised, meaning it does not
         require labeled data, as it identifies clusters of features based on similarity.
     ''')
 

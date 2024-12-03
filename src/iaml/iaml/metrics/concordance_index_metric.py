@@ -8,11 +8,11 @@ from ..metric import Metric
 class ConcordanceIndexMetric(Metric):
     """[METRIC] Concordance Index for Survival Models using sksurv"""
     name: str = 'Concordance Index'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         The Concordance Index for Survival Models using sksurv measures how well 
         a survival model predicts the order of events, such as survival times. A higher index 
         value indicates better predictive accuracy.''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         The Concordance Index for Survival Models using sksurv evaluates the performance of 
         survival models by assessing their ability to correctly rank individuals based on their 
         survival times. It focuses on the relative timing of events rather than exact predictions. 

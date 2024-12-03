@@ -13,11 +13,11 @@ class ActTrimSpaces(Actionable):
     [STEP] Trim spaces on each columns
     """
     name = "Trim columns spaces"
-    description = textwrap.dedent('''\
+    _description = textwrap.dedent('''\
         This step trim spaces on each columns.
         It helps preventing errors on the dataset when casting columns with spaces''')
-    description_long = textwrap.dedent('''\
-        In datasets, columns with spaces can be an issue. 
+    _description_long = textwrap.dedent('''\
+        In datasets, columns with spaces can be an issue.
         This step remove spaces in front and back of columns values.
         This ensures that columns can be casted correctly with having spaces throwing
         an error.''')

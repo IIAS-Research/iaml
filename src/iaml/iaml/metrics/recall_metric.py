@@ -11,11 +11,11 @@ class RecallMetric(Metric):
     """[METRIC] Recall"""
 
     name: str = "Recall"
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         Recall measures the ability of a model to identify all relevant positive cases. 
         It indicates the proportion of true positive results among all actual positive cases.
         ''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         Recall evaluates how many actual positive cases were correctly predicted by the model. 
         It is calculated as the number of true positives divided by the total number of actual positives 
         (true positives + false negatives). For example, if there are 100 actual positive cases and the model 

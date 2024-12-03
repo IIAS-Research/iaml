@@ -16,12 +16,12 @@ class ActRandomOverSampling(Actionable):
     [STEP] Random Over Sampling
     """
     name = "Random Over Sampling"
-    description = textwrap.dedent('''\
-        RandomOverSampler is a tool that helps balance data by copying 
+    _description = textwrap.dedent('''\
+        RandomOverSampler is a tool that helps balance data by copying
         and pasting samples from minority groups.''')
-    description_long = textwrap.dedent('''\
-        RandomOverSampler is a technique used to handle imbalanced datasets. 
-        It works by randomly copying and pasting samples from the minority class 
+    _description_long = textwrap.dedent('''\
+        RandomOverSampler is a technique used to handle imbalanced datasets.
+        It works by randomly copying and pasting samples from the minority class
         (the group with fewer samples) until it has the same number of samples as the majority class.
         This helps ensure that all classes are represented equally in the dataset.''')
     
@@ -34,7 +34,7 @@ class ActRandomOverSampling(Actionable):
                 'Nicola Torelli'
             ],
             'doi': 'https://doi.org/10.1007/s10618-012-0295-5',
-            'publisher': 'Data Mining and Knowledge Discovery Vol.28 page 92--122' 
+            'publisher': 'Data Mining and Knowledge Discovery Vol.28 page 92--122'
         }
     ]
     def __init__(self):

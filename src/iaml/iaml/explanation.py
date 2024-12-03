@@ -231,7 +231,7 @@ class Explanation:
 
         return textwrap.dedent(f"""
             ## {self.step.name}
-            **{self.description}**
+            **{self.step.description}**
 
             {self.to_markdown_conf()}
             {self.to_markdown_processings(processings_limit)}

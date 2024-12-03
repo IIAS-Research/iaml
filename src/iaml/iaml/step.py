@@ -39,10 +39,10 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     refs: list[dict[str, Any]] = None
     """List of references for this step."""
 
-    __description: str = ''
+    _description: str = ''
     """Short description of the step."""
 
-    __description_long: str = ''
+    _description_long: str = ''
     """Longer description of the step."""
 
     can_be_disabled: bool = True
@@ -317,7 +317,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         :return: List of steps.
         """
         return [self]
-
     #####################
     ## CACHING RESULTS ##
     #####################
@@ -393,7 +392,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             'description': self.description,
             'enable': self.enable,
             'can_be_disable': self.can_be_disabled,
-            'configuration': self.configuration,
+            'configuration': {
+                k: { **v, 'description': v['description'].replace('\n', ' ') }
+                for k, v in self.configuration.items() },
             'children': []
         }
 
@@ -437,7 +438,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         :param Candidate, optional candidate: Candidate on which the priority should be evaluated.
         :return: Value between 0 and 1.
         """
-        return 0
+        return 0.0
 
     #######
     # RUN #
@@ -474,23 +475,26 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     ####################
     ### Explanations ###
     ####################
+    def __format_description(self, description: str) -> str:
+        return description \
+            .replace('\n', ' ') \
+            .format(**{ k: v['value'] for k, v in self.configuration.items() })
+
     @property
     def description(self) -> str:
         """Formats the description of a step with its configuration.
 
         :return: Formatted description.
         """
-        conf = { k: v['value'] for k, v in self.configuration.items() }
+        return self.__format_description(self._description)
 
-        return self.__description.format(**conf)
-
-    @description.setter
-    def description(self, value: str) -> None:
-        """Sets the description of this step.
-
-        :param str value: New description.
+    @property
+    def description_long(self) -> str:
+        """Formats the longer description of a step with its configuration.
+        
+        :return: Formatted description.
         """
-        self.__description = value
+        return self.__format_description(self._description_long)
 
     def explain(self, processings_limit: int = 20) -> str:
         """Renders the explanation as Markdown text.

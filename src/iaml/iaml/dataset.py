@@ -50,7 +50,12 @@ class Dataset:
 
         self.__X: pd.DataFrame = X.drop(columns=groups_columns)
         """The dataframe used in this Dataset object without groups columns if provided"""
-
+        
+        # Make sure y is either None or single column
+        if isinstance(y, pd.DataFrame):
+            if len(y.columns) > 1:
+                raise ValueError("IAML only handle single column labels !")
+            y = y.values.ravel()
         self.__y: np.array = np.array(y)
         """The dataframe target"""
 

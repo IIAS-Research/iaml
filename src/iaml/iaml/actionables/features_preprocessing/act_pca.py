@@ -16,13 +16,13 @@ class ActPCA(Actionable):
     [STEP] Reduce dimensions with PCA
     """
     name = "PCA"
-    description = "Apply PCA for dimensionality reduction over a list of columns"
-    description_long = textwrap.dedent('''\
-        PCA, or Principal Component Analysis, is a dimensionality reduction technique. 
-        It transforms the data into a set of linearly uncorrelated components, capturing 
-        the maximum variance in the data with each successive component. 
-        This method is unsupervised, meaning it does not require labeled data, 
-        and is particularly useful for simplifying datasets while retaining 
+    _description = "Apply PCA for dimensionality reduction over a list of columns"
+    _description_long = textwrap.dedent('''\
+        PCA, or Principal Component Analysis, is a dimensionality reduction technique.
+        It transforms the data into a set of linearly uncorrelated components, capturing
+        the maximum variance in the data with each successive component.
+        This method is unsupervised, meaning it does not require labeled data,
+        and is particularly useful for simplifying datasets while retaining
         as much of the underlying structure as possible.
     ''')
     
