@@ -45,8 +45,7 @@ class ActPCA(Actionable):
         self.preprocessor = PCA(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X)
         return self
-    
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply PCA
 

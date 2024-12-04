@@ -1,6 +1,4 @@
-"""
-[STEP] Decompose features with SelectPercentile
-"""
+"""[STEP] Decompose features with SelectPercentile"""
 
 import textwrap
 import pandas as pd
@@ -12,19 +10,18 @@ from ...decorators.all import is_step
 
 @is_step('features_preprocessing')
 class ActSelectPercentile(Actionable):
-    """
-    [STEP] Preprocess with SelectPercentile
-    """
-    name= "Preprocess with SelectPercentile"
-    _description = textwrap.dedent('''\
+    """[STEP] Preprocess with SelectPercentile"""
+
+    name: str = "Preprocess with SelectPercentile"
+    _description: str  = textwrap.dedent('''\
         SelectPercentile is a tool that helps choose important features from a
         group of variables by looking at how well each one predicts the outcome.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str  = textwrap.dedent('''\
         SelectPercentile is a feature selection technique used in machine
         learning. It works by assigning scores to each feature based on how well it predicts
         the outcome. Then, it selects only the top-scoring percentage of features.
         This helps reduce the number of variables while keeping the most informative ones.''')
-    
+
     def __init__(self):
         self.configuration = {
             'score_func': {
@@ -39,50 +36,30 @@ class ActSelectPercentile(Actionable):
                 'range': [1.0, 99.0]
                 }
             }
-        
-        self.optimizable = True
-        self.preprocessor = None
 
+        self.optimizable: bool = True
+        self.preprocessor: bool = None
 
     def fit(self, dataset: Dataset) -> Actionable:
-        """
-        Fit Features agglomerations
 
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
-        
         self.preprocessor = SelectPercentile(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply SelectPercentile
+        """Apply SelectPercentile
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame X: DataFrame to transform
+        :return: Transformed dataset
         """
         return pd.DataFrame(self.preprocessor.transform(X))
-        
+
     def suitable(self, dataset: Dataset) -> bool:
         # Negative values are not supported
         return not((dataset.X < 0).any().any()) \
             and dataset.type_of_target in \
                 ['binary', 'multiclass',  'multilabel-indicator']
-    
-    def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5

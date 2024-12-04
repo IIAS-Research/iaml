@@ -1,6 +1,4 @@
-"""
-[STEP] Decompose features with RBFSampler
-"""
+"""[STEP] Decompose features with RBFSampler"""
 from typing import Any
 import textwrap
 import pandas as pd
@@ -51,41 +49,22 @@ class ActRBFSampler(Actionable):
             }
         }
 
-        self.optimizable = True
-        self.preprocessor = None
+        self.optimizable: bool = True
+        self.preprocessor: bool = None
 
     def fit(self, dataset: Dataset) -> Actionable:
-        """
-        Fit Features agglomerations
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
-
         self.preprocessor = RBFSampler(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X)
 
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply RBFSampler
+        """Apply RBFSampler
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
-
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame X: DataFrame to transform
+        :return: Transformed dataset
         """
         return pd.DataFrame(self.preprocessor.transform(X))
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5

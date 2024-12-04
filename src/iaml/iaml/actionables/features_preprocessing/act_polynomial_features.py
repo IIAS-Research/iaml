@@ -1,6 +1,4 @@
-"""
-[STEP] Decompose features with PolynomialFeatures
-"""
+"""[STEP] Decompose features with PolynomialFeatures"""
 import textwrap
 import pandas as pd
 from sklearn.preprocessing import PolynomialFeatures
@@ -12,6 +10,7 @@ from ...decorators.all import is_step
 @is_step('features_preprocessing')
 class ActPolynomialFeatures(Actionable):
     """[STEP] Preprocess with PolynomialFeatures"""
+
     name: str = "Preprocess with PolynomialFeatures"
     _description: str = textwrap.dedent('''\
         PolynomialFeatures creates new features by combining existing
@@ -43,8 +42,8 @@ class ActPolynomialFeatures(Actionable):
                 }
             }
 
-        self.optimizable = True
-        self.preprocessor = None
+        self.optimizable: bool = True
+        self.preprocessor: bool = None
 
     def fit(self, dataset: Dataset) -> Actionable:
 

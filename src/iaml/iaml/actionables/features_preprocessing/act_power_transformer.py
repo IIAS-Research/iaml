@@ -1,6 +1,4 @@
-"""
-[STEP] Preprocess with PowerTransformer
-"""
+"""[STEP] Preprocess with PowerTransformer"""
 from typing import Any
 import textwrap
 import pandas as pd
@@ -64,8 +62,8 @@ class ActPowerTransformer(Actionable):
                 }
             }
 
-        self.optimizable = True
-        self.preprocessor = None
+        self.optimizable: bool = True
+        self.preprocessor: bool = None
 
     def fit(self, dataset: Dataset) -> Actionable:
         self.preprocessor = PowerTransformer(**self.passthrough_parameters())
@@ -87,6 +85,5 @@ class ActPowerTransformer(Actionable):
 
     def suitable(self, dataset: Dataset) -> bool:
         if self.get_config('method') == 'box-cox' and not(dataset.X < 0).any().any():
-            self.configure('method', 'yeo-johnson')
-
+            self.configure('method', 'yeo-johnson') # pylint: disable=too-many-function-args
         return True

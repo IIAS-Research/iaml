@@ -1,6 +1,4 @@
-"""
-[STEP] Remove High Correlated Column
-"""
+"""[STEP] Remove High Correlated Column"""
 import textwrap
 import numpy as np
 import pandas as pd
@@ -11,12 +9,11 @@ from ...decorators.all import is_step
 
 @is_step('features_selection')
 class ActRemoveHighCorrelatedColumn(Actionable):
-    """
-    [STEP] Remove High Correlated Columns
-    """
-    name = "Remove High Correlated Columns"
-    _description = "Remove columns that have high correlation with each other"
-    _description_long = textwrap.dedent('''\
+    """[STEP] Remove High Correlated Columns"""
+
+    name: str = "Remove High Correlated Columns"
+    _description: str = "Remove columns that have high correlation with each other"
+    _description_long: str = textwrap.dedent('''\
         Removing high correlated columns helps to reduce multicollinearity
         in a dataset. When two columns are highly correlated, they contain
         redundant information. By removing one of them, we can simplify the
