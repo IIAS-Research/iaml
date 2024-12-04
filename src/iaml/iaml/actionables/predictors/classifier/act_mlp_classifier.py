@@ -15,16 +15,16 @@ class ActMLPClassifier(Predictor):
     [STEP] MLP Classifier
     """
     name = "MLP Classifier"
-    description = textwrap.dedent('''\
-        MLPClassifier is a machine learning algorithm that models the relationship 
-        between input features and a categorical output variable using a 
+    _description = textwrap.dedent('''\
+        MLPClassifier is a machine learning algorithm that models the relationship
+        between input features and a categorical output variable using a
         multi-layer perceptron neural network.''')
-    description_long = textwrap.dedent('''\
-        MLPClassifier is a type of neural network algorithm that models the 
-        relationship between input features and a categorical output variable using a 
-        multi-layer perceptron (MLP) neural network. 
-        It works by transforming the input features through one or more hidden layers with 
-        non-linear activation functions, and then using a final layer with a softmax activation 
+    _description_long = textwrap.dedent('''\
+        MLPClassifier is a type of neural network algorithm that models the
+        relationship between input features and a categorical output variable using a
+        multi-layer perceptron (MLP) neural network.
+        It works by transforming the input features through one or more hidden layers with
+        non-linear activation functions, and then using a final layer with a softmax activation
         function to output a probability distribution over the classes.''')
     refs = [
         {
@@ -58,8 +58,10 @@ class ActMLPClassifier(Predictor):
                 'categorical': ["tanh", "relu"]
                 },
             'alpha': {
-                'description': 'Strength of the L2 regularization term. The L2 regularization \
-                    term is divided by the sample size when added to the loss.',
+                'description': textwrap.dedent('''\
+                    Strength of the L2 regularization term. The L2
+                    regularization term is divided by the sample size when
+                    added to the loss.'''),
                 'default': 0.0001,
                 'range': [1e-07, 0.1]
                 },

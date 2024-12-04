@@ -10,11 +10,11 @@ class RocAucMetric(Metric):
     """[METRIC] ROC AUC"""
 
     name: str = "ROC AUC"
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         The ROC AUC metric (Receiver Operating Characteristic - Area Under the Curve) is a tool used to evaluate 
         the performance of a classification model. It measures the model's ability to distinguish between two 
         classes by indicating the proportion of true positives relative to false positives.''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         The ROC AUC metric is a method that helps assess the effectiveness of a classification model. 
         The ROC curve illustrates the model's performance at various decision thresholds, with a curve closer 
         to the top-left corner indicating better performance. The AUC, or "area under the curve," provides 

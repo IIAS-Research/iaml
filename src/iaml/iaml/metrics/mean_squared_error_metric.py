@@ -10,11 +10,11 @@ class MeanSquaredErrorMetric(Metric):
     """[METRIC] Mean Squared Error"""
 
     name: str = 'Mean Squared Error'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         Mean Squared Error (MSE) measures the average of the squares of the errors 
         in predictions. It emphasizes larger errors, making it useful for assessing prediction accuracy.
         ''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         Mean Squared Error (MSE) evaluates a model's accuracy by calculating the average of the squared 
         differences between predicted and actual values. It gives more weight to larger errors, which is important in healthcare.
         To calculate MSE, you square each error, sum them, and divide by the total number of predictions. 

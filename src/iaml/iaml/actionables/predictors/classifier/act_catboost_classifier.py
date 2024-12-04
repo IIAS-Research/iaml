@@ -15,11 +15,11 @@ class ActCatBoost(Predictor):
     [STEP]  CatBoost Classifier
     """
     name = "CatBoost Classifier"
-    description = textwrap.dedent('''\
-        CatBoostClassifier is a powerful tool that helps computers make accurate 
+    _description = textwrap.dedent('''\
+        CatBoostClassifier is a powerful tool that helps computers make accurate
         predictions by learning from both positive and negative examples simultaneously.''')
-    description_long = textwrap.dedent('''\
-        CatBoostClassifier is a gradient boosting algorithm specifically 
+    _description_long = textwrap.dedent('''\
+        CatBoostClassifier is a gradient boosting algorithm specifically
         designed for classification tasks.''')
     refs = [
         {
@@ -103,13 +103,13 @@ class ActCatBoost(Predictor):
         else:
             self.configuration['eval_metric']['categorical'] = ['AUC', 'Accuracy']
             self.configuration['loss_function']['categorical'] = [
-                                                                'MultiClass', 
+                                                                'MultiClass',
                                                                 'MultiClassOneVsAll'
                                                                 ]
         self.check_configuration()    
         
         
-        self.model = CatBoostClassifier(verbose=0, **self.passthrough_parameters()) 
+        self.model = CatBoostClassifier(verbose=0, **self.passthrough_parameters())
         
         self.label_encoder.fit(dataset.y)
         self.model.fit(dataset.X, self.label_encoder.transform(dataset.y))

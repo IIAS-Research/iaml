@@ -345,7 +345,6 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         """
         # Run and Stack results
         if not self.key:
-            # print("# RUN nk # ", self.step, self.step.resume_configuration())
             return self.step.run(candidate), []
 
         while not self.done():

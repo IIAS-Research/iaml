@@ -15,10 +15,10 @@ class ActTfIdf(Actionable):
     """[STEP] Vectorize textual columns with TF-IDF"""
 
     name: str = 'TF-IDF'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         Process "Term Frequency / Inversed Document Frequency"
         over a list of textual columns''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         This algorithm is used to evaluate the importance of a word inside
         it\'s corpus. A word with a lot of repetitions will
         have more importance than a word appearing once.''')

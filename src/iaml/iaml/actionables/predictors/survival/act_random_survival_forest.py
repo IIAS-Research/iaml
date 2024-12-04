@@ -16,20 +16,20 @@ class ActRandomSurvivalForest(Predictor):
     [STEP] Random Survival Forest
     """
     name = "RandomSurvivalForest"
-    description = textwrap.dedent('''\
-        RandomSurvivalForest is a survival analysis algorithm 
-        that uses an ensemble of decision trees to estimate the survival function 
-        over time. It is a non-parametric model that handles complex relationships 
+    _description = textwrap.dedent('''\
+        RandomSurvivalForest is a survival analysis algorithm
+        that uses an ensemble of decision trees to estimate the survival function
+        over time. It is a non-parametric model that handles complex relationships
         and can model non-linear effects of covariates.''')
-    description_long = textwrap.dedent('''\
-        RandomSurvivalForest is a flexible survival analysis 
-        algorithm that uses an ensemble of decision trees to predict the time 
-        until an event occurs. It extends the concept of random forests to survival 
-        data, handling complex interactions and non-linear relationships between 
-        input features (covariates). Unlike parametric models such as the Cox 
-        Proportional Hazards model, RandomSurvivalForest makes fewer assumptions 
-        about the underlying data, making it useful in cases where the assumptions 
-        of proportional hazards do not hold. It also efficiently manages censored 
+    _description_long = textwrap.dedent('''\
+        RandomSurvivalForest is a flexible survival analysis
+        algorithm that uses an ensemble of decision trees to predict the time
+        until an event occurs. It extends the concept of random forests to survival
+        data, handling complex interactions and non-linear relationships between
+        input features (covariates). Unlike parametric models such as the Cox
+        Proportional Hazards model, RandomSurvivalForest makes fewer assumptions
+        about the underlying data, making it useful in cases where the assumptions
+        of proportional hazards do not hold. It also efficiently manages censored
         data, where the event may not have occurred during the study period.''')
     
     refs = [
@@ -68,8 +68,9 @@ class ActRandomSurvivalForest(Predictor):
                 'passthrough': False
             },
             'max_depth': {
-                'description': 'The maximum depth of the tree. If None, then nodes are expanded \
-                    until all leaves are pure.',
+                'description': textwrap.dedent('''\
+                    The maximum depth of the tree. If None, then nodes are
+                    expanded until all leaves are pure.'''),
                 'default': None,
                 'range': [1, None],
                 'passthrough': False

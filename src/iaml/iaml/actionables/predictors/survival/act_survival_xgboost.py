@@ -16,20 +16,20 @@ class ActGradientBoostingSurvivalAnalysis(Predictor):
     [STEP] Gradient Boosting Survival Analysis
     """
     name = "GradientBoostingSurvivalAnalysis"
-    description = textwrap.dedent('''\
-        GradientBoostingSurvivalAnalysis is a survival analysis algorithm 
-        that uses gradient boosting to estimate the survival function over time. 
-        It is an ensemble-based model that minimizes a differentiable loss function 
+    _description = textwrap.dedent('''\
+        GradientBoostingSurvivalAnalysis is a survival analysis algorithm
+        that uses gradient boosting to estimate the survival function over time.
+        It is an ensemble-based model that minimizes a differentiable loss function
         to predict the time until an event occurs.''')
-    description_long = textwrap.dedent('''\
-        GradientBoostingSurvivalAnalysis is a flexible survival 
-        analysis algorithm that uses gradient boosting to predict the time until 
-        an event occurs. It extends the concept of boosting to survival data, 
-        handling complex interactions and non-linear relationships between input 
-        features (covariates). Unlike parametric models such as the Cox Proportional 
-        Hazards model, GradientBoostingSurvivalAnalysis makes fewer assumptions 
-        about the underlying data, making it useful in cases where the assumptions 
-        of proportional hazards do not hold. It also efficiently manages censored 
+    _description_long = textwrap.dedent('''\
+        GradientBoostingSurvivalAnalysis is a flexible survival
+        analysis algorithm that uses gradient boosting to predict the time until
+        an event occurs. It extends the concept of boosting to survival data,
+        handling complex interactions and non-linear relationships between input
+        features (covariates). Unlike parametric models such as the Cox Proportional
+        Hazards model, GradientBoostingSurvivalAnalysis makes fewer assumptions
+        about the underlying data, making it useful in cases where the assumptions
+        of proportional hazards do not hold. It also efficiently manages censored
         data, where the event may not have occurred during the study period.''')
     
     refs = [

@@ -15,12 +15,12 @@ class ActGaussianProcessRegressor(Predictor):
     [STEP] Gaussian Process Regressor
     """
     name = "Gaussian Process Regressor"
-    description = textwrap.dedent('''\
-        GaussianProcessRegressor is a machine learning algorithm 
+    _description = textwrap.dedent('''\
+        GaussianProcessRegressor is a machine learning algorithm
         that makes predictions for regression tasks using Gaussian processes.''')
-    description_long = textwrap.dedent('''\
-        GaussianProcessRegressor is a powerful algorithm for regression tasks, 
-        especially when the relationship between the input features and the output variable is 
+    _description_long = textwrap.dedent('''\
+        GaussianProcessRegressor is a powerful algorithm for regression tasks,
+        especially when the relationship between the input features and the output variable is
         complex and non-linear, and when uncertainty estimates are important.''')
     refs = [
         {

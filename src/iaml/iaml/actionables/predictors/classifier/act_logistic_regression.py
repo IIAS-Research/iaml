@@ -14,15 +14,15 @@ class ActLogisticRegression(Predictor):
     [STEP]  Logistic Regression Classifier
     """
     name = "Logistic Regression Classifier"
-    description = textwrap.dedent('''\
-        LogisticRegression is a machine learning algorithm 
-        that models the relationship between input features and a binary 
+    _description = textwrap.dedent('''\
+        LogisticRegression is a machine learning algorithm
+        that models the relationship between input features and a binary
         output variable using a logistic function.''')
-    description_long = textwrap.dedent('''\
-        LogisticRegression is a type of classification algorithm that models 
-        the relationship between input features and a binary 
-        output variable using a logistic function. 
-        It works by finding the best-fitting line or hyperplane that 
+    _description_long = textwrap.dedent('''\
+        LogisticRegression is a type of classification algorithm that models
+        the relationship between input features and a binary
+        output variable using a logistic function.
+        It works by finding the best-fitting line or hyperplane that
         maximizes the likelihood of the observed output variables given the input features.''')
     refs = [
         {
@@ -67,8 +67,9 @@ class ActLogisticRegression(Predictor):
                 'range': [1e-05, 0.1]
             },
             'class_weight': {
-                'description': 'The “balanced” mode uses the values of y to \
-                    automatically adjust weights inversely proportional to class frequencies ',
+                'description': textwrap.dedent('''\
+                    The “balanced” mode uses the values of y to automatically
+                    adjust weights inversely proportional to class frequencies.'''),
                 'default': None,
                 'categorical': [None, 'balanced']
             }

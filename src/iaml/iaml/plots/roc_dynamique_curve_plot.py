@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class ROCDynamiqueCurvePlot(MetricPlot):
     """[PLOT] ROC Dynamique Curve for Survival Models using sksurv"""
-    
+
     title: str = "ROC Dynamique Curve"
     description: str = textwrap.dedent("""
         This curve represents how well a predictive survival model is able to distinguish 
@@ -31,7 +31,7 @@ class ROCDynamiqueCurvePlot(MetricPlot):
         A high AUC value means the model is very good at predicting outcomes, while a lower 
         value suggests it struggles to differentiate between high-risk and low-risk patients as 
         time goes on.""")
-    
+
     @capture
     def _compute(
         self,
@@ -42,14 +42,14 @@ class ROCDynamiqueCurvePlot(MetricPlot):
         y_train: pd.Series = None,
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
-        
+
         # Compute time-dependent ROC AUC for each time point
         _, event_times = zip(*y)
-        
+
         max_val = max(event_times) - 0.1 if isinstance(max(event_times), float) \
             else max(event_times)
         times = np.arange(min(event_times), max_val)
-        
+
 
         # Calculate cumulative dynamic AUC (time-dependent ROC AUC)
         aucs, _ = cumulative_dynamic_auc(
@@ -58,7 +58,7 @@ class ROCDynamiqueCurvePlot(MetricPlot):
             estimator.predict(X),
             times
         )
-        
+
         # Plot the time-dependent ROC AUC over time
         plt.plot(times, aucs)
         plt.xlabel("Temps de suivi")
@@ -72,7 +72,7 @@ class ROCDynamiqueCurvePlot(MetricPlot):
         plt.close()
 
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:
         return type_of_target in ['survival']

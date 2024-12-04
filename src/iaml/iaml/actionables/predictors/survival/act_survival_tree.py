@@ -16,14 +16,14 @@ class ActSurvivalTree(Predictor):
     [STEP] SurvivalTree
     """
     name = "SurvivalTree"
-    description = textwrap.dedent('''\
-        SurvivalTree is a decision tree algorithm tailored for survival analysis. 
-        It constructs a tree structure based on the log-rank test, where each split 
-        is designed to separate data by survival times. The method handles censored data 
-        and outputs risk scores, cumulative hazard functions, and survival functions 
+    _description = textwrap.dedent('''\
+        SurvivalTree is a decision tree algorithm tailored for survival analysis.
+        It constructs a tree structure based on the log-rank test, where each split
+        is designed to separate data by survival times. The method handles censored data
+        and outputs risk scores, cumulative hazard functions, and survival functions
         based on the tree's terminal nodes.''')
-    description_long = textwrap.dedent('''\
-        SurvivalTree builds a decision tree based on survival data, using the 
+    _description_long = textwrap.dedent('''\
+        SurvivalTree builds a decision tree based on survival data, using the
         log-rank splitting rule to determine the best splits. It is a non-parametric model that
         is particularly suited for survival analysis with right-censored data. The model provides
         both cumulative hazard and survival functions at each terminal node, making it useful for
@@ -46,8 +46,9 @@ class ActSurvivalTree(Predictor):
     def __init__(self):
         self.configuration: dict = {
             'splitter': {
-                'description': 'The strategy used to split at each node. \
-                    Supported: "best", "random".',
+                'description': textwrap.dedent('''\
+                    The strategy used to split at each node. Supported: "best",
+                    "random".'''),
                 'default': 'best',
                 'options': ['best', 'random'],
                 'passthrough': False
@@ -71,15 +72,17 @@ class ActSurvivalTree(Predictor):
                 'passthrough': False
             },
             'min_weight_fraction_leaf': {
-                'description': 'The minimum weighted fraction of the input samples \
-                    required to be at a leaf node.',
+                'description': textwrap.dedent('''\
+                    The minimum weighted fraction of the input samples required
+                    to be at a leaf node.'''),
                 'default': 0.0,
                 'range': [0.0, 0.5],
                 'passthrough': False
             },
             'max_features': {
-                'description': 'The number of features to consider when looking for the best \
-                    split.',
+                'description': textwrap.dedent('''\
+                    The number of features to consider when looking for the
+                    best split.'''),
                 'default': None,
                 'options': [None, 'auto', 'sqrt', 'log2'],
                 'passthrough': False

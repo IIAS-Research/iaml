@@ -34,7 +34,7 @@ class ClassificationReportPlot(MetricPlot):
         """)
 
     @capture
-    def _compute(
+    def _compute( # pylint: disable=too-many-positional-arguments
         self,
         estimator: 'IAMLPipeline',
         X: pd.DataFrame,

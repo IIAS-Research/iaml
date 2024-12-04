@@ -14,16 +14,16 @@ class ActKNNRegressor(Predictor):
     [STEP] KNN
     """
     name = "KNN"
-    description = textwrap.dedent('''\
-        KNeighborsRegressor is a machine learning algorithm that makes 
+    _description = textwrap.dedent('''\
+        KNeighborsRegressor is a machine learning algorithm that makes
         predictions for regression tasks using k-nearest neighbors.''')
-    description_long = textwrap.dedent('''\
-        KNeighborsRegressor is a type of instance-based learning 
-        algorithm that makes predictions for new input features based on the values of 
-        the k-nearest neighbors in the training data. It works by calculating the distance 
-        between the new input features and all the training data, and then selecting 
-        the k-nearest neighbors based on that distance. The output variable for the new 
-        input features is then calculated as the average of the output variables 
+    _description_long = textwrap.dedent('''\
+        KNeighborsRegressor is a type of instance-based learning
+        algorithm that makes predictions for new input features based on the values of
+        the k-nearest neighbors in the training data. It works by calculating the distance
+        between the new input features and all the training data, and then selecting
+        the k-nearest neighbors based on that distance. The output variable for the new
+        input features is then calculated as the average of the output variables
         for the k-nearest neighbors.''')
     
     refs = [

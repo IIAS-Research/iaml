@@ -10,11 +10,11 @@ from ..dataset import Dataset
 class CumulativeDynamicAUCMetric(Metric):
     """[METRIC] Cumulative Dynamic AUC for Survival Models"""
     name: str = 'Cumulative AUC'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         The Cumulative Dynamic AUC (Area Under the Curve) for Survival Models measures the accuracy of a survival model 
         in predicting the probability of an event over time. A higher AUC indicates better predictive performance.
         ''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         The Cumulative Dynamic AUC for Survival Models evaluates how well a model predicts 
         the likelihood of an event, such as death or disease, at various time points. Unlike traditional AUC, which 
         assesses binary classification, the cumulative dynamic AUC accounts for time-dependent predictions 

@@ -1,4 +1,5 @@
 """[STEP] Fill missing values with mean"""
+import textwrap
 import pandas as pd
 import numpy as np
 from ...actionable import Actionable
@@ -13,12 +14,25 @@ class ActMeanColumn(Actionable):
     """[STEP] Fill missing values with the mean."""
 
     name: str = 'Fill missing values'
-    description: str = 'Fill missing values with the mean of non-missing values.'
-    description_long: str = description
+    _description: str = textwrap.dedent('''\
+        Fill missing values with the mean of non-missing values
+        when the proportion of empty rows is lower than {empty_threshold:.0%}.''')
+    _description_long: str = textwrap.dedent('''\
+        Fill a column missings values with the mean of the columns
+        when the proportion of empty rows is lower than {empty_threshold}.
+        Work only for numerical columns.''')
     can_be_disabled: bool = False
 
     def __init__(self):
         self.columns: list[str] = None
+        self.configuration:dict = {
+            'empty_threshold': {
+                'description': textwrap.dedent('''\
+                    Column with less or equal proportion of empty row will be
+                    fill with mean value. 1 will always fill void values'''),
+                'default': 1 # TODO Review when adding new kind of imputer
+            }
+        }
 
     def fit(self, dataset: Dataset) -> Actionable:
         self.columns = []

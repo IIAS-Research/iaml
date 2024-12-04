@@ -15,17 +15,17 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
     [STEP] Quadratic Discriminant Analysis
     """
     name = "Quadratic Discriminant Analysis"
-    description = textwrap.dedent('''\
-        QuadraticDiscriminantAnalysis is a machine learning algorithm 
-        that models the relationship between input features and a categorical 
+    _description = textwrap.dedent('''\
+        QuadraticDiscriminantAnalysis is a machine learning algorithm
+        that models the relationship between input features and a categorical
         output variable using a quadratic function.''')
-    description_long = textwrap.dedent('''\
-        QuadraticDiscriminantAnalysis is a type of discriminant analysis 
-        algorithm that models the relationship between input features and a categorical output 
-        variable using a quadratic function. 
-        It works by estimating the covariance matrices of the classes and using 
-        them to calculate the probability density functions for each class. 
-        The class with the highest probability density function is then used to make 
+    _description_long = textwrap.dedent('''\
+        QuadraticDiscriminantAnalysis is a type of discriminant analysis
+        algorithm that models the relationship between input features and a categorical output
+        variable using a quadratic function.
+        It works by estimating the covariance matrices of the classes and using
+        them to calculate the probability density functions for each class.
+        The class with the highest probability density function is then used to make
         the prediction.''')
     refs = [
         {
@@ -35,7 +35,6 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
             'authors': ['Thomas M. Cover'],
             'doi': 'https://doi.org/10.1109/PGEC.1965.264137',
             'publisher': 'IEEE Transactions on Electronic Computers Vol.EC-14 page 326--334'
-            
         },
         {
             'year': 2016,
@@ -46,50 +45,27 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
                 Vol.3, No.2 page 145--180'
         }
     ]
+
     def __init__(self):
         self.configuration = {
             'reg_param': {
                 'description': 'Regularizes the per-class covariance estimates by transforming S2',
                 'default': 0.0001,
                 'range': [0.0001, 1.0]
-                }
             }
+        }
         self.model: QuadraticDiscriminantAnalysis = None
-    
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Quadratic Discriminant Analysis on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = QuadraticDiscriminantAnalysis(**self.passthrough_parameters())
-        
+
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    
+
     def suitable(self, dataset: Dataset) -> bool:
-        """
-        Does this step suitable for this candidate
-
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
         return dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
-    
-    def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
+            ['binary', 'multiclass', 'multilabel-indicator']
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

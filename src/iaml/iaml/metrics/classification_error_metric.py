@@ -9,12 +9,12 @@ from ..metric import Metric
 class ClassificationErrorMetric(Metric):
     """[METRIC] Classification Error"""
     name: str = 'Classification Error'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         Classification Error measures a model's performance 
         by calculating the proportion of incorrect predictions. It is defined as 1 
         minus the Balanced Accuracy Score, making it useful for imbalanced datasets.
         ''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         Classification Error evaluates how well a predictive model performs 
         by measuring the proportion of incorrect predictions. It is calculated as 1 minus the Balanced 
         Accuracy Score, which gives equal importance to both positive and negative classes. 

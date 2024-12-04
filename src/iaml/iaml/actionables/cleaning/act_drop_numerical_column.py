@@ -13,20 +13,21 @@ class ActDropNumericalColumn(Actionable):
     """[STEP] Drop Numerical Column"""
 
     name: str = 'Remove numerical columns'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         Remove numerical columns where the proportion of empty rows
         in the dataset is higher than {empty_threshold}.''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         Remove numerical columns from the dataset where the proportion of empty
-        rows in the dataset is higher than {empty_threshold}. This ensure that every columns will
+        rows in the dataset is higher than {empty_threshold:.0%}. This ensure that every columns will
         be relevant for the model to train on.''')
 
     def __init__(self):
         self.columns_to_drop: list[str] = None
         self.configuration = {
             'empty_threshold': {
-                'description': 'Column with more or equal proportion of empty row \
-                    will dropped. 1 will drop all columns',
+                'description': textwrap.dedent('''\
+                    Column with more or equal proportion of empty row will
+                    dropped. 1 will drop all columns'''),
                 'default': 0.5
             }
         }

@@ -11,6 +11,7 @@
 from copy import deepcopy
 import time
 import math
+import textwrap
 import multiprocessing
 from typing import Iterator, TYPE_CHECKING
 import pandas as pd
@@ -158,35 +159,29 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """
         self.first_step = MetaOrderedStep(tag="Main") # First step -> Contain all pipeline's stages
 
-        self.first_step.add_step(
-            MetaStep(
-                tag='features_precleaning',
-                name='Features Precleaning',
-                description='Convert complexe columns into several. \
-                    It will help model to extract informations from your data.'))
-        self.first_step.add_step(
-            MetaStep(
-                tag='cleaning',
-                name='Features Cleaning',
-                description='Improve data quality, handle missing values, \
-                    extract information from textual columns, etc.'))
-        self.first_step.add_step(
-            MetaStep(
-                tag='features_selection',
-                name='Features Selection',
-                description='Decrease number of column to improve models performances'))
-        self.first_step.add_step(
-            MetaExplorerStep(
-                tag='normalize',
-                name='Features Normalization',
-                description='Normalize data to help model to give the same interest \
-                    to each column'))
-        self.first_step.add_step(
-            MetaStep(
-                tag='imbalance',
-                name='Handle Imbalanced Data',
-                description='Balance the dataset to ensure the model does not favor the majority \
-                    class over the minority class'))
+        self.first_step.add_step(MetaStep(tag='features_precleaning',
+            name='Features Precleaning',
+            description=textwrap.dedent('''\
+                Converts complex columns into several columns, which helps the
+                model to extract information from your data.''')))
+        self.first_step.add_step(MetaStep(tag='cleaning',
+            name='Features Cleaning',
+            description=textwrap.dedent('''\
+                Improve data quality, handle missing values, extract
+                information from textual columns, etc.''')))
+        self.first_step.add_step(MetaStep(tag='features_selection',
+            name='Features Selection',
+            description=textwrap.dedent('''\
+                Decrease number of column to improve the models' performance.''')))
+        self.first_step.add_step(MetaExplorerStep(tag='normalize',
+            name='Features Normalization',
+            description=textwrap.dedent('''\
+                Normalize data to help model to give the same interest to each column''')))
+        self.first_step.add_step(MetaStep(tag='imbalance',
+            name='Handle Imbalanced Data',
+            description=textwrap.dedent('''\
+                Balance the dataset to ensure the model does not favor the
+                majority class over the minority class''')))
 
         if self.preprocessor:
             self.first_step.add_step(
@@ -197,8 +192,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 MetaPartialExplorerStep(
                     tag='features_preprocessing',
                     name="Dimensionality Reduction (optional)",
-                    description="Reduce the complexity of data and make computations \
-                        more efficient"))
+                    description=textwrap.dedent('''\
+                        Reduce the complexity of data and make computations
+                        more efficient'''))
+            )
 
         learning_tag = 'fast_predictor' if fast else 'predictor'
 
@@ -253,10 +250,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         Logger().verbose = verbose # Set logger verbose
 
-        if isinstance(y, pd.DataFrame):
-            y = y.values.ravel()
-
-        dataset: Dataset = Dataset(
+        dataset:Dataset = Dataset(
             deepcopy(X),
             deepcopy(y),
             groups=groups,
@@ -312,7 +306,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         generation_sample_size: int = 200,
         n_candidates: int = 1,
         callback: callable = None,
-        verbose=1,
+        verbose: int = 1,
+        log_callback: callable = None,
         **kwargs) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
         
@@ -330,6 +325,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param callable, optional callback: Method call after each big step of training.
         :param int, optional verbose: Verbosity level. Default to 1.
         :param dict, optional \\**kwargs: Additional parameters.
+        :param callable, optional log_callback: Callback for logger.
         :return: List of all the generated candidates. Sorted by performances.
         """
         # Avoid [] dangerous default value in the signature
@@ -339,6 +335,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.check_pipeline() # Raise error if the pipeline is not valid
 
         Logger().verbose = verbose # Set logger verbose
+        if log_callback is not None:
+            Logger().set_callback(log_callback)
 
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
@@ -347,10 +345,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return self.max_duration - (time.monotonic() - start_time)
 
         try:
-            if isinstance(y, pd.DataFrame):
-                y = y.values.ravel()
-
-            dataset: Dataset = Dataset(
+            dataset:Dataset = Dataset(
                 deepcopy(X),
                 deepcopy(y),
                 groups=groups,
@@ -367,7 +362,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 self.init_candidate.add_metric(metric)
 
             # Generate candidates
-            candidates = self.__run(self.init_candidate, *args, **kwargs)
+            candidates = self.__run(self.init_candidate)
 
             # Remove candidate without predictor
             candidates = [candidate for candidate in candidates \
@@ -428,9 +423,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             return fit_candidates
         except TerminatedError:
-            print('IAML was terminated.')
+            Logger().info('IAML was terminated.')
         except Exception as ex:
-            print("Error during fit")
+            Logger().error('Error during fit')
             raise ex
         finally:
             self.executor.shutdown()

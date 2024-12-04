@@ -11,12 +11,12 @@ from ..dataset import Dataset
 class BrierScoreMetric(Metric):
     """[METRIC] Brier Score for Survival Models"""
     name: str = 'Brier Score'
-    description: str = textwrap.dedent('''\
+    _description: str = textwrap.dedent('''\
         The Brier Score is a metric used to assess the accuracy of survival models, 
         which predict the likelihood of an event, such as death or disease, occurring within a specific timeframe. 
         It compares the model's probability predictions to actual outcomes, with lower scores indicating 
         better model performance.''')
-    description_long: str = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         The Brier Score measures how well survival models predict the probability of an event happening, like survival over time. 
         It calculates the average squared differences between predicted probabilities and actual outcomes 
         (1 for an event occurring, 0 for it not occurring). The score ranges from 0 to 1, where 0 means perfect 

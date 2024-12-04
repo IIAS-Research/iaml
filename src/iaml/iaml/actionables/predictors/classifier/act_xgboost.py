@@ -14,13 +14,13 @@ class ActXGBoost(Predictor):
     [STEP]  XGBoost
     """
     name = "XGBoost"
-    description = textwrap.dedent('''\
-        GradientBoostingClassifier is a machine learning algorithm that models the 
-        relationship between input features and a categorical output variable using 
+    _description = textwrap.dedent('''\
+        GradientBoostingClassifier is a machine learning algorithm that models the
+        relationship between input features and a categorical output variable using
         gradient boosting.''')
-    description_long = textwrap.dedent('''\
-        It works by building multiple decision trees in a sequential manner, 
-        where each tree is trained to correct the errors made by the previous tree. 
+    _description_long = textwrap.dedent('''\
+        It works by building multiple decision trees in a sequential manner,
+        where each tree is trained to correct the errors made by the previous tree.
         The final prediction is made by summing the predictions of all the trees.''')
     
     refs = [
@@ -71,8 +71,9 @@ class ActXGBoost(Predictor):
                 'range': [0.0000001, 5]
             },
             'subsample': {
-                'description': 'he fraction of samples to be used for fitting \
-                    the individual base learners.',
+                'description': textwrap.dedent('''\
+                    The fraction of samples to be used for fitting the
+                    individual base learners.'''),
                 'default': 1.0,
                 'range': [0.1, 1.0]
             },
