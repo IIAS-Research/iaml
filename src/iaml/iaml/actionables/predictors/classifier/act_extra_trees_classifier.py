@@ -1,30 +1,28 @@
-"""
-[STEP] Extra Trees Classifier
-"""
+"""[STEP] Extra Trees Classifier"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import ExtraTreesClassifier
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'classifier')
 class ActExtraTreesClassifier(Predictor):
-    """
-    [STEP] Extra Trees Classifier
-    """
-    name = "Extra Trees Classifier"
-    _description = textwrap.dedent('''\
+    """[STEP] Extra Trees Classifier"""
+
+    name: str = "Extra Trees Classifier"
+    _description: str = textwrap.dedent('''\
         ExtraTreesClassifier is a machine learning algorithm that makes
         predictions by combining the outputs of multiple decision trees.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         ExtraTreesClassifier is a type of ensemble learning algorithm that
         belongs to the family of decision tree-based models. It works by building multiple
         decision trees, where each tree is trained on a random subset of the input feature
         and a random subset of the training data. At prediction time, the algorithm aggregates
         the outputs of all the decision trees to make a final prediction.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2006,
             'name': 'Extremely randomized trees',
@@ -81,31 +79,15 @@ class ActExtraTreesClassifier(Predictor):
             }
         }
         self.model: ExtraTreesClassifier = None
-        
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Extra Trees Classifier on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = ExtraTreesClassifier(**self.passthrough_parameters())
-        
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5 # neutral
