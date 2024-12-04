@@ -1,7 +1,6 @@
-"""
-[STEP]  AdaBoost Regressor
-"""
+"""[STEP]  AdaBoost Regressor"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import AdaBoostRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
@@ -10,18 +9,17 @@ from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActAdaBoostRegressor(Predictor):
-    """
-    [STEP]  AdaBoost Regressor
-    """
-    name = "AdaBoost Regressor"
-    _description = textwrap.dedent('''\
+    """[STEP]  AdaBoost Regressor"""
+
+    name: str = "AdaBoost Regressor"
+    _description: str = textwrap.dedent('''\
         AdaBoostRegressor is a powerful tool that combines many simple models
         to make accurate predictions for continuous outcomes.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         AdaBoostRegressor is an ensemble learning technique
         used for regression problems. It works by combining multiple weak learners
         (simple models) into a strong learner.''')
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 1995,
             'name': (
@@ -61,30 +59,16 @@ class ActAdaBoostRegressor(Predictor):
             }
         }
         self.model: AdaBoostRegressor = None
-        
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit AdaBoost Regressor on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = AdaBoostRegressor(**self.passthrough_parameters())
-        
+
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'continuous'
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5 # neutral

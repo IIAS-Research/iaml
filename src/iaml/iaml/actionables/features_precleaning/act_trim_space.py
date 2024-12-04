@@ -40,14 +40,10 @@ class ActTrimSpaces(Actionable):
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        Apply the dropping of rows with at least 40% empty columns.
+        """Apply the dropping of rows with at least 40% empty columns.
         
-        Args:
-            X (pd.DataFrame): The dataframe to clean.
-
-        Returns:
-            pd.DataFrame: The cleaned dataframe.
+        :param pd.DataFrame X: The dataframe to clean.
+        :return: The cleaned dataframe.
         """
         if self.get_config('left_trim'):
             X = X.rename(columns=lambda x: x.lstrip())
@@ -63,24 +59,9 @@ class ActTrimSpaces(Actionable):
         return X
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Assign priority to this action. Higher means higher priority.
-        
-        Returns:
-            float: Priority score.
-        """
         return 1.5
 
     def suitable(self, dataset: Dataset) -> bool:
-        """
-        Checks if this step is suitable for the dataset.
-        
-        Args:
-            dataset (Dataset): The dataset to check suitability for.
-
-        Returns:
-            bool: True if the has spaces in header or values.
-        """
         cond = (
             dataset.X.apply(
                 lambda x: (

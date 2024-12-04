@@ -20,21 +20,8 @@ class MetaOrderedStep(MetaStep):
     # Run steps self ordered by "priorize" function
     @runner
     def run(self, candidate:'Candidate') -> 'Candidate':
-        """
-        Run all step in order. Candidate will be transform successively by Steps
-
-        Parameters
-        ----------
-        candidate : Candidate
-            Candidate to transform
-
-        Returns
-        -------
-        Candidate
-            transformed data
-        """
         current_candidate: Candidate = candidate
         for step in self.steps:
             current_candidate = step.run(current_candidate)
-        
+
         return current_candidate

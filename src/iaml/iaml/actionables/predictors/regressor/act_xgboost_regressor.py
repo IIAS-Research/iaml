@@ -1,7 +1,6 @@
-"""
-[STEP]  XGBoost Regressor
-"""
+"""[STEP]  XGBoost Regressor"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import GradientBoostingRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
@@ -10,20 +9,18 @@ from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActXGBoostRegressor(Predictor):
-    """
-    [STEP]  XGBoost Regressor
-    """
-    name = "XGBoost Regressor"
-    _description = textwrap.dedent('''\
+    """[STEP]  XGBoost Regressor"""
+
+    name: str = "XGBoost Regressor"
+    _description: str = textwrap.dedent('''\
         GradientBoostingRegressor is a machine learning algorithm that models the
         relationship between input features and a continuous output variable using
         gradient boosting.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         It works by building multiple decision trees in a sequential manner,
         where each tree is trained to correct the errors made by the previous tree. The final
         prediction is made by summing the predictions of all the trees.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'name': 'Stochastic Gradient Boosting',
             'year': 1999,
@@ -102,30 +99,14 @@ class ActXGBoostRegressor(Predictor):
             }
         }
         self.model: GradientBoostingRegressor = None
-        
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit XgBoost regressor on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = GradientBoostingRegressor(**self.passthrough_parameters())
-        
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5 # neutral
