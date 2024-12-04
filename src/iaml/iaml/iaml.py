@@ -1,4 +1,13 @@
-"""IAML is an autoML tools focusing on Medical Dataset with explainable models"""
+"""
+    IAML (Incremental AutoML), a high-performance and modular,
+    open-source Python framework. Designed to mimics the behavior
+    of a data scientist in creating pipelines and leverages an 
+    optimization process inspired by genetic algorithm for
+    efficient pipeline construction and hyperparameter tuning.
+    
+    The framework incorporates explainability features, such as 
+    SHAP-based insights, to enhance model transparency and trustworthiness.
+"""
 from copy import deepcopy
 import time
 import math
