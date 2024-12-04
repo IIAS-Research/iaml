@@ -1,29 +1,26 @@
-"""
-[STEP] Extra Survival Trees
-"""
+"""[STEP] Extra Survival Trees"""
 import textwrap
+from typing import Any
 from sksurv.ensemble import ExtraSurvivalTrees
-import numpy as np
 
 from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'survival')
 class ActExtraSurvivalTrees(Predictor):
-    """
-    [STEP] Extra Survival Trees
-    """
-    name = "ExtraSurvivalTrees"
-    _description = textwrap.dedent('''\
+    """[STEP] Extra Survival Trees"""
+    name: str = "ExtraSurvivalTrees"
+    _description: str = textwrap.dedent('''\
         ExtraSurvivalTrees is an ensemble learning method for survival
         analysis based on extremely randomized trees. It fits multiple decision trees
         to the data, where each tree is built from a random subset of features and
         splits are selected randomly. This method provides more variance reduction
         and robustness, especially useful when dealing with high-dimensional or
         sparse data.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         ExtraSurvivalTrees is a variant of ensemble learning for survival
         analysis that uses extremely randomized trees. In this approach, multiple trees
         are grown by selecting random subsets of features and splitting points.
@@ -32,8 +29,7 @@ class ActExtraSurvivalTrees(Predictor):
         datasets that contain complex, non-linear relationships between features.
         ExtraSurvivalTrees handles censored data and can provide interpretable models
         for survival time predictions.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2006,
             'name': 'Extremely Randomized Trees',
@@ -45,7 +41,7 @@ class ActExtraSurvivalTrees(Predictor):
             'doi': 'https://doi.org/10.1007/s10994-006-6226-1',
             'publisher': 'Machine Learning, 63(1), 3-42'
         }
-        ]
+    ]
 
     def __init__(self):
         self.configuration: dict = {
@@ -89,33 +85,17 @@ class ActExtraSurvivalTrees(Predictor):
             }
         }
         self.model: ExtraSurvivalTrees = None
-        
+
     def fit(self, dataset: Dataset):  # pylint: disable=unused-argument
-        """
-        Fit Extra Survival Trees on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = ExtraSurvivalTrees(
             **self.passthrough_parameters()
         )
-        
         X, y = dataset.to_survival()
         self.model.fit(X, y)
-        
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'survival'
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5  # neutral

@@ -68,13 +68,11 @@ class Cache(metaclass=MetaSingleton):
         return None
 
     def add_to_cache(self, fingerprint: str, dataset: pd.DataFrame, output: Any) -> None:
-        """
-        Add something to cache
+        """Add something to cache
         
-        Parameters
-        ----------
-        fingerprint : str
-            fingerprint of the newly added object to cache
+        :param str fingerprint: fingerprint of the newly added object to cache.
+        :param pd.DataFrame dataset: Dataset that'll be cached.
+        :param Any output: __description__
         
         """
         if self.__disable:

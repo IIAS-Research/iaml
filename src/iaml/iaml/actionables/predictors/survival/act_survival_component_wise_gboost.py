@@ -1,29 +1,27 @@
-"""
-[STEP] Componentwise Gradient Boosting Survival Analysis
-"""
+"""[STEP] Componentwise Gradient Boosting Survival Analysis"""
 import textwrap
+from typing import Any
 from sksurv.ensemble import ComponentwiseGradientBoostingSurvivalAnalysis
-import numpy as np
 
 from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'survival')
 class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
-    """
-    [STEP] Componentwise Gradient Boosting Survival Analysis
-    """
-    name = "ComponentwiseGradientBoostingSurvivalAnalysis"
-    _description = textwrap.dedent('''\
+    """[STEP] Componentwise Gradient Boosting Survival Analysis"""
+
+    name: str = "ComponentwiseGradientBoostingSurvivalAnalysis"
+    _description: str = textwrap.dedent('''\
         ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis
         algorithm that uses gradient boosting with componentwise (stagewise) updates
         to estimate the survival function over time. This variant of boosting allows
         the model to fit individual components (features) in a stagewise manner,
         making it a more interpretable approach for feature selection and model
         refinement in survival analysis.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         ComponentwiseGradientBoostingSurvivalAnalysis extends
         gradient boosting for survival analysis by applying updates one component
         (feature) at a time. This approach improves the model's ability to handle
@@ -33,8 +31,7 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
         as each boosting iteration focuses on fitting individual covariates
         rather than combining all features at once. This method is particularly
         suited for feature selection and handling censored survival data.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2006,
             'name': 'Survival ensembles',
@@ -84,33 +81,17 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
             }
         }
         self.model: ComponentwiseGradientBoostingSurvivalAnalysis = None
-        
+
     def fit(self, dataset: Dataset):  # pylint: disable=unused-argument
-        """
-        Fit Componentwise Gradient Boosting Survival Analysis on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = ComponentwiseGradientBoostingSurvivalAnalysis(
             **self.passthrough_parameters()
         )
-        
         X, y = dataset.to_survival()
         self.model.fit(X, y)
-        
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'survival'
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5  # neutral

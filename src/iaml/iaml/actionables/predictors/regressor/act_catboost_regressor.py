@@ -2,6 +2,7 @@
 [STEP]  CatBoost Regressor
 """
 import textwrap
+from typing import Any
 from catboost import CatBoostRegressor
 from sklearn.preprocessing import LabelEncoder
 from ....predictor import Predictor
@@ -11,19 +12,17 @@ from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActCatBoostRegressor(Predictor):
-    """
-    [STEP]  CatBoost Regressor
-    """
-    name = "CatBoost Regressor"
-    _description = textwrap.dedent('''\
+    """[STEP]  CatBoost Regressor"""
+
+    name: str = "CatBoost Regressor"
+    _description: str = textwrap.dedent('''\
         CatBoostRegressor is a powerful tool that helps computers make accurate
         predictions for continuous outcomes by learning from both positive and
         negative examples simultaneously.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         CatBoostRegressor is a gradient boosting algorithm specifically
         designed for regression tasks.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2017,
             'name': 'CatBoost: unbiased boosting with categorical features',
@@ -38,6 +37,7 @@ class ActCatBoostRegressor(Predictor):
             'publisher': 'Advances in Neural Information Processing Systems 31 (NeurIPS 2018)'
         }
     ]
+
     def __init__(self):
         self.configuration = {
             'iterations': {
@@ -103,30 +103,14 @@ class ActCatBoostRegressor(Predictor):
         self.label_encoder: LabelEncoder = LabelEncoder()
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit XgBoost regressor on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = CatBoostRegressor(verbose=0, **self.passthrough_parameters())
-        
-        
+
         self.label_encoder.fit(dataset.y)
         self.model.fit(dataset.X, self.label_encoder.transform(dataset.y))
-        
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5 # neutral
