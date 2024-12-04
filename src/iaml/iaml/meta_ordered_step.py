@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from .candidate import Candidate
 
 #
-# Inherit from MetaStep but will execute all steps without priorize() method. 
+# Inherit from MetaStep but will execute all steps without priorize() method.
 #
 @is_step('meta')
 class MetaOrderedStep(MetaStep):

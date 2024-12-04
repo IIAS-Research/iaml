@@ -33,7 +33,7 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         self,
         estimator: 'IAMLPipeline',
         X: pd.DataFrame,
-        y: pd.Series, 
+        y: pd.Series,
         X_train: pd.DataFrame = None,
         y_train: pd.Series = None,
         **kwargs) -> MetricPlot:
@@ -66,7 +66,7 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         plt.close()
 
         return self
-    
+
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:
         return type_of_target in ['survival']

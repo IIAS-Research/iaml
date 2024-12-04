@@ -86,7 +86,7 @@ class ActExtraTreesRegressor(Predictor):
         self.model.fit(dataset.X, dataset.y)
 
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'continuous'
 
