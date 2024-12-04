@@ -1,6 +1,6 @@
 """Last step of a pipeline -> can make prediction"""
 from abc import ABCMeta, abstractmethod
-from typing import Any, List
+from typing import Any
 import dataclasses
 import pandas as pd
 from sklearn.base import BaseEstimator
