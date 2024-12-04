@@ -1,24 +1,23 @@
 
-"""
-[STEP]  KNN
-"""
+"""[STEP]  KNN"""
 import textwrap
+from typing import Any
 from sklearn.neighbors import KNeighborsClassifier
 from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'classifier')
 class ActKNN(Predictor):
-    """
-    [STEP]  KNN
-    """
-    name = "KNN"
-    _description = textwrap.dedent('''\
+    """[STEP]  KNN"""
+
+    name: str = "KNN"
+    _description: str = textwrap.dedent('''\
         KNeighborsClassifier is a machine learning algorithm that makes
         predictions for classification tasks using k-nearest neighbors.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         KNeighborsClassifier is a type of instance-based learning
         algorithm that makes predictions for new input features based on the labels
         of the k-nearest neighbors in the training data.
@@ -26,8 +25,7 @@ class ActKNN(Predictor):
         the training data, and then selecting the k-nearest neighbors based on that distance
         The label for the new input features is then determined by a majority vote of the
         labels of the k-nearest neighbors.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 1951,
             'name': 'Discriminatory Analysis, Nonparametric Discrimination: Consistency Properties',
@@ -49,6 +47,7 @@ class ActKNN(Predictor):
             'publisher': 'IEEE Transactions on Information Theory. 13: page 21--27'
         }
     ]
+
     def __init__(self):
         self.configuration = {
             'metric': {
@@ -69,34 +68,18 @@ class ActKNN(Predictor):
             }
         }
         self.model: KNeighborsClassifier = None
-        
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Knn classifier on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = KNeighborsClassifier(
             n_neighbors = min(self.get_config('n_neighbors'), dataset.X.shape[0]),
             **self.passthrough_parameters()
             )
-        
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
     def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
         return 0.5 # neutral

@@ -1,7 +1,6 @@
-"""
-[STEP]  Logistic Regression Classifier
-"""
+"""[STEP]  Logistic Regression Classifier"""
 import textwrap
+from typing import Any
 from sklearn.linear_model import LogisticRegression
 from ....predictor import Predictor
 from ....dataset import Dataset
@@ -10,21 +9,20 @@ from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'fast_predictor', 'classifier', 'baseline_predictor')
 class ActLogisticRegression(Predictor):
-    """
-    [STEP]  Logistic Regression Classifier
-    """
-    name = "Logistic Regression Classifier"
-    _description = textwrap.dedent('''\
+    """[STEP]  Logistic Regression Classifier"""
+
+    name: str = "Logistic Regression Classifier"
+    _description: str = textwrap.dedent('''\
         LogisticRegression is a machine learning algorithm
         that models the relationship between input features and a binary
         output variable using a logistic function.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         LogisticRegression is a type of classification algorithm that models
         the relationship between input features and a binary
         output variable using a logistic function.
         It works by finding the best-fitting line or hyperplane that
         maximizes the likelihood of the observed output variables given the input features.''')
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 1944,
             'name': 'Application of the Logistic Function to Bio-Essay',
@@ -50,6 +48,7 @@ class ActLogisticRegression(Predictor):
             )
         }
     ]
+
     def __init__(self):
         self.configuration = {
             'random_state': {
@@ -75,33 +74,18 @@ class ActLogisticRegression(Predictor):
             }
         }
         self.model: LogisticRegression = None
-    
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Logistic Regression on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = LogisticRegression(
             **self.passthrough_parameters()
             )
-        
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
+
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
-    
-    def priorize(self, candidate: Candidate = None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

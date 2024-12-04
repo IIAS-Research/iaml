@@ -1,6 +1,4 @@
-"""
-[PLOT] Parent of all others Plot, implement the default behavior
-"""
+"""[PLOT] Parent of all others Plot, implement the default behavior"""
 import base64
 from functools import wraps
 from typing import Any, TYPE_CHECKING

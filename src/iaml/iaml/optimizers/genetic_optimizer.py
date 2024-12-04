@@ -16,7 +16,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
     :param float, optional initial_modifier: Maximum modification value possible. Default to 5.
     :param int, optional duration: Used to compute a mutation ratio. Default to None.
     """
-    
+
     def __init__(
         self,
         nb_candidate: int = 35,
@@ -50,7 +50,6 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
 
         self.start_time: float = time.time()
         """Starting time of the first generation"""
-    
 
     @property
     def __mutate_ratio(self) -> float:
@@ -58,7 +57,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         if not self.duration:
             return 0.5
         return min(0.9, max(0.1, ((time.time() - self.start_time) / self.duration)))
-        
+
     @property
     def finished(self) -> bool:
         """Is optimization finished ?
@@ -121,7 +120,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
                 continue # Nothing to optimize
 
             # For each configuration key, we'll choose a random value
-            for key in self.__config_keys(current_step): 
+            for key in self.__config_keys(current_step):
 
                 # 1/2 chance to let the default value unchanged
                 if bool(random.getrandbits(1)):
@@ -143,11 +142,11 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
                             new_value = config['value']*change_rate
                         else:
                             # Positive -> Multiply value by something between 1
-                            # and the max modificator in configuration 
+                            # and the max modificator in configuration
                             change_rate = random.uniform(1, self.initial_modifier)
                             new_value = config['value']*change_rate
 
-                    # Value was a int ? Round it to keep it int 
+                    # Value was a int ? Round it to keep it int
                     if is_int:
                         new_value = round(new_value)
 
@@ -158,7 +157,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
                 # Categorical value, choose randomly one of them
                 elif 'categorical' in config.keys():
                     new_value = random.choice(config['categorical'])
-                elif isinstance(config['value'], bool): 
+                elif isinstance(config['value'], bool):
                     # Bool value, choose randomly beetwen True and False
                     new_value = random.choice([True, False])
                 else: # Other value ? Just keep it
@@ -211,7 +210,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
             if new_value == random_item['value']: # To be sure there is a mutation
                 new_value += random.choice([-1, 1])
 
-            if not self.__valide_config(random_item, new_value): 
+            if not self.__valide_config(random_item, new_value):
                 # Cancel if the new value is not correct.
                 new_value = random_item['value']
 
