@@ -1,7 +1,7 @@
 """Singleton used by IAML to dispatch cores to process"""
+import multiprocess
 import multiprocess.managers
 import psutil
-import multiprocess
 from .meta_singleton import MetaSingleton
 from .logger import Logger
 
