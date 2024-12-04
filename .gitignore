@@ -28,7 +28,10 @@ __pycache__
 
 # Documentation
 public/
+docs/
 
+# Build
+dist/
 # Environments
 .env
 .venv

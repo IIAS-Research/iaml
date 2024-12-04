@@ -32,7 +32,8 @@ dependencies = [
     "tpot>=0.12.2",
     "scikit-survival>=0.23.0",
     "psutil>=6.0.0",
-    "yellowbrick>=1.5"
+    "yellowbrick>=1.5",
+    "build>=1.2.2.post1",
 ]
 
 [project.optional-dependencies]
@@ -43,6 +44,10 @@ cudf = [
 [project.urls]
 "Homepage" = "http://docs.example.invalid/automl/main/"
 "Bug Tracker" = "https://gitlab.example.invalid/DataScience/automl/-/issues"
+
+[build-system]
+requires = ["setuptools>=59.6"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = { "iaml" = "src/iaml/iaml" }
