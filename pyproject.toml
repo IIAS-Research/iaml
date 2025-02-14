@@ -6,6 +6,7 @@ authors = [
     { name="Robin BOURACHOT", email="rbourachot@chu-reims.fr" },
     { name="Hugo RUELLET", email="hruellet@chu-reims.fr" },
 ]
+description = "Incremental AutoML package"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -16,6 +17,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Operating System :: OS Independent",
 ]
+license = { file = "LICENSE" }
 dependencies = [
     "catboost>=1.2.7",
     "gensim>=4.3.3",
@@ -33,7 +35,6 @@ dependencies = [
     "scikit-survival>=0.23.0",
     "psutil>=6.0.0",
     "yellowbrick>=1.5",
-    "build>=1.2.2.post1",
 ]
 
 [project.optional-dependencies]
@@ -42,8 +43,8 @@ cudf = [
 ]
 
 [project.urls]
-"Homepage" = "http://docs.example.invalid/automl/main/"
-"Bug Tracker" = "https://gitlab.example.invalid/DataScience/automl/-/issues"
+"Homepage" = "https://github.com/IIAS-Research/iaml"
+"Issues" = "https://github.com/IIAS-Research/iaml/issues"
 
 [build-system]
 requires = ["setuptools>=59.6"]
@@ -58,7 +59,9 @@ dev-dependencies = [
     "mkdocs>=1.6.1",
     "pylint>=3.2.7",
     "ipywidgets>=8.1.5",
-    "pre-commit>=3.8.0"
+    "pre-commit>=3.8.0",
+    "build>=1.2.2.post1",
+    "twine>=6.1.0",
 ]
 
 [tool.uv.sources]
