@@ -1,6 +1,6 @@
 [project]
 name = "PyIAML"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
     { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
     { name="Robin BOURACHOT", email="rbourachot@chu-reims.fr" },
