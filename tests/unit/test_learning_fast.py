@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # Include tools lib
-sys.path.append('./src/iaml')
+sys.path.append('./src')
 from iaml import *
 from iaml.explanation import Explanation
 
@@ -45,7 +45,7 @@ class TestLearningFast(unittest.TestCase):
         """
         Test : Fast regression on a CSV file
         """
-        df = self.load_and_sample('./src/perf_logger/tests_data/life_expectancy.csv')
+        df = self.load_and_sample('./tests/data/life_expectancy.csv')
         y = df['label']
         X = df.drop(columns=['label'])
             
@@ -56,7 +56,7 @@ class TestLearningFast(unittest.TestCase):
         """
         Test : Fast classification on a CSV file
         """
-        df = self.load_and_sample('./src/perf_logger/tests_data/fertility.csv')
+        df = self.load_and_sample('./tests/data/titanic.csv')
         
         y = df['label']
         X = df.drop(columns=['label'])
@@ -67,7 +67,7 @@ class TestLearningFast(unittest.TestCase):
         """
         Test : Fast survival on a CSV file
         """
-        df = self.load_and_sample('./src/perf_logger/tests_data/seer.csv')
+        df = self.load_and_sample('./tests/data/seer.csv')
         
         df['label'] = list(zip(df['event'], df['event_time']))
         df.drop(columns=['event', 'event_time'], inplace=True)
