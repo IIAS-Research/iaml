@@ -1,15 +1,27 @@
 version = 1
 requires-python = ">=3.10"
 resolution-markers = [
-    "python_full_version < '3.11' and platform_machine == 'aarch64'",
-    "python_full_version < '3.11' and platform_machine == 'x86_64'",
-    "python_full_version < '3.11' and platform_machine != 'aarch64' and platform_machine != 'x86_64'",
-    "python_full_version == '3.11.*' and platform_machine == 'aarch64'",
-    "python_full_version == '3.11.*' and platform_machine == 'x86_64'",
-    "python_full_version == '3.11.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64'",
-    "python_full_version >= '3.12' and platform_machine == 'aarch64'",
-    "python_full_version >= '3.12' and platform_machine == 'x86_64'",
-    "python_full_version >= '3.12' and platform_machine != 'aarch64' and platform_machine != 'x86_64'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_system == 'Darwin'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_system == 'Linux'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_system != 'Darwin' and platform_system != 'Linux'",
+    "python_full_version < '3.11' and platform_machine == 'x86_64' and platform_system == 'Darwin'",
+    "python_full_version < '3.11' and platform_machine == 'x86_64' and platform_system != 'Darwin'",
+    "python_full_version < '3.11' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and platform_system == 'Darwin'",
+    "python_full_version < '3.11' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and platform_system != 'Darwin'",
+    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and platform_system == 'Darwin'",
+    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and platform_system == 'Linux'",
+    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and platform_system != 'Darwin' and platform_system != 'Linux'",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and platform_system == 'Darwin'",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and platform_system != 'Darwin'",
+    "python_full_version == '3.11.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and platform_system == 'Darwin'",
+    "python_full_version == '3.11.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and platform_system != 'Darwin'",
+    "python_full_version >= '3.12' and platform_machine == 'aarch64' and platform_system == 'Darwin'",
+    "python_full_version >= '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux'",
+    "python_full_version >= '3.12' and platform_machine == 'aarch64' and platform_system != 'Darwin' and platform_system != 'Linux'",
+    "python_full_version >= '3.12' and platform_machine == 'x86_64' and platform_system == 'Darwin'",
+    "python_full_version >= '3.12' and platform_machine == 'x86_64' and platform_system != 'Darwin'",
+    "python_full_version >= '3.12' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and platform_system == 'Darwin'",
+    "python_full_version >= '3.12' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and platform_system != 'Darwin'",
 ]
 
 [[package]]
