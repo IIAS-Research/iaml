@@ -8,19 +8,7 @@ credentials.yml
 */data/*
 */dont_push/*
 *.log
-!autosklearn_perf.log
-!tplot_perf.log
-src/scripts/VVe__CoagIA__training_with_choices/data
-src/scripts/VVe__CoagIA__training_with_choices/saved_results
-notebooks/temp-plot.html
-*/perf_fig.png
-*/time_fig.png
-*/compare_perf_fig.png
-*/compare_perf_tplot_fig.png
-src/perf_logger/bench/*
-src/perf_logger/tests_data/dont_push/*
 catboost_info/
-rmm_log.txt
 
 # Python
 __pycache__
@@ -40,4 +28,4 @@ venv.bak/
 
 
 # Vscode
-.vscode/*
+.vscode/
