@@ -2,16 +2,13 @@
 [PLOT] Residuals Plot
 """
 import textwrap
-import io
-from typing import TYPE_CHECKING
-import pandas as pd
+
 from yellowbrick.regressor import ResidualsPlot as ybResidualsPlot
 
-from ..plot import MetricPlot, capture
-if TYPE_CHECKING:
-    from ..iaml_pipeline import IAMLPipeline
+from ..metric_plot import MetricPlot, yellowbrick_plot
 
 
+@yellowbrick_plot(ybResidualsPlot)
 class ResidualsPlot(MetricPlot):
     """[PLOT] Residuals Plot"""
 
@@ -36,25 +33,6 @@ class ResidualsPlot(MetricPlot):
         for predicting medical outcomes.
         """)
 
-    @capture
-    def _compute( # pylint: disable=too-many-positional-arguments
-        self,
-        estimator:'IAMLPipeline',
-        X: pd.DataFrame,
-        y: pd.Series,
-        X_train: pd.DataFrame = None,
-        y_train: pd.Series = None,
-        **kwargs) -> MetricPlot:
-        self._binary_image = io.BytesIO()
-
-        self.__visualizer = ybResidualsPlot(estimator, is_fitted=True)
-        if X_train is not None and y_train is not None:
-            self.__visualizer.fit(X_train, y_train)
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
-
-        return self
-
     @classmethod
-    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
+    def suitable(cls, type_of_target: str) -> bool:
         return type_of_target == 'continuous'

@@ -1,15 +1,12 @@
 """[PLOT] Classification Report Plot"""
 import textwrap
-import io
-from typing import TYPE_CHECKING
-import pandas as pd
+
 from yellowbrick.classifier import ClassificationReport
 
-from ..plot import MetricPlot, capture
-if TYPE_CHECKING:
-    from ..iaml_pipeline import IAMLPipeline
+from ..metric_plot import MetricPlot, yellowbrick_plot
 
 
+@yellowbrick_plot(ClassificationReport)
 class ClassificationReportPlot(MetricPlot):
     """[PLOT] Classification Report Plot"""
 
@@ -33,26 +30,6 @@ class ClassificationReportPlot(MetricPlot):
         aiding in model refinement and ensuring robust diagnostic predictions.
         """)
 
-    @capture
-    def _compute( # pylint: disable=too-many-positional-arguments
-        self,
-        estimator: 'IAMLPipeline',
-        X: pd.DataFrame,
-        y: pd.DataFrame,
-        X_train: pd.DataFrame = None,
-        y_train: pd.DataFrame = None,
-        **kwargs) -> MetricPlot:
-        self._binary_image = io.BytesIO()
-        self.__visualizer = ClassificationReport(estimator, is_fitted=True)
-
-        if X_train is not None and y_train is not None:
-            self.__visualizer.fit(X_train, y_train)
-
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
-
-        return self
-
     @classmethod
-    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
-        return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']

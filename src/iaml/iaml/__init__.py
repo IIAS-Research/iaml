@@ -16,8 +16,9 @@ from .actionable import Actionable
 from .candidate import Candidate
 from .dataset import Dataset
 from .data_type import DataType
+from .metric_plot import MetricPlot
 from .metric import Metric
-from .plot import Plot, MetricPlot
+from .plot import Plot
 from .cache import Cache
 from .meta_predictor import MetaPredictor
 from .void_step import VoidStep

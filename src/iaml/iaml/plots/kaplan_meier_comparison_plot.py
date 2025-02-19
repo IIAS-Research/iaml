@@ -1,6 +1,8 @@
 """
 [PLOT] Kaplan-Meier Model Comparison Survival Plot using sksurv
 """
+from __future__ import annotations
+
 import textwrap
 import io
 from typing import TYPE_CHECKING
@@ -8,7 +10,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.nonparametric import kaplan_meier_estimator
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, capture
 from ..dataset import Dataset
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
@@ -41,9 +43,9 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         """)
 
     @capture
-    def _compute( # pylint: disable=too-many-positional-arguments
+    def compute( # pylint: disable=too-many-positional-arguments
         self,
-        estimator: 'IAMLPipeline',
+        estimator: IAMLPipeline,
         X: pd.DataFrame,
         y: pd.Series,
         X_train: pd.DataFrame = None,
@@ -84,4 +86,4 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
 
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:
-        return type_of_target in ['survival']
+        return type_of_target == 'survival'

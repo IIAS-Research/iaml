@@ -1,4 +1,6 @@
 """[PLOT] ROC-AUC Plot"""
+from __future__ import annotations
+
 import textwrap
 import io
 from typing import TYPE_CHECKING
@@ -6,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, capture
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
 
@@ -51,9 +53,9 @@ class ROCAUCPlot(MetricPlot):
         """)
 
     @capture
-    def _compute(
+    def compute(
         self,
-        estimator: 'IAMLPipeline',
+        estimator: IAMLPipeline,
         X: pd.DataFrame,
         y: pd.Series,
         X_train: pd.DataFrame = None,
@@ -90,5 +92,5 @@ class ROCAUCPlot(MetricPlot):
         return self
 
     @classmethod
-    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
-        return type_of_target in ['binary']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target == 'binary'

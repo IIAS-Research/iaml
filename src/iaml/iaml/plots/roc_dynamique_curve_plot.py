@@ -1,4 +1,6 @@
 """[PLOT] ROC Dynamique Curve for Survival Models using sksurv"""
+from __future__ import annotations
+
 import textwrap
 import io
 from typing import TYPE_CHECKING
@@ -7,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.metrics import cumulative_dynamic_auc
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, capture
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
 
@@ -33,9 +35,9 @@ class ROCDynamiqueCurvePlot(MetricPlot):
         time goes on.""")
 
     @capture
-    def _compute(
+    def compute(
         self,
-        estimator: 'IAMLPipeline',
+        estimator: IAMLPipeline,
         X: pd.DataFrame,
         y: pd.Series,
         X_train: pd.DataFrame = None,
@@ -49,7 +51,6 @@ class ROCDynamiqueCurvePlot(MetricPlot):
         max_val = max(event_times) - 0.1 if isinstance(max(event_times), float) \
             else max(event_times)
         times = np.arange(min(event_times), max_val)
-
 
         # Calculate cumulative dynamic AUC (time-dependent ROC AUC)
         aucs, _ = cumulative_dynamic_auc(
@@ -75,4 +76,4 @@ class ROCDynamiqueCurvePlot(MetricPlot):
 
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:
-        return type_of_target in ['survival']
+        return type_of_target == 'survival'
