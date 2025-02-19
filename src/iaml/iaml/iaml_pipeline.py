@@ -457,11 +457,13 @@ class IAMLPipeline(Pipeline):
             raise RuntimeError('There is no model to explain.')
 
         def p(pred_data):
-            if hasattr(self, 'predict_proba'):
-                return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
+            df = pd.DataFrame(pred_data, columns=X.columns)
 
-            # Regressor does not implement predict_proba
-            return self.predict(pd.DataFrame(pred_data, columns=X.columns))
+            if hasattr(self, 'predict_proba'):
+                return self.predict_proba(df)[:, 1]
+
+            # when the regressor does not implement predict_proba
+            return self.predict(df)
 
         mask_dataset = self.original_dataset if self.original_dataset is not None \
             and not self.original_dataset.empty else X

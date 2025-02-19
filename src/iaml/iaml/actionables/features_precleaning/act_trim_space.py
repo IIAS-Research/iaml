@@ -49,13 +49,14 @@ class ActTrimSpaces(Actionable):
             X = X.rename(columns=lambda x: x.lstrip())
             for col in X.columns:
                 if isinstance(X[col].dtype, str) or is_object_dtype(X[col]):
-                    X[col] = X[col].apply(lambda x: x.lstrip() if isinstance(x, str) else x)
+                    X[col] = X[col].apply(lambda x: x.lstrip() if isinstance(x, str) else x, convert_dtype=False)
 
         if self.get_config('right_trim'):
             X = X.rename(columns=lambda x: x.rstrip())
             for col in X.columns:
                 if isinstance(X[col].dtype, str) or is_object_dtype(X[col]):
-                    X[col] = X[col].apply(lambda x: x.rstrip() if isinstance(x, str) else x)
+                    X[col] = X[col].apply(lambda x: x.rstrip() if isinstance(x, str) else x, convert_dtype=False)
+
         return X
 
     def priorize(self, candidate: Candidate = None) -> float:
