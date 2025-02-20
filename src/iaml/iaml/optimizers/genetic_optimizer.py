@@ -245,7 +245,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
 
     def __unique(self, candidates: list[Candidate]) -> list[Candidate]:
         """Get a list of unique Candidates
-        
+
         :param list[Candidate] candidates: List of Candidate.
         :return: List of unique Candidate
         """

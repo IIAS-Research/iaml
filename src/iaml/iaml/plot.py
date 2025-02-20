@@ -113,5 +113,8 @@ class Plot:
         
         :return: Markdown formatted plot.
         """
-        base64_md = f"![{self.title}](data:image/png;base64,{self.b64_image})"
-        return "\n\n".join([f"# {self.title}", self.description, base64_md])
+        return "\n\n".join([
+            f"# {self.title}",
+            self.description,
+            f"![{self.title}](data:image/png;base64,{self.b64_image})"
+        ])

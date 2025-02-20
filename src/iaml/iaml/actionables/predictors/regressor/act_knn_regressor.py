@@ -68,12 +68,14 @@ class ActKNNRegressor(Predictor):
         }
         self.model: KNeighborsRegressor = None
 
-    def fit(self, dataset: Dataset): # pylint: disable=unused-argumentate: Transformed candidate
+    def fit(self, dataset: Dataset):
         self.model = KNeighborsRegressor(
             n_neighbors = min(self.get_config('n_neighbors'), dataset.X.shape[0]),
             **self.passthrough_parameters()
-            )
+        )
+
         self.model.fit(dataset.X, dataset.y)
+
         return self
 
     def suitable(self, dataset: Dataset) -> bool:

@@ -49,6 +49,7 @@ class AccuracyMetric(Metric):
         total_samples = y.shape[0]
         ideal_count = total_samples/len(class_count)
         threshold = 0.20 * ideal_count
+
         return not any(abs(count - ideal_count) > threshold for count in class_count.values())
 
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:

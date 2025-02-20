@@ -218,17 +218,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self,
         X: pd.DataFrame,
         y: pd.DataFrame,
-        *args: tuple,
         groups: pd.DataFrame = None,
         groups_columns: list[str] = None,
         generation_sample_size: int = 200,
-        verbose: int = 1,
-        **kwargs: dict) -> Candidate:
+        verbose: int = 1) -> Candidate:
         """Run a very basic pipeline to train a model baseline 
         
         :param pd.DataFrame X: Training features 
         :param pd.DataFrame y: Training labels
-        :param tuple, optional \\*args: Additional parameters.
         :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
             Default to None.
         :param list[str], optional groups_columns: List of column names used to split data by 
@@ -236,7 +233,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param int, optional generation_sample_size: Size of the sample dataset used to generate 
             first generation of candidates (default 200).
         :param int, optional verbose: Verbosity level. Default to 1.
-        :param dict, optional \\**kwargs: Additional parameters.
         :return: Baseline candidate
         """
         # Avoid [] dangerous default value in the signature
@@ -299,7 +295,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self,
         X: pd.DataFrame,
         y: pd.DataFrame,
-        *args,
         groups: pd.DataFrame = None,
         groups_columns: list[str] = None,
         patience: int = -1,
@@ -307,13 +302,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         n_candidates: int = 1,
         callback: callable = None,
         verbose: int = 1,
-        log_callback: callable = None,
-        **kwargs) -> list[Candidate]:
+        log_callback: callable = None) -> list[Candidate]:
         """Run Pipeline to fit steps and models on X & y data. 
-        
+
         :param pd.DataFrame X: Training features 
         :param pd.DataFrame y: Training labels
-        :param tuple, optional \\*args: Additional parameters.
         :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
             Default to None.
         :param list[str], optional groups_columns: List of column names used to split data by 
@@ -324,7 +317,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param int, optional n_candidates: Number of candidates to return. Default to 1.
         :param callable, optional callback: Method call after each big step of training.
         :param int, optional verbose: Verbosity level. Default to 1.
-        :param dict, optional \\**kwargs: Additional parameters.
         :param callable, optional log_callback: Callback for logger.
         :return: List of all the generated candidates. Sorted by performances.
         """

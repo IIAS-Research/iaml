@@ -1,3 +1,4 @@
+"""[PLOT] Parent for all metrics plots."""
 from __future__ import annotations
 from typing import TYPE_CHECKING, Type
 
@@ -38,9 +39,13 @@ class MetricPlot(Plot):
 
 
 def yellowbrick_plot(yellowbrick_visualizer: Type[Visualizer]):
+    """Decorator for creating metric plots based on Yellowbrick visualizers.
+
+    :param Type[Visualizer] yellowbrick_visualizer: Base Yellowbrick visualizer.
+    """
     def decorator(cls):
         @capture
-        def compute(self, estimator, X, y, X_train = None, y_train = None, **kwargs): # pylint: disable=missing-function-docstring
+        def compute(self, estimator, X, y, X_train = None, y_train = None, **kwargs): # pylint: disable=missing-function-docstring, unused-argument
             self._binary_image = io.BytesIO() # pylint: disable=protected-access
             visualizer = yellowbrick_visualizer(estimator, is_fitted=True)
 
