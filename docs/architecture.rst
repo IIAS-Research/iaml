@@ -7,6 +7,7 @@ The architecture of IAML is designed to be modular, adaptable, and optimized for
 Learning Architecture
 =====================
 The IAML framework operates in three main stages:
+
 1. **Candidate Generation:** Initial pipelines are created based on available modules.
 2. **Candidate Evaluation:** Pipelines are evaluated for performance using cross-validation.
 3. **Candidate Optimization:** Pipelines are refined using evolutionary strategies inspired by genetic algorithms.
@@ -15,9 +16,10 @@ Each stage is modular, allowing users to customize, extend, or replace component
 
 Modular Components
 -------------------
-IAML uses a set of modular units called "Steps." Each Step represents a specific data processing action, such as data cleaning, feature engineering, or model training. These Steps are assembled into pipelines that are optimized for performance.
+IAML uses a set of modular units called "Steps". Each Step represents a specific data processing action, such as data cleaning, feature engineering, or model training. These Steps are assembled into pipelines that are optimized for performance.
 
 Key Features of a Step:
+
 - **Capability Evaluation:** Determines its suitability for the dataset.
 - **Parameter Adaptation:** Adjusts its internal parameters for the dataset.
 - **Data Action:** Performs an action, such as transformation, prediction, or resampling.

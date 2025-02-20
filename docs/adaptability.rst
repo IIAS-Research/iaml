@@ -24,15 +24,15 @@ Adding custom Steps to IAML pipelines is straightforward. Follow these steps to 
 
 1. **Inherit from the appropriate Step type:** Choose the appropriate base class, such as `Step`, `Actionable`, `MetaStep`, or `Predictor`.
 2. **Add required `@is_step(tags)` decorator:** Registers the Step in IAML and associates it with specific pipeline tags. This enables automatic inclusion of the Step in pipelines based on context.
-3. **Define a constructor (`__init__`):** Configure your Step by defining its name and parameters. Constructor must define `configuration` dictionary.
-4. **Implement the `fit(self, dataset)` method:** This method handles the fitting of steps parameters according current dataset. Must return self.
-5. **Implement one of the executions methods:**
-    - **transform**: Receive a list of sample (X) and return a transformed version of it (with the sample number of sample).
-    - **resample** : Receive a list of sample (X) and labels (y), then return resampled X and y. Warning : This kind of step is mandatory for treatment like RandomUnderSampling but as it received X and y, it must be developed carefully to avoid all biais. 
-    - **predict** : Optional if you predictor follow scikit-learn API. Predict method receive a list of samples (X) and return predicted values (y). 
+3. **Define a constructor (`__init__`):** Configure your Step by defining its name and parameters. Constructor must define ``configuration`` dictionary.
+4. **Implement the `fit(self, dataset)` method:** This method handles the fitting of steps parameters according to the current dataset. Must return self.
+5. **Implement one of the following methods:**
+    - **transform**: Receives a list of samples (X) and returns a transformed version of it (with the sample number of sample).
+    - **resample**: Receives a list of samples (X) and labels (y), then return resampled X and y. Warning: this kind of step is mandatory for processings such as RandomUnderSampling because they need to transform both X and y. However, beware of biases when transforming the labels. 
+    - **predict**: Optional if your predictor follows scikit-learn's API. This method receives a list of samples (X) and returns predicted values (y). 
 
 Example: Custom Cleaning Step
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here’s an example of an Actionable Step that fills missing values in numeric columns with the mean:
 
@@ -144,6 +144,7 @@ How Tags Enable Automation
 Tags allow IAML to automatically add Steps to appropriate pipelines. When you decorate a Step with `@is_step(tags)`, it is registered in IAML with the specified tags. Pipelines can then include the Step dynamically based on context, ensuring that custom Steps integrate seamlessly.
 
 For example:
+
 - A cleaning Step tagged with `'cleaning'` will automatically be included in pipelines where cleaning is required.
 - A learning Step tagged with `'learning'` and `'tabular'` will be added to pipelines handling tabular datasets.
 
