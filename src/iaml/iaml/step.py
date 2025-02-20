@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import sys
 import json
+import textwrap
 from hashlib import md5
 from typing import TYPE_CHECKING
 from typing import Any
@@ -497,41 +498,42 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         return self.__format_description(self._description_long)
 
     def explain(self, processings_limit: int = 20) -> str:
-        """Renders the explanation as Markdown text.
+        """Renders the step configurations as Markdown text.
 
         :param int processings_limit: Maximum number of processings to render.
-        :return str: Markdown text.
+        :return: Markdown document.
         """
-        explanations = '\n'.join([ f' - {p}' for p in self.explanations[:processings_limit] ])
-
-        if len(explanations) == 0:
-            return None
-
-        confs = '\n'.join([
-            f'| **{k}** | {v["description"]} | {v["value"]} |'
+        confs = '\n            '.join([
+            f'| **{k}** | {v["description"]} | {v["value"]} |'.replace('\n', '')
             for k, v in self.configuration.items()
         ])
 
+        processings = [ f' - {p}' for p in self.explanations[:processings_limit] ]
+        explanations = '\n            '.join(processings)
         processings_left = len(self.explanations) - processings_limit
 
-        return f"""
-## {self.name}
-**{self.description}**
+        if len(explanations) == 0 and (hasattr(self, 'transform') or hasattr(self, 'resample')):
+            return None
 
-{f'''
-### Configuration
-| Name | Description | Value |
-| ---- | ----------- | ----- |
-{confs}
-''' if len(confs) > 0 else ""}
+        markdown_conf = textwrap.dedent(f"""\
+            ### Configuration
+            | Name | Description | Value |
+            | ---- | ----------- | ----- |
+            {confs}
+            """) if len(confs) > 0 else ""
 
-{f'''
-### Processings
-{explanations}
-{f" - *and **{processings_left}** more explanations...*" if processings_left > 0 else ""}
-''' if len(explanations) > 0 else ""}
-        """
+        markdown_processings = textwrap.dedent(f'''\
+            ### Processings
+            {explanations}
+            {f" - *and **{processings_left}** more explanations...*" if processings_left > 0 else ""}
+            ''') if len(explanations) > 0 else ""
 
+        return '\n'.join([
+            f'## {self.name}',
+            f'**{self.description}**\n',                               
+            markdown_conf,
+            markdown_processings,
+        ])
 
 def same_types(a: dict, b: dict) -> bool:
     """Recursively checks whether the two provided dictionaries are the exact same.
