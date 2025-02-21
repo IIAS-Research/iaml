@@ -36,7 +36,7 @@ class ActLinearRegression(Predictor):
         return self
 
     def suitable(self, dataset: Dataset) -> bool:
-        return dataset.type_of_target in ['continuous']
+        return dataset.type_of_target == 'continuous'
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

@@ -38,7 +38,6 @@ class Plot:
     """Plot description"""
 
     def __init__(self, *_):
-        print(self, *_)
         self._binary_image: io.BytesIO = None
         """The generated plot image"""
 

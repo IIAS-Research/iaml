@@ -43,7 +43,7 @@ class AccuracyMetric(Metric):
         """Get one label (numpy.array or pd.series) and 
         return true if classes is balanced
         
-        :return: Balanced ?
+        :return: Whether the dataset is balanced.
         """
         class_count = Counter(y)
         total_samples = y.shape[0]
