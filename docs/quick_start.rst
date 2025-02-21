@@ -74,13 +74,16 @@ IAML provides tools to explain model behavior and feature importance. Here's how
     model = iaml.chosen_model
 
     # Generate a summary of the pipeline
-    model.explain()
+    model.describe_steps()
+    model.describe_metrics()
 
     # Perform detailed feature importance analysis
-    model.explain(X_test, y_test)
+    explanation = model.explain_feature_importance(X_test, y_test)
+    explanation.to_markdown_shap()
+    explanation.to_markdown_plots()
 
-    # Visualizations (e.g., SHAP plots)
-    -> TODO: How to visualize easily?
+    # Visualizations (e.g., confusion matrix)
+    model.explain_model_performance()
 
     # Get scientific references
     model.bibliography()
@@ -115,7 +118,7 @@ Below is a basic example of using IAML to solve a classification problem.
 
 .. note::
 
-    This is an example of a classification task, but IAML automatically adapts to input data. The code remains the same for regression tasks.
+    This is an example for a classification task, but IAML automatically adapts to the input data. The code remains the same for regression tasks.
 
 What's Next?
 ============

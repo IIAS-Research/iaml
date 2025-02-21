@@ -16,27 +16,27 @@ When conducting scientific research, it is crucial to ensure that the methodolog
 
 Key Features for Scientific Work
 ================================
-1. **Descriptive Statistics and Visualizations**
-    IAML provides tools to generate descriptive statistics and visualizations, enabling researchers to better understand the characteristics of their datasets. These include summary tables, histograms, and correlation matrices that can be directly included in scientific work.
+.. 1. **Descriptive Statistics and Visualizations**
+..     IAML provides tools to generate descriptive statistics and visualizations, enabling researchers to better understand the characteristics of their datasets. These include summary tables, histograms, and correlation matrices that can be directly included in scientific work.
 
-    Example:
+..     Example:
 
-    .. code-block:: python
+..     .. code-block:: python
 
-        # TODO
+..         # TODO
 
-    Visualizations such as histograms, TODO, and TODO are automatically generated to provide a clear overview of the data.
+..     Visualizations such as histograms, TODO, and TODO are automatically generated to provide a clear overview of the data.
 
-2. **Detailed Documentation of Pipelines**
+1. **Detailed Documentation of Pipelines**
     IAML generates summaries for every pipeline, documenting preprocessing steps, feature engineering techniques, and models used. This ensures that all methods are transparent and can be cited or replicated in scientific papers.
 
     Example:
 
     .. code-block:: python
 
-        model.explain()  # Summarizes the entire pipeline, including transformations and models.
+        model.describe_steps()  # Summarizes the entire pipeline, including transformations and models.
 
-3. **Comprehensive Performance Metrics**
+2. **Comprehensive Performance Metrics**
     Evaluate models with multiple metrics to provide a detailed view of performance. These metrics can be directly used in publications.
 
     Example:
@@ -49,16 +49,28 @@ Key Features for Scientific Work
         # Example output:
         # {'accuracy': 0.85, 'precision': 0.88, 'recall': 0.83, 'f1_score': 0.86}
 
-4. **Feature Importance Analysis**
+3. **Feature Importance Analysis**
     IAML integrates SHAP (SHapley Additive Explanations) to provide detailed feature importance analysis, helping you interpret your model and draw meaningful conclusions from your data.
 
     Example:
 
     .. code-block:: python
 
-        model.explain(X_test, y_test)  # Provides SHAP-based insights.
+        explanation = model.explain_feature_importance(X_test, y_test)  # Provides SHAP-based insights.
 
-5. **Model Performance Visualizations**
+        # Example output:
+        # {'Pclass': 0.09936865575659631,
+        #  'Name': 0.18412368391698725,
+        #  'Sex': 0.13135919778281502,
+        #  'Age': 0.017263125201303287,
+        #  'SibSp': 0.01746738519962855,
+        #  'Parch': 0.011230812036885408,
+        #  'Ticket': 0.02003346312480449,
+        #  'Fare': 0.008829174755618716,
+        #  'Cabin': 0.005968384526857956,
+        #  'Embarked': 0.032069830830315095}
+
+4. **Model Performance Visualizations**
     IAML automatically generates visualizations to help researchers understand model performance, strengths, and weaknesses. These include:
 
     - ROC curves for classification tasks.
@@ -69,9 +81,22 @@ Key Features for Scientific Work
 
     .. code-block:: python
 
-        TODO
+        plots = model.explain_model_performance(X_test, y_test)  # Provides SHAP-based insights.
 
-6. **Scientific Bibliography**
+        # Example output:
+        # [<iaml.plots.class_prediction_error_plot.ClassPredictionErrorPlot object at 0x7f7d884260b0>,
+        #  <iaml.plots.classification_report_plot.ClassificationReportPlot object at 0x7f7da5422380>,
+        #  <iaml.plots.confusion_matrix_plot.ConfusionMatrixPlot object at 0x7f7d7db05f30>,
+        #  <iaml.plots.rocauc_plot.ROCAUCPlot object at 0x7f7d7da0f880>,
+        #  <iaml.plots.precision_recall_curve_plot.PrecisionRecallCurvePlot object at 0x7f7d88247bb0>]
+
+        # Example usage in a Jupyter notebook:
+        from IPython.display import Image
+
+        for plot in plots:
+            display(Image(plot.image))
+
+5. **Scientific Bibliography**
     Automatically generate a bibliography of all algorithms and methods used in the pipeline, making it easier to include proper citations in your work.
 
     Example:
@@ -81,7 +106,12 @@ Key Features for Scientific Work
         print(model.bibliography())
 
         # Example output:
-        # TODO
+        # [ 1]  G. E. P. Box, D. R. Cox. An Analysis of Transformations
+        # Journal of the Royal Statistical Society: Series B (Methodological),                 Vol.26, No.2 page 211--243, https://doi.org/10.1111/j.2517-6161.1964.tb00553.x, 1964.
+        # [ 2]  In-Kwon Yeo, Richard A. Johnson. A New Family of Power Transformations to Improve Normality or Symmetry
+        # Oxford University Press, Biometrika Vol.87 No.4 page 954--959, https://doi.org/10.1093/biomet/87.4.954, 2000.
+        # [ 3]  Joseph Berkson. Application of the Logistic Function to Bio-Essay
+        # Journal of the American Statistical Association Vol. 39, No. 227, page 357--365, https://doi.org/10.2307/2280041, 1944.
 
 How to Cite IAML
 =================
