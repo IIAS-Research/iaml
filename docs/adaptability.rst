@@ -27,7 +27,7 @@ Adding custom Steps to IAML pipelines is straightforward. Follow these steps to 
 3. **Define a constructor (`__init__`):** Configure your Step by defining its name and parameters. Constructor must define ``configuration`` dictionary.
 4. **Implement the `fit(self, dataset)` method:** This method handles the fitting of steps parameters according to the current dataset. Must return self.
 5. **Implement one of the following methods:**
-    - :py:meth:`~iaml.step.Step.transform`: Receives a list of samples (X) and returns a transformed version of it (with the sample number of sample).
+    - :py:meth:`~iaml.step.Step.transform`: Receives a list of samples (X) and returns a transformed version of it (with the same number of samples).
     - :py:meth:`~iaml.step.Step.resample`: Receives a list of samples (X) and labels (y), then return resampled X and y. Warning: this kind of step is mandatory for processings such as RandomUnderSampling because they need to transform both X and y. However, beware of biases when transforming the labels. 
     - :py:meth:`~iaml.step.Step.predict`: Optional if your predictor follows scikit-learn's API. This method receives a list of samples (X) and returns predicted values (y). 
 
@@ -188,7 +188,7 @@ This example creates a balanced accuracy metric based on the one of scikit-learn
             the balanced accuracy is (70% + 90%) / 2 = 80%. This metric ensures that the model is effective 
             for all classes, making it valuable for medical decision-making.
             ''')
-        refs: list[dict[str, Any]] = [
+        refs = [
             {
                 'year': 2010,
                 'name': 'The Balanced Accuracy and Its Posterior Distribution',
