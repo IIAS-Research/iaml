@@ -99,7 +99,7 @@ Below is a basic example of using IAML to solve a classification problem.
     from sklearn.datasets import load_breast_cancer
 
     # Load dataset
-    data = load_breast_cancer()
+    data = load_breast_cancer(as_frame=True)
     X, y = data.data, data.target
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
