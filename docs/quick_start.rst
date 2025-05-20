@@ -71,22 +71,24 @@ IAML provides tools to explain model behavior and feature importance. Here's how
 
 .. code-block:: python
 
-    model = iaml.chosen_model
+    candidates = model.fit(X_train, y_train)
+
+    bestmodel = candidates[0]
 
     # Generate a summary of the pipeline
-    model.describe_steps()
-    model.describe_metrics()
+    bestmodel.describe_steps()
+    bestmodel.describe_metrics()
 
     # Perform detailed feature importance analysis
-    explanation = model.explain_feature_importance(X_test, y_test)
+    explanation = bestmodel.explain_feature_importance(X_test)
     explanation.to_markdown_shap()
     explanation.to_markdown_plots()
 
     # Visualizations (e.g., confusion matrix)
-    model.explain_model_performance()
+    bestmodel.explain_model_performance(X_test, y_test)
 
     # Get scientific references
-    model.bibliography()
+    bestmodel.bibliography()
 
 Full example
 ============
@@ -107,13 +109,14 @@ Below is a basic example of using IAML to solve a classification problem.
     model = IAML(max_duration=120)
 
     # Train the model
-    model.fit(X_train, y_train)
+    candidates = model.fit(X_train, y_train)
+    bestmodel = candidates[0]
 
     # Make predictions
-    predictions = model.predict(X_test)
+    predictions = bestmodel.predict(X_test)
 
     # Evaluate the model
-    results = model.evaluate(X_test, y_test)
+    results = bestmodel.evaluate(X_test, y_test)
     print("Performance Metrics:", results)
 
 .. note::
