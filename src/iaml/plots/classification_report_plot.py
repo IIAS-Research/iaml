@@ -1,20 +1,17 @@
-"""
-[PLOT] Classification Report Plot
-"""
+"""[PLOT] Classification Report Plot"""
 import textwrap
-import io
-import pandas as pd
+
 from yellowbrick.classifier import ClassificationReport
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, yellowbrick_plot
 
+
+@yellowbrick_plot(ClassificationReport)
 class ClassificationReportPlot(MetricPlot):
-    """
-    [PLOT] Classification Report Plot
-    """
-    
-    title = "Classification report"
-    description = textwrap.dedent("""
+    """[PLOT] Classification Report Plot"""
+
+    title: str = "Classification report"
+    description: str = textwrap.dedent("""
         The Classification Report is a visual tool to evaluate the performance of a machine learning model 
         on classification tasks, such as diagnosing medical conditions. This plot provides key metrics for 
         each class (like diseases or health conditions) that the model is trained to identify.
@@ -32,29 +29,7 @@ class ClassificationReportPlot(MetricPlot):
         Doctors and data scientists use this visualization to easily compare the model's performance on different conditions, 
         aiding in model refinement and ensuring robust diagnostic predictions.
         """)
-    
-    @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
-            **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y.
-        """
-        self._binary_image = io.BytesIO()
-        self.__visualizer = ClassificationReport(estimator, is_fitted=True)
-        
-        if X_train is not None and y_train is not None:
-            self.__visualizer.fit(X_train, y_train)
-            
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
-        
-        return self
-    
+
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
-        return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']

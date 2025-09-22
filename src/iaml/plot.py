@@ -1,57 +1,99 @@
-"""
-[PLOT] Parent of all others Plot, implement the default behavior
-"""
+"""[PLOT] Parent of all others Plot, implement the default behavior"""
+from __future__ import annotations
+
 import base64
 from functools import wraps
+from typing import Any, TYPE_CHECKING
+
+import io
 import matplotlib.pyplot as plt
 import pandas as pd
 
+if TYPE_CHECKING:
+    from .iaml_pipeline import IAMLPipeline
+
+
+def capture(func) -> Any:
+    """A decorator to capture a matplotlib plot into a BytesIO object and return it
+    as binary data instead of showing it.
+    
+    :return: binary plot data.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        ret = func(*args, **kwargs)
+        plt.close()
+        return ret
+
+    return wrapper
+
+
 class Plot:
-    """
-    [PLOT] Parent of all others Plot, implement the default behavior
-    """
-    
-    title = "Here is the plot title"
-    description = "Here is an explanation of how this plot work"
-    
-    def __init__(self):
-        self.__visualizer = None  # pylint: disable=unused-private-member
-        self._binary_image = None
-    
+    """[PLOT] Parent of all others Plot, implement the default behavior"""
+
+    title: str = "Here is the plot title"
+    """Plot title"""
+
+    description: str = "Here is an explanation of how this plot work"
+    """Plot description"""
+
+    def __init__(self, *_):
+        self._binary_image: io.BytesIO = None
+        """The generated plot image"""
+
     @property
-    def image(self):
-        """
-            Get binary representation of the plot image
+    def image(self) -> bytes:
+        """Get binary representation of the plot image
+
+        :raise AttributeError: Plot must be computed before.
+        :return: The image bytes.
         """
         if self._binary_image is not None:
             return self._binary_image.getvalue()
-        
+
         raise AttributeError("Plot must be computed before")
-    
+
     @property
-    def b64_image(self):
-        """
-            Get b64 representation of the plot image
+    def b64_image(self) -> str:
+        """Get b64 representation of the plot image
+        
+        :return: b64 string image.
         """
         return base64.b64encode(self.image).decode()
+
+    def compute(
+        self,
+        estimator: IAMLPipeline,
+        X: pd.DataFrame,
+        y: pd.Series,
+        **kwargs) -> None:
+        """Compute plot given X, y. 
+        Must be overloaded by children classes
         
-    def _compute(self, estimator:'IAMLPipeline', X:pd.DataFrame, y:pd.DataFrame, **kwargs):
-        """
-        Compute plot given X, y. 
-        Must be overwrote by children classes
+        :param IAMLPipeline estimator: The pipeline we compute the plot on.
+        :param pd.DataFrame X: The dataset we wanna compute plot on.
+        :param pd.Series y: The dataset target we wanna compute plot on.
+        :param optional \\**kwargs: Additional parameters for plotting.
         """
         raise NotImplementedError('Subclass must implement abstract method')
-    
+
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
+    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
         """
-        Does this plot is usable for a given type_of_target ?
+        Evaluates whether the plot is relevant to the type of target to
+        predict.
+
+        :param str type_of_target: Type of target to predict.
+        :return: Whether the plot is relevant.
         """
         return False
 
-    def to_json(self, data_format='binary') -> dict:
-        """
-        Convert plot into json with name, description and b64 image
+    def to_json(self, data_format: str='binary') -> dict[str, Any]:
+        """Convert plot into json with name, description and b64 image
+        
+        :param str data_format: Type of data we want. Can be 'binary' or 'b64'.
+        :raise AttributeError: Invalid data format.
+        :return: A dictonnary containing plot informations and data.
         """
         match data_format:
             case 'binary':
@@ -59,37 +101,19 @@ class Plot:
             case 'b64':
                 data = self.b64_image
             case _:
-                raise AttributeError('Invalide Data Format')
-        
+                raise AttributeError('Invalid data format')
+
         return {'title': self.title,
             'description': self.description,
             'image': data}
-        
+
     def to_markdown(self) -> str:
-        base64_md = f"![{self.title}](data:image/png;base64,{self.b64_image})"
-        return "\n\n".join([f"# {self.title}", self.description, base64_md])
-    
-
-class MetricPlot(Plot):
-    """
-    To be used by performance Explainer
-    """
-    def __init__(self, estimator:'IAMLPipeline', 
-                X:pd.DataFrame, y:pd.DataFrame, 
-                X_train:pd.DataFrame, y_train:pd.DataFrame, 
-                **kwargs):
-        self._compute(estimator, X, y, X_train=X_train, y_train=y_train, **kwargs)
-    
-
-def capture(func):
-    """
-    A decorator to capture a matplotlib plot into a BytesIO object and return it
-    as binary data instead of showing it.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        ret = func(*args, **kwargs)
-        plt.close()
-        return ret
-    
-    return wrapper
+        """Return plot as markdown format
+        
+        :return: Markdown formatted plot.
+        """
+        return "\n\n".join([
+            f"# {self.title}",
+            self.description,
+            f"![{self.title}](data:image/png;base64,{self.b64_image})"
+        ])

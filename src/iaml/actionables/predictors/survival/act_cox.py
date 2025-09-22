@@ -1,8 +1,7 @@
 
-"""
-[STEP]  Cox
-"""
+"""[STEP]  Cox"""
 import textwrap
+from typing import Any
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 
 from ....predictor import Predictor
@@ -10,17 +9,17 @@ from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'survival')
 class ActCox(Predictor):
-    """
-    [STEP]  Cox
-    """
-    name = "CoxPHSurvivalAnalysis"
-    _description = textwrap.dedent('''\
+    """[STEP]  Cox"""
+
+    name: str = "CoxPHSurvivalAnalysis"
+    _description: str = textwrap.dedent('''\
         CoxPHSurvivalAnalysis is a survival analysis algorithm
         that estimates the effect of covariates on the likelihood of an event
         occurring over time, using the Cox proportional hazards model.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         CoxPHSurvivalAnalysis is a survival analysis method
         that models the relationship between multiple input features (covariates)
         and the time until a particular event happens. The algorithm is based on
@@ -31,8 +30,7 @@ class ActCox(Predictor):
         rates, or in engineering to predict equipment failure. Unlike many other
         models, it doesn't predict the exact time of the event but estimates the
         risk over time, handling cases where the event has not yet occurred (censored data).''')
-
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 1972,
             'name': 'Regression models and life tables',
@@ -94,35 +92,18 @@ class ActCox(Predictor):
                 'passthrough': False
             }
         }
-        self.model:CoxPHSurvivalAnalysis = None
-        
-        
+        self.model: CoxPHSurvivalAnalysis = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Knn classifier on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = CoxPHSurvivalAnalysis(
             **self.passthrough_parameters()
             )
-        
         X, y = dataset.to_survival()
         self.model.fit(X, y)
-        
         return self
-    
-    def suitable(self, dataset:Dataset) -> bool:
+
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'survival'
 
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

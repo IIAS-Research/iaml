@@ -1,6 +1,4 @@
-"""
-[STEP] Transform string column to date
-"""
+"""[STEP] Transform string column to date"""
 import textwrap
 import pandas as pd
 import numpy as np
@@ -13,37 +11,27 @@ from ...decorators.all import is_step
 
 @is_step('cleaning')
 class ActSplitDate(Actionable):
-    """
-    [STEP] Transform string column to date
-    """
-    name = 'Create Date Elements columns'
-    _description = textwrap.dedent('''\
+    """[STEP] Transform string column to date"""
+
+    name: str = 'Create Date Elements columns'
+    _descrption: str = textwrap.dedent('''\
         Transform a textual date column into multiple columns
         for day, month, year, hour, minute, second''')
-    _description_long = textwrap.dedent('''\
-        Transform a textual date column into multiple columns for
+    _description_long: str = textwrap.dedent('''\
+        Transform a textual date column into multiple columns for 
         day, month, year, hour, minute, second.
         Exemple:
-            +---------------------+----------+------------+-----------+-----------+----------+----------+
-            | date                | date_day | date_month | date_year | date_hour | date_min | date_sec |
-            +---------------------+----------+------------+-----------+-----------+----------+----------+
-            | 2024-01-15 12:31:27 | 15       | 01         | 2024      | 12        | 31       | 27       |
-            +---------------------+----------+------------+-----------+-----------+----------+----------+
+        +-------------------+----------+------------+-----------+-----------+----------+----------+
+        |date               | date_day | date_month | date_year | date_hour | date_min | date_sec |
+        +-------------------+----------+------------+-----------+-----------+----------+----------+
+        |2024-01-15 12:31:27| 15       | 01         | 2024      | 12        | 31       | 27       |
+        +-------------------+----------+------------+-----------+-----------+----------+----------+
         ''')
+
     def __init__(self):
-        self.configuration:dict = {}
-        self.columns:list[str] = None
-    
-    def fit(self, dataset:Dataset) -> Actionable:
-        """
-        Find columns to split
+        self.columns: list[str] = None
 
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
+    def fit(self, dataset: Dataset) -> Actionable:
         self.columns = dataset.get_columns_names_by_type(DataType.DATE)
 
         self.explanations = [
@@ -52,16 +40,12 @@ class ActSplitDate(Actionable):
         ]
 
         return self
-            
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Split dates columns into columns -> weekday, mount, year, hour, minute, second
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Split dates columns into columns (weekday, mount, year, hour, minute, second).
 
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame x: DataFrame to transform.
+        :return: Transformed dataset.
         """
         for column in self.columns:
             # Day
@@ -73,17 +57,11 @@ class ActSplitDate(Actionable):
             X[column + '_hour'] = X[column].dt.hour.replace(np.NaN, -1)
             X[column + '_minute'] = X[column].dt.minute.replace(np.NaN, -1)
             X[column + '_second'] = X[column].dt.second.replace(np.NaN, -1)
-            
-        return X
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        return bool(dataset.get_columns_names_by_type(DataType.DATE))
-        
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
-        return 0.5 # medium priority
-    
+        return X
+
+    def suitable(self, dataset: Dataset) -> bool:
+        return bool(dataset.get_columns_names_by_type(DataType.DATE))
+
+    def priorize(self, candidate: Candidate = None) -> float:
+        return 0.5

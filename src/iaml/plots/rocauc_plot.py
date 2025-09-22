@@ -1,20 +1,23 @@
-"""
-[PLOT] ROC-AUC Plot
-"""
+"""[PLOT] ROC-AUC Plot"""
+from __future__ import annotations
+
 import textwrap
 import io
+from typing import TYPE_CHECKING
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, capture
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
+
 class ROCAUCPlot(MetricPlot):
-    """
-    [PLOT] ROC-AUC Plot
-    """
-    
-    title = "Receiver Operating Characteristic - Area Under the Curve"
-    description = textwrap.dedent("""
+    """[PLOT] ROC-AUC Plot"""
+
+    title: str = "Receiver Operating Characteristic - Area Under the Curve"
+    description: str = textwrap.dedent("""
         The ROC-AUC (Receiver Operating Characteristic - Area Under the Curve) plot is a widely used 
         tool to assess the performance of a classification model, especially in the healthcare domain. 
         It provides a graphical representation of the model's ability to distinguish between classes, 
@@ -48,27 +51,29 @@ class ROCAUCPlot(MetricPlot):
         different threshold values, making it a critical tool in situations where misdiagnosis could have 
         serious consequences.
         """)
-    
+
     @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y, **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y.
-        """
-        
+    def compute(
+        self,
+        estimator: IAMLPipeline,
+        X: pd.DataFrame,
+        y: pd.Series,
+        X_train: pd.DataFrame = None,
+        y_train: pd.Series = None,
+        **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
-        
+
         pos_label = None
-        if not(y.dtype == 'int' or y.dtype == 'bool'):
-            pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0] 
-        
+        if y.dtype not in ['int', 'bool']:
+            pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0]
+
         # Predict probabilities
         y_prob = estimator.predict_proba(X)[:, 1]
-        
+
         # Compute ROC curve and AUC
         fpr, tpr, _ = roc_curve(y, y_prob, pos_label=pos_label)
         roc_auc = auc(fpr, tpr)
-        
+
         # Create the ROC plot
         plt.figure()
         plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
@@ -80,15 +85,12 @@ class ROCAUCPlot(MetricPlot):
         plt.title('Receiver Operating Characteristic')
         plt.legend(loc='lower right')
         plt.grid(True)
-        
+
         # Save plot to binary image
         plt.savefig(self._binary_image, format='png')
-        
+
         return self
-    
+
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
-        return type_of_target in ['binary']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target == 'binary'

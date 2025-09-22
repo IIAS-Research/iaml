@@ -1,20 +1,17 @@
-"""
-[PLOT] Confusion Matrix Plot
-"""
+"""[PLOT] Confusion Matrix Plot"""
 import textwrap
-import io
-import pandas as pd
+
 from yellowbrick.classifier import ConfusionMatrix
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, yellowbrick_plot
 
+
+@yellowbrick_plot(ConfusionMatrix)
 class ConfusionMatrixPlot(MetricPlot):
-    """
-    [PLOT] Confusion Matrix Plot
-    """
-    
-    title = "Confusion Matrix"
-    description = textwrap.dedent("""
+    """[PLOT] Confusion Matrix Plot"""
+
+    title: str = "Confusion Matrix"
+    description: str = textwrap.dedent("""
         The Confusion Matrix is a powerful visualization tool used to assess how well a classification model 
         is performing, particularly in identifying different medical conditions or diagnostic categories. 
         It provides a clear breakdown of true positive, false positive, true negative, and false negative rates.
@@ -31,29 +28,7 @@ class ConfusionMatrixPlot(MetricPlot):
         types of errors it makes. This information is crucial in healthcare, where reducing misdiagnoses can significantly 
         improve patient outcomes.
         """)
-    
-    @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
-            **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y.
-        """
-        self._binary_image = io.BytesIO()
-        self.__visualizer = ConfusionMatrix(estimator, is_fitted=True)
-        
-        if X_train is not None and y_train is not None:
-            self.__visualizer.fit(X_train, y_train)
-            
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
-        
-        return self
-    
+
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
-        return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']

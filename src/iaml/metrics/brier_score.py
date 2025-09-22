@@ -1,7 +1,6 @@
 
-"""
-[METRIC] Brier Score for Survival Models
-"""
+"""[METRIC] Brier Score for Survival Models"""
+from typing import Any
 import textwrap
 import pandas as pd
 import numpy as np
@@ -10,16 +9,14 @@ from ..metric import Metric
 from ..dataset import Dataset
 
 class BrierScoreMetric(Metric):
-    """
-    [METRIC] Brier Score for Survival Models
-    """
-    name = 'Brier Score'
-    _description = textwrap.dedent('''\
+    """[METRIC] Brier Score for Survival Models"""
+    name: str = 'Brier Score'
+    _description: str = textwrap.dedent('''\
         The Brier Score is a metric used to assess the accuracy of survival models, 
         which predict the likelihood of an event, such as death or disease, occurring within a specific timeframe. 
         It compares the model's probability predictions to actual outcomes, with lower scores indicating 
         better model performance.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         The Brier Score measures how well survival models predict the probability of an event happening, like survival over time. 
         It calculates the average squared differences between predicted probabilities and actual outcomes 
         (1 for an event occurring, 0 for it not occurring). The score ranges from 0 to 1, where 0 means perfect 
@@ -27,7 +24,7 @@ class BrierScoreMetric(Metric):
         but also considers the uncertainty of those predictions. A lower Brier Score indicates a more reliable model, 
         making it a crucial tool for researchers and practitioners in fields like medicine, where accurate survival 
         predictions can significantly impact decision-making.''')
-    refs=[
+    refs: list[dict[str, Any]] = [
         {
             'year': 1999,
             'name': \
@@ -38,59 +35,48 @@ class BrierScoreMetric(Metric):
                 'W. Sauerbrei',
                 'M. Schumacher'
             ],
-            'doi': 'https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18%3C2529::AID-SIM274%3E3.0.CO;2-5',
+            'doi': 'https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18%3C2529'\
+                '::AID-SIM274%3E3.0.CO;2-5',
             'publisher': 'Statistics in Medicine, vol. 18, no. 17-18, pp. 2529–2545'
         }
     ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'brier_score'
-    
-    
+
     @property
-    def needed_prediction(self):
+    def needed_prediction(self) -> str:
         return 'predict_survival_function'
 
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
-        """
-        Is this metric suitable for this candidate? Must be survival analysis.
-
-        Args:
-            X (pd.DataFrame): Features
-            y (pd.DataFrame): Labels (with two columns: 'duration' and 'event')
-            type_of_target (str): Type of target (must be 'survival')
-
-        Returns:
-            bool: Suitable?
-        """
         return type_of_target == 'survival'
+
+    def compute(
+        self,
+        y: pd.DataFrame,
+        y_pred: pd.DataFrame,
+        y_train: pd.DataFrame = None,
+        **kwargs) -> float:
+        """Compute metric given y, y_pred and an optional y_train. 
         
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, 
-                y_train:pd.DataFrame=None, **kwargs) -> float:
-        """
-        Compute the Brier Score  with the predicted data.
-
-        Args:
-            y (pd.DataFrame): Ground truth data (duration and event status)
-            y_pred (pd.DataFrame): Predicted data (risk scores or predicted survival times)
-            kwargs: Additional arguments, including y_train and X_train
-
-        Returns:
-            float: Computed Integrated Brier Score
+        :param pd.DataFrame y: Ground truth to compute the metric.
+        :param pd.DataFrame y_pred: Prediction to compute the metric.
+        :param pd.DataFrame, optional y_train: Training ground truth. Default to None.
+        :param dict, optional \\**kwargs: Additional parameters
+        :return: Computed value
         """
         y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
         y = Dataset.fix_y_survival(y, y_train)
         y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
-        
+
         # Extract time from y test
         _, times = zip(*y)
-        
+
         time = max(times)
         if isinstance(time, float):
             time -= 1
-            
+
         predictions = [fn(time) for fn in y_pred]
-        
+
         # Calculate integrated Brier score using sksurv function
         return brier_score(y_train, y, predictions, time)[1][0]
-            

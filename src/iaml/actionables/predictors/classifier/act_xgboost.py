@@ -1,7 +1,6 @@
-"""
-[STEP]  XGBoost
-"""
+"""[STEP]  XGBoost"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import GradientBoostingClassifier
 from ....predictor import Predictor
 from ....dataset import Dataset
@@ -10,20 +9,18 @@ from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActXGBoost(Predictor):
-    """
-    [STEP]  XGBoost
-    """
-    name = "XGBoost"
-    _description = textwrap.dedent('''\
+    """[STEP]  XGBoost"""
+
+    name: str = "XGBoost"
+    _description: str = textwrap.dedent('''\
         GradientBoostingClassifier is a machine learning algorithm that models the
         relationship between input features and a categorical output variable using
         gradient boosting.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         It works by building multiple decision trees in a sequential manner,
         where each tree is trained to correct the errors made by the previous tree.
         The final prediction is made by summing the predictions of all the trees.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'name': 'Stochastic Gradient Boosting',
             'year': 1999,
@@ -54,8 +51,9 @@ class ActXGBoost(Predictor):
             'publisher': 'Springer New York'
         }
     ]
+
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -108,38 +106,23 @@ class ActXGBoost(Predictor):
                 'range': [2, 20]
             }
         }
-        self.model:GradientBoostingClassifier = None
-        
+        self.model: GradientBoostingClassifier = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit XgBoost on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         if dataset.type_of_target == 'binary':
             self.configuration['loss']['categorical'] = ['log_loss', 'exponential']
         else:
             self.configuration['loss']['categorical'] = ['log_loss']
         self.check_configuration()
-        
+
         self.model = GradientBoostingClassifier(**self.passthrough_parameters())
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    def suitable(self, dataset:Dataset) -> bool:
+
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral
-    

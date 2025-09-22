@@ -1,8 +1,6 @@
-"""
-[STEP] HistGradient Boosting Regressor
-"""
-
+"""[STEP] HistGradient Boosting Regressor"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import HistGradientBoostingRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
@@ -12,14 +10,13 @@ from ....decorators.all import is_step
 # @is_step('predictor', 'tabular', 'regressor')
 @is_step('disabled')
 class ActHistGradientBoostingRegressor(Predictor):
-    """
-    [STEP] HistGradient Boosting Regressor
-    """
-    name = "HistGradient Boosting Regressor"
-    _description = textwrap.dedent('''\
+    """[STEP] HistGradient Boosting Regressor"""
+
+    name: str = "HistGradient Boosting Regressor"
+    _description: str = textwrap.dedent('''\
         HistGradientBoostingRegressor is a machine learning algorithm
         that makes predictions for regression tasks using histogram-based gradient boosting.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         HistGradientBoostingRegressor is a type of gradient boosting
         algorithm that uses histogram-based decision trees to model the relationship between
         the input features and the output variable. It works by iteratively adding decision
@@ -29,7 +26,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         usage compared to other tree-based algorithms.
         HistGradientBoostingRegressor also includes options for regularization,
         such as L1 and L2 regularization, to prevent overfitting.''')
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2006,
             'name': 'Gaussian Processes for Machine Learning',
@@ -41,8 +38,9 @@ class ActHistGradientBoostingRegressor(Predictor):
             'publisher': 'MIT Press 2006'
         }
     ]
+
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'l2_regularization': {
                 'description': 'The L2 regularization parameter. \
                     Use 0 for no regularization (default).',
@@ -92,41 +90,16 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'range': [8, 25]
                 }
             }
-        self.model:HistGradientBoostingRegressor = None
-    
+        self.model: HistGradientBoostingRegressor = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit HistGradientBoostingRegressor on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = HistGradientBoostingRegressor(early_stopping=True,
                                                    **self.passthrough_parameters())
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        """
-        Does this step suitable for this candidate
 
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'continuous'
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

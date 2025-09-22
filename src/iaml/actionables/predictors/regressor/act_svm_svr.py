@@ -1,31 +1,29 @@
-"""
-[STEP]  SVM Regressor
-"""
+"""[STEP]  SVM Regressor"""
 import textwrap
+from typing import Any
 from sklearn import svm
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'regressor')
 class ActSVMSVR(Predictor):
-    """
-    [STEP]  SVM Regressor
-    """
-    name = "SVM Regression"
-    _description = textwrap.dedent('''\
+    """[STEP]  SVM Regressor"""
+
+    name: str = "SVM Regression"
+    _description: str = textwrap.dedent('''\
         SVM Regressor is a machine learning algorithm that models the relationship
         between input features and a continuous output variable using a support vector machine
         (SVM). It can handle non-linearly separable data by using a kernel function to map the data
         into a higher-dimensional space.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         SVM Regressor is a type of regression algorithm that models the
         relationship between input features and a continuous output variable using a support
         vector machine (SVM). It works by finding the optimal hyperplane or boundary that predicts
         the output variable with the minimum error.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 1999,
             'name': 'Probabilistic Outputs for Support Vector Machines and Comparisons to \
@@ -49,7 +47,7 @@ class ActSVMSVR(Predictor):
     ]
 
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'kernel': {
                 'description': 'Kernel to use in the SVM',
                 'default': 'rbf',
@@ -66,34 +64,17 @@ class ActSVMSVR(Predictor):
                 'range': [1e-05, 0.1]
             }
         }
-        self.model:svm.SVR = None
-        
+        self.model: svm.SVR = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit SVM Regressor on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = svm.SVR(
             **self.passthrough_parameters()
             )
-        
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        return dataset.type_of_target in ['continuous']
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def suitable(self, dataset: Dataset) -> bool:
+        return dataset.type_of_target in ['continuous']
+
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

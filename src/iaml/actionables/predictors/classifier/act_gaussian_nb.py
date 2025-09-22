@@ -1,8 +1,7 @@
-"""
-[STEP] Gaussian NB
-"""
+"""[STEP] Gaussian NB"""
 
 import textwrap
+from typing import Any
 from sklearn.naive_bayes import GaussianNB
 from ....predictor import Predictor
 from ....dataset import Dataset
@@ -11,14 +10,13 @@ from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'classifier')
 class ActGaussianNb(Predictor):
-    """
-    [STEP] Gaussian NB
-    """
-    name = " Gaussian NB"
-    _description = textwrap.dedent('''\
+    """[STEP] Gaussian NB"""
+
+    name: str = " Gaussian NB"
+    _description: str = textwrap.dedent('''\
         GaussianNB is a machine learning algorithm that makes predictions
         based on the Gaussian (normal) distribution of the input features.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         GaussianNB is a type of naive Bayes classifier that assumes the
         input features are independent and follow a Gaussian (normal) distribution.
         It uses Bayes' theorem to calculate the probability of each class given the
@@ -26,12 +24,11 @@ class ActGaussianNb(Predictor):
         GaussianNB is particularly useful when the input features have a continuous
         distribution and can be modeled well by a normal distribution.
         It is a simple and fast algorithm that works well for many classification problems,
-        especially when the number of features is much larger than the number of samples.''')  
-    
-    refs = []
-    
+        especially when the number of features is much larger than the number of samples.''')
+    refs: list[dict[str, Any]] = []
+
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'var_smoothing': {
                 'description': textwrap.dedent('''\
                     Portion of the largest variance of all features that is
@@ -40,42 +37,16 @@ class ActGaussianNb(Predictor):
                 'range': [1e-11, 1e-4]
             },
         }
-        self.model:GaussianNB = None
-    
+        self.model: GaussianNB = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit GaussianNB on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = GaussianNB(**self.passthrough_parameters())
-        
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        """
-        Does this step suitable for this candidate
 
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

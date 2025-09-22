@@ -1,31 +1,29 @@
-"""
-[STEP]  Random Forest Regressor
-"""
+"""[STEP]  Random Forest Regressor"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import RandomForestRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'regressor')
 class ActRandomForestRegressor(Predictor):
-    """
-    [STEP]  Random Forest Regressor
-    """
-    name = "Random Forest Regressor"
-    _description = textwrap.dedent('''\
+    """[STEP]  Random Forest Regressor"""
+
+    name: str = "Random Forest Regressor"
+    _description: str = textwrap.dedent('''\
         RandomForestRegressor is a machine learning algorithm that
         models the relationship between input features and a continuous output
         variable using a collection of decision trees.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         RandomForestRegressor is a type of ensemble learning algorithm
         that models the relationship between input features and a continuous output variable
         using a collection of decision trees. It works by building multiple decision trees on
         random subsets of the input features and data, and then averaging the predictions of each
         tree to make the final prediction.''')
-
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2001,
             'name': 'Random Forests',
@@ -41,8 +39,9 @@ class ActRandomForestRegressor(Predictor):
             'publisher': 'Machine Learning Vol.63 page 5--42'
         }
     ]
+
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             # 'max_depth': { # Disable before probably better with no limit in regression
             #     'description': 'Max depth of each tree',
             #     'default': 15,
@@ -84,31 +83,15 @@ class ActRandomForestRegressor(Predictor):
                 'categorical': ["poisson", "friedman_mse", "absolute_error", "squared_error"]
             }
         }
-        self.model:RandomForestRegressor = None
-        
+        self.model: RandomForestRegressor = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Random Forest regressor on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = RandomForestRegressor(**self.passthrough_parameters())
-        
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
-    def suitable(self, dataset:Dataset) -> bool:
+
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']
 
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

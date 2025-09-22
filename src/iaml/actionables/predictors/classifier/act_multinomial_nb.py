@@ -39,7 +39,7 @@ class ActMultinomialNB(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'alpha': {
                 'description': textwrap.dedent('''\
                     Additive (Laplace/Lidstone) smoothing parameter (set
@@ -57,43 +57,19 @@ class ActMultinomialNB(Predictor):
         }
 
         self.model: MultinomialNB = None
-    
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit MultinomialNB on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = MultinomialNB(**self.passthrough_parameters())
-        
+
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        """
-        Does this step suitable for this candidate ?
-        Dataset must contain only positive values
 
-        Args:
-            candidate (Candidate): Suitable for this candidate
 
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, dataset: Dataset) -> bool:
         # Negative values are not supported
         return not((dataset.X < 0).any().any()) \
             and dataset.type_of_target in ['binary', 'multiclass']
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

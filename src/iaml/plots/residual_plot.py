@@ -2,19 +2,18 @@
 [PLOT] Residuals Plot
 """
 import textwrap
-import io
-import pandas as pd
+
 from yellowbrick.regressor import ResidualsPlot as ybResidualsPlot
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, yellowbrick_plot
 
+
+@yellowbrick_plot(ybResidualsPlot)
 class ResidualsPlot(MetricPlot):
-    """
-    [PLOT] Residuals Plot
-    """
-    
-    title = "Residuals Plot"
-    description = textwrap.dedent("""
+    """[PLOT] Residuals Plot"""
+
+    title: str = "Residuals Plot"
+    description: str = textwrap.dedent("""
         The Residuals Plot is a diagnostic tool used to evaluate the performance of a regression model. 
         In the context of predicting continuous medical outcomes, such as blood pressure, cholesterol levels, 
         or other measurements, this plot helps assess how well the model's predictions match the actual 
@@ -33,28 +32,7 @@ class ResidualsPlot(MetricPlot):
         whether certain patterns or trends remain unexplained, which can be critical in refining models used 
         for predicting medical outcomes.
         """)
-    
-    @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
-            **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y.
-        """
-        self._binary_image = io.BytesIO()
-        
-        self.__visualizer = ybResidualsPlot(estimator, is_fitted=True)
-        if X_train is not None and y_train is not None:
-            self.__visualizer.fit(X_train, y_train)
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
-        
-        return self
-    
+
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
+    def suitable(cls, type_of_target: str) -> bool:
         return type_of_target == 'continuous'

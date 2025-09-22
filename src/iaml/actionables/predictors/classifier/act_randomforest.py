@@ -1,30 +1,29 @@
-"""
-[STEP]  Random Forest
-"""
+"""[STEP]  Random Forest"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import RandomForestClassifier
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'classifier')
 class ActRandomForest(Predictor):
-    """
-    [STEP]  Random Forest
-    """
-    name = "Random Forest"
-    _description = textwrap.dedent('''\
+    """[STEP]  Random Forest"""
+
+    name: str = "Random Forest"
+    _description: str = textwrap.dedent('''\
         RandomForestClassifier is a machine learning algorithm that models
         the relationship between input features and a categorical output variable using
         a collection of decision trees.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         RandomForestClassifier is a type of ensemble learning algorithm that
         models the relationship between input features and a categorical output variable using
         a collection of decision trees. It works by building multiple decision trees on random
         subsets of the input features and data, and then using a majority vote to make
         the final prediction.''')
-    refs = [
+    refs: tuple[dict[str, Any]] = [
         {
             'year': 2001,
             'name': 'Random Forests',
@@ -33,8 +32,9 @@ class ActRandomForest(Predictor):
             'publisher': 'Machine Learning Vol.45 page 5--32'
         }
     ]
+
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -76,32 +76,16 @@ class ActRandomForest(Predictor):
                 'categorical': ['gini', 'entropy', 'log_loss']
             }
         }
-        self.model:RandomForestClassifier = None
-        
+        self.model: RandomForestClassifier = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Random forest on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = RandomForestClassifier(**self.passthrough_parameters())
-        
         self.model.fit(dataset.X, dataset.y)
-        
         return self
-    
-    def suitable(self, dataset:Dataset) -> bool:
+
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

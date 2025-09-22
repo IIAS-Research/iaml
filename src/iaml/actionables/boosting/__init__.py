@@ -1,4 +1,4 @@
 """
 All boosting Actionables
 """
-from .act_adaboost import *
+from .act_adaboost import ActAdaBoost

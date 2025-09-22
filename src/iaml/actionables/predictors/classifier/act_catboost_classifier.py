@@ -1,7 +1,6 @@
-"""
-[STEP]  CatBoost
-"""
+"""[STEP]  CatBoost"""
 import textwrap
+from typing import Any
 from catboost import CatBoostClassifier
 from sklearn.preprocessing import LabelEncoder
 from ....predictor import Predictor
@@ -9,19 +8,19 @@ from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'classifier')
 class ActCatBoost(Predictor):
-    """
-    [STEP]  CatBoost Classifier
-    """
-    name = "CatBoost Classifier"
-    _description = textwrap.dedent('''\
+    """[STEP]  CatBoost Classifier"""
+
+    name: str = "CatBoost Classifier"
+    _description: str = textwrap.dedent('''\
         CatBoostClassifier is a powerful tool that helps computers make accurate
         predictions by learning from both positive and negative examples simultaneously.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         CatBoostClassifier is a gradient boosting algorithm specifically
         designed for classification tasks.''')
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2017,
             'name': 'CatBoost: unbiased boosting with categorical features',
@@ -36,8 +35,9 @@ class ActCatBoost(Predictor):
             'publisher': 'Advances in Neural Information Processing Systems 31 (NeurIPS 2018)'
         }
     ]
+
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'iterations': {
                 'description': 'The maximum number of trees that can be built.',
                 'default': 1000,
@@ -85,19 +85,10 @@ class ActCatBoost(Predictor):
             }
         }
 
-        self.model:CatBoostClassifier = None
-        self.label_encoder:LabelEncoder = LabelEncoder()
-        
+        self.model: CatBoostClassifier = None
+        self.label_encoder: LabelEncoder = LabelEncoder()
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Catboost on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         if dataset.type_of_target == 'binary':
             self.configuration['loss_function']['categorical'] = ['Logloss', 'CrossEntropy']
         else:
@@ -106,24 +97,16 @@ class ActCatBoost(Predictor):
                                                                 'MultiClass',
                                                                 'MultiClassOneVsAll'
                                                                 ]
-        self.check_configuration()    
-        
-        
+        self.check_configuration()
+
         self.model = CatBoostClassifier(verbose=0, **self.passthrough_parameters())
-        
         self.label_encoder.fit(dataset.y)
         self.model.fit(dataset.X, self.label_encoder.transform(dataset.y))
-        
         return self
-    
-    def suitable(self, dataset:Dataset) -> bool:
+
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
 
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

@@ -25,7 +25,6 @@ class ActLinearDiscriminantAnalysis(Predictor):
         It works by calculating the within-class and between-class scatter matrices,
         and then finding the directions in the feature space that maximize the ratio of
         the between-class scatter to the within-class scatter.''')
-    
     refs = [
         {
             'year': 1936,
@@ -38,7 +37,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'tol': {
                 'description': textwrap.dedent('''\
                     Absolute threshold for a singular value of X to be
@@ -47,43 +46,18 @@ class ActLinearDiscriminantAnalysis(Predictor):
                 'range': [1e-05, 0.1]
             }
         }
+        self.model: LinearDiscriminantAnalysis = None
 
-        self.model:LinearDiscriminantAnalysis = None
-    
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Linear Discriminant Analysis on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = LinearDiscriminantAnalysis(**self.passthrough_parameters())
-        
+
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        """
-        Does this step suitable for this candidate
 
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \
             ['binary', 'multiclass',  'multilabel-indicator']
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

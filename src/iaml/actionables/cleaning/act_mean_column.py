@@ -1,6 +1,4 @@
-"""
-[STEP] Fill missing values with mean
-"""
+"""[STEP] Fill missing values with mean"""
 import textwrap
 import pandas as pd
 import numpy as np
@@ -10,23 +8,23 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
 
+
 @is_step('cleaning', 'baseline_cleaning')
 class ActMeanColumn(Actionable):
-    """
-    [STEP] Fill missing values with mean
-    """
-    name = 'Fill missing values'
-    _description = textwrap.dedent('''\
+    """[STEP] Fill missing values with the mean."""
+
+    name: str = 'Fill missing values'
+    _description: str = textwrap.dedent('''\
         Fill missing values with the mean of non-missing values
         when the proportion of empty rows is lower than {empty_threshold:.0%}.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         Fill a column missings values with the mean of the columns
         when the proportion of empty rows is lower than {empty_threshold}.
         Work only for numerical columns.''')
-    can_be_disabled = False
+    can_be_disabled: bool = False
 
     def __init__(self):
-        self.columns:list[str] = None
+        self.columns: list[str] = None
         self.configuration:dict = {
             'empty_threshold': {
                 'description': textwrap.dedent('''\
@@ -35,10 +33,8 @@ class ActMeanColumn(Actionable):
                 'default': 1 # TODO Review when adding new kind of imputer
             }
         }
-    
-    def fit(self, dataset:Dataset) -> Actionable:
-        # threshold = self.get_config('empty_threshold')
 
+    def fit(self, dataset: Dataset) -> Actionable:
         self.columns = []
         explain = []
 
@@ -49,7 +45,7 @@ class ActMeanColumn(Actionable):
             mean = values.mean()
             if np.isnan(mean):
                 mean = 0
-                
+
             self.columns.append((column, mean))
             explain.append((
                 nan_values_count,
@@ -64,29 +60,19 @@ class ActMeanColumn(Actionable):
             for (c, mean), v in zip(self.columns, explain)
             if v[0] > 0 # hide processings that affected no values
         ]
-        
+
         return self
-    
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Fill NA values with mean
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Fill NA values with the mean.
 
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame x: DataFrame to transform.
+        :return: Transformed dataset.
         """
         for name, mean in self.columns:
-            X[name] = X[name].fillna(mean)    
-        
-        return X
-        
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
+            X[name] = X[name].fillna(mean)
 
-        Return : continuous between 0 and 1
-        """
-        return 1-(candidate.dataset.X.isnull().sum().min()/len(candidate.dataset.X))
+        return X
+
+    def priorize(self, candidate: Candidate = None) -> float:
+        return 1 - (candidate.dataset.X.isnull().sum().min() / len(candidate.dataset.X))

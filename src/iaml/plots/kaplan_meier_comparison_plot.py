@@ -1,25 +1,26 @@
 """
 [PLOT] Kaplan-Meier Model Comparison Survival Plot using sksurv
 """
+from __future__ import annotations
+
 import textwrap
 import io
-import traceback
+from typing import TYPE_CHECKING
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sksurv.nonparametric import kaplan_meier_estimator
-from sksurv.linear_model import CoxPHSurvivalAnalysis
-from ..plot import MetricPlot, capture
-from ..logger import Logger
+from ..metric_plot import MetricPlot, capture
 from ..dataset import Dataset
+if TYPE_CHECKING:
+    from ..iaml_pipeline import IAMLPipeline
+
 
 class KaplanMeierModelComparisonPlot(MetricPlot):
-    """
-    [PLOT] Kaplan-Meier Model Comparison Survival
-    """
-    
-    title = "Kaplan-Meier Model Comparison"
-    description = textwrap.dedent("""
+    """[PLOT] Kaplan-Meier Model Comparison Survival"""
+
+    title: str = "Kaplan-Meier Model Comparison"
+    description: str = textwrap.dedent("""
         The Kaplan-Meier Model Comparison Plot is a diagnostic tool used to evaluate the performance of 
         survival models by comparing predicted survival curves against the observed survival data.
 
@@ -40,43 +41,33 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         to this baseline, it becomes easier to gauge the improvement (or lack thereof) in predictive 
         accuracy.
         """)
-    
+
     @capture
-    def _compute(self, estimator, X:pd.DataFrame, y:pd.Series, 
-                X_train:pd.DataFrame=None, y_train:pd.Series=None,
-                transform:bool=True,
-                **kwargs) -> MetricPlot:
-        """
-        Compute Kaplan-Meier survival plot with model predictions for comparison using sksurv.
-        
-        Parameters:
-        - model: The survival model used to make predictions (e.g., CoxPH from sksurv)
-        - X: The input data used for making predictions
-        - durations: Series of observed survival times
-        - event_observed: Series indicating whether the event occurred (1) or was censored (0)
-        - groups: Optional Series indicating different groups for stratified survival analysis
-        """
+    def compute( # pylint: disable=too-many-positional-arguments
+        self,
+        estimator: IAMLPipeline,
+        X: pd.DataFrame,
+        y: pd.Series,
+        X_train: pd.DataFrame = None,
+        y_train: pd.Series=None,
+        **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
-        
+
         X_train, y_train = Dataset.fix_survival(X_train, y_train)
         X, y = Dataset.fix_survival(X, y)
 
         # Fit the Kaplan-Meier model on observed data
         event, time = zip(*y)
-        
+
         # Observed data
         time, survival_prob = kaplan_meier_estimator(event, time)
         plt.step(time, survival_prob, where="post", label="Observed", color='blue')
-        # Observed data
-        # time, survival_prob = kaplan_meier_estimator(*zip(*y_train))
-        # plt.step(time, survival_prob, where="post", label="Observed Train", color='blue', linestyle="--")
-        
-        
+
         # Current model
         survival_predictions = estimator.predict_survival_function(X)
 
         mean_survival_prob = np.mean([fn.y for fn in survival_predictions], axis=0)
-        mean_survival_time = survival_predictions[0].x 
+        mean_survival_time = survival_predictions[0].x
 
         plt.step(mean_survival_time, mean_survival_prob,
             where="post", label="Model prediction", color="green")
@@ -87,15 +78,12 @@ class KaplanMeierModelComparisonPlot(MetricPlot):
         plt.ylabel("Survival Probability")
         plt.ylim([0, 1])
         plt.legend()
-        
+
         plt.savefig(self._binary_image, format='png')
         plt.close()
 
         return self
-    
+
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:
-        """
-        Does this plot is usable for a given type_of_target?
-        """
-        return type_of_target in ['survival']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target == 'survival'

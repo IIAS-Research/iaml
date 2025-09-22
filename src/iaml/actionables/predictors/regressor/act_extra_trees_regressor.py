@@ -1,31 +1,29 @@
-"""
-[STEP]  Extra Trees Regressor
-"""
+"""[STEP]  Extra Trees Regressor"""
 import textwrap
+from typing import Any
 from sklearn.ensemble import ExtraTreesRegressor
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
+
 @is_step('predictor', 'tabular', 'regressor')
 class ActExtraTreesRegressor(Predictor):
-    """
-    [STEP]  Extra Trees Regressor
-    """
-    name = "Extra Trees Regressor"
-    _description = textwrap.dedent('''\
+    """[STEP]  Extra Trees Regressor"""
+
+    name: str = "Extra Trees Regressor"
+    _description: str = textwrap.dedent('''\
         ExtraTreesRegressor is a machine learning algorithm that makes predictions
         for regression tasks by combining the outputs of multiple decision trees.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         ExtraTreesRegressor is a type of ensemble learning algorithm
         that belongs to the family of decision tree-based models.
         It works by building multiple decision trees, where each tree is trained on a
         random subset of the input features and a random subset of the training data.
         At prediction time, the algorithm aggregates the outputs of all the
         decision trees to make a final prediction.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 2006,
             'name': 'Extremely randomized trees',
@@ -39,7 +37,7 @@ class ActExtraTreesRegressor(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'max_depth': {
                 'description': 'Max depth of each tree',
                 'default': 15,
@@ -81,31 +79,16 @@ class ActExtraTreesRegressor(Predictor):
                 'default': 42
             }
         }
-        self.model:ExtraTreesRegressor = None
-        
+        self.model: ExtraTreesRegressor = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit Extra Trees Regressor on Candidate.dataset
-
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
         self.model = ExtraTreesRegressor(**self.passthrough_parameters())
-        
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    def suitable(self, dataset:Dataset) -> bool:
+
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'continuous'
 
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
-
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

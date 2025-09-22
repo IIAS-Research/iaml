@@ -35,7 +35,7 @@ class ActARDRegression(Predictor):
         }
     ]
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'alpha_1': {
                 'description': textwrap.dedent('''\
                     Hyper-parameter : shape parameter for the Gamma
@@ -78,40 +78,17 @@ class ActARDRegression(Predictor):
             }
         }
 
-        self.model:ARDRegression = None
-  
+        self.model: ARDRegression = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit ARDRegression on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = ARDRegression(**self.passthrough_parameters())
-        
+
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
-    
-    def suitable(self, dataset:Dataset) -> bool:
-        """
-        Does this step suitable for this candidate
 
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'continuous'
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

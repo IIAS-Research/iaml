@@ -1,7 +1,5 @@
-"""
-[STEP] MLP Regressor
-"""
-
+"""[STEP] MLP Regressor"""
+from typing import Any
 import textwrap
 from sklearn.neural_network import MLPRegressor
 from ....predictor import Predictor
@@ -11,23 +9,21 @@ from ....decorators.all import is_step
 
 @is_step('predictor', 'tabular', 'regressor')
 class ActMLPRegressor(Predictor):
-    """
-    [STEP] MLP Regressor
-    """
-    name = "MLP Regressor"
-    _description = textwrap.dedent('''\
+    """[STEP] MLP Regressor"""
+
+    name: str = "MLP Regressor"
+    _description: str = textwrap.dedent('''\
         MLPRegressor is a machine learning algorithm that models the
         relationship between input features and a continuous output variable using
         a multi-layer perceptron neural network.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         MLPRegressor is a type of neural network algorithm that models
         the relationship between input features and a continuous output variable using a
         multi-layer perceptron (MLP) neural network.
         It works by transforming the input features through one or more hidden
         layers with non-linear activation functions, and then using a final layer with
         a linear activation function to output a continuous value.''')
-    
-    refs = [
+    refs: list[dict[str, Any]] = [
         {
             'year': 1989,
             'name': 'Connectionist Learning Procedures',
@@ -51,9 +47,9 @@ class ActMLPRegressor(Predictor):
             )
         }
     ]
-    
+
     def __init__(self):
-        self.configuration:dict = {
+        self.configuration = {
             'activation': {
                 'description': 'Activation function for the hidden layer.',
                 'default': 'relu',
@@ -86,45 +82,22 @@ class ActMLPRegressor(Predictor):
             }
         }
 
-        self.model:MLPRegressor = None
-    
+        self.model: MLPRegressor = None
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        """
-        Fit MLP Regressor on Candidate.dataset
-
-        Args:
-            dataset (Candidate): Fit data
-
-        Returns:
-            Fitted step
-        """
         self.model = MLPRegressor(
             hidden_layer_sizes=[self.get_config('node_per_layer') \
                 for i in range(self.get_config('hidden_layer_count'))],
             early_stopping=True,
             max_iter=400,
             **self.passthrough_parameters())
-        
+
         self.model.fit(dataset.X, dataset.y)
-        
+
         return self
 
-    def suitable(self, dataset:Dataset) -> bool:
-        """
-        Does this step suitable for this candidate
-
-        Args:
-            candidate (Candidate): Suitable for this candidate
-
-        Returns:
-            bool: Suitable ?
-        """
+    def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == "continuous"
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
+    def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

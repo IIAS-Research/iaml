@@ -1,5 +1,4 @@
-"""
-This implementation adds a level of abstraction to futures, allowing us to
+"""This implementation adds a level of abstraction to futures, allowing us to
 manage the worker queue with more control, and keep multithreading code
 within the steps as simple as possible.
 """
@@ -15,21 +14,33 @@ from .step import Step
 
 
 class WorkerFuture(Future):
-    """
-    Thread Step
+    """Thread Step
+
+    :param Step step: The step that will be performed by the Thread
+    :param callable task: The function to run on the thread
+    :param tuple, optional args: callable parameters
+    :param dict, optional kwargs: callable parameters
     """
     def __init__(self, step: Step, task: callable, *args, **kwargs) -> None:
         super().__init__()
 
-        self.step = step
-        self.task = task
-        self.args = args
-        self.kwargs = kwargs
-    
+        self.step: Step = step
+        """The step that will be performed by the Thread"""
+
+        self.task: callable = task
+        """The function to run on the thread"""
+
+        self.args: tuple = args
+        """Optional parameters to be passed to the callable"""
+
+        self.kwargs: dict = kwargs
+        """Optional parameters to be passed to the callable"""
 
     def run(self) -> Any:
-        """
-        Execute the thread
+        """Run the thread and execute the affected task
+        In case of error, log them and return an empty list
+        
+        :return: The task result or an empty list in case of errors.
         """
         try:
             return self.task(*self.args, **self.kwargs)
@@ -42,8 +53,7 @@ class WorkerFuture(Future):
 
 
 class WorkerManager(metaclass=MetaSingleton):
-    """
-    This implementation adds a level of abstraction to futures, allowing us to
+    """This implementation adds a level of abstraction to futures, allowing us to
     manage the worker queue with more control, and keep multithreading code
     within the steps as simple as possible.
 
@@ -53,36 +63,55 @@ class WorkerManager(metaclass=MetaSingleton):
     jobs, preventing deadlocks.
 
     Reference: https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor.
+    
+    :param int, optional max_workers: Maximum number of parallel workers
     """
     def __init__(self, max_workers: int = None) -> None:
-        self.active_workers_count = 0
-        self.executor = ThreadPoolExecutor(max_workers=math.inf, thread_name_prefix='WorkerManager')
-        self.max_workers = max_workers or os.cpu_count()
-        self.running_futures: list[WorkerFuture] = []
-        self.running_parents: list[list[int]] = []
-        self.queue: list[WorkerFuture] = []
-        self.run_tree = {}
+        self.active_workers_count: int = 0
+        """Hold the current number of active workers"""
 
+        self.executor: ThreadPoolExecutor = ThreadPoolExecutor(
+            max_workers=math.inf,
+            thread_name_prefix='WorkerManager')
+        """ThreadPoolExecutor object, handling workers"""
+
+        self.max_workers: int = max_workers or os.cpu_count()
+        """The maximum number of paralllel workers"""
+
+        self.running_futures: list[WorkerFuture] = []
+        """List of running workers"""
+
+        self.running_parents: list[list[int]] = []
+        """List of Lists for parents ids"""
+
+        self.queue: list[WorkerFuture] = []
+        """List of worker pending"""
 
     def __done_callback(self, base_future: Future, worker_future: WorkerFuture) -> None:
+        """Function called when a thread is done working
+        
+        :param Future base_future: basic asynchronous task
+        :param WorkerFuture worker_future: Our asynchronous thread task
+        """
         worker_future.set_result(base_future.result())
 
         self.active_workers_count -= 1
         self.running_futures.remove(worker_future)
 
         self.run_next(worker_future.step)
-    
 
     def is_sibling_running(self, step: Step) -> bool:
-        """
-        Checks whether a sibling of `step` is currently running.
+        """Checks whether a sibling of `step` is currently running.
+        
+        :param Step step: The step we are working on
+        :return: Either the parent steps of our steps is running in an asynchronous thread
         """
         return step.parents_steps in [ f.step.parents_steps for f in self.running_futures ]
-    
 
     def run(self, future: WorkerFuture) -> None:
-        """
-        Immediately starts `future`.
+        """Immediately starts `future`.
+        
+        :param WorkerFuture future: The asynchronous task to run
         """
         # parents are supposed to wait for their children to complete before
         # doing anything else, so they are not an "active" worker as long as
@@ -95,13 +124,13 @@ class WorkerManager(metaclass=MetaSingleton):
 
         f = self.executor.submit(future.run)
         f.add_done_callback(lambda _f: self.__done_callback(_f, future))
-    
 
     def run_next(self, current_step: Step) -> None:
-        """
-        Finds a sibling of `current_step`, and starts it. This should be used
+        """Finds a sibling of `current_step`, and starts it. This should be used
         when a future is done running. If there is no sibling, start whatever
         is next in the queue.
+        
+        :param Step current_step: The current step we need to find the siblings
         """
         next_sibling_in_queue = next(( f for f in self.queue \
             if current_step.parents_steps == f.step.parents_steps ), None)
@@ -117,13 +146,17 @@ class WorkerManager(metaclass=MetaSingleton):
             if (self.active_workers_count - len(self.running_parents) + 1) < self.max_workers \
                 and len(self.queue) > 0:
                 self.run(self.queue.pop())
-    
 
     def submit(self, step: Step, task: callable, *args, **kwargs) -> WorkerFuture:
-        """
-        Submits a job to the worker manager, and returns a wrapped future which
+        """Submits a job to the worker manager, and returns a wrapped future which
         can be used to wait for the job to end, even if it's not started yet
         (as opposed to jobs submitted to a `ThreadPoolExecutor`).
+        
+        :param Step step: The step we submit to the asynchronous task
+        :param callable task: The function to run on our asynchronous task
+        :param Tuple, optional args: callable parameters
+        :param Dict, optional kwargs: callable parameters
+        :return: The future we just created
         """
         future = WorkerFuture(step, task, *args, **kwargs)
 

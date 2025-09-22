@@ -1,6 +1,4 @@
-"""
-[STEP] Drop Numerical Column
-"""
+"""[STEP] Drop Numerical Column"""
 import textwrap
 import pandas as pd
 from ...actionable import Actionable
@@ -9,23 +7,23 @@ from ...data_type import DataType
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
+
 @is_step('cleaning')
 class ActDropNumericalColumn(Actionable):
-    """
-    [STEP] Drop Numerical Column
-    """
-    name = 'Remove numerical columns'
-    _description = textwrap.dedent('''\
+    """[STEP] Drop Numerical Column"""
+
+    name: str = 'Remove numerical columns'
+    _description: str = textwrap.dedent('''\
         Remove numerical columns where the proportion of empty rows
-        in the dataset is higher than {empty_threshold:.0%}.''')
-    _description_long = textwrap.dedent('''\
+        in the dataset is higher than {empty_threshold}.''')
+    _description_long: str = textwrap.dedent('''\
         Remove numerical columns from the dataset where the proportion of empty
         rows in the dataset is higher than {empty_threshold:.0%}. This ensure that every columns will
         be relevant for the model to train on.''')
-    
+
     def __init__(self):
-        self.columns_to_drop:list[str] = None
-        self.configuration:dict = {
+        self.columns_to_drop: list[str] = None
+        self.configuration = {
             'empty_threshold': {
                 'description': textwrap.dedent('''\
                     Column with more or equal proportion of empty row will
@@ -33,17 +31,8 @@ class ActDropNumericalColumn(Actionable):
                 'default': 0.5
             }
         }
-    
-    def fit(self, dataset:Dataset) -> Actionable:
-        """
-        Find columns to drop
 
-        Args:
-            dataset (Dataset): Fit data
-
-        Returns:
-            Candidate: Transformed candidate
-        """
+    def fit(self, dataset: Dataset) -> Actionable:
         self.columns_to_drop = []
         explain = []
 
@@ -62,36 +51,24 @@ class ActDropNumericalColumn(Actionable):
         ]
 
         return self
-    
-    
-    def transform(self, X:pd.DataFrame) -> pd.DataFrame:
-        """
-        Drop numerical column
 
-        Args:
-            x (pd.DataFrame): DataFrame to transform
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Drop columns.
 
-        Returns:
-            pd.DataFrame: Transformed dataset
+        :param pd.DataFrame X: DataFrame to transform.
+        :return: Transformed DataFrame.
         """
         return X.drop(self.columns_to_drop, axis=1)
-        
-    
-    def priorize(self, candidate:Candidate=None) -> float:
-        """
-        Try to priorize himself
 
-        Return : continuous between 0 and 1
-        """
-        return 0 # Last cleaning action
-    
-    def suitable(self, dataset:Dataset) -> bool:
+    def priorize(self, candidate: Candidate = None) -> float:
+        return 0
+
+    def suitable(self, dataset: Dataset) -> bool:
         for column in dataset.get_columns_names_by_type(DataType.NUMERIC):
             values = dataset.X[column]
             nan_values_count = values.isnull().sum()
 
             if nan_values_count / len(values) >= self.get_config('empty_threshold'):
                 return True
-            
+
         return False
-    

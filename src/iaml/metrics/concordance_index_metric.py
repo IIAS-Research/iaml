@@ -1,21 +1,18 @@
-"""
-[METRIC] Concordance Index for Survival Models using sksurv
-"""
+"""[METRIC] Concordance Index for Survival Models using sksurv"""
+from typing import Any
 import textwrap
 import pandas as pd
 from sksurv.metrics import concordance_index_censored
 from ..metric import Metric
 
 class ConcordanceIndexMetric(Metric):
-    """
-    [METRIC] Concordance Index for Survival Models using sksurv
-    """
-    name = 'Concordance Index'
-    _description = textwrap.dedent('''\
+    """[METRIC] Concordance Index for Survival Models using sksurv"""
+    name: str = 'Concordance Index'
+    _description: str = textwrap.dedent('''\
         The Concordance Index for Survival Models using sksurv measures how well 
         a survival model predicts the order of events, such as survival times. A higher index 
         value indicates better predictive accuracy.''')
-    _description_long = textwrap.dedent('''\
+    _description_long: str = textwrap.dedent('''\
         The Concordance Index for Survival Models using sksurv evaluates the performance of 
         survival models by assessing their ability to correctly rank individuals based on their 
         survival times. It focuses on the relative timing of events rather than exact predictions. 
@@ -24,8 +21,7 @@ class ConcordanceIndexMetric(Metric):
         analysis, as it helps researchers and clinicians understand how well their models perform in 
         predicting outcomes, making it a valuable tool in fields like healthcare and clinical research.
         ''')
-    
-    refs=[
+    refs: list[dict[str, Any]] = [
         {
             'year': 1996,
             'name': textwrap.dedent("""\
@@ -45,37 +41,20 @@ class ConcordanceIndexMetric(Metric):
         }
     ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'concordance_index'
 
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
-        """
-        Is this metric suitable for this candidate? Must be survival analysis.
-
-        Args:
-            X (pd.DataFrame): Features
-            y (pd.DataFrame): labels (with two columns: 'duration' and 'event')
-            type_of_target (str): Type of target (must be 'survival')
-
-        Returns:
-            bool: Suitable?
-        """
         return type_of_target == 'survival'
-        
-    def compute(self, y:pd.DataFrame, y_pred:pd.DataFrame, **kwargs) -> float:
-        """
-        Compute the concordance index with the predicted data.
 
-        Args:
-            y (pd.DataFrame): Ground truth data (duration and event status)
-            y_pred (pd.DataFrame): Predicted data (risk scores or predicted survival times)
-
-        Returns:
-            float: Computed concordance index
-        """
+    def compute(
+        self,
+        y: pd.DataFrame,
+        y_pred: pd.DataFrame,
+        **kwargs) -> float:
         event, time = zip(*y)
-        
+
         # Calculate concordance index using sksurv function
         result = concordance_index_censored(event, time, y_pred)
-        
+
         return result[0]  # The first value in the result is the concordance index

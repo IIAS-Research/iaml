@@ -1,20 +1,17 @@
-"""
-[PLOT] Class Prediction Error Plot
-"""
+"""[PLOT] Class Prediction Error Plot"""
 import textwrap
-import io
-import pandas as pd
+
 from yellowbrick.classifier import ClassPredictionError
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, yellowbrick_plot
 
+
+@yellowbrick_plot(ClassPredictionError)
 class ClassPredictionErrorPlot(MetricPlot):
-    """
-    [PLOT] Class Prediction Error Plot
-    """
-    
-    title = "Prediction Error Plot"
-    description = textwrap.dedent("""
+    """[PLOT] Class Prediction Error Plot"""
+
+    title: str = "Prediction Error Plot"
+    description: str = textwrap.dedent("""
         The Class Prediction Error is a visualization that helps understand how well a machine 
         learning model is performing in predicting medical conditions or diagnoses. It shows 
         both the correct predictions made by the model and the mistakes it makes for each condition.
@@ -34,29 +31,7 @@ class ClassPredictionErrorPlot(MetricPlot):
         shows where the model is making errors, making it easier to improve its accuracy, which is 
         critical in healthcare where correct predictions can have a big impact on patient outcomes.
         """)
-    
-    @capture
-    def _compute(self, estimator:'IAMLPipeline', 
-            X:pd.DataFrame, y,
-            X_train:pd.DataFrame=None, y_train=None,
-            **kwargs) -> MetricPlot:
-        """
-        Compute plot given X, y. 
-        """
-        self._binary_image = io.BytesIO()
-        self.__visualizer = ClassPredictionError(estimator, is_fitted=True)
-        
-        if X_train is not None and y_train is not None:
-            self.__visualizer.fit(X_train, y_train)
-            
-        self.__visualizer.score(X, y)
-        self.__visualizer.poof(self._binary_image)
-        
-        return self
-    
+
     @classmethod
-    def suitable(cls, type_of_target:str) -> bool:  # pylint: disable=unused-argument
-        """
-        Does this plot is usable for a given type_of_target ?
-        """
-        return type_of_target in ['binary', 'multiclass',  'multilabel-indicator']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target in ['binary', 'multiclass', 'multilabel-indicator']
