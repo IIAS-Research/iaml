@@ -5,7 +5,6 @@ import pandas as pd
 from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
-from ...decorators.all import is_step
 from ...data_type import DataType
 
 # TODO Fix this step

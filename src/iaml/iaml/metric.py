@@ -10,10 +10,10 @@ class Metric:
     name: str = ""
     """Name of the metric"""
 
-    description: str = ""
+    _description: str = ""
     """Short description of the metric"""
 
-    description_long: str = ""
+    _description_long: str = ""
     """Long description of the metric"""
 
     refs: list[dict[str, Any]] = []
@@ -39,6 +39,22 @@ class Metric:
         if hasattr(cls, 'refs'):
             return [Reference(ref, cls.__name__) for ref in cls.refs]
         return []
+
+    @property
+    def description(self) -> str:
+        """Formats the description of a step with its configuration.
+
+        :return: Formatted description.
+        """
+        return self._description.replace('\n', '')
+
+    @property
+    def description_long(self) -> str:
+        """Formats the longer description of a step with its configuration.
+        
+        :return: Formatted description.
+        """
+        return self._description_long.replace('\n', '')
 
     def __str__(self) -> str:
         """Metric name

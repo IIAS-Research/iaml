@@ -6,7 +6,7 @@ from sksurv.nonparametric import nelson_aalen_estimator
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, capture
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
 
@@ -29,7 +29,7 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         """)
 
     @capture
-    def _compute(
+    def compute(
         self,
         estimator: 'IAMLPipeline',
         X: pd.DataFrame,
@@ -69,4 +69,4 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
 
     @classmethod
     def suitable(cls, type_of_target: str) -> bool:
-        return type_of_target in ['survival']
+        return type_of_target == 'survival'

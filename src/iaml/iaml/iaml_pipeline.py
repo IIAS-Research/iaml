@@ -2,15 +2,19 @@
 Transform, resample and then predict from Candidate instance 
 """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import pickle
+
 from copy import deepcopy
 from hashlib import md5
-from typing import TYPE_CHECKING
+
 import numpy as np
 import shap
 import pandas as pd
+
 from sklearn.pipeline import Pipeline
+
 from .dataset import Dataset
 from .void_step import VoidStep
 from .explanation import Explanation
@@ -36,7 +40,7 @@ class IAMLPipeline(Pipeline):
 
     def __init__(
         self,
-        steps: list[tuple[str, 'Step']] = None,
+        steps: list[tuple[str, Step]] = None,
         original_dataset: pd.DataFrame = None,
         estimator_type: str = None) -> None:
         if steps is None:
@@ -270,14 +274,14 @@ class IAMLPipeline(Pipeline):
         return [ e for _, step in self.training_steps if (e := step.explain()) is not None ]
 
     @property
-    def model(self) -> 'Step':
+    def model(self) -> Step:
         """Shortcut to get the prediction model of IAMLPipeline 
 
         :return: Prediction model of the pipeline (or None)
         """
         return self.predictor
 
-    def add_transform(self, instance: 'Step') -> None:
+    def add_transform(self, instance: Step) -> None:
         """Add transform Step to the Pipeline
 
         :param Step instance: Step to add (must implement transform).
@@ -288,7 +292,7 @@ class IAMLPipeline(Pipeline):
         else:
             raise ValueError("Step must implement transform method")
 
-    def add_resample(self, instance:'Step') -> None:
+    def add_resample(self, instance: Step) -> None:
         """Add resample Step to the Pipeline
 
         :param Step instance: Step to add (must implement resample).
@@ -299,7 +303,7 @@ class IAMLPipeline(Pipeline):
         else:
             raise ValueError("Step must implement resample method")
 
-    def set_model(self, instance: 'Step') -> None:
+    def set_model(self, instance: Step) -> None:
         """
         Set the predict model (Step) of the Pipeline
 
@@ -308,7 +312,7 @@ class IAMLPipeline(Pipeline):
         """
         self.predictor = (str(instance), instance)
 
-    def copy(self) -> 'IAMLPipeline':
+    def copy(self) -> IAMLPipeline:
         """Return a copied IAMLPipeline
 
         :return: Copied IAMLPipeline instance.
@@ -325,9 +329,9 @@ class IAMLPipeline(Pipeline):
 
     @property
     def have_model(self) -> bool:
-        """Does the IAMLPipeline have a model set ?
+        """Does the IAMLPipeline have a model set?
 
-        :return:True a model have been set
+        :return: True if a model has been set.
         """
         return bool(self.predictor)
 
@@ -441,7 +445,7 @@ class IAMLPipeline(Pipeline):
         """
         return ' '.join(x.title() for x in str(self.model[0]).split('_'))
 
-    def explain_model(self, X: pd.DataFrame, nsamples: int = 20) -> 'Explanation':
+    def explain_model(self, X: pd.DataFrame, nsamples: int = 20) -> Explanation:
         """Explains the model by computing SHAP values on the fitted model.
         Uses the train set as the masker, and the provided set as
         prediction.
@@ -457,11 +461,13 @@ class IAMLPipeline(Pipeline):
             raise RuntimeError('There is no model to explain.')
 
         def p(pred_data):
-            if hasattr(self, 'predict_proba'):
-                return self.predict_proba(pd.DataFrame(pred_data, columns=X.columns))[:, 1]
+            df = pd.DataFrame(pred_data, columns=X.columns)
 
-            # Regressor does not implement predict_proba
-            return self.predict(pd.DataFrame(pred_data, columns=X.columns))
+            if hasattr(self, 'predict_proba'):
+                return self.predict_proba(df)[:, 1]
+
+            # when the regressor does not implement predict_proba
+            return self.predict(df)
 
         mask_dataset = self.original_dataset if self.original_dataset is not None \
             and not self.original_dataset.empty else X
@@ -476,7 +482,7 @@ class IAMLPipeline(Pipeline):
             feature_names=X.columns.to_list(),
             output_names=X.columns.to_list())
 
-        return Explanation(self.model[1], None, None, shap_explanation)
+        return Explanation(shap_explanation)
 
     # Implement scikit-learn estimator's methods
     def __sklearn_is_fitted__(self):
@@ -519,4 +525,5 @@ class IAMLPipeline(Pipeline):
                 'doi': 'https://doi.org/10.48550/arXiv.1705.07874',
                 'publisher': 'arXiv preprint arXiv:1705.07874'
             }, 'Shap')]
+
         return Reference.bibliography(references, structured)

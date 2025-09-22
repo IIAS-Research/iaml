@@ -12,7 +12,7 @@ from .dataset import Dataset
 from .cache import Cache
 from .splitters import random_splitter
 from .iaml_pipeline import IAMLPipeline
-from .plot import MetricPlot
+from .metric_plot import MetricPlot
 from .logger import Logger
 
 if TYPE_CHECKING:
@@ -369,24 +369,29 @@ class Candidate:
 
         return md5(to_hash.encode()).hexdigest()
 
-    def explain(self) -> list:
-        """Explain all steps
+    def describe_metrics(self) -> str:
+        """Explain all metrics
 
-        :return: list of Explain strings
+        :return: Markdown table of all metrics.
         """
-        # Results explain
-        metrics = '\n'.join([
+        metrics = '\n            '.join([
             f'| `{m}` | **{self.__metric_value(m):.4f}** | *{m.explain()}* |'
             for m in self.metrics
         ])
-        results_explain: str = textwrap.dedent(f'''
+
+        return textwrap.dedent(f'''\
             ### Results
             | Metric name | Computed value | Description |
             | ----------- | -------------- | ----------- |
             {metrics}
             ''') if len(metrics) > 0 else ""
 
-        return [*self.pipeline.explanations, results_explain]
+    def describe_steps(self) -> list[str]:
+        """Explain all steps
+
+        :return: List of explanation strings for each step.
+        """
+        return self.pipeline.explanations
 
     def explain_model_performance(
         self,
@@ -409,14 +414,42 @@ class Candidate:
         if isinstance(y_train, pd.DataFrame):
             y_train = y_train[y_train.columns[0]]
 
-
         plots = []
         for plot_sub_class in MetricPlot.__subclasses__():
             # Verify if a subclass is suitable or not
             if plot_sub_class.suitable(self.dataset.type_of_target):
-                plot = plot_sub_class(self.pipeline,
+                plot = plot_sub_class().compute(self.pipeline,
                     deepcopy(X_test), deepcopy(y_test),
                     X_train=deepcopy(X_train), y_train=deepcopy(y_train), **kwargs)
                 plots.append(plot)
 
         return plots
+
+    def explain_feature_importance(self, X: pd.DataFrame, nsamples: int = 20):
+        """
+        Explains the model by computing SHAP values on the fitted model. Uses
+        the train set as the masker, and the provided set as prediction.
+
+        :param pd.DataFrame X: Prediction set to compute SHAP values for.
+        :param int, optional nsamples: Number of samples to pick from the masker to pick feature 
+            data from for each row in the provided prediction dataset. More samples means more 
+            accurate SHAP values and longer computing times. Defaults to 20.
+        :return: Model explanation, with an overview of the most important features, and graphs.
+        """
+        return self.pipeline.explain_model(X, nsamples)
+
+    def predict(self, X: pd.DataFrame) -> list:
+        """Run all the steps to predict labels from candidate data
+
+        :param pd.DataFrame X: Features used as candidate of the pipeline.
+        :return: Predicted values
+        """
+        return self.pipeline.predict(X)
+
+    def predict_proba(self, X: pd.DataFrame) -> list:
+        """Run all the steps to predict labels from candidate data
+
+        :param pd.DataFrame X: Features used as candidate of the pipeline.
+        :return: Predicted values
+        """
+        return self.pipeline.predict(X)

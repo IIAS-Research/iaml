@@ -1,6 +1,8 @@
 """
 [PLOT] Precision-Recall Curve Plot
 """
+from __future__ import annotations
+
 import textwrap
 import io
 from typing import TYPE_CHECKING
@@ -8,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, average_precision_score
 
-from ..plot import MetricPlot, capture
+from ..metric_plot import MetricPlot, capture
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
 
@@ -37,9 +39,9 @@ class PrecisionRecallCurvePlot(MetricPlot):
         """)
 
     @capture
-    def _compute( # pylint: disable=arguments-differ
+    def compute( # pylint: disable=arguments-differ
         self,
-        estimator: 'IAMLPipeline',
+        estimator: IAMLPipeline,
         X: pd.DataFrame,
         y: pd.Series,
         **kwargs) -> MetricPlot:
@@ -80,5 +82,5 @@ class PrecisionRecallCurvePlot(MetricPlot):
         return self
 
     @classmethod
-    def suitable(cls, type_of_target: str) -> bool:  # pylint: disable=unused-argument
-        return type_of_target in ['binary']
+    def suitable(cls, type_of_target: str) -> bool:
+        return type_of_target == 'binary'

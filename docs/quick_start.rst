@@ -71,19 +71,24 @@ IAML provides tools to explain model behavior and feature importance. Here's how
 
 .. code-block:: python
 
-    model = iaml.chosen_model
+    candidates = model.fit(X_train, y_train)
+
+    bestmodel = candidates[0]
 
     # Generate a summary of the pipeline
-    model.explain()
+    bestmodel.describe_steps()
+    bestmodel.describe_metrics()
 
     # Perform detailed feature importance analysis
-    model.explain(X_test, y_test)
+    explanation = bestmodel.explain_feature_importance(X_test)
+    explanation.to_markdown_shap()
+    explanation.to_markdown_plots()
 
-    # Visualizations (e.g., SHAP plots)
-    -> TODO: How to visualize easily?
+    # Visualizations (e.g., confusion matrix)
+    bestmodel.explain_model_performance(X_test, y_test)
 
     # Get scientific references
-    model.bibliography()
+    bestmodel.bibliography()
 
 Full example
 ============
@@ -96,7 +101,7 @@ Below is a basic example of using IAML to solve a classification problem.
     from sklearn.datasets import load_breast_cancer
 
     # Load dataset
-    data = load_breast_cancer()
+    data = load_breast_cancer(as_frame=True)
     X, y = data.data, data.target
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -104,18 +109,19 @@ Below is a basic example of using IAML to solve a classification problem.
     model = IAML(max_duration=120)
 
     # Train the model
-    model.fit(X_train, y_train)
+    candidates = model.fit(X_train, y_train)
+    bestmodel = candidates[0]
 
     # Make predictions
-    predictions = model.predict(X_test)
+    predictions = bestmodel.predict(X_test)
 
     # Evaluate the model
-    results = model.evaluate(X_test, y_test)
+    results = bestmodel.evaluate(X_test, y_test)
     print("Performance Metrics:", results)
 
 .. note::
 
-    This is an example of a classification task, but IAML automatically adapts to input data. The code remains the same for regression tasks.
+    This is an example for a classification task, but IAML automatically adapts to the input data. The code remains the same for regression tasks.
 
 What's Next?
 ============
