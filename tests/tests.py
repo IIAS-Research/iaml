@@ -9,7 +9,7 @@ import os, sys
 
 def main(args):
     python_file_path = os.path.dirname(os.path.abspath(__file__))
-    tests_path = python_file_path+"/tests/"
+    tests_path = python_file_path
     
     if len(args):
         if args[0] == "integration":
