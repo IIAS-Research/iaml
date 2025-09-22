@@ -3,8 +3,9 @@ name = "iaml"
 version = "0.1.0"
 authors = [
     { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
-    { name="Robin BOURACHOT", email="rbourachot@chu-reims.fr" },
     { name="Hugo RUELLET", email="hruellet@chu-reims.fr" },
+    { name="Robin BOURACHOT", email="rbourachot@chu-reims.fr" },
+    { name="Youssouf DAHLOUK", email="ydahlouk@chu-reims.fr" },
 ]
 readme = "README.md"
 requires-python = ">=3.10"
@@ -45,7 +46,7 @@ cudf = [
 "Bug Tracker" = "https://gitlab.example.invalid/DataScience/automl/-/issues"
 
 [tool.setuptools]
-package-dir = { "iaml" = "src/iaml/iaml" }
+package-dir = { "iaml" = "src/iaml" }
 
 [tool.uv]
 dev-dependencies = [

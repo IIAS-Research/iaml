@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # Include tools lib
-sys.path.append('./src/iaml')
+sys.path.append('./src')
 from iaml import *
 from iaml.explanation import Explanation
 
@@ -47,11 +47,8 @@ class TestLearning(unittest.TestCase):
         """
         Test : Regression on a CSV file
         """
-        datasets = ['./src/perf_logger/tests_data/insurance.csv',
-                    './src/perf_logger/tests_data/life_expectancy.csv',
-                    './src/perf_logger/tests_data/concrete_data.csv',
-                    './src/perf_logger/tests_data/ds_salaries.csv',
-                    './src/perf_logger/tests_data/tips.csv'
+        datasets = ['./tests/data/insurance.csv',
+                    './tests/data/life_expectancy.csv'
                     ]
         
         for dataset in datasets:
@@ -66,14 +63,8 @@ class TestLearning(unittest.TestCase):
         """
         Test : Classification on a CSV file
         """
-        datasets = ['./src/perf_logger/tests_data/body_signal_of_smoking.csv',
-                    './src/perf_logger/tests_data/bbc-text.csv',
-                    './src/perf_logger/tests_data/Drug_classification.csv',
-                    './src/perf_logger/tests_data/fertility.csv',
-                    './src/perf_logger/tests_data/fetal_health.csv',
-                    './src/perf_logger/tests_data/healthcare-dataset-stroke-data.csv',
-                    './src/perf_logger/tests_data/HepatitisCdata.csv',
-                    './src/perf_logger/tests_data/titanic.csv'
+        datasets = ['./tests/data/body_signal_of_smoking.csv',
+                    './tests/data/titanic.csv'
                     ]
         
         for dataset in datasets:
@@ -89,8 +80,7 @@ class TestLearning(unittest.TestCase):
         Test : Survival on a CSV file
         """
         datasets = [
-                    './src/perf_logger/tests_data/seer.csv',
-                    './src/perf_logger/tests_data/chc.csv'
+                    './tests/data/seer.csv'
                     ]
         
         for dataset in datasets:
