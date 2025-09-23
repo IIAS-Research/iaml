@@ -36,6 +36,7 @@ dependencies = [
     "scikit-survival>=0.23.0",
     "psutil>=6.0.0",
     "yellowbrick>=1.5",
+    "scikit-optimize>=0.10.2",
 ]
 
 [dependency-groups]
