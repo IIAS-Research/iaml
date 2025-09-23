@@ -18,6 +18,8 @@ public/
 /docs/_build/
 /docs/autoapi/
 
+# Build
+dist/
 # Environments
 .env
 .venv

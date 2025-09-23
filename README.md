@@ -1,58 +1,58 @@
 # IAML
 
-Plateforme d'AutoML développée par l'IIAS. L'objectif est de simplifier la réalisation des projets de DS par la génération et l'execution automatique de PipeLines.
-L'aspect Data est traité par le développement package Python. Une interface web sera également développée pour que l'outil puisse être utilisé par tous.
 
-- **Documentation complète** : [http://docs.example.invalid/automl/main](http://docs.example.invalid/automl/main)
-- Autres branches : [http://docs.example.invalid/automl/[BRANCH_NAME]](http://docs.example.invalid/automl/[BRANCH_NAME])
+AutoML platform developed by IIAS. The aim is to simplify the implementation of Data Scientist projects through the automatic generation and execution of pipelines.
+The data aspect is handled by the Python package development. A web interface will also be developed so that the tool can be used by everyone.
+
+- **Documentation** : __coming_soon__
 
 ***
 ## 🔧 1 - Installation
 
-### En tant que projet
+### As a project
 
-Pour installer ce projet, suivez les étapes suivantes :
+To install this project, follow these steps:
 
-1. Installer Python 3 ([télécharger](https://www.python.org/downloads/))
-2. Installer `uv` (le plus simple est de l'installer en global, hors d'un environnement virtuel)
-3. Installer les dépendances (la création de l'environnement virtuel est automatique) :
-    - Avec support pour notebooks Jupyter et mkDocs, exécuter `uv sync`
-    - Autrement, exécuter `uv sync --no-dev`
+1. Install Python 3 ([download](https://www.python.org/downloads/))
+2. Install `uv` (the easiest way is to install it globally, outside a virtual environment)
+3. Install dependencies (virtual environment creation is automatic):
+    - With support for Jupyter and mkDocs notebooks, run `uv sync`
+    - Otherwise, run `uv sync --no-dev`
 
-### En tant que bibliothèque
+### As a library
 
-Insérer une des lignes suivantes dans votre `requirements.txt` :
+Insert one of the following lines in your `requirements.txt` file :
 
 ```bash
-iaml @ git+ssh://git@gitlab.example.invalid/DataScience/automl
-iaml[cudf] @ git+ssh://git@gitlab.example.invalid/DataScience/automl # Avec cuDF
+iaml @ git+ssh://git@github.com:iias_research/iaml
+iaml[cudf] @ git+ssh://git@github.com:iias_research/iaml # Avec cuDF
 ```
 
 ***
-## 🚀 2 - Lancement
+## 🚀 2 - How to run
 
 TODO
 
 ***
-## 💡 3 - Informations générales
+## 💡 3 - General information
 
-Structures des fichiers : 
+Directory structure :
 
-- src/scripts/ : Contients les fichiers de scripts python
-- notbooks/ : Contients les notebooks
-- libs/ : Contients les librairies python
-- data/ : Contients les fichiers base de données (git-ignoré)
-- assets/ : Contients les différents fichiers SQL, JSON, XML..
-- docs/ : Contients les fichiers markdown permettant la génération de la documentation
-- tests : Contients les tests unitaires et d'intégrations 
+- src/scripts/ : Contains python script files
+- notbooks/ : Contains notebooks
+- libs/ : Contains python libraries
+- data/ : Contains database files (git-ignored)
+- assets/ : Contains various SQL, JSON, XML files..
+- docs/ : Contains markdown files for generating documentation
+- tests : Contains unit and integration testing
 
 ***
-## 📌 4 - Outils et packages utilisés
+## 📌 4 - Tools and packages used
 
 - MKDOCS version 1.5.3
 
 ***
-## 💪 5 -  Crédits
+## 💪 5 -  Credits
 
 - Rudy MERIEUX
 - Robin BOURACHOT
