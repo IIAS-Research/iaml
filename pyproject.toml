@@ -38,8 +38,8 @@ dependencies = [
     "yellowbrick>=1.5",
 ]
 
-[project.optional-dependencies]
-cudf = [
+[dependency-groups]
+gpu = [
     "cudf-cu11>=24.8.1",
 ]
 
