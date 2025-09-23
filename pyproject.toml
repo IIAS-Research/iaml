@@ -31,7 +31,7 @@ dependencies = [
     "pandas>=2.2.2",
     "rich>=13.8.1",
     "scikit-learn>=1.5.2",
-    "shap",
+    "shap==0.47.0",
     "tpot>=0.12.2",
     "scikit-survival>=0.23.0",
     "psutil>=6.0.0",
@@ -64,6 +64,3 @@ dev-dependencies = [
     "sphinx-autoapi>=3.3.3",
     "sphinx-rtd-theme>=3.0.2",
 ]
-
-[tool.uv.sources]
-shap = { git = "https://github.com/shap/shap.git", rev = "98f0b61c0ddc41595c765f79d9cccdeb0cc608a0" }
