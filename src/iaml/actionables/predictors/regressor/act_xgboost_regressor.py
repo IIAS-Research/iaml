@@ -65,7 +65,7 @@ class ActXGBoostRegressor(Predictor):
             'learning_rate': {
                 'description': 'Learning rate',
                 'default': 0.1,
-                'range': [0.000000001, 5]
+                'range': [0.000000001, 5.0]
             },
             'n_estimators': {
                 'description': 'Number of estimators',
@@ -89,8 +89,8 @@ class ActXGBoostRegressor(Predictor):
             },
             'max_features': {
                 'description': 'The number of features to consider when looking for the best split',
-                'default': 1,
-                'range': [0.1, 1]
+                'default': 1.0,
+                'range': [0.1, 1.0]
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node',

@@ -48,7 +48,7 @@ class ActCatBoostRegressor(Predictor):
             'learning_rate': {
                 'description': 'The learning rate.',
                 'default': 0.03,
-                'range': [0.001, 1]
+                'range': [0.001, 1.0]
             },
             'depth': {
                 'description': 'Depth of the tree.',
