@@ -52,9 +52,15 @@ class BayesianOptimizer(BaseOptimizer):
                     
                     if isinstance(value, (int, float)):
                         if 'range' in config:
-                            if config['range'][0] > config['range'][1]:
-                                config['range'] = (config['range'][1], config['range'][0])
-                            dimensions.append(Real(*config['range']) if isinstance(value, float) else Integer(*config['range']))
+                            low, high = config['range']
+                            if low > high:
+                                low, high = high, low
+                            if isinstance(value, float):
+                                dimensions.append(Real(low, high))
+                            else:
+                                if low <= 0:
+                                    low = 1
+                                dimensions.append(Integer(low, high))
                         else:
                             dimensions.append(Real(-1e6, 1e6) if isinstance(value, float) else Integer(-1e6, 1e6))
                     elif 'categorical' in config.keys():
