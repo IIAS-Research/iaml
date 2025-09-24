@@ -62,7 +62,10 @@ class BayesianOptimizer(BaseOptimizer):
                                     low = 1
                                 dimensions.append(Integer(low, high))
                         else:
-                            dimensions.append(Real(-1e6, 1e6) if isinstance(value, float) else Integer(-1e6, 1e6))
+                            if isinstance(value, float):
+                                dimensions.append(Real(-1e6, 1e6))
+                            else:
+                                dimensions.append(Integer(1, 1_000_000)) # TODO Pas de int négatif ? 
                     elif 'categorical' in config.keys():
                         dimensions.append(Categorical(config['categorical']))
                     elif isinstance(value, bool):
