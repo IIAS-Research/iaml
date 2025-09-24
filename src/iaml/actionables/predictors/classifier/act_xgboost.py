@@ -66,7 +66,7 @@ class ActXGBoost(Predictor):
             'learning_rate': {
                 'description': 'Learning rate',
                 'default': 0.1,
-                'range': [0.0000001, 5]
+                'range': [0.0000001, 5.0]
             },
             'subsample': {
                 'description': textwrap.dedent('''\

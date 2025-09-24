@@ -70,7 +70,7 @@ class ActMeanColumn(Actionable):
         :return: Transformed dataset.
         """
         for name, mean in self.columns:
-            X[name] = X[name].fillna(mean)
+            X[name] = X[name].fillna(mean).infer_objects(copy=False)
 
         return X
 

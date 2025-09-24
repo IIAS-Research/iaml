@@ -56,8 +56,8 @@ class ActRandomForest(Predictor):
             },
             'max_features': {
                 'description': 'The number of features to consider when looking for the best split',
-                'default': 1,
-                'range': [0.1, 1]
+                'default': 1.0,
+                'range': [0.1, 1.0]
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node',

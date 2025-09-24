@@ -27,7 +27,7 @@ from .splitters import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 from .meta_partial_explorer_step import MetaPartialExplorerStep
-from .optimizers import Optimizer, GeneticOptimizer
+from .optimizers import Optimizer, GeneticOptimizer, RandomOptimizer, BayesianOptimizer
 from .meta_predictor import MetaPredictor
 from .predictor import Predictor
 from .logger import Logger
@@ -73,7 +73,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         max_duration: int = -1,
         time_before_sample_use: int | str = None,
         preprocessor: bool = False,
-        main_metric: Metric = None) -> None:
+        main_metric: Metric = None,
+        optimizer: Optimizer = BayesianOptimizer) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -82,6 +83,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         self.metalearner: bool = metalearner
         """Enable / Disable Meta Learner"""
+        
+        self.optimizer = optimizer
+        """Choose Optimizer"""
+        
 
         if metalearner is None:
             if max_duration < 500 and max_duration != -1:
@@ -393,7 +398,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             ### FINETUNING
             candidates = self.__optimize(dataset,
                                         gen0_candidates,
-                                        optimizer=GeneticOptimizer(duration=remain_time()),
+                                        optimizer=self.optimizer(duration=remain_time()),
                                         max_duration=remain_time(),
                                         patience=patience,
                                         callback=callback)
