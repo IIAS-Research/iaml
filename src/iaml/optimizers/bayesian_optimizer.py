@@ -84,28 +84,32 @@ class BayesianOptimizer(BaseOptimizer):
                 Logger().warning(f"Missing optimizer for structure {structure_id}")
                 continue
             
-            new_params = optimizer_data['optimizer'].ask(n_points=1)[0]
-            if len(new_params) != len(optimizer_data['param_keys']):
+            try:
+                new_params = optimizer_data['optimizer'].ask(n_points=1)[0]
+            except:
+                new_params = None
+                
+            if new_params and len(new_params) != len(optimizer_data['param_keys']):
                 Logger().error(f"Parameter mismatch: expected {len(optimizer_data['param_keys'])}, got {len(new_params)}")
                 continue
             
             new_candidate = deepcopy(candidate)
             idx = 0
-            
-            for step_idx, step in enumerate(new_candidate.pipeline.steps):
-                for key, config in sorted(step[1].configuration.items()):
-                    if key in self.ignored_configs:
-                        continue
-                    param_key = f"{step_idx}_{key}"
-                    if param_key in optimizer_data['param_keys']:
-                        if isinstance(config['value'], bool):
-                            step[1].configure(key, bool(new_params[idx]))
-                        elif isinstance(new_params[idx], (np.integer, np.floating)):
-                            step[1].configure(key, new_params[idx].item())
-                        else:
-                            step[1].configure(key, new_params[idx])
-                        idx += 1
-            new_candidates.append(new_candidate)
+            if new_params:
+                for step_idx, step in enumerate(new_candidate.pipeline.steps):
+                    for key, config in sorted(step[1].configuration.items()):
+                        if key in self.ignored_configs:
+                            continue
+                        param_key = f"{step_idx}_{key}"
+                        if param_key in optimizer_data['param_keys']:
+                            if isinstance(config['value'], bool):
+                                step[1].configure(key, bool(new_params[idx]))
+                            elif isinstance(new_params[idx], (np.integer, np.floating)):
+                                step[1].configure(key, new_params[idx].item())
+                            else:
+                                step[1].configure(key, new_params[idx])
+                            idx += 1
+                new_candidates.append(new_candidate)
         
         return new_candidates
     
