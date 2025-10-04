@@ -74,7 +74,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         time_before_sample_use: int | str = None,
         preprocessor: bool = False,
         main_metric: Metric = None,
-        optimizer: Optimizer = BayesianOptimizer) -> None:
+        optimizer: Optimizer = GeneticOptimizer,
+        train_on_n_samples: int = None) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -87,6 +88,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.optimizer = optimizer
         """Choose Optimizer"""
         
+        self.train_on_n_samples = train_on_n_samples
+        """If defined, pick n sample in the dataset before train"""
+        
 
         if metalearner is None:
             if max_duration < 500 and max_duration != -1:
@@ -94,6 +98,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     Meta learner are disabled (you can enable it, \
                     with the parameter 'metalearner')")
                 self.metalearner = False
+            else:
+                self.metalearner = True
+        # metalearner = False # Disable -> In this version, metalearner have bad results ?
 
         # Set max duration of each stage
         if max_stage_duration is None:
@@ -347,6 +354,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 deepcopy(y),
                 groups=groups,
                 groups_columns=groups_columns)
+            
+            if self.train_on_n_samples != None and self.train_on_n_samples > 0:
+                dataset = dataset.sample(self.train_on_n_samples)
 
             ### INITIAL GENERATE CANDIDATE
             self.init_candidate: Candidate = Candidate(

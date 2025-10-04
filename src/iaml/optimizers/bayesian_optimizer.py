@@ -113,6 +113,29 @@ class BayesianOptimizer(BaseOptimizer):
         
         return new_candidates
     
+    def _export_params(self, candidate, optimizer_data):
+        params = [None]*len(optimizer_data['param_keys'])
+        for step_idx, step in enumerate(candidate.pipeline.steps):
+            for key, config in sorted(step[1].configuration.items()):
+                if key in self.ignored_configs:
+                    continue
+                param_key = f"{step_idx}_{key}"
+                if param_key in optimizer_data['param_keys']:
+                    try:
+                        param_index = optimizer_data['param_keys'].index(param_key)
+                        value = config['value']
+                        if isinstance(value, (np.integer, np.floating)):
+                            value = value.item()
+                        
+                        bounds = optimizer_data['dimensions'][param_index].bounds
+                        if isinstance(bounds, tuple) and isinstance(value, (int, float)):
+                            value = max(min(value, bounds[1]), bounds[0])
+                        params[param_index] = value
+                    except IndexError as e:
+                        Logger().error(f"IndexError: {str(e)} - param_key: {param_key}, param_keys: {optimizer_data['param_keys']}")
+                        continue
+        return params
+    
     def run(self, candidates):
         """
         Perform Bayesian Optimization iteration.
@@ -123,7 +146,6 @@ class BayesianOptimizer(BaseOptimizer):
             self._initialize_search_space(candidates)
         
         candidates.sort(key=lambda c: c.get_main_metric_value(), reverse=True)
-        candidates = candidates[0:self.max_candidates//2]
         
         for candidate in candidates:
             structure_id = self._generate_structure_id(candidate)
@@ -132,30 +154,7 @@ class BayesianOptimizer(BaseOptimizer):
                 Logger().warning(f"Skipping candidate {structure_id}, missing optimizer")
                 continue
             
-            params = []
-            for step_idx, step in enumerate(candidate.pipeline.steps):
-                for key, config in sorted(step[1].configuration.items()):
-                    if key in self.ignored_configs:
-                        continue
-                    param_key = f"{step_idx}_{key}"
-                    if param_key in optimizer_data['param_keys']:
-                        try:
-                            param_index = optimizer_data['param_keys'].index(param_key)
-                            value = config['value']
-                            if isinstance(value, (np.integer, np.floating)):
-                                value = value.item()
-                            
-                            bounds = optimizer_data['dimensions'][param_index].bounds
-                            if isinstance(bounds, tuple) and isinstance(value, (int, float)):
-                                value = max(min(value, bounds[1]), bounds[0])
-                            params.append(value)
-                        except IndexError as e:
-                            Logger().error(f"IndexError: {str(e)} - param_key: {param_key}, param_keys: {optimizer_data['param_keys']}")
-                            continue
-            
-            if len(params) != len(optimizer_data['param_keys']):
-                Logger().error(f"Mismatch in parameters: expected {len(optimizer_data['param_keys'])}, got {len(params)}")
-                continue
+            params = self._export_params(candidate, optimizer_data)
             
             main_metric = candidate.get_main_metric_value()
             if isinstance(main_metric, (np.integer, np.floating)):
@@ -169,10 +168,13 @@ class BayesianOptimizer(BaseOptimizer):
             except ValueError as e:
                 Logger().error(f"Error in skopt.tell(): {str(e)}. Params: {params}, Bounds: {optimizer_data['optimizer'].space.bounds}")
                 continue
-        
-        new_candidates = self._suggest_new_candidates(candidates)
+            
+        keep_candidates = candidates[0:self.max_candidates//2]
+        new_candidates = self._suggest_new_candidates(keep_candidates)
         self.current_iteration += 1
-        return new_candidates + candidates
+        
+        # return self._suggest_new_candidates(candidates) # DEBUG
+        return keep_candidates + new_candidates
     
     @property
     def finished(self) -> bool:
