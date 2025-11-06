@@ -67,16 +67,24 @@ class IntegratedBrierScoreMetric(Metric):
         :param dict, optional \\**kwargs: Additional parameters
         :return: Computed value
         """
-        y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
-        y = Dataset.fix_y_survival(y, y_train)
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
+        y_train_samples = Dataset.normalize_survival_target(y_train)
+        y_samples = Dataset.fix_y_survival(y, y_train_samples)
+
+        y_train_struct = np.array(
+            y_train_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
+        y_struct = np.array(
+            y_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
 
         # Extract time from y test
-        _, time = zip(*y)
+        _, time = zip(*y_samples)
         times = np.arange(min(time), max(time))
 
         # Extract risk score for each time point
         predictions = np.asarray([[fn(t) for t in times] for fn in y_pred])
 
         # Calculate integrated Brier score using sksurv function
-        return integrated_brier_score(y_train, y, predictions, times)
+        return integrated_brier_score(y_train_struct, y_struct, predictions, times)

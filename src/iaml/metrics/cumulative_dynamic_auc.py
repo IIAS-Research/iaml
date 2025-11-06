@@ -87,19 +87,27 @@ class CumulativeDynamicAUCMetric(Metric):
         :param dict, optional \\**kwargs: Additional parameters
         :return: Computed value
         """
-        y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
-        y = Dataset.fix_y_survival(y, y_train)
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
+        y_train_samples = Dataset.normalize_survival_target(y_train)
+        y_samples = Dataset.fix_y_survival(y, y_train_samples)
+
+        y_train_struct = np.array(
+            y_train_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
+        y_struct = np.array(
+            y_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
 
         # Extract time from y test
-        _, time = zip(*y)
+        _, time = zip(*y_samples)
         times = np.arange(min(time), max(time))
 
         # Extract risk score for each time point
         predictions = np.asarray([[fn(t) for t in times] for fn in y_pred])
 
         # Calculate cumulative dynamic AUC using sksurv function
-        all_points, _ = cumulative_dynamic_auc(y_train, y, predictions, times)
+        all_points, _ = cumulative_dynamic_auc(y_train_struct, y_struct, predictions, times)
 
         # Return mean AUC across time points
         return np.nanmean(all_points)

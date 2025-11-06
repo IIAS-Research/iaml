@@ -17,7 +17,6 @@ def type_of_target(y: list) -> str:
         return 'survival'
     if y.dtype == float and len(np.unique(y)) > len(y)*0.2:
         return 'continuous'
-
     return sk_type_of_target(y)
 
 def is_survival(y: list[tuple[Any, Any]]) -> bool:
@@ -30,19 +29,36 @@ def is_survival(y: list[tuple[Any, Any]]) -> bool:
     :param list[tuple[Any, Any]] y: each tuple contains two elements (binary-like, numeric).
     :return: True if the data meets the survival data requirements, False otherwise.
     """
-
+    
     # Ensure all elements are tuples of length 2
-    if not all(isinstance(row, tuple) and len(row) == 2 for row in y):
+    if not all(isinstance(row, (tuple, np.ndarray)) and len(row) == 2 for row in y):
         return False
 
     # Check if the first element of all tuples is binary-like
     first_elements = [row[0] for row in y]
-    if any(not isinstance(element, (bool, int))
-            for element in first_elements):
+    if not is_bool_convertible(first_elements):
         return False
-
+    
     # Check if the second element of all tuples is numeric (int or float)
-    if not all(isinstance(row[1], (int, float)) for row in y):
+    if not all(isinstance(row[1], (int, float, np.integer, np.floating)) for row in y):
         return False
 
+    return True
+
+def is_bool_convertible(seq):
+    for element in seq:
+        if isinstance(element, (bool, np.bool_)):
+            continue
+        elif isinstance(element, (int, np.integer)):
+            if element in (0, 1):
+                continue
+            else:
+                return False
+        elif isinstance(element, (float, np.floating)):
+            if abs(element - 0.0) < 1e-9 or abs(element - 1.0) < 1e-9:
+                continue
+            else:
+                return False
+        else:
+            return False
     return True

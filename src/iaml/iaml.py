@@ -92,15 +92,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """If defined, pick n sample in the dataset before train"""
         
 
-        if metalearner is None:
-            if max_duration < 500 and max_duration != -1:
-                Logger().warning("Max duration under 500 seconds : \
-                    Meta learner are disabled (you can enable it, \
-                    with the parameter 'metalearner')")
-                self.metalearner = False
-            else:
-                self.metalearner = True
-        # metalearner = False # Disable -> In this version, metalearner have bad results ?
+        # if metalearner is None:
+        #     if max_duration < 500 and max_duration != -1:
+        #         Logger().warning("Max duration under 500 seconds : \
+        #             Meta learner are disabled (you can enable it, \
+        #             with the parameter 'metalearner')")
+        #         self.metalearner = False
+        #     else:
+        #         self.metalearner = True
+        metalearner = False # Disable -> In this version, metalearner have bad results ?
 
         # Set max duration of each stage
         if max_stage_duration is None:
@@ -375,6 +375,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
             Logger().info(f"{len(candidates)} generated pipelines")
+            
+            
+            # Logger().info(f"Warming up...")
+            # candidates[0].training_evaluate(dataset, splitter=self.splitter)
+            # Logger().info(f"Warmed up !")
 
             ### INITIAL EVALUATION
             # Evaluate candidates
@@ -522,11 +527,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             if not Cache().from_cache('IAML_'+fingerprint, dataset.X):
                 Cache().add_to_cache('IAML_'+fingerprint, dataset.X, candidate.computed_metrics)
 
+        best_metric = new_candidates[0].get_main_metric_value() if new_candidates else None
+        remaining_time = timeout - (time.monotonic() - start_time)
+
         self.__callback(callback, # pylint: disable=too-many-function-args
             generation = stage_number,
             generation_size = len(new_candidates),
-            best = new_candidates[0].get_main_metric_value(),
-            remaining_time = timeout - (time.monotonic() - start_time),
+            best = best_metric,
+            remaining_time = remaining_time,
             text = f'Stage {stage_number} finished' \
                 if stage_number is not None else "Initial evaluation finished")
 
@@ -567,37 +575,47 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 Patient has arbitrary set to 20')
             patience = 20
 
+        previous_candidates = candidates
+
         while   not(optimizer.finished) \
                 and (patience == -1 or iterations_without_improvement < patience) \
                 and (max_duration == -1 or max_duration > duration):
             # Generate new candidates
-            candidates = optimizer.run(candidates)
+            generated_candidates = optimizer.run(previous_candidates)
 
             if self.metalearner:
                 # Generate metapredictor
-                if len(candidates) > 1:
+                if len(generated_candidates) > 1:
                     for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
                         meta_candidate: MetaPredictor = metapredictor(
-                            [candidate for candidate in candidates if not candidate.is_meta][0:5]
+                            [candidate for candidate in generated_candidates if not candidate.is_meta][0:5]
                             ).to_candidate()
-                        candidates.append(meta_candidate)
+                        generated_candidates.append(meta_candidate)
 
             Logger().info(f'Finetuning... \
                 stage={iterations_count} \
-                candidates={len(candidates)} \
+                candidates={len(generated_candidates)} \
                 patience={iterations_without_improvement}/{patience}, \
                 duration={round(duration, 2)}/{max_duration}, \
                 best_result={best_result}')
 
             # Evaluate new candidates
-            candidates = self.__run_evaluations(candidates,
+            evaluated_candidates = self.__run_evaluations(generated_candidates,
                         dataset,
                         timeout=max_duration - (time.monotonic() - starting_time),
                         stage_number=iterations_count,
                         callback=callback)
 
             # Remove not computed (error or timeout)
-            candidates = [candidate for candidate in candidates if candidate.computed_metrics]
+            evaluated_candidates = [candidate for candidate in evaluated_candidates if candidate.computed_metrics]
+
+            if not evaluated_candidates:
+                Logger().warning('No candidates produced a valid evaluation; keeping previous best candidates.')
+                candidates = previous_candidates
+                break
+
+            candidates = evaluated_candidates
+            previous_candidates = candidates
 
             # Improvement ?
             new_best: float = candidates[0].get_main_metric_value()

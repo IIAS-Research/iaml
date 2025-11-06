@@ -8,12 +8,15 @@ import time
 import traceback
 import warnings
 import threading
+import queue
 import multiprocess
 import multiprocess.managers
 import multiprocess.process
 
 from .logger import Logger
 from .core_dispatcher import CoreDispatcher
+from .shared_cache import start_cache_manager
+from .cache import Cache
 
 
 class TerminatedError(RuntimeError):
@@ -26,7 +29,8 @@ def process_daemon(
     to_run_queue: multiprocess.Queue,
     queue: multiprocess.Queue,
     error_queue: multiprocess.Queue,
-    finally_queue: multiprocess.Queue) -> None:
+    finally_queue: multiprocess.Queue,
+    shared_cache) -> None:
     """Will be run by TimedPoolExecutor -> Daemon process able to handle actions
 
     :param multiprocess.Queue to_run_queue: List of action to run
@@ -36,6 +40,8 @@ def process_daemon(
         Used to count number of ran actions
     """
     result = None
+    
+    Cache().configure(shared_cache)
 
     time.sleep(random.random()) # Weird thing to un-sync the threads
 
@@ -91,20 +97,33 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.daemons_collectors: list[threading.Thread] = None
         """List of running daemons"""
 
-        self.manager: multiprocess.Manager = multiprocess.Manager()
-        """Manager object handling multiprocess Queues"""
+        self._mp_capable: bool = True
+        """Flag indicating whether multiprocessing primitives are available."""
 
-        self.to_run_queue: multiprocess.Manager.Queue = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        try:
+            self.manager: multiprocess.Manager = multiprocess.Manager()
+        except Exception as exc:  # pylint: disable=broad-except
+            warnings.warn(f"TimedPoolExecutor fallback to sequential mode (manager start failed: {exc!r})")
+            self.manager = None
+            self._mp_capable = False
 
-        self.error_queue: multiprocess.Manager.Queue  = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        if self._mp_capable:
+            self.to_run_queue = self.manager.Queue()
+            self.error_queue = self.manager.Queue()
+            self.result_queue = self.manager.Queue()
+            self.finally_queue = self.manager.Queue()
+        else:
+            self.to_run_queue = queue.Queue()
+            self.error_queue = queue.Queue()
+            self.result_queue = queue.Queue()
+            self.finally_queue = queue.Queue()
+        # Queues used to exchange data with subprocesses
 
-        self.result_queue: multiprocess.Manager.Queue  = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        self.cache_manager: multiprocess.managers.BaseManager | None = None
+        """Keep a strong reference to the shared cache manager process"""
 
-        self.finally_queue: multiprocess.Manager.Queue  = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        self.shared_cache = None
+        """Proxy object used by workers to talk to the shared cache"""
 
         self.callbacks: list[callable] = [callback]
         """Method to call after each run"""
@@ -120,24 +139,41 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
 
         self.process: list[multiprocess.Process] = []
         """List of sub processes"""
+        
+        if not self._mp_capable:
+            self.debug = True
+            self.max_workers = 1
+            self.cache_manager = None
+            self.shared_cache = None
+            Cache().configure(None)
+        else:
+            try:
+                self.cache_manager, self.shared_cache = start_cache_manager(max_cache_size=500)
+                Cache().configure(self.shared_cache)
+            except OSError as exc:
+                warnings.warn(f"Shared cache disabled (start_cache_manager failed: {exc!r})")
+                self.cache_manager = None
+                self.shared_cache = None
+                Cache().configure(None)
 
-        # Create and start sub process (will only wait until first submit)
-        for _ in range(max_workers):
-            self.process.append(
-                multiprocess.Process( # pylint: disable=not-callable
-                    target=process_daemon,
-                    args=[self.to_run_queue,
-                        self.result_queue,
-                        self.error_queue,
-                        self.finally_queue
-                    ]
+            # Create and start sub process (will only wait until first submit)
+            for _ in range(max_workers):
+                self.process.append(
+                    multiprocess.Process( # pylint: disable=not-callable
+                        target=process_daemon,
+                        args=[self.to_run_queue,
+                            self.result_queue,
+                            self.error_queue,
+                            self.finally_queue,
+                            self.shared_cache
+                        ]
+                    )
                 )
-            )
-            self.process[-1].start()
+                self.process[-1].start()
 
-        CoreDispatcher().affiliate(
-            [process.pid for process in self.process],
-            core_number=self.max_workers)
+            CoreDispatcher().affiliate(
+                [process.pid for process in self.process],
+                core_number=self.max_workers)
 
         self.__run_daemon() # Run the daemon THREAD
 
@@ -154,7 +190,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """Shutdown TimedPoolExecutor : Kill subprocess and thread
         """
         self.stop_flag = True # Main daemon thread will kill process
-        self.main_daemon.join()
+        if self.main_daemon:
+            self.main_daemon.join()
 
     def __collect_results(self) -> None:
         """Collect results from queues and run callback
@@ -172,19 +209,30 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             self.results.append(result)
 
     def __collect_finally(self) -> None:
-        while self.finally_queue.get() != "stop":
+        while True:
+            item = self.finally_queue.get()
+            if item == "stop":
+                break
             self.finished_run += 1
 
     def __print_errors(self) -> None:
         """Collect and print error from error_queue"""
         while True:
-            error, callback_id = self.error_queue.get()
+            item = self.error_queue.get()
+
+            if item is None:
+                continue
+
+            error, callback_id = item
 
             if error == 'stop':
                 break
 
             Logger().error("Error in a subprocess : ", error)
-            self.callbacks[callback_id](None)
+            if callback_id is not None and callback_id < len(self.callbacks):
+                callback = self.callbacks[callback_id]
+                if callable(callback):
+                    callback(None)
 
     def __keep_running(self) -> None:
         """Daemon THREAD process. Infinite loop to catch results & errors"""
@@ -201,7 +249,14 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 while not self.to_run_queue.empty():
                     self.to_run_queue.get()
 
-                self.manager.shutdown()
+                if self.manager is not None:
+                    self.manager.shutdown()
+                if self.cache_manager is not None:
+                    self.cache_manager.shutdown()
+                    self.cache_manager = None
+
+                self.shared_cache = None
+                Cache().configure(None)
 
                 break
 

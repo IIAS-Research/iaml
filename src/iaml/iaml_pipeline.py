@@ -253,6 +253,7 @@ class IAMLPipeline(Pipeline):
 
             # APPLY TRANSFORM / RESAMPLE
             dataset_from_cache = Cache().from_cache(f"apply_{step.fingerprint()}", dataset.X)
+            
             if dataset_from_cache:
                 dataset = dataset_from_cache
             else:

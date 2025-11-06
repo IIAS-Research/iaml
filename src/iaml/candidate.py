@@ -244,15 +244,19 @@ class Candidate:
         for train_ds, test_ds in splitted_datasets:
             copied_pipe = deepcopy(self.pipeline)
 
-            if self.is_meta:
-                copied_pipe.fit(train_ds.X, train_ds.y)
-            else:
-                # Fit in two step to allow caching
-                if not from_cache:
-                    train_ds =  train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
-                    test_ds =  test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
+            try:
+                if self.is_meta:
+                    copied_pipe.fit(train_ds.X, train_ds.y)
+                else:
+                    # Fit in two step to allow caching
+                    if not from_cache:
+                        train_ds = train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
+                        test_ds = test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
 
-                copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
+                    copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
+            except (ValueError, np.linalg.LinAlgError) as exc:
+                Logger().warning(f"Skip candidate {self.pipeline} after training failure: {exc!r}")
+                return {}
 
             try:
                 metrics.append(self.__compute_metrics(

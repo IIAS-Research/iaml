@@ -1,9 +1,15 @@
 """Singleton used by IAML to generate nice logs"""
 from enum import Enum
+import warnings
 import rich.console
 import rich.progress
 import multiprocess
-from multiprocess.queues import Empty
+from multiprocess.queues import Empty as MpEmpty
+
+try:
+    from queue import Empty as ThreadEmpty
+except ImportError:  # pragma: no cover
+    ThreadEmpty = MpEmpty
 
 from .meta_singleton import MetaSingleton
 
@@ -37,7 +43,13 @@ class Logger(metaclass=MetaSingleton):
         self.verbose: int = verbose
         """Loagger verbosity"""
 
-        self.log_queue = multiprocess.Queue()
+        try:
+            self.log_queue = multiprocess.Queue()
+            self._queue_enabled = True
+        except (OSError, PermissionError) as exc:
+            warnings.warn(f"Logger running without multiprocess queue ({exc!r})")
+            self.log_queue = None
+            self._queue_enabled = False
         """Queue used by the logger to handle log from various process"""
 
         self.callback: callable = None
@@ -68,10 +80,14 @@ class Logger(metaclass=MetaSingleton):
         :param LogType log_type: Logger type
         :param list[str] \\*text: Text to log in console
         """
-        if multiprocess.current_process().name == 'MainProcess':
-            self.__print(*text)
+        proc_name = multiprocess.current_process().name
+        if proc_name == 'MainProcess' or not self._queue_enabled:
+            if proc_name != 'MainProcess':
+                self.__print(f"[{proc_name}]", *text)
+            else:
+                self.__print(*text)
         else:
-            self.log_queue.put((log_type, f"[{multiprocess.current_process().name}]", *text))
+            self.log_queue.put((log_type, f"[{proc_name}]", *text))
 
 
     def __print(self, *text: list[str]) -> None:
@@ -111,9 +127,12 @@ class Logger(metaclass=MetaSingleton):
 
     def print_queue(self):
         """Print all texts from subProcess"""
+        if not self._queue_enabled or self.log_queue is None:
+            return
+
         while not self.log_queue.empty():
             try:
                 messages = self.log_queue.get(block=False)
                 self.__print(*messages)
-            except Empty:
+            except (MpEmpty, ThreadEmpty):
                 break

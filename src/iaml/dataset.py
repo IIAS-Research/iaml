@@ -3,7 +3,7 @@ Add features like data type detection and splitting
 """
 import copy
 from copy import deepcopy
-from typing import Iterator, TYPE_CHECKING
+from typing import Any, Iterator, TYPE_CHECKING
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 import numpy as np
 import pandas as pd
@@ -305,35 +305,111 @@ class Dataset:
         """Turn dataframe to survival compatibility"""
         return Dataset.fix_survival(self.X, self.y)
 
+    @staticmethod
+    def _normalize_survival_pair(value: Any) -> tuple[bool, float]:
+        """Normalize a single survival sample to a (event, time) tuple."""
+        if isinstance(value, np.void):
+            if value.dtype.names and \
+                'event' in value.dtype.names and 'time' in value.dtype.names:
+                return bool(value['event']), float(value['time'])
+            value = value.tolist()
+
+        if isinstance(value, dict):
+            if 'event' not in value or 'time' not in value:
+                raise KeyError("Survival sample dictionary must include 'event' and 'time'.")
+            return bool(value['event']), float(value['time'])
+
+        if isinstance(value, np.ndarray):
+            if value.shape == ():
+                return Dataset._normalize_survival_pair(value.item())
+            if value.ndim >= 1 and value.shape[0] >= 2:
+                return bool(value[0]), float(value[1])
+
+        if isinstance(value, (tuple, list)):
+            if len(value) < 2:
+                raise ValueError("Survival sample must provide event indicator and time.")
+            return bool(value[0]), float(value[1])
+
+        raise TypeError(f"Unsupported survival sample format: {type(value)}")
+
     @classmethod
-    def fix_survival(cls, X: pd.DataFrame, y: np.ndarray) -> tuple[pd.DataFrame, np.ndarray]:
+    def normalize_survival_target(cls, y: Any) -> list[tuple[bool, float]]:
+        """Return survival targets as a list of (event, time) tuples."""
+        if y is None:
+            return []
+
+        if isinstance(y, pd.DataFrame):
+            if not len(y.columns):
+                return []
+            if {'event', 'time'}.issubset(y.columns):
+                iterator = zip(y['event'], y['time'])
+            elif len(y.columns) >= 2:
+                iterator = (row[:2] for row in y.itertuples(index=False, name=None))
+            else:
+                raise ValueError("Survival DataFrame must contain at least two columns.")
+            return [cls._normalize_survival_pair(sample) for sample in iterator]
+
+        if isinstance(y, pd.Series):
+            return cls.normalize_survival_target(y.to_frame())
+
+        if isinstance(y, np.ndarray):
+            if y.dtype.names and 'event' in y.dtype.names and 'time' in y.dtype.names:
+                return [cls._normalize_survival_pair((row['event'], row['time'])) for row in y]
+            if y.ndim == 0:
+                return [cls._normalize_survival_pair(y.item())]
+            if y.ndim == 1:
+                return [cls._normalize_survival_pair(sample) for sample in y.tolist()]
+            if y.ndim >= 2 and y.shape[1] >= 2:
+                return [cls._normalize_survival_pair(sample[:2]) for sample in y]
+
+        if isinstance(y, (list, tuple)):
+            return [cls._normalize_survival_pair(sample) for sample in y]
+
+        if hasattr(y, '__iter__'):
+            return cls.normalize_survival_target(list(y))
+
+        raise TypeError(f"Unsupported survival target format: {type(y)}")
+
+    @classmethod
+    def fix_survival(cls, X: pd.DataFrame, y: Any) -> tuple[pd.DataFrame, np.ndarray]:
         """Turn dataframe to survival compatibility
         
         :param pd.DataFrame X: The dataframe to fix.
-        :param np.ndarray y: The dataframe target to fix.
+        :param Any y: The dataframe target to fix.
         :return: Fixed dataframe
         """
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float32')])
+        from sksurv.util import Surv
+
+        samples = cls.normalize_survival_target(y)
+        if samples:
+            events, times = zip(*samples)
+            y_surv = Surv.from_arrays(
+                event=np.asarray(events, dtype=bool),
+                time=np.asarray(times, dtype=float)
+            )
+        else:
+            y_surv = np.array([], dtype=[('event', 'bool'), ('time', 'float')])
+        
         X = deepcopy(X)
         X[X.select_dtypes(include=['float64']).columns] = \
                 X.select_dtypes(include=['float64']).astype('float32')
 
-        return X, y
+        return X, y_surv
 
     @classmethod
-    def fix_y_survival(cls, y: np.ndarray, y_train: np.ndarray) -> list:
-        """Just a tool to avoid survivial crash. 
-        TODO to something better
-        
-        :param np.ndarray y: The whole dataframe target.
-        :param np.ndarray y_train: The train target.
-        :return: Fixed train target.
-        """
-        _, times = zip(*y_train)
+    def fix_y_survival(cls, y: Any, y_train: Any) -> list[tuple[bool, float]]:
+        """Adjust survival targets to avoid censoring beyond the training horizon."""
+        y_samples = cls.normalize_survival_target(y)
+        y_train_samples = cls.normalize_survival_target(y_train)
+
+        if not y_train_samples:
+            return y_samples
+
+        _, times = zip(*y_train_samples)
         censure_time = max(times)
 
-        new_y = list([])
-        for event, time in y:
+        new_y: list[tuple[bool, float]] = []
+        for event, time in y_samples:
             if time >= censure_time:
                 time = censure_time
                 event = False

@@ -79,6 +79,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
             self.first_candidate_pool = candidates[0:6]
 
         nb_to_keep: int = round(self.number_of_candidate / 4)
+        # nb_to_keep: int = max(min(4, round(self.number_of_candidate / 4)), 1)
         mutate_ratio = self.__mutate_ratio
         self.generation_count += 1
 

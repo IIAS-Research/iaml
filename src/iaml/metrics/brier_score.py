@@ -65,12 +65,20 @@ class BrierScoreMetric(Metric):
         :param dict, optional \\**kwargs: Additional parameters
         :return: Computed value
         """
-        y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
-        y = Dataset.fix_y_survival(y, y_train)
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
+        y_train_samples = Dataset.normalize_survival_target(y_train)
+        y_samples = Dataset.fix_y_survival(y, y_train_samples)
+
+        y_train_struct = np.array(
+            y_train_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
+        y_struct = np.array(
+            y_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
 
         # Extract time from y test
-        _, times = zip(*y)
+        _, times = zip(*y_samples)
 
         time = max(times)
         if isinstance(time, float):
@@ -79,4 +87,4 @@ class BrierScoreMetric(Metric):
         predictions = [fn(time) for fn in y_pred]
 
         # Calculate integrated Brier score using sksurv function
-        return brier_score(y_train, y, predictions, time)[1][0]
+        return brier_score(y_train_struct, y_struct, predictions, time)[1][0]
