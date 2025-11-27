@@ -9,7 +9,7 @@ from ....dataset import Dataset
 from ....decorators.all import is_step
 
 
-@is_step('predictor', 'tabular', 'survival')
+@is_step('predictor', 'tabular', 'survival', 'minimal_predictor')
 class ActGradientBoostingSurvivalAnalysis(Predictor):
     """[STEP] Gradient Boosting Survival Analysis"""
 

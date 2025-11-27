@@ -31,6 +31,7 @@ from .optimizers import Optimizer, GeneticOptimizer, RandomOptimizer, BayesianOp
 from .meta_predictor import MetaPredictor
 from .predictor import Predictor
 from .logger import Logger
+from .actionables.cleaning.act_simple_imputer import ActSimpleImputer
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
@@ -160,6 +161,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param dict pipeline: JSON description of the pipeline
         """
         self.first_step = Step.from_pipeline(pipeline)
+        self.minimal_predictor_step = self.__build_minimal_predictor_step()
 
     def default_pipeline(self, fast: bool = False) -> None:
         """Load the default pipeline.
@@ -216,6 +218,22 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 tag=learning_tag,
                 name="Machine learning models",
                 description="List of machine learning models IAML will try to optimize"))
+
+        self.minimal_predictor_step = self.__build_minimal_predictor_step()
+
+    def __build_minimal_predictor_step(self) -> MetaExplorerStep | None:
+        """Build the minimalist predictor stage if suitable models exist."""
+        minimal_step = MetaExplorerStep(
+            tag='minimal_predictor',
+            name='Minimalist Predictors',
+            description=textwrap.dedent('''\
+                Try high-performing boosting-style models without any preprocessing
+                to provide quick baseline candidates before the full pipeline is explored.'''))
+
+        if not minimal_step.steps:
+            return None
+
+        return minimal_step
 
     def __callback(self, callback: callable, **kwargs: dict) -> None:
         """Call callback function if defined
@@ -368,18 +386,31 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
                 self.init_candidate.add_metric(metric)
 
-            # Generate candidates
-            candidates = self.__run(self.init_candidate)
+            minimal_candidates = self.__generate_minimal_candidates(self.init_candidate)
 
+            # Generate candidates
+            pipeline_candidates = self.__run(self.init_candidate)
+            pipeline_candidates = [candidate for candidate in pipeline_candidates \
+                if candidate.pipeline.predictor is not None]
+
+            candidates = minimal_candidates + pipeline_candidates
             # Remove candidate without predictor
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
+            self.candidates = candidates
+
+            if minimal_candidates:
+                Logger().info(f"{len(minimal_candidates)} minimalist pipelines generated")
             Logger().info(f"{len(candidates)} generated pipelines")
-            
-            
-            # Logger().info(f"Warming up...")
-            # candidates[0].training_evaluate(dataset, splitter=self.splitter)
-            # Logger().info(f"Warmed up !")
+
+
+            Logger().info(f"Warming up...")
+            warmup_candidate = pipeline_candidates[0] if pipeline_candidates else candidates[0]
+            warmup_candidate.training_evaluate(
+                dataset,
+                splitter=self.splitter,
+                cache_split=False)
+            Logger().info(f"Warmed up !")
 
             ### INITIAL EVALUATION
             # Evaluate candidates
@@ -665,6 +696,34 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             # Verify if a subclass is suitable or not
             if subclass.suitable(type_of_target):
                 yield subclass
+
+    def __apply_minimal_preprocessing(self, candidate: Candidate) -> Candidate:
+        """Ensure minimalist candidates have a basic imputer in their pipeline."""
+        dataset = candidate.dataset
+
+        if dataset.X.isna().values.any():
+            imputer = ActSimpleImputer()
+            results = imputer.run(candidate)
+
+            if isinstance(results, list) and results:
+                return results[0]
+
+            return results
+
+        return candidate
+
+    def __generate_minimal_candidates(self, candidate: Candidate) -> list[Candidate]:
+        """Generate minimalist candidates using raw predictors only."""
+        if not self.minimal_predictor_step:
+            return []
+
+        Logger().info('Generate minimalist candidates...')
+        minimal_candidate = candidate.to_input()
+        minimal_candidate = self.__apply_minimal_preprocessing(minimal_candidate)
+
+        candidates = self.minimal_predictor_step.run(minimal_candidate)
+
+        return [cand for cand in candidates if cand.pipeline.predictor is not None]
 
     def __run(self, candidate: Candidate) -> list[Candidate]:
         """Run pipeline steps

@@ -5,6 +5,7 @@ Regressor Predictors Actionables
 from .act_svm_svr import ActSVMSVR
 from .act_randomforest_regressor import ActRandomForestRegressor
 from .act_xgboost_regressor import ActXGBoostRegressor
+from .act_gboost_regressor import ActGBoostRegressor
 from .act_catboost_regressor import ActCatBoostRegressor
 from .act_knn_regressor import ActKNNRegressor
 from .act_linear_regression import ActLinearRegression

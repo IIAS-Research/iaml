@@ -20,6 +20,12 @@ except ImportError as e:
         "miceforest is required for ActMICEForestImputer. Install with: pip install miceforest lightgbm"
     ) from e
 
+try:
+    from lightgbm.basic import LightGBMError  # type: ignore
+    _LGBM_ERRORS: tuple[type[Exception], ...] = (LightGBMError,)
+except Exception:
+    _LGBM_ERRORS = tuple()
+
 
 @is_step('cleaning')
 class ActMICEForestImputer(Actionable):
@@ -122,30 +128,81 @@ class ActMICEForestImputer(Actionable):
             return self
 
         X_fit_valid = X_fit[valid_cols].copy().reset_index(drop=True)
-
+        if X_fit_valid.empty:
+            self.explanations = [
+                "Skipped MICE: dataset had 0 lignes après prétraitements (nothing to impute)."
+            ]
+            self.kernel = None
+            return self
+        if len(X_fit_valid) < 5:
+            self.explanations = [
+                f"Skipped MICE: dataset trop petit ({len(X_fit_valid)} lignes) pour miceforest."
+            ]
+            self.kernel = None
+            return self
+        
         self._nan_stats = {}
         for c in valid_cols:
             n_missing = int(X_fit_valid[c].isna().sum())
             n_total = int(len(X_fit_valid[c]))
             pct = (n_missing / n_total * 100.0) if n_total > 0 else 0.0
             self._nan_stats[c] = (n_missing, n_total, pct)
-        
-        X_fit_valid = X_fit[valid_cols].copy().reset_index(drop=True)
         rs = self.configuration['random_state']['default']
 
-        self.kernel = mf.ImputationKernel(
+        kernel_kwargs = dict(
             data=X_fit_valid,
             random_state=rs,
             num_datasets=1,
             save_all_iterations_data=True,
         )
-        
-        self.kernel.mice(
-            int(self.configuration['max_iter']['default']),
-            n_jobs=8,
-            verbose=False,
-            seed=rs,
-            random_state=rs)
+        self.kernel = mf.ImputationKernel(**kernel_kwargs)
+
+        mean_match_candidates = max(0, min(5, len(X_fit_valid) - 1))
+
+        def _run_kernel(mmc: int) -> None:
+            self.kernel.mice(
+                int(self.configuration['max_iter']['default']),
+                n_jobs=8,
+                verbose=False,
+                seed=rs,
+                random_state=rs,
+                mean_match_candidates=mmc
+            )
+
+        fallback_errors: tuple[type[Exception], ...] = (IndexError,) + _LGBM_ERRORS
+
+        try:
+            _run_kernel(mean_match_candidates)
+        except ValueError as exc:
+            Logger().warning(
+                "MICE fitting failed (%s). Step skipped; columns left untouched.", exc
+            )
+            self.kernel = None
+            self.explanations = [f"Skipped MICE (error: {exc})."]
+            return self
+        except fallback_errors as exc:  # type: ignore[misc]
+            Logger().warning(
+                "MICE mean-matching failed (%s). Retrying without predictive mean matching.",
+                exc,
+            )
+            self.kernel = mf.ImputationKernel(**kernel_kwargs)
+            try:
+                _run_kernel(0)
+            except Exception as exc2:  # noqa: BLE001
+                Logger().warning(
+                    "MICE fallback without predictive mean matching failed (%s). Step skipped; columns left untouched.",
+                    exc2,
+                )
+                self.kernel = None
+                self.explanations = [f"Skipped MICE (error: {exc2})."]
+                return self
+        except Exception as exc:  # noqa: BLE001
+            Logger().warning(
+                "MICE fitting failed (%s). Step skipped; columns left untouched.", exc
+            )
+            self.kernel = None
+            self.explanations = [f"Skipped MICE (error: {exc})."]
+            return self
         
         self._ensure_seed_on_kernel_models(rs)
 

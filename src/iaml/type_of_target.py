@@ -15,8 +15,12 @@ def type_of_target(y: list) -> str:
     # Survival target -> list[tuple[bool, int]]
     if is_survival(y):
         return 'survival'
-    if y.dtype == float and len(np.unique(y)) > len(y)*0.2:
-        return 'continuous'
+
+    if np.issubdtype(y.dtype, np.number):
+        unique_count = len(np.unique(y))
+        if unique_count > len(y) * 0.2 or unique_count > 10:
+            return 'continuous'
+
     return sk_type_of_target(y)
 
 def is_survival(y: list[tuple[Any, Any]]) -> bool:

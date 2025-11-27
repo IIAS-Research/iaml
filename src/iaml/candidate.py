@@ -219,7 +219,8 @@ class Candidate:
     def training_evaluate(
         self,
         dataset: Dataset,
-        splitter: callable = random_splitter) -> dict:
+        splitter: callable = random_splitter,
+        cache_split: bool = True) -> dict:
         """Evaluate pipeline model with self.metrics on dataset
         If evaluate is called in training process, result will be cached in
         self.computed_metrics.
@@ -233,13 +234,12 @@ class Candidate:
         metrics: list[dict] = []
 
         # without cache !
-        from_cache: bool = True
-        to_cache: list = True
-        splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
+        from_cache: bool = cache_split
+        to_cache: list[tuple[Dataset, Dataset]] = []
+        splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X) if cache_split else None
         if not splitted_datasets or self.is_meta: # Cannot use cache with meta for now
             from_cache = False
-            to_cache: list = []
-            splitted_datasets: list[tuple[Dataset, Dataset]] = splitter(dataset)
+            splitted_datasets = splitter(dataset)
 
         for train_ds, test_ds in splitted_datasets:
             copied_pipe = deepcopy(self.pipeline)
@@ -255,7 +255,9 @@ class Candidate:
 
                     copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
             except (ValueError, np.linalg.LinAlgError) as exc:
-                Logger().warning(f"Skip candidate {self.pipeline} after training failure: {exc!r}")
+                Logger().warning(
+                    f"Skip candidate {self._pipeline_signature()} after training failure: {exc!r}"
+                )
                 return {}
 
             try:
@@ -267,12 +269,16 @@ class Candidate:
                     y_train=train_ds.y,
                     model_only= not self.is_meta)
                     )
-                if not from_cache:
+                if cache_split and not from_cache:
                     to_cache.append((train_ds, test_ds))
-            except ValueError:
+            except ValueError as exc:
+                Logger().warning(
+                    f"Skip candidate {self._pipeline_signature()} after metric computation failure "
+                    f"(predict/predict_proba raised ValueError: {exc!r})"
+                )
                 return {}
 
-        if not from_cache:
+        if cache_split and not from_cache:
             Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)
 
         self.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
@@ -341,7 +347,9 @@ class Candidate:
                     except Exception:  # pylint: disable=broad-exception-caught
                         Logger().error(traceback.format_exc())
             except AttributeError:
-                pass
+                Logger().warning(
+                    f"Pipeline {self._pipeline_signature()} does not expose '{need}' needed by metrics."
+                )
         return computed
 
     def __metric_value(self, metric: Metric) -> float | None:
@@ -372,6 +380,16 @@ class Candidate:
                 for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]])
 
         return md5(to_hash.encode()).hexdigest()
+
+    def _pipeline_signature(self) -> str:
+        """Return a short, logging-safe pipeline identifier."""
+        try:
+            names = [name for name, _ in self.pipeline.training_steps if name]
+            if names:
+                return " -> ".join(names)
+        except Exception:
+            pass
+        return getattr(self.pipeline, "name", self.pipeline.__class__.__name__)
 
     def describe_metrics(self) -> str:
         """Explain all metrics
