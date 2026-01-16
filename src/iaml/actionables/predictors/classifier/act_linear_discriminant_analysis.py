@@ -56,8 +56,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
         return self
 
     def suitable(self, dataset: Dataset) -> bool:
-        return dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
+        return dataset.type_of_target in ['binary', 'multiclass']
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

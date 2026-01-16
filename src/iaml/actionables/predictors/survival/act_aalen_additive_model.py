@@ -62,7 +62,7 @@ class ActAalenAdditiveFitter(Predictor):
 
         y = pd.DataFrame(list(dataset.y), columns=['event', 'time'])
         merged = dataset.X.reset_index(drop=True).join(y.reset_index(drop=True))
-        self.model.fit(merged, 'event', 'time')
+        self.model.fit(merged, 'time', 'event')
         return self
 
     def suitable(self, dataset: Dataset) -> bool:

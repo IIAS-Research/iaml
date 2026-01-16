@@ -33,6 +33,22 @@ iaml[cudf] @ git+ssh://git@github.com:iias_research/iaml # Avec cuDF
 
 TODO
 
+### Tests
+
+Run all tests:
+
+```bash
+python -m tests
+```
+
+Run a subset:
+
+```bash
+python -m tests unit
+python -m tests integration
+python -m tests steps
+```
+
 ***
 ## 💡 3 - General information
 

@@ -1,11 +1,15 @@
 import unittest, sys
-import pandas as pd
-import numpy as np
 
 # Include tools lib
 sys.path.append('./src')
 from iaml import *
 from iaml.explanation import Explanation
+
+from tests.helpers.datasets import (
+    make_classification_data,
+    make_regression_data,
+    make_survival_data,
+)
 
 class TestLearningFast(unittest.TestCase):
     
@@ -26,53 +30,24 @@ class TestLearningFast(unittest.TestCase):
             self.assertTrue(isinstance(shap_plots[0], Plot))
                 
 
-    def load_and_sample(self, path, size=200):
-        df = None
-        try:
-            df = pd.read_csv(path, sep=";")
-        except:
-            df = pd.DataFrame()
-            
-        if len(df.columns) < 2:
-            df = pd.read_csv(path, sep=",")
-            
-        if df.shape[0] > size:
-            df = df.sample(size)
-            
-        return df
-    
     def test_regression(self):
         """
-        Test : Fast regression on a CSV file
+        Test : Fast regression on synthetic data
         """
-        df = self.load_and_sample('./tests/data/life_expectancy.csv')
-        y = df['label']
-        X = df.drop(columns=['label'])
-            
+        X, y = make_regression_data(n_samples=80, seed=110)
         self.__learning_test(X, y)
     
     
     def test_classification(self):
         """
-        Test : Fast classification on a CSV file
+        Test : Fast classification on synthetic data
         """
-        df = self.load_and_sample('./tests/data/titanic.csv')
-        
-        y = df['label']
-        X = df.drop(columns=['label'])
-            
+        X, y = make_classification_data(n_samples=80, seed=120)
         self.__learning_test(X, y)
 
     def test_survival(self):
         """
-        Test : Fast survival on a CSV file
+        Test : Fast survival on synthetic data
         """
-        df = self.load_and_sample('./tests/data/seer.csv')
-        
-        df['label'] = list(zip(df['event'], df['event_time']))
-        df.drop(columns=['event', 'event_time'], inplace=True)
-    
-        y = df['label']
-        X = df.drop(columns=['label'])
-    
+        X, y = make_survival_data(n_samples=80, seed=130)
         self.__learning_test(X, y, shap=False)

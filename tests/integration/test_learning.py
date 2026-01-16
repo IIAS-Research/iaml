@@ -1,11 +1,15 @@
 import unittest, sys
-import pandas as pd
-import numpy as np
 
 # Include tools lib
 sys.path.append('./src')
 from iaml import *
 from iaml.explanation import Explanation
+
+from tests.helpers.datasets import (
+    make_classification_data,
+    make_regression_data,
+    make_survival_data,
+)
 
 class TestLearning(unittest.TestCase):
     
@@ -25,71 +29,24 @@ class TestLearning(unittest.TestCase):
             self.assertTrue(isinstance(exp, Explanation), msg=name)
             self.assertTrue(isinstance(shap_plots[0], Plot), msg=name)
             
-    
-    def load_and_sample(self, path, size=1000):
-        df = None
-        try:
-            df = pd.read_csv(path, sep=";")
-        except:
-            df = pd.DataFrame()
-            
-        if len(df.columns) < 2:
-            df = pd.read_csv(path, sep=",")
-            
-        if df.shape[0] > size:
-            df = df.sample(size)
-            
-        return df
-            
-                
-
     def test_regression(self):
         """
-        Test : Regression on a CSV file
+        Test : Regression on synthetic data
         """
-        datasets = ['./tests/data/insurance.csv',
-                    './tests/data/life_expectancy.csv'
-                    ]
-        
-        for dataset in datasets:
-            df = self.load_and_sample(dataset)
-            y = df['label']
-            X = df.drop(columns=['label'])
-                
-            self.__learning_test(X, y, name=dataset)
+        X, y = make_regression_data(n_samples=120, seed=10)
+        self.__learning_test(X, y, name="synthetic_regression")
     
     
     def test_classification(self):
         """
-        Test : Classification on a CSV file
+        Test : Classification on synthetic data
         """
-        datasets = ['./tests/data/body_signal_of_smoking.csv',
-                    './tests/data/titanic.csv'
-                    ]
-        
-        for dataset in datasets:
-            print("DATASET", dataset)
-            df = self.load_and_sample(dataset, size=250)
-            y = df['label']
-            X = df.drop(columns=['label'])
-                
-            self.__learning_test(X, y, name=dataset)
+        X, y = make_classification_data(n_samples=120, seed=20)
+        self.__learning_test(X, y, name="synthetic_classification")
 
     def test_survival(self):
         """
-        Test : Survival on a CSV file
+        Test : Survival on synthetic data
         """
-        datasets = [
-                    './tests/data/seer.csv'
-                    ]
-        
-        for dataset in datasets:
-            df = self.load_and_sample(dataset)
-        
-            df['label'] = list(zip(df['event'], df['event_time']))
-            df.drop(columns=['event', 'event_time'], inplace=True)
-        
-            y = df['label']
-            X = df.drop(columns=['label'])
-
-            self.__learning_test(X, y, shap=False)
+        X, y = make_survival_data(n_samples=120, seed=30)
+        self.__learning_test(X, y, shap=False, name="synthetic_survival")
