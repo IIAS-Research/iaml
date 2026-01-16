@@ -1,4 +1,5 @@
 """[STEP] Impute missing values with MICE (miceforest/LightGBM)"""
+import os
 import textwrap
 import pandas as pd
 import numpy as np
@@ -66,6 +67,7 @@ class ActMICEForestImputer(Actionable):
                 'default': 30
             }
         }
+        self._n_jobs = self._detect_parallel_jobs()
 
     # --- helpers -----------------------------------------------------------------
     def _select_columns(self, df: pd.DataFrame) -> list[str]:
@@ -162,7 +164,7 @@ class ActMICEForestImputer(Actionable):
         def _run_kernel(mmc: int) -> None:
             self.kernel.mice(
                 int(self.configuration['max_iter']['default']),
-                n_jobs=8,
+                n_jobs=self._n_jobs,
                 verbose=False,
                 seed=rs,
                 random_state=rs,
@@ -205,6 +207,7 @@ class ActMICEForestImputer(Actionable):
             return self
         
         self._ensure_seed_on_kernel_models(rs)
+        self._ensure_parallelism_on_kernel_models(self._n_jobs)
 
         # Explications
         expl = [
@@ -252,6 +255,7 @@ class ActMICEForestImputer(Actionable):
 
             # Sécuriser les modèles du kernel : s'assurer que params['seed'] existe
             _ = self._ensure_seed_on_kernel_models(self.configuration['random_state']['default'])
+            self._ensure_parallelism_on_kernel_models(self._n_jobs)
 
             # Appel principal à impute_new_data ; en cas de KeyError 'seed', on coupe le PMM
             try:
@@ -335,3 +339,41 @@ class ActMICEForestImputer(Actionable):
                 p["seed"] = p.get("random_state", int(seed) if seed is not None else 0)
                 patched += 1
         return patched
+
+    def _ensure_parallelism_on_kernel_models(self, threads: int) -> int:
+        if threads is None or threads < 1:
+            return 0
+        patched = 0
+        for m in self._yield_kernel_models():
+            params = getattr(m, "params", None)
+            if isinstance(params, dict):
+                updated = False
+                for key in ("num_threads", "n_jobs", "nthread"):
+                    if params.get(key) != threads:
+                        params[key] = threads
+                        updated = True
+                if updated:
+                    patched += 1
+        return patched
+
+    def _detect_parallel_jobs(self) -> int:
+        manual = os.environ.get("IAML_MICE_JOBS")
+        if manual:
+            try:
+                jobs = int(manual)
+                if jobs >= 1:
+                    return jobs
+            except ValueError:
+                pass
+        cpu_count = os.cpu_count() or 1
+        if cpu_count <= 2:
+            return 1
+        if cpu_count <= 4:
+            return 2
+        if cpu_count <= 8:
+            return 4
+        if cpu_count <= 16:
+            return 6
+        if cpu_count <= 32:
+            return 8
+        return min(16, max(8, cpu_count // 2))

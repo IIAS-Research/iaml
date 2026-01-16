@@ -9,8 +9,8 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-
-@is_step('features_precleaning')
+# Disabled -> It decrease perfs
+# @is_step('features_precleaning')
 class ActDropBadQualityRows(Actionable):
     """
     [STEP] Drop Rows with a ratio of Empty Columns
