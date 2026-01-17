@@ -12,6 +12,7 @@ class ActPolynomialFeatures(Actionable):
     """[STEP] Preprocess with PolynomialFeatures"""
 
     name: str = "Preprocess with PolynomialFeatures"
+    _usage: str = "Use when you want explicit polynomial interactions for linear models; consider ActKernelPCA for projection-based nonlinearity. Applicable to numeric tabular features with moderate dimensionality. Avoid when feature count will explode or when ActKBinsDiscretizer is a better match."
     _description: str = textwrap.dedent('''\
         PolynomialFeatures creates new features by combining existing
         features mathematically. It squares, cubes, and multiplies features to

@@ -30,6 +30,7 @@ class ActWord2Vec(Actionable):
         Word2Vec is a word embedding algorithm auto-supervised algorithm.
         This means we don't need labelled data as the algorithm discove
         the ground truth by himself''')
+    _usage: str = "Use when you want dense semantic text embeddings rather than sparse counts (vs ActCountVectorizer). Applicable to free-form text columns with enough tokens per row to learn embeddings. Avoid when text is short or ID-like, or when token-count interpretability is required."
     refs: list[dict[str, Any]] = [
         {
             'year': 2023,

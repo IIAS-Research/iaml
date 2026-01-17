@@ -23,6 +23,7 @@ class ActSVMSVR(Predictor):
         relationship between input features and a continuous output variable using a support
         vector machine (SVM). It works by finding the optimal hyperplane or boundary that predicts
         the output variable with the minimum error.''')
+    _usage: str = "Use when you need kernel-based regression for moderate-sized non-linear data and want an alternative to ActElasticNetRegressor or ActDecisionTreeRegressor. Applicable to tabular continuous targets. Avoid when data are very large or interpretability is key."
     refs: list[dict[str, Any]] = [
         {
             'year': 1999,

@@ -18,6 +18,7 @@ class ActRemoveLowVarianceColumn(Actionable):
         the specified threshold. Low variance columns do not contribute
         significantly to the predictive power of models and can lead to
         overfitting.''')
+    _usage: str = 'Use when you need a fast filter for near-constant features. Applicable to numeric or encoded features; for supervised use ActSelectKBest or ActSelectFromModel. Avoid when scaling changes variance meaning or you want redundancy control like ActRemoveHighCorrelatedColumn.'
 
     def __init__(self):
         self.configuration = {

@@ -14,6 +14,7 @@ class ActDropCategoricalColumn(Actionable):
 
     name: str = 'Remove categorical columns'
     _description: str = 'Remove all columns containing categorical data from the dataset'
+    _usage: str = 'Use when categorical columns must be removed for steps that cannot handle categories. Applicable to datasets with categorical or category-typed columns. Avoid when you can impute or encode categories instead (ActCategoricalImputer, ActCountVectorizer).'
     _description_long: str = textwrap.dedent('''\
         Remove all columns containing categorical data from the dataset.
         This step is used to clean the dataset in order to perform other actions later on

@@ -17,6 +17,7 @@ class MetaOrderedStep(MetaStep):
     """
     Group several Step and run them in list order
     """
+    _usage: str = "Use when you need strict list-ordered execution of child steps instead of MetaStep prioritization. Applicable to pipelines where each step must run on the same Candidate in order. Avoid when steps are interchangeable and best-of exploration is needed (MetaExplorerStep)."
     # Run steps self ordered by "priorize" function
     @runner
     def run(self, candidate:'Candidate') -> 'Candidate':

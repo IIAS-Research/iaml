@@ -16,6 +16,7 @@ class ActOnehot(Actionable):
     name: str = 'One hot encoding categorical features'
     _description: str = 'Encode categorical data to numerical value using \
         One Hot Encoding Algorithm'
+    _usage: str = 'Use when categorical columns have meaningful distinct values and you want indicator features, rather than ActDropCategoricalColumn. Applicable to nominal categorical data with low to moderate cardinality. Avoid when categories are very high-cardinality; consider ActDropHighCardinalityCategorical.'
     _description_long: str = textwrap.dedent('''\
         Retrieve all unique values from a column, then transform
         those values to multiple binary columns.

@@ -23,6 +23,7 @@ class ActExtraTreesRegressor(Predictor):
         random subset of the input features and a random subset of the training data.
         At prediction time, the algorithm aggregates the outputs of all the
         decision trees to make a final prediction.''')
+    _usage: str = "Use when you want a strong nonparametric tabular regressor, often a better default than ActDecisionTreeRegressor or ActAdaBoostRegressor. Applicable to numeric or mixed features with continuous targets. Avoid when data is tiny, very sparse/high-dimensional, or a linear/transparent model is required."
     refs: list[dict[str, Any]] = [
         {
             'year': 2006,

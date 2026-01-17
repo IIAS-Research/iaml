@@ -25,6 +25,7 @@ class ActLinearDiscriminantAnalysis(Predictor):
         It works by calculating the within-class and between-class scatter matrices,
         and then finding the directions in the feature space that maximize the ratio of
         the between-class scatter to the within-class scatter.''')
+    _usage = "Use when you need a fast linear classifier; simpler than ActCatBoost or ActExtraTreesClassifier. Applicable to tabular numeric data with binary or multiclass labels. Avoid when strong nonlinear patterns or categorical splits favor ActDecisionTreeClassifier."
     refs = [
         {
             'year': 1936,

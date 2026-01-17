@@ -40,6 +40,7 @@ class ActMICEForestImputer(Actionable):
         Uses miceforest.ImputationKernel to iteratively impute missing values.
         By default works on numeric columns. Optionally auto-categorizes low-cardinality
         object columns to allow categorical imputation by LightGBM.''')
+    _usage: str = 'Use when multivariate imputation is needed for missing numeric data instead of ActDropNumericalColumn. Applicable to datasets with correlated numeric features (and low-cardinality categoricals if auto_categorize). Avoid when missingness is tiny or ActCategoricalImputer is a better fit.'
     can_be_disabled: bool = False
 
     def __init__(self):

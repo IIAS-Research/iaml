@@ -15,6 +15,7 @@ class ActGBoostRegressor(Predictor):
     """[STEP] Gradient Boosting Regressor"""
 
     name: str = "Gradient Boosting Regressor"
+    _usage: str = "Use when you want a boosting baseline for regression and prefer simpler tuning vs ActCatBoostRegressor. Applicable to tabular data with continuous targets and mixed features. Avoid when you need linear interpretability or very fast training; consider ActElasticNetRegressor."
     _description: str = textwrap.dedent('''\
         GradientBoostingRegressor learns an ensemble of weak learners (decision trees)
         in a stage-wise manner to minimize the prediction error on continuous targets.''')

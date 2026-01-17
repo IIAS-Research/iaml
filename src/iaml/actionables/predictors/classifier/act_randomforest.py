@@ -13,6 +13,7 @@ class ActRandomForest(Predictor):
     """[STEP]  Random Forest"""
 
     name: str = "Random Forest"
+    _usage: str = "Use when you need a solid tabular classifier baseline and prefer it over ActExtraTreesClassifier for stability. Applicable to binary, multiclass, or multilabel tabular data with tree-ready features. Avoid when data is extremely sparse text or you need native categorical handling."
     _description: str = textwrap.dedent('''\
         RandomForestClassifier is a machine learning algorithm that models
         the relationship between input features and a categorical output variable using

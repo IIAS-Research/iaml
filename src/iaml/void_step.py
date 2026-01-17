@@ -41,6 +41,7 @@ class VoidStep(Step):
     :param Step, optional step_to_mimic: The step to mimic, if provided
     :param Dict, optional kwargs: Additional parameters
     """
+    _usage: str = "Use when you need a no-op placeholder that mimics another step during search, unlike Actionable. Applicable to any dataset when inputs must pass through unchanged. Avoid when you need a real operation or orchestration; consider MetaStep or MetaOrderedStep."
     name: str = "VoidStep"
     def __init__(self, *args, step_to_mimic: Step = None, **kwargs) -> None:  # pylint: disable=unused-argument
         """VoidStep : Do nothing"""

@@ -16,6 +16,7 @@ class MetaPartialExplorerStep(MetaExplorerStep):
     """
 
     name: str = "MetaPartialExplorerStep"
+    _usage: str = "Use when you want a meta placeholder so the optimizer can later swap in real steps instead of MetaExplorerStep. Applicable to meta pipelines where a tag selects one step to mimic without exploration. Avoid when you need immediate exploration or ordered multi-step execution."
 
     def __init__(self, *args, tag: set = None, **kwargs):  # pylint: disable=unused-argument
         if steps := find_steps_by_tag(tag):

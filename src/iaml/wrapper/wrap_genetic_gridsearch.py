@@ -22,6 +22,7 @@ class WrapGeneticGridSearch(StepWrapper):
     Each new generation will learn from the previous one
     """
     name = "Wrap : Genetic GridSearch"
+    _usage: str = "Use when you need adaptive, multi-generation search over larger spaces and want broader exploration than WrapBasicGridSearch or WrapIterativeGridSearch. Applicable to numeric, categorical, and boolean hyperparameters. Avoid when budget is tight or a fixed grid suffices."
 
     def __init__(self, step: Step):
         # Set of configuration key to ignore.

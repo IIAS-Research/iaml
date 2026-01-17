@@ -13,6 +13,7 @@ class ActSelectPercentile(Actionable):
     """[STEP] Preprocess with SelectPercentile"""
 
     name: str = "Preprocess with SelectPercentile"
+    _usage: str = "Use when you need fast univariate feature selection by percentile, rather than ActKernelPCA. Applicable to non-negative features with classification targets (chi2 or f_classif). Avoid when you want feature engineering via clustering like ActKMeansFeatures."
     _description: str  = textwrap.dedent('''\
         SelectPercentile is a tool that helps choose important features from a
         group of variables by looking at how well each one predicts the outcome.''')

@@ -46,6 +46,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     _description_long: str = ''
     """Longer description of the step."""
 
+    _usage: str = ''
+    """Concise guidance on when to use (and avoid) this step."""
+
     can_be_disabled: bool = True
     """Whether this step can be disabled."""
 

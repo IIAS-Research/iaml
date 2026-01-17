@@ -15,6 +15,7 @@ class ActQuadraticDiscriminantAnalysis(Predictor):
     [STEP] Quadratic Discriminant Analysis
     """
     name = "Quadratic Discriminant Analysis"
+    _usage = "Use when class covariances differ and you want a fast probabilistic baseline vs ActDecisionTreeClassifier or ActExtraTreesClassifier. Applicable to tabular numeric features for binary or multiclass targets. Avoid when data are highly non-Gaussian, sparse, or p>>n."
     _description = textwrap.dedent('''\
         QuadraticDiscriminantAnalysis is a machine learning algorithm
         that models the relationship between input features and a categorical

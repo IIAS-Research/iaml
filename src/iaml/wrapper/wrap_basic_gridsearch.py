@@ -8,6 +8,7 @@ from ..decorators.all import is_step, runner
 class WrapBasicGridSearch(StepWrapper):
     """[WRAPPER] Wrap a step to apply Grid Search configuration parameters"""
 
+    _usage: str = "Use when you want a quick, simple grid around current values and prefer it over WrapGeneticGridSearch or WrapIterativeGridSearch. Applicable to numeric, categorical, and boolean hyperparameters. Avoid when search space is large or needs adaptive or iterative exploration."
     to_avoid: list[str] = ['random_state'] # List of ignored key
 
     @runner

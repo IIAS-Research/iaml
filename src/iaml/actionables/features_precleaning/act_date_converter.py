@@ -20,6 +20,7 @@ class ActDateConverter(Actionable):
         column is not converted. As converting to date is time consuming, we will
         perform the test on {sample_size}.
     ''')
+    _usage: str = 'Use when short text columns mostly contain parseable dates. Applicable to SHORT_TEXT columns with mixed date formats. Avoid when values are IDs or sentinels better handled by ActDropIdLikeColumns or ActSentinelToNaN.'
 
     def __init__(self):
         self.configuration = {

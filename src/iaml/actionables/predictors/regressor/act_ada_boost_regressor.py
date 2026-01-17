@@ -19,6 +19,7 @@ class ActAdaBoostRegressor(Predictor):
         AdaBoostRegressor is an ensemble learning technique
         used for regression problems. It works by combining multiple weak learners
         (simple models) into a strong learner.''')
+    _usage: str = "Use when regression needs boosting and you want an alternative to ActDecisionTreeRegressor or ActExtraTreesRegressor. Applicable to continuous targets with modest features and nonlinear signal. Avoid when data is very noisy, high-dimensional, or you need strong interpretability."
     refs: list[dict[str, Any]] = [
         {
             'year': 1995,

@@ -1,3 +1,8 @@
 """Features selection Actionables"""
 from .act_remove_high_correlated_column import ActRemoveHighCorrelatedColumn
 from .act_remove_low_variance_column import ActRemoveLowVarianceColumn
+from .act_select_k_best import ActSelectKBest
+from .act_rfe import ActRFE
+from .act_select_from_model import ActSelectFromModel
+from .act_vif_selector import ActVIFSelector
+from .act_permutation_importance_selector import ActPermutationImportanceSelector

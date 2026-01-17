@@ -13,6 +13,7 @@ class ActRBFSampler(Actionable):
     """[STEP] Approximate with RBFSampler"""
 
     name: str = "Approximate with RBFSampler"
+    _usage: str = "Use when you want a fast nonlinear kernel approximation for numeric features, as a lighter alternative to ActKernelPCA. Applicable to dense tabular data where scaling is reasonable. Avoid when data are categorical heavy, very sparse, or when you need exact kernel features."
     _description: str = textwrap.dedent('''\
         RBFSampler is a tool that helps computers understand complex relationships
         between things by turning them into simpler numbers.''')

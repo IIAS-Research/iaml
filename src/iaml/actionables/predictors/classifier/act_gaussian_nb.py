@@ -25,6 +25,7 @@ class ActGaussianNb(Predictor):
         distribution and can be modeled well by a normal distribution.
         It is a simple and fast algorithm that works well for many classification problems,
         especially when the number of features is much larger than the number of samples.''')
+    _usage: str = "Use when you need a fast baseline for continuous features; consider ActBernoulliNb for binary features or ActCatBoost for higher accuracy. Applicable to tabular binary/multiclass tasks with roughly normal feature distributions. Avoid when features are strongly dependent or mostly categorical."
     refs: list[dict[str, Any]] = []
 
     def __init__(self):

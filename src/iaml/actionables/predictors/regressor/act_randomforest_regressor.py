@@ -23,6 +23,7 @@ class ActRandomForestRegressor(Predictor):
         using a collection of decision trees. It works by building multiple decision trees on
         random subsets of the input features and data, and then averaging the predictions of each
         tree to make the final prediction.''')
+    _usage: str = "Use when you want a robust nonlinear tabular baseline; more stable than ActDecisionTreeRegressor. Applicable to continuous targets with numeric or encoded categorical features. Avoid when data is huge or latency is tight; consider ActExtraTreesRegressor."
     refs: list[dict[str, Any]] = [
         {
             'year': 2001,

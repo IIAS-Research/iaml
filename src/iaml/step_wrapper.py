@@ -12,6 +12,8 @@ class StepWrapper(Step):
     """StepWrapper is a direct child of Step and will wrap and execute another step.
     Wrap with StepWrapper is useless, use children classes
     """
+    _usage = "Use when you need a minimal wrapper around exactly one child step for delegation. Applicable to any dataset and single-step pipelines. Avoid when Actionable or MetaStep provides the intended behavior."
+
     def __init__(self, step: Step):
         self.step: Step = step
         """The step to wrap"""

@@ -13,6 +13,7 @@ class ActMinMaxScaler(Actionable):
     """[STEP] Min Max Scaler"""
 
     name: str = "Min Max Scaler"
+    _usage: str = "Use when you need bounded scaling of numeric features for scale-sensitive models; unlike ActNormalizer, keeps feature ranges. Applicable to continuous numeric columns with stable min/max. Avoid when outliers or range drift dominate; consider ActRobustScaler."
     _description: str = textwrap.dedent('''\
         MinMaxScaler is a tool that helps computers understand complex relationships
         between things by turning them into simpler numbers within a fixed range.''')

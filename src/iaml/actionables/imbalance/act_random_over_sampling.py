@@ -22,6 +22,7 @@ class ActRandomOverSampling(Actionable):
         It works by randomly copying and pasting samples from the minority class
         (the group with fewer samples) until it has the same number of samples as the majority class.
         This helps ensure that all classes are represented equally in the dataset.''')
+    _usage: str = "Use when you need a simple baseline to boost rare classes without synthesis; compare with ActSMOTE or ActADASYN. Applicable to imbalanced binary or multiclass classification tables. Avoid when oversampling risks overfitting or duplicates distort signal."
     refs: list[dict[str, Any]] = [
         {
             'year': 2012,

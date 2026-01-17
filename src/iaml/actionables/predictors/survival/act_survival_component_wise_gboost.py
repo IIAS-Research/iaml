@@ -14,6 +14,7 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
     """[STEP] Componentwise Gradient Boosting Survival Analysis"""
 
     name: str = "ComponentwiseGradientBoostingSurvivalAnalysis"
+    _usage: str = "Use when you want stagewise boosting with feature selection for survival instead of ActGradientBoostingSurvivalAnalysis. Applicable to tabular censored survival data, especially with many features. Avoid when a linear model like ActCox or ActCoxnetSurvivalAnalysis is preferred."
     _description: str = textwrap.dedent('''\
         ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis
         algorithm that uses gradient boosting with componentwise (stagewise) updates
@@ -37,7 +38,7 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
             'name': 'Survival ensembles',
             'authors': [
                 'T. Hothorn',
-                'P. Bühlmann',
+                'P. B5hlmann',
                 'S. Dudoit',
                 'A. Molinaro',
                 'M. J. van der Laan'

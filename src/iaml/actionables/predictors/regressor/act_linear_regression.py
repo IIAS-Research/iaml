@@ -24,6 +24,7 @@ class ActLinearRegression(Predictor):
         a linear function. It works by finding the best-fitting line or hyperplane
         that minimizes the sum of the squared differences between the predicted
         and actual output variables.''')
+    _usage: str = "Use when you need a fast linear baseline before ActElasticNetRegressor or ActDecisionTreeRegressor. Applicable to tabular regression with roughly linear relationships. Avoid when strong nonlinearity, interactions, or heavy regularization is needed."
     refs: list[dict[str, Any]] = []
 
     def __init__(self):

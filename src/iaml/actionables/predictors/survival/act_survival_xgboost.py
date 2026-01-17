@@ -14,6 +14,7 @@ class ActGradientBoostingSurvivalAnalysis(Predictor):
     """[STEP] Gradient Boosting Survival Analysis"""
 
     name: str = "GradientBoostingSurvivalAnalysis"
+    _usage: str = "Use when you need flexible non-linear survival modeling and want boosted trees as an alternative to ActRandomSurvivalForest. Applicable to tabular survival data with censored outcomes. Avoid when proportional hazards holds and ActCox is sufficient or data is tiny."
     _description: str = textwrap.dedent('''\
         GradientBoostingSurvivalAnalysis is a survival analysis algorithm
         that uses gradient boosting to estimate the survival function over time.

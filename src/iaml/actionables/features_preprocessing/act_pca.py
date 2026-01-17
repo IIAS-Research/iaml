@@ -16,6 +16,7 @@ class ActPCA(Actionable):
 
     name: str = "PCA"
     _description: str = "Apply PCA for dimensionality reduction over a list of columns"
+    _usage: str = "Use when you need fast linear dimensionality reduction for numeric features; consider ActKernelPCA or ActFastICA for nonlinear or independent components. Applicable to scaled numeric matrices. Avoid when features are categorical or you must keep original feature meaning."
     _description_long: str = textwrap.dedent('''\
         PCA, or Principal Component Analysis, is a dimensionality reduction technique.
         It transforms the data into a set of linearly uncorrelated components, capturing

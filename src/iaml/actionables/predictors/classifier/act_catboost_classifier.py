@@ -15,6 +15,7 @@ class ActCatBoost(Predictor):
     """[STEP]  CatBoost Classifier"""
 
     name: str = "CatBoost Classifier"
+    _usage: str = "Use when you want high-accuracy tabular classification with categorical features, often stronger than ActDecisionTreeClassifier or ActExtraTreesClassifier. Applicable to binary or multiclass tabular data. Avoid when data is tiny, compute is tight, or you prefer ActGaussianNb."
     _description: str = textwrap.dedent('''\
         CatBoostClassifier is a powerful tool that helps computers make accurate
         predictions by learning from both positive and negative examples simultaneously.''')

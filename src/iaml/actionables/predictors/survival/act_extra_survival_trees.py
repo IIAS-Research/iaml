@@ -13,6 +13,7 @@ from ....decorators.all import is_step
 class ActExtraSurvivalTrees(Predictor):
     """[STEP] Extra Survival Trees"""
     name: str = "ExtraSurvivalTrees"
+    _usage: str = "Use when you want a randomized tree ensemble for survival, as an alternative to ActRandomSurvivalForest. Applicable to tabular censored survival data with nonlinear feature effects. Avoid when you need proportional-hazards interpretability like ActCox or data is very small."
     _description: str = textwrap.dedent('''\
         ExtraSurvivalTrees is an ensemble learning method for survival
         analysis based on extremely randomized trees. It fits multiple decision trees

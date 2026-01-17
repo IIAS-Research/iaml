@@ -27,6 +27,7 @@ class ActSurvivalTree(Predictor):
         both cumulative hazard and survival functions at each terminal node, making it useful for
         clinical risk prediction and other applications where time-to-event outcomes are crucial.
         ''')
+    _usage: str = "Use when you need an interpretable survival baseline; compare ActCox or ActExtraSurvivalTrees for linear or ensemble options. Applicable to tabular time-to-event data with right censoring. Avoid when higher accuracy is required or proportional-hazards structure is assumed."
     refs: list[dict[str, Any]] = [
         {
             'year': 1993,

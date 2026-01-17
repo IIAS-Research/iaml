@@ -26,6 +26,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         usage compared to other tree-based algorithms.
         HistGradientBoostingRegressor also includes options for regularization,
         such as L1 and L2 regularization, to prevent overfitting.''')
+    _usage: str = "Use when you need fast nonlinear tabular regression; leaner than ActCatBoostRegressor or ActExtraTreesRegressor. Applicable to medium to large tabular continuous targets with mostly numeric features. Avoid when data is tiny, mostly linear, or interpretability is critical."
     refs: list[dict[str, Any]] = [
         {
             'year': 2006,

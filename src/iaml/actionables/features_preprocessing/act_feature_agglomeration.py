@@ -21,6 +21,7 @@ class ActFeatureAgglomeration(Actionable):
         essential information. This technique is unsupervised, meaning it does not
         require labeled data, as it identifies clusters of features based on similarity.
     ''')
+    _usage: str = "Use when you want to cluster highly correlated numeric features for dimensionality reduction, instead of ActKernelPCA or ActFastICA. Applicable to wide tabular data with many continuous features and no labels. Avoid when features are mostly categorical or you need interpretable original features."
 
     def __init__(self):
         self.configuration: dict = {

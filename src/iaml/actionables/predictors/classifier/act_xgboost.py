@@ -20,6 +20,7 @@ class ActXGBoost(Predictor):
         It works by building multiple decision trees in a sequential manner,
         where each tree is trained to correct the errors made by the previous tree.
         The final prediction is made by summing the predictions of all the trees.''')
+    _usage: str = "Use when you want boosted-tree accuracy on tabular classification and can tune, vs ActDecisionTreeClassifier or ActExtraTreesClassifier. Applicable to binary or multiclass tabular features. Avoid when data is tiny, highly sparse, or you need a simple, fast baseline."
     refs: list[dict[str, Any]] = [
         {
             'name': 'Stochastic Gradient Boosting',

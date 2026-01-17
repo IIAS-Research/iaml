@@ -15,6 +15,7 @@ class ActCatBoostRegressor(Predictor):
     """[STEP]  CatBoost Regressor"""
 
     name: str = "CatBoost Regressor"
+    _usage: str = "Use when you need strong tabular regression with categorical features versus ActDecisionTreeRegressor. Applicable to continuous targets with mixed numeric/categorical columns. Avoid when interpretability, ultra-low latency, or tiny data dominate."
     _description: str = textwrap.dedent('''\
         CatBoostRegressor is a powerful tool that helps computers make accurate
         predictions for continuous outcomes by learning from both positive and

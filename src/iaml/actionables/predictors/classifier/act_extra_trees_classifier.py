@@ -22,6 +22,7 @@ class ActExtraTreesClassifier(Predictor):
         decision trees, where each tree is trained on a random subset of the input feature
         and a random subset of the training data. At prediction time, the algorithm aggregates
         the outputs of all the decision trees to make a final prediction.''')
+    _usage: str = "Use when you want a low-tuning tabular classifier, stronger than ActDecisionTreeClassifier and simpler than ActBaggingClassifier. Applicable to numeric/categorical tabular data for binary or multiclass. Avoid when you need calibrated probabilities or very sparse text features."
     refs: list[dict[str, Any]] = [
         {
             'year': 2006,

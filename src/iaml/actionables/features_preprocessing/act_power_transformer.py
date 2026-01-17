@@ -24,6 +24,7 @@ class ActPowerTransformer(Actionable):
         machine learning models that assume normal distribution,
         even if your original data doesn't meet this assumption.
         It helps make your data more compatible with many common ML algorithms.''')
+    _usage: str = "Use when numeric features are skewed and need Gaussian-like scaling, instead of ActKernelPCA or ActFastICA. Applicable to continuous numeric data with unimodal, non-normal distributions. Avoid when data are categorical/one-hot, already near-normal, or highly multimodal."
     refs: list[dict[str, Any]] = [
         {
             'year': 1964,

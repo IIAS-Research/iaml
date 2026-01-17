@@ -15,6 +15,7 @@ class ActSimpleImputer(Actionable):
     """[STEP] Lightweight imputer that fills NaNs with mean/mode values."""
 
     name: str = 'Simple Imputer'
+    _usage: str = 'Use when NaNs must be filled quickly for minimal models; if dropping is preferred consider ActDropNumericalColumn. Applicable to mixed numeric and categorical tables with missing values. Avoid when missingness is informative or you plan richer imputation such as ActCategoricalImputer.'
     _description: str = textwrap.dedent('''\
         Fill missing numeric values with the column mean and categorical values with the
         most frequent value so minimalist predictors can run without preprocessing.''')

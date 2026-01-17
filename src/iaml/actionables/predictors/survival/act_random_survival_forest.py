@@ -14,6 +14,7 @@ class ActRandomSurvivalForest(Predictor):
     """[STEP] Random Survival Forest"""
 
     name: str = "RandomSurvivalForest"
+    _usage: str = "Use when you want a flexible tree-ensemble survival model; choose over ActCox when PH is doubtful, or consider ActExtraSurvivalTrees for more randomness. Applicable to tabular time-to-event data with censoring. Avoid when data are tiny or effects are well modeled by linear PH."
     _description: str = textwrap.dedent('''\
         RandomSurvivalForest is a survival analysis algorithm
         that uses an ensemble of decision trees to estimate the survival function

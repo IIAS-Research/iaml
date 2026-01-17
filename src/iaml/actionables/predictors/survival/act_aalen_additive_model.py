@@ -16,6 +16,7 @@ class ActAalenAdditiveFitter(Predictor):
     """[STEP] Aalen's Additive Model for Survival Analysis"""
 
     name: str = "AalenAdditiveFitter"
+    _usage: str = "Use when effects change over time and you want an additive alternative to ActCox. Applicable to tabular survival data with event/time and censoring. Avoid when hazards are time-constant or nonlinear interactions favor ActRandomSurvivalForest."
     _description: str = textwrap.dedent('''\
         Aalen's Additive Model is a semi-parametric survival analysis model
         that estimates survival time as a function of covariates, using a linear combination

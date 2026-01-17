@@ -14,6 +14,7 @@ class ActDropDateColumn(Actionable):
 
     name: str = 'Remove date columns'
     _description: str = 'Remove all columns containing Date from the dataset'
+    _usage: str = 'Use when date columns are irrelevant and you want to remove them; for other types use ActDropNumericalColumn or ActDropCategoricalColumn. Applicable to columns typed as DataType.DATE. Avoid when dates carry predictive signal or need feature extraction.'
     _description_long: str = textwrap.dedent('''\
         Remove all columns containing Data from the dataset
         This step is used to clean the dataset in order to perform other actions later on

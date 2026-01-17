@@ -14,6 +14,7 @@ class ActMeanColumn(Actionable):
     """[STEP] Fill missing values with the mean."""
 
     name: str = 'Fill missing values'
+    _usage: str = "Use when numeric columns have some missing values and you want a quick baseline imputation over ActDropNumericalColumn. Applicable to numerical data with moderate missingness. Avoid when missingness is high or systematic, or when ActDropNumericalColumn is safer."
     _description: str = textwrap.dedent('''\
         Fill missing values with the mean of non-missing values
         when the proportion of empty rows is lower than {empty_threshold:.0%}.''')

@@ -15,6 +15,7 @@ class ActMultinomialNB(Predictor):
     [STEP] Multinomial NB
     """
     name = "Multinomial NB"
+    _usage = "Use when non-negative counts or frequencies drive class signal and you want a fast baseline vs ActComplementNB or ActBernoulliNb. Applicable to tabular bag-of-words or count features for binary or multiclass targets. Avoid when features include negatives, strong feature interactions, or need nonlinear splits."
     _description = textwrap.dedent('''\
         MultinomialNB is a machine learning algorithm that models
         the relationship between input features and a categorical output variable

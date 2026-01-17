@@ -16,6 +16,7 @@ class WrapIterativeGridSearch(StepWrapper):
     """
 
     name = "Wrap : Iterative GridSearch"
+    _usage = "Use when you need iterative narrowing of numeric grids, faster than WrapBasicGridSearch. Applicable to numeric-heavy configs with ordered ranges and small categorical/bool sets. Avoid when spaces are huge or unstructured; consider WrapGeneticGridSearch."
     def __init__(self, step: Step) -> None:
         self.configuration = {
             'modificator': {

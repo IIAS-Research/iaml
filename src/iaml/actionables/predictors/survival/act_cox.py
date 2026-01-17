@@ -30,6 +30,7 @@ class ActCox(Predictor):
         rates, or in engineering to predict equipment failure. Unlike many other
         models, it doesn't predict the exact time of the event but estimates the
         risk over time, handling cases where the event has not yet occurred (censored data).''')
+    _usage: str = "Use when you need a Cox model; compare ActCoxnetSurvivalAnalysis for regularization or ActRandomSurvivalForest for nonlinearity. Applicable to tabular survival data with censoring and proportional hazards. Avoid when hazards are non-proportional or interactions dominate."
     refs: list[dict[str, Any]] = [
         {
             'year': 1972,

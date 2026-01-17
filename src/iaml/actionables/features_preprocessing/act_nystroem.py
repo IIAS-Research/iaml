@@ -15,6 +15,7 @@ class ActNystroem(Actionable):
     name: str = "Nystroem"
     _description: str = "Apply the Nystroem method for dimensionality reduction \
         over a list of columns"
+    _usage: str = "Use when you need a fast nonlinear kernel map approximation for large numeric data, as a lighter option than ActKernelPCA. Applicable to scaled continuous features with many rows. Avoid when you need independent components or tiny data where ActFastICA or ActKernelPCA is fine."
     _description_long: str = textwrap.dedent('''\
         The Nystroem method is a technique used for approximating kernel methods, 
         which helps in reducing the computational cost of kernel-based algorithms.

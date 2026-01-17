@@ -32,6 +32,7 @@ class MetaStep(Step):
     """
     name: str = "Steps group"
     description: str = 'Execute steps one by one'
+    _usage: str = "Use when you need a meta step to run several child Steps and pass candidates between them. Applicable to pipelines with multiple child steps or tagged steps producing Candidate outputs. Avoid when you need fixed ordering or exploration; consider MetaOrderedStep or MetaExplorerStep."
     description_long: str = None
 
     def __init__(

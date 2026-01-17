@@ -22,6 +22,7 @@ class ActCategoryStringToNumeric(Actionable):
 
     name: str = 'Textual Category To Numeric Value'
     _description: str ='Encode categorical text data column to numeric value'
+    _usage: str = 'Use when target labels are categorical strings and models require numeric y; prefer ActDropCategoricalColumn only if target is unusable. Applicable to single target columns of low-to-moderate cardinality. Avoid when target is already numeric or when ActDropHighCardinalityCategorical is more appropriate.'
     _description_long: str = textwrap.dedent('''\
         Retrieve all unique values from a column, then transform those values to a numeric type.
         Exemple: If a column contain 3 uniques values like "coffee", "tea" and "water",

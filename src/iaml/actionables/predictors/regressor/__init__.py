@@ -16,3 +16,12 @@ from .act_hist_gradient_boosting_regressor import ActHistGradientBoostingRegress
 from .act_mlp_regressor import ActMLPRegressor
 from .act_sgd_regressor import ActSGDRegressor
 from .act_gaussian_process_regressor import ActGaussianProcessRegressor
+from .act_decision_tree_regressor import ActDecisionTreeRegressor
+from .act_ridge_regressor import ActRidgeRegressor
+from .act_lasso_regressor import ActLassoRegressor
+from .act_elastic_net_regressor import ActElasticNetRegressor
+from .act_huber_regressor import ActHuberRegressor
+from .act_ransac_regressor import ActRANSACRegressor
+from .act_quantile_regressor import ActQuantileRegressor
+from .act_poisson_regressor import ActPoissonRegressor
+from .act_light_gbm_regressor import ActLightGBMRegressor
