@@ -61,6 +61,18 @@ class IAMLPipeline(Pipeline):
         self.metrics: list[Metric] = []
         """List of metrics that'll be computed in this pipeline"""
 
+        self._fingerprint_cache: str | None = None
+        """Cached fingerprint of training steps."""
+
+        self._transform_fingerprint_cache: str | None = None
+        """Cached fingerprint of transforms/resamplers."""
+
+        self._fingerprint_cache_version: tuple | None = None
+        """Cached config versions for training steps."""
+
+        self._transform_fingerprint_cache_version: tuple | None = None
+        """Cached config versions for transforms/resamplers."""
+
         if estimator_type not in ['classifier', 'regressor', 'survival']:
             raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
                 survival or regressor")
@@ -112,6 +124,7 @@ class IAMLPipeline(Pipeline):
         self.transformers = []
         self.resamplers = []
         self.predictor = None
+        self._invalidate_fingerprint_cache()
 
         for value in values:
             self.__add_step(value)
@@ -124,6 +137,7 @@ class IAMLPipeline(Pipeline):
         :param tuple[str,object] step: The step to add.
         """
         _, instance = step
+        self._invalidate_fingerprint_cache()
         if hasattr(instance, 'predict') and callable(instance.predict):
             self.predictor = step
         elif hasattr(instance, 'transform') and callable(instance.transform):
@@ -141,13 +155,16 @@ class IAMLPipeline(Pipeline):
         for idx, step in enumerate(self.transformers):
             if id(old) == id(step[1]):
                 self.transformers[idx] = (new.name, new)
+                self._invalidate_fingerprint_cache()
                 return True
         for idx, step in enumerate(self.resamplers):
             if id(old) == id(step[1]):
                 self.resamplers[idx] = (new.name, new)
+                self._invalidate_fingerprint_cache()
                 return True
         if id(old) == id(self.predictor[1]):
             self.predictor = (new.name, new)
+            self._invalidate_fingerprint_cache()
             return True
 
         return False
@@ -161,13 +178,16 @@ class IAMLPipeline(Pipeline):
         for idx, step in enumerate(self.transformers):
             if id(to_remove) == id(step[1]):
                 del self.transformers[idx]
+                self._invalidate_fingerprint_cache()
                 return True
         for idx, step in enumerate(self.resamplers):
             if id(to_remove) == id(step[1]):
                 del self.resamplers[idx]
+                self._invalidate_fingerprint_cache()
                 return True
         if id(to_remove) == id(self.predictor[1]):
             self.predictor = None
+            self._invalidate_fingerprint_cache()
             return True
 
         return False
@@ -289,6 +309,7 @@ class IAMLPipeline(Pipeline):
         :raise ValueError: Step must implement transform method.
         """
         if instance and hasattr(instance, 'transform'):
+            self._invalidate_fingerprint_cache()
             self.transformers.append((str(instance), instance))
         else:
             raise ValueError("Step must implement transform method")
@@ -300,6 +321,7 @@ class IAMLPipeline(Pipeline):
         :raise ValueError: Step must implement resample method.
         """
         if instance and hasattr(instance, 'resample'):
+            self._invalidate_fingerprint_cache()
             self.resamplers.append((str(instance), instance))
         else:
             raise ValueError("Step must implement resample method")
@@ -311,6 +333,7 @@ class IAMLPipeline(Pipeline):
         :param Step instance: Step to add (must implement predict).
         :raise ValueError: Step must implement predict method.
         """
+        self._invalidate_fingerprint_cache()
         self.predictor = (str(instance), instance)
 
     def copy(self) -> IAMLPipeline:
@@ -504,9 +527,37 @@ class IAMLPipeline(Pipeline):
 
         :return: md5 sting
         """
-        to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
+        current_version = tuple(
+            (id(step), getattr(step, "_config_version", None))
+            for _, step in self.training_steps
+        )
+        if self._fingerprint_cache is None or self._fingerprint_cache_version != current_version:
+            to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
+            self._fingerprint_cache = md5(to_hash.encode()).hexdigest()
+            self._fingerprint_cache_version = current_version
+        return self._fingerprint_cache
 
-        return md5(to_hash.encode()).hexdigest()
+    def transformers_resamplers_fingerprint(self) -> str:
+        """Fingerprint for transformers/resamplers only (used by Candidate)."""
+        current_version = tuple(
+            (id(step), getattr(step, "_config_version", None))
+            for _, step in [*self.transformers, *self.resamplers]
+        )
+        if self._transform_fingerprint_cache is None \
+            or self._transform_fingerprint_cache_version != current_version:
+            to_hash = "\n".join([
+                step.fingerprint()
+                for _, step in [*self.transformers, *self.resamplers]
+            ])
+            self._transform_fingerprint_cache = md5(to_hash.encode()).hexdigest()
+            self._transform_fingerprint_cache_version = current_version
+        return self._transform_fingerprint_cache
+
+    def _invalidate_fingerprint_cache(self) -> None:
+        self._fingerprint_cache = None
+        self._transform_fingerprint_cache = None
+        self._fingerprint_cache_version = None
+        self._transform_fingerprint_cache_version = None
 
     def bibliography(self, structured: bool) -> str | list[dict]:
         """Return a string listing all step's references or a structured list of dict.

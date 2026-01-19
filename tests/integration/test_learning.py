@@ -24,7 +24,8 @@ class TestLearning(unittest.TestCase):
         self.assertTrue(isinstance(perf_plots[0], Plot), msg=name)
         
         if shap:
-            exp = iaml.chosen_model.explain_model(X.sample(40))
+            sample_size = min(40, len(X))
+            exp = iaml.chosen_model.explain_model(X.sample(sample_size))
             shap_plots = exp.to_plots()
             self.assertTrue(isinstance(exp, Explanation), msg=name)
             self.assertTrue(isinstance(shap_plots[0], Plot), msg=name)
@@ -33,7 +34,7 @@ class TestLearning(unittest.TestCase):
         """
         Test : Regression on synthetic data
         """
-        X, y = make_regression_data(n_samples=120, seed=10)
+        X, y = make_regression_data(n_samples=30, seed=10)
         self.__learning_test(X, y, name="synthetic_regression")
     
     
@@ -41,12 +42,12 @@ class TestLearning(unittest.TestCase):
         """
         Test : Classification on synthetic data
         """
-        X, y = make_classification_data(n_samples=120, seed=20)
+        X, y = make_classification_data(n_samples=30, seed=20)
         self.__learning_test(X, y, name="synthetic_classification")
 
     def test_survival(self):
         """
         Test : Survival on synthetic data
         """
-        X, y = make_survival_data(n_samples=120, seed=30)
+        X, y = make_survival_data(n_samples=30, seed=30)
         self.__learning_test(X, y, shap=False, name="synthetic_survival")

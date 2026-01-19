@@ -9,6 +9,7 @@ import traceback
 import warnings
 import threading
 import queue
+import pickle
 import multiprocess
 import multiprocess.managers
 import multiprocess.process
@@ -99,6 +100,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
 
         self._mp_capable: bool = True
         """Flag indicating whether multiprocessing primitives are available."""
+        self._mp_fallback: bool = False
+        """Flag indicating whether we already fell back to sequential execution."""
 
         try:
             self.manager: multiprocess.Manager = multiprocess.Manager()
@@ -293,11 +296,35 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             raise TerminatedError("Job submission failed: Executor is currently \
                 shutdown and cannot accept new tasks.")
 
+        callback_id = len(self.callbacks) - 1
+
         if self.debug:
-            self.result_queue.put((target(*args, **kwargs), len(self.callbacks)-1))
-        else:
-            self.to_run_queue.put((target, args, kwargs, len(self.callbacks)-1))
+            result = target(*args, **kwargs)
+            if callback_id and callable(self.callbacks[callback_id]):
+                self.callbacks[callback_id](result)
+            Logger().info(str(result))
+            self.results.append(result)
             self.submit_count += 1
+            self.finished_run += 1
+            return
+
+        try:
+            self.to_run_queue.put((target, args, kwargs, callback_id))
+            self.submit_count += 1
+        except pickle.PicklingError as exc:
+            if not self._mp_fallback:
+                warnings.warn(
+                    f"TimedPoolExecutor fallback to sequential mode (pickle failed: {exc!r})"
+                )
+                self._mp_fallback = True
+            self.debug = True
+            result = target(*args, **kwargs)
+            if callback_id and callable(self.callbacks[callback_id]):
+                self.callbacks[callback_id](result)
+            Logger().info(str(result))
+            self.results.append(result)
+            self.submit_count += 1
+            self.finished_run += 1
 
     def __finished(self) -> bool:
         """Are all the submitted tasks finished?

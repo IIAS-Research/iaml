@@ -152,30 +152,34 @@ class ActMICEForestImputer(Actionable):
             self._nan_stats[c] = (n_missing, n_total, pct)
         rs = self.configuration['random_state']['default']
 
+        default_mmc = 5
+        mean_match_candidates = {
+            c: max(0, min(default_mmc, int(nonnull_counts[c]) - 1))
+            for c in valid_cols
+        }
+
         kernel_kwargs = dict(
             data=X_fit_valid,
             random_state=rs,
             num_datasets=1,
             save_all_iterations_data=True,
+            mean_match_candidates=mean_match_candidates,
         )
         self.kernel = mf.ImputationKernel(**kernel_kwargs)
 
-        mean_match_candidates = max(0, min(5, len(X_fit_valid) - 1))
-
-        def _run_kernel(mmc: int) -> None:
+        def _run_kernel() -> None:
             self.kernel.mice(
                 int(self.configuration['max_iter']['default']),
                 n_jobs=self._n_jobs,
                 verbose=False,
                 seed=rs,
-                random_state=rs,
-                mean_match_candidates=mmc
+                random_state=rs
             )
 
         fallback_errors: tuple[type[Exception], ...] = (IndexError,) + _LGBM_ERRORS
 
         try:
-            _run_kernel(mean_match_candidates)
+            _run_kernel()
         except ValueError as exc:
             Logger().warning(
                 "MICE fitting failed (%s). Step skipped; columns left untouched.", exc
@@ -186,9 +190,10 @@ class ActMICEForestImputer(Actionable):
                 "MICE mean-matching failed (%s). Retrying without predictive mean matching.",
                 exc,
             )
-            self.kernel = mf.ImputationKernel(**kernel_kwargs)
+            fallback_kernel_kwargs = dict(kernel_kwargs, mean_match_candidates=0)
+            self.kernel = mf.ImputationKernel(**fallback_kernel_kwargs)
             try:
-                _run_kernel(0)
+                _run_kernel()
             except Exception as exc2:  # noqa: BLE001
                 Logger().warning(
                     "MICE fallback without predictive mean matching failed (%s). Step skipped; columns left untouched.",

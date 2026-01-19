@@ -59,7 +59,10 @@ class ActNormalizer(Actionable):
         :return: Transformed dataset
         """
         if self.normalizer and self.columns:
-            X[self.columns] = self.normalizer.transform(X[self.columns])
+            columns = [column for column in self.columns if column in X.columns]
+            if not columns:
+                return X
+            X[columns] = self.normalizer.transform(X[columns])
         return X
 
     def suitable(self, dataset: Dataset) -> bool:

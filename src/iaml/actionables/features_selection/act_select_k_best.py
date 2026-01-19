@@ -1,6 +1,8 @@
 """[STEP] Select K Best Features."""
 import textwrap
 
+from collections.abc import Callable
+
 import pandas as pd
 from sklearn.feature_selection import SelectKBest, chi2, f_classif
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
@@ -51,7 +53,7 @@ class ActSelectKBest(Actionable):
         self.selector: SelectKBest | None = None
         self._scores: dict[str, float] = {}
 
-    def _resolve_score_func(self, dataset: Dataset) -> callable | None:
+    def _resolve_score_func(self, dataset: Dataset) -> Callable | None:
         score_func = self.get_config('score_func')
         if score_func == 'chi2':
             return chi2

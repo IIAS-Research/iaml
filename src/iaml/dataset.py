@@ -8,6 +8,7 @@ from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 import numpy as np
 import pandas as pd
 
+from .cache_keys import hash_df
 from .data_type import DataType
 from .type_of_target import type_of_target
 from .logger import Logger
@@ -50,6 +51,9 @@ class Dataset:
 
         self.__X: pd.DataFrame = X.drop(columns=groups_columns)
         """The dataframe used in this Dataset object without groups columns if provided"""
+
+        self._fingerprint: str | None = None
+        """Cached hash of X for step caching."""
 
         # Make sure y is either None or single column
         if isinstance(y, pd.DataFrame):
@@ -169,6 +173,7 @@ class Dataset:
         :return: Transformed dataset.
         """
         self.__X = method(self.__X)
+        self._fingerprint = None
         self.__detect_columns_types()
 
     @property
@@ -198,6 +203,12 @@ class Dataset:
                             y,
                             groups=X[self.groups.columns])
         return self.decline(*resampler(self.X, self.y))
+
+    def fingerprint(self) -> str:
+        """Stable hash of X for caching."""
+        if self._fingerprint is None:
+            self._fingerprint = hash_df(self.__X)
+        return self._fingerprint
 
     def split(self, splitter: callable, *args, **kwargs) -> Iterator[tuple['Dataset', 'Dataset']]:
         """Use splitter to split dataset into a list of tuple (train set, test set) 

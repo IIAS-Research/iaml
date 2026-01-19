@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import traceback
+import os
+import time
 from typing import TYPE_CHECKING
 from copy import copy, deepcopy
 from hashlib import md5
@@ -14,6 +16,7 @@ from .splitters import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .metric_plot import MetricPlot
 from .logger import Logger
+from .step_cache import StepCache
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -152,11 +155,60 @@ class Candidate:
         :param IAMLPipeline, optional iaml_pipeline: Replace current pipeline. Defaults to None.
         :return: New Candidate
         """
+        logger = None
+        diag_enabled = os.environ.get("IAML_DIAG", "").lower() in ["1", "true", "yes"]
+        if diag_enabled:
+            from .logger import Logger  # pylint: disable=import-outside-toplevel
+            logger = Logger()
+            if logger.verbose <= 1:
+                logger = None
+
+        pipeline_copy_time = 0.0
+        dataset_copy_time = 0.0
         if iaml_pipeline is None:
+            start = time.perf_counter()
             iaml_pipeline = self.pipeline.copy()
+            pipeline_copy_time = time.perf_counter() - start
+
+        if dataset is None:
+            start = time.perf_counter()
+            dataset = deepcopy(self.dataset)
+            dataset_copy_time = time.perf_counter() - start
+
+        if logger is not None:
+            try:
+                steps = self.pipeline.training_steps
+                step_count = len(steps)
+                cache_count = 0
+                step_cache = StepCache()
+                for _, step in steps:
+                    if hasattr(step, "_cache_id"):
+                        cache_count += step_cache.size_for_step(step._cache_id)
+                    elif hasattr(step, "caches") and step.caches is not None:
+                        cache_count += len(step.caches)
+                candidate_refs = 0
+                for _, step in steps:
+                    if hasattr(step, "candidate") and step.candidate is not None:
+                        if isinstance(step.candidate, list):
+                            candidate_refs += len(step.candidate)
+                        else:
+                            candidate_refs += 1
+            except Exception:  # pylint: disable=broad-except
+                step_count = None
+                cache_count = None
+                candidate_refs = None
+
+            logger.info(
+                "diag: to_output copy pipeline=%.3fs dataset=%.3fs steps=%s caches=%s candidates=%s",
+                pipeline_copy_time,
+                dataset_copy_time,
+                step_count,
+                cache_count,
+                candidate_refs,
+            )
 
         return Candidate(
-            dataset or deepcopy(self.dataset),
+            dataset,
             metrics or copy(self.metrics),
             iaml_pipeline=iaml_pipeline,
             stacked_path=self.stacked_path)
@@ -281,8 +333,21 @@ class Candidate:
         if cache_split and not from_cache:
             Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)
 
-        self.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
-            for k in map(str, self.metrics) }
+        computed_metrics: dict[str, float] = {}
+        for metric in self.metrics:
+            name = str(metric)
+            values = [
+                metric_values.get(name)
+                for metric_values in metrics
+                if name in metric_values
+            ]
+            if values:
+                computed_metrics[name] = float(np.mean([
+                    value if value is not None else 0 for value in values
+                ]))
+            else:
+                computed_metrics[name] = 0
+        self.computed_metrics = computed_metrics
 
         return self.computed_metrics
 
@@ -376,9 +441,13 @@ class Candidate:
 
         :return: String fingerprint
         """
-        to_hash = "\n".join([step.fingerprint() \
-                for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]])
+        if hasattr(self.pipeline, "transformers_resamplers_fingerprint"):
+            return self.pipeline.transformers_resamplers_fingerprint()
 
+        to_hash = "\n".join([
+            step.fingerprint()
+            for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]
+        ])
         return md5(to_hash.encode()).hexdigest()
 
     def _pipeline_signature(self) -> str:

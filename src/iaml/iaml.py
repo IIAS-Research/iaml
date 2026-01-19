@@ -191,7 +191,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             name='Features Normalization',
             description=textwrap.dedent('''\
                 Normalize data to help model to give the same interest to each column''')))
-        self.first_step.add_step(MetaStep(tag='imbalance',
+        self.first_step.add_step(MetaExplorerStep(tag='imbalance',
+            also_explore_without=True,
             name='Handle Imbalanced Data',
             description=textwrap.dedent('''\
                 Balance the dataset to ensure the model does not favor the
@@ -435,11 +436,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                             dataset, timeout=timeout, callback=callback)
 
             if not gen0_candidates:
-                if remain_time() < 1:
+                if warmup_candidate and warmup_candidate.computed_metrics:
+                    Logger().warning(
+                        "No candidates evaluated before timeout; using warmup candidate."
+                    )
+                    gen0_candidates = [warmup_candidate]
+                elif remain_time() < 1:
                     raise TimeoutError('IAML was unable to generate a model within the \
                         imposed time limit. Try increasing the processing time')
-                raise RuntimeError('Undefined error. IAML was unable to create pipeline \
-                    based on your data')
+                else:
+                    raise RuntimeError('Undefined error. IAML was unable to create pipeline \
+                        based on your data')
 
             ### FINETUNING
             candidates = self.__optimize(dataset,
