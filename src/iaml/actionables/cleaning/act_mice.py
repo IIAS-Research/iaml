@@ -180,9 +180,7 @@ class ActMICEForestImputer(Actionable):
             Logger().warning(
                 "MICE fitting failed (%s). Step skipped; columns left untouched.", exc
             )
-            self.kernel = None
-            self.explanations = [f"Skipped MICE (error: {exc})."]
-            return self
+            raise RuntimeError(f"MICE fitting failed: {exc}") from exc
         except fallback_errors as exc:  # type: ignore[misc]
             Logger().warning(
                 "MICE mean-matching failed (%s). Retrying without predictive mean matching.",
@@ -196,16 +194,14 @@ class ActMICEForestImputer(Actionable):
                     "MICE fallback without predictive mean matching failed (%s). Step skipped; columns left untouched.",
                     exc2,
                 )
-                self.kernel = None
-                self.explanations = [f"Skipped MICE (error: {exc2})."]
-                return self
+                raise RuntimeError(
+                    f"MICE fallback without predictive mean matching failed: {exc2}"
+                ) from exc2
         except Exception as exc:  # noqa: BLE001
             Logger().warning(
                 "MICE fitting failed (%s). Step skipped; columns left untouched.", exc
             )
-            self.kernel = None
-            self.explanations = [f"Skipped MICE (error: {exc})."]
-            return self
+            raise RuntimeError(f"MICE fitting failed: {exc}") from exc
         
         self._ensure_seed_on_kernel_models(rs)
         self._ensure_parallelism_on_kernel_models(self._n_jobs)
@@ -298,6 +294,33 @@ class ActMICEForestImputer(Actionable):
 
         return X_out
 
+
+    def suitable(self, dataset: Dataset) -> bool:
+        if dataset.X.empty:
+            return False
+
+        X = dataset.X.copy()
+        columns = self._select_columns(X)
+        if not columns:
+            return False
+
+        X_fit = X[columns]
+        if X_fit.empty:
+            return False
+
+        if not X_fit.isna().any().any():
+            return False
+
+        nonnull_counts = X_fit.notna().sum(axis=0)
+        valid_cols = [c for c in columns if nonnull_counts[c] > 0]
+        if not valid_cols:
+            return False
+
+        X_fit_valid = X_fit[valid_cols]
+        if X_fit_valid.empty or len(X_fit_valid) < 5:
+            return False
+
+        return True
 
     def priorize(self, candidate: Candidate = None) -> float:
         alpha = 0.01

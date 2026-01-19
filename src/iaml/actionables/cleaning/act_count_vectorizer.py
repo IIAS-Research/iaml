@@ -78,8 +78,8 @@ class ActCountVectorizer(Actionable):
             )
 
         if not self.columns and columns:
-            self.explanations.append(
-                'Count vectorizer skipped: no usable vocabulary in short text columns.'
+            raise RuntimeError(
+                "Count vectorizer failed: no usable vocabulary in short text columns."
             )
 
         return self

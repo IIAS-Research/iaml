@@ -31,13 +31,7 @@ class TestActMICEForestImputer(StepTestCase):
         self.assertListEqual(result["city"].tolist(), df["city"].tolist())
         missing_age = int(df["age"].isna().sum())
         missing_score = int(df["score"].isna().sum())
-
-        if step.kernel is None:
-            self.assertTrue(any("Skipped MICE" in explanation for explanation in step.explanations))
-            self.assertEqual(result["age"].isna().sum(), missing_age)
-            self.assertEqual(result["score"].isna().sum(), missing_score)
-            return
-
+        self.assertIsNotNone(step.kernel)
         self.assertEqual(result["age"].isna().sum(), 0)
         self.assertEqual(result["score"].isna().sum(), 0)
         for col in ("age", "score"):

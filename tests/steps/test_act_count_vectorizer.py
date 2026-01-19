@@ -85,7 +85,5 @@ class TestActCountVectorizer(StepTestCase):
         )
         step = ActCountVectorizer()
 
-        self.fit_step(step, dataset)
-        result = step.transform(dataset.X.copy())
-
-        self.assertFrameEqual(result, df)
+        with self.assertRaises(RuntimeError):
+            self.fit_step(step, dataset)
