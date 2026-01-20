@@ -18,7 +18,8 @@ from .dataset import Dataset
 from .data_type import DataType
 from .metric_plot import MetricPlot
 from .metric import Metric
-from .plot import Plot
+from .plot import Plot, StatisticPlot
+from .statistic import Statistic
 from .cache import Cache
 from .meta_predictor import MetaPredictor
 from .void_step import VoidStep
@@ -35,6 +36,9 @@ from .wrapper import *
 
 # Metrics
 from .metrics import *
+
+# Statistics
+from .statistics import *
 
 # Plots
 from .plots import *

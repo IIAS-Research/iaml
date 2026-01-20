@@ -47,6 +47,7 @@ Run a subset:
 python -m tests unit
 python -m tests integration
 python -m tests steps
+python -m tests statistics
 ```
 
 ***

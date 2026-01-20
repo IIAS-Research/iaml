@@ -22,6 +22,9 @@ def main(args):
         elif args[0] == "steps":
             print("Run step tests")
             tests_path = os.path.join(python_file_path, "steps")
+        elif args[0] == "statistics":
+            print("Run statistics tests")
+            tests_path = os.path.join(python_file_path, "statistics")
         else:
             print("Invalid arguments")
             exit(os.EX_DATAERR)   

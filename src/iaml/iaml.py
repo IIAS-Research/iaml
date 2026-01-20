@@ -22,6 +22,7 @@ from .metastep import MetaStep
 from .candidate import Candidate
 from .dataset import Dataset
 from .metric import Metric
+from .statistic import Statistic
 from .worker_manager import WorkerManager
 from .splitters import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
@@ -31,6 +32,7 @@ from .optimizers import Optimizer, GeneticOptimizer, RandomOptimizer, BayesianOp
 from .meta_predictor import MetaPredictor
 from .predictor import Predictor
 from .logger import Logger
+from .plot import StatisticPlot
 from .actionables.cleaning.act_simple_imputer import ActSimpleImputer
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps
@@ -150,6 +152,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.chosen_candidate: Candidate = None
         """Hold the best candidate"""
         WorkerManager(max_workers=self.max_workers)
+
+        self.descriptive_statistics: pd.DataFrame | None = None
+        """Cached descriptive statistics for the last fitted dataset."""
 
     def __del__(self):
         """Delete the TimedPoolExecutor"""
@@ -373,6 +378,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 deepcopy(y),
                 groups=groups,
                 groups_columns=groups_columns)
+
+            try:
+                self.descriptive_statistics = self.__compute_descriptive_statistics(dataset)
+            except Exception as exc:  # noqa: BLE001
+                Logger().warning(f"Descriptive statistics computation failed: {exc}")
+                self.descriptive_statistics = pd.DataFrame()
             
             if self.train_on_n_samples != None and self.train_on_n_samples > 0:
                 dataset = dataset.sample(self.train_on_n_samples)
@@ -490,6 +501,63 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return None
 
         return self.chosen_candidate.pipeline
+
+    def visualize_descriptive_statistics(self) -> list[StatisticPlot]:
+        """Return a list of plots that show descriptive statistics."""
+        if self.descriptive_statistics is None or self.descriptive_statistics.empty:
+            return []
+
+        plots: list[StatisticPlot] = []
+        stats_df = self.descriptive_statistics
+
+        def group_columns_by_feature(dataframe: pd.DataFrame) -> dict[str, list[str]]:
+            columns = list(dataframe.columns)
+            base_names: list[str] = []
+            for col in columns:
+                if isinstance(col, str) and col.endswith('_all'):
+                    base = col[:-4]
+                    if base not in base_names:
+                        base_names.append(base)
+
+            groups: dict[str, list[str]] = {}
+            used_cols: set[str] = set()
+            if base_names:
+                for base in base_names:
+                    group = [
+                        col for col in columns
+                        if col == base or (isinstance(col, str) and col.startswith(f"{base}_"))
+                    ]
+                    groups[base] = group
+                    used_cols.update(group)
+
+            for col in columns:
+                if col not in used_cols:
+                    groups[col] = [col]
+
+            return groups
+
+        for plot_sub_class in StatisticPlot.__subclasses__():
+            if not getattr(plot_sub_class, 'enabled', True):
+                continue
+            if getattr(plot_sub_class, 'group_by_feature', False):
+                for base, cols in group_columns_by_feature(stats_df).items():
+                    plot = plot_sub_class().compute(stats_df[cols], base_name=base)
+                    plots.append(plot)
+            else:
+                plots.append(plot_sub_class().compute(stats_df))
+
+        return plots
+
+    def __compute_descriptive_statistics(self, dataset: Dataset) -> pd.DataFrame:
+        """Compute descriptive statistics on the dataset."""
+        computed_statistics = pd.DataFrame()
+        for statistic_sub_class in Statistic.all_subclasses():
+            statistic = statistic_sub_class()
+            if statistic.suitable(dataset):
+                result = statistic.compute(dataset)
+                if result is not None and not result.empty:
+                    computed_statistics = pd.concat([computed_statistics, result])
+        return computed_statistics
 
     def check_pipeline(self) -> None:
         """Raise Exception if pipeline is not valid
