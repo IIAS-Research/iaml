@@ -122,6 +122,8 @@ class ActKBinsDiscretizer(Actionable):
             return self
 
         values = dataset.X[self.columns]
+        if values.isna().any().any():
+            return self
         self.active_columns = self._select_active_columns(values)
         if not self.active_columns:
             return self
@@ -180,6 +182,8 @@ class ActKBinsDiscretizer(Actionable):
         if not columns or dataset.X.empty:
             return False
         values = dataset.X[columns]
+        if values.isna().any().any():
+            return False
         if values.empty:
             return False
         unique_counts = values.nunique(dropna=True)

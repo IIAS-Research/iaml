@@ -49,6 +49,9 @@ from .stack import Stack
 # Optimizer
 from .optimizers import *
 
+# LLM helpers
+from .llm import *
+
 # Meta predictors
 from .meta_predictors import *
 

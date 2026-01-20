@@ -98,6 +98,8 @@ class ActSparseRandomProjection(Actionable):
             return self
 
         values = dataset.X[self.columns]
+        if values.isna().any().any():
+            return self
         n_components = self._resolve_n_components(*values.shape)
         if n_components is None:
             return self
@@ -136,6 +138,8 @@ class ActSparseRandomProjection(Actionable):
         if not columns or dataset.X.empty:
             return False
         values = dataset.X[columns]
+        if values.isna().any().any():
+            return False
         return min(values.shape) > 1
 
     def priorize(self, candidate: Candidate = None) -> float:

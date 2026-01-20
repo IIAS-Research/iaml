@@ -9,6 +9,15 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
+def _is_numeric_matrix(values: pd.DataFrame) -> bool:
+    if values.empty:
+        return False
+    for column in values.columns:
+        if not pd.api.types.is_numeric_dtype(values[column]):
+            return False
+    return not values.isna().any().any()
+
+
 @is_step('features_preprocessing')
 class ActFeatureAgglomeration(Actionable):
     """[STEP] Apply FeatureAgglomeration for dimensionality reduction"""
@@ -50,10 +59,13 @@ class ActFeatureAgglomeration(Actionable):
             }
 
         self.optimizable: bool = True
-        self.preprocessor: bool = None
+        self.preprocessor: FeatureAgglomeration | None = None
 
     def fit(self, dataset: Dataset) -> Actionable:
         # pylint: disable=too-many-function-args
+        self.preprocessor = None
+        if not _is_numeric_matrix(dataset.X):
+            return self
         self.configure('n_clusters', min(self.get_config('n_clusters'), dataset.X.shape[1]))
 
         self.preprocessor = FeatureAgglomeration(**self.passthrough_parameters())
@@ -67,7 +79,12 @@ class ActFeatureAgglomeration(Actionable):
         :param pd.DataFrame X: DataFrame to transform
         :return: Transformed dataset
         """
+        if self.preprocessor is None:
+            return X
         return pd.DataFrame(self.preprocessor.transform(X))
+
+    def suitable(self, dataset: Dataset) -> bool:
+        return _is_numeric_matrix(dataset.X)
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5

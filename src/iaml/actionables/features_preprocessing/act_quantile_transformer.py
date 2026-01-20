@@ -72,6 +72,9 @@ class ActQuantileTransformer(Actionable):
         self.columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
         if self.columns and not dataset.X.empty:
             values = dataset.X[self.columns]
+            if values.isna().any().any():
+                self.preprocessor = None
+                return self
             self.preprocessor = self._build_transformer(values.shape[0])
             self.preprocessor.fit(values)
         else:
@@ -90,7 +93,10 @@ class ActQuantileTransformer(Actionable):
 
     def suitable(self, dataset: Dataset) -> bool:
         columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
-        return bool(columns) and not dataset.X.empty
+        if not columns or dataset.X.empty:
+            return False
+        values = dataset.X[columns]
+        return not values.isna().any().any()
 
     def priorize(self, candidate: Candidate = None) -> float:
         if candidate is None:

@@ -14,6 +14,7 @@ import math
 import textwrap
 import multiprocessing
 from typing import Iterator, TYPE_CHECKING
+import numpy as np
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
 from .step import Step
@@ -34,6 +35,7 @@ from .predictor import Predictor
 from .logger import Logger
 from .plot import StatisticPlot
 from .actionables.cleaning.act_simple_imputer import ActSimpleImputer
+from .llm import LLMSettings, LLMProvider, ChatGPTProvider, LLMCandidateGenerator, LLMOptimizer
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
@@ -66,6 +68,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         Default to None.
     :param bool, optional preprocessor: Use preprocessor. Default to False.
     :param Metric, optional main_metric: Main Metric to use. Default to None.
+    :param Optimizer, optional optimizer: Optimizer class to use. Default to GeneticOptimizer.
+    :param str, optional mode: Shortcut mode selector ("classic", "llm_full",
+        "llm_generation", "llm_optimizer"). Default to None.
+    :param str, optional generation_mode: Candidate generation mode ("classic" or "llm").
+        Default to "classic".
+    :param str, optional optimizer_mode: Optimization mode ("classic" or "llm").
+        Default to "classic".
+    :param LLMProvider, optional llm_provider: LLM provider to use when LLM mode is enabled.
+    :param LLMSettings, optional llm_settings: LLM settings for prompts and budgets.
     """
     def __init__( # pylint: disable=too-many-arguments
         self,
@@ -78,7 +89,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         preprocessor: bool = False,
         main_metric: Metric = None,
         optimizer: Optimizer = GeneticOptimizer,
-        train_on_n_samples: int = None) -> None:
+        train_on_n_samples: int = None,
+        mode: str | None = None,
+        generation_mode: str = "classic",
+        optimizer_mode: str = "classic",
+        llm_provider: LLMProvider | None = None,
+        llm_settings: LLMSettings | None = None) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -93,6 +109,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         self.train_on_n_samples = train_on_n_samples
         """If defined, pick n sample in the dataset before train"""
+
+        self.llm_settings: LLMSettings = llm_settings or LLMSettings()
+        """Settings for LLM-backed generation/optimization."""
+
+        self.llm_provider: LLMProvider | None = llm_provider
+        """Provider for LLM calls."""
+
+        self.generation_mode, self.optimizer_mode = self.__resolve_modes(
+            mode, generation_mode, optimizer_mode
+        )
+        """Mode selectors for LLM integration."""
         
 
         # if metalearner is None:
@@ -240,6 +267,38 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return None
 
         return minimal_step
+
+    def __resolve_modes(
+        self,
+        mode: str | None,
+        generation_mode: str,
+        optimizer_mode: str,
+    ) -> tuple[str, str]:
+        """Resolve mode shortcuts and validate flags."""
+        if mode:
+            mapping = {
+                "classic": ("classic", "classic"),
+                "llm": ("llm", "llm"),
+                "llm_full": ("llm", "llm"),
+                "llm_generation": ("llm", "classic"),
+                "llm_optimizer": ("classic", "llm"),
+                "hybrid": ("llm", "classic"),
+            }
+            if mode not in mapping:
+                raise ValueError(f"Unknown mode '{mode}'.")
+            generation_mode, optimizer_mode = mapping[mode]
+
+        for value in (generation_mode, optimizer_mode):
+            if value not in ("classic", "llm"):
+                raise ValueError(f"Invalid mode flag '{value}'.")
+
+        return generation_mode, optimizer_mode
+
+    def __ensure_llm_provider(self) -> LLMProvider:
+        """Create default LLM provider if none is configured."""
+        if self.llm_provider is None:
+            self.llm_provider = ChatGPTProvider(settings=self.llm_settings)
+        return self.llm_provider
 
     def __callback(self, callback: callable, **kwargs: dict) -> None:
         """Call callback function if defined
@@ -398,10 +457,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
                 self.init_candidate.add_metric(metric)
 
-            minimal_candidates = self.__generate_minimal_candidates(self.init_candidate)
+            minimal_candidates = []
+            if self.generation_mode == "classic" or self.llm_settings.include_minimal_candidates:
+                minimal_candidates = self.__generate_minimal_candidates(self.init_candidate)
 
             # Generate candidates
-            pipeline_candidates = self.__run(self.init_candidate)
+            if self.generation_mode == "llm":
+                pipeline_candidates = self.__run_llm(self.init_candidate, dataset)
+            else:
+                pipeline_candidates = self.__run(self.init_candidate)
             pipeline_candidates = [candidate for candidate in pipeline_candidates \
                 if candidate.pipeline.predictor is not None]
 
@@ -462,7 +526,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             ### FINETUNING
             candidates = self.__optimize(dataset,
                                         gen0_candidates,
-                                        optimizer=self.optimizer(duration=remain_time()),
+                                        optimizer=self.__build_optimizer(dataset, remain_time()),
                                         max_duration=remain_time(),
                                         patience=patience,
                                         callback=callback)
@@ -472,12 +536,30 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             # Fit candidates with the whole dataset
             fit_candidates = []
-            for i in range(min(n_candidates, len(candidates))):
+            last_fit_error = None
+            for candidate in candidates:
+                if len(fit_candidates) >= n_candidates:
+                    break
                 Cache.reset()
-                current_candidate = deepcopy(candidates[i])
-                current_candidate.pipeline.fit(X, y,
-                    groups_columns=groups_columns, metrics=current_candidate.metrics)
+                current_candidate = deepcopy(candidate)
+                try:
+                    current_candidate.pipeline.fit(
+                        X,
+                        y,
+                        groups_columns=groups_columns,
+                        metrics=current_candidate.metrics,
+                    )
+                except (ValueError, np.linalg.LinAlgError) as exc:
+                    Logger().warning(
+                        f"Skipping candidate during final fit after failure: {exc!r}"
+                    )
+                    last_fit_error = exc
+                    continue
                 fit_candidates.append(current_candidate)
+
+            if not fit_candidates:
+                details = f" Last error: {last_fit_error!r}" if last_fit_error else ""
+                raise ValueError(f"IAML could not fit any candidate pipeline.{details}")
 
             self.chosen_candidate = fit_candidates[0]
             self.last_stage_candidates = candidates
@@ -617,6 +699,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             # Wait for all tasks to complete with a timeout
             new_candidates += self.executor.join(min(timeout, self.max_stage_duration))
 
+            if new_candidates:
+                skipped = sum(1 for candidate in new_candidates if not candidate.computed_metrics)
+                if skipped:
+                    Logger().warning(
+                        f"Skipped {skipped} candidates with no computed metrics."
+                    )
+                new_candidates = [candidate for candidate in new_candidates if candidate.computed_metrics]
+
             new_candidates.sort(reverse=True)
 
             # Add results to progressbar
@@ -645,6 +735,20 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 if stage_number is not None else "Initial evaluation finished")
 
         return new_candidates
+
+    def __build_optimizer(self, dataset: Dataset, duration: int) -> Optimizer:
+        """Instantiate optimizer based on current mode."""
+        if self.optimizer_mode == "llm":
+            provider = self.__ensure_llm_provider()
+            return LLMOptimizer(
+                dataset=dataset,
+                stats_df=self.descriptive_statistics,
+                root_step=self.first_step,
+                provider=provider,
+                settings=self.llm_settings,
+                duration=duration,
+            )
+        return self.optimizer(duration=duration)
 
     def __optimize( # pylint: disable=too-many-arguments
         self,
@@ -799,6 +903,26 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         candidates = self.minimal_predictor_step.run(minimal_candidate)
 
         return [cand for cand in candidates if cand.pipeline.predictor is not None]
+
+    def __run_llm(self, candidate: Candidate, dataset: Dataset) -> list[Candidate]:
+        """Run LLM-driven candidate generation."""
+        provider = self.__ensure_llm_provider()
+        Logger().info(
+            "LLM generation enabled (model=%s, pool=%d, max_calls_total=%d, max_calls_gen=%d)",
+            self.llm_settings.model,
+            self.llm_settings.generation_pool_size,
+            self.llm_settings.max_calls_total,
+            self.llm_settings.max_calls_per_generation,
+        )
+        generator = LLMCandidateGenerator(
+            provider=provider,
+            settings=self.llm_settings,
+            root_step=self.first_step,
+            dataset=dataset,
+            stats_df=self.descriptive_statistics,
+        )
+        self.candidates = generator.generate(candidate, pool_size=self.llm_settings.generation_pool_size)
+        return self.candidates
 
     def __run(self, candidate: Candidate) -> list[Candidate]:
         """Run pipeline steps

@@ -92,6 +92,8 @@ class ActSelectKBest(Actionable):
 
         if not self.columns or dataset.y is None:
             return self
+        if dataset.X[self.columns].isna().any().any():
+            return self
 
         k_value = self._resolve_k(len(self.columns))
         if k_value < 1:
@@ -154,6 +156,8 @@ class ActSelectKBest(Actionable):
 
         columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
         if not columns or dataset.X.empty:
+            return False
+        if dataset.X[columns].isna().any().any():
             return False
 
         if self._resolve_k(len(columns)) < 1:
