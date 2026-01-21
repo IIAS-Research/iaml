@@ -59,8 +59,9 @@ def make_mixed_feature_data(n_samples: int = 120, seed: int = 10) -> pd.DataFram
         + pd.to_timedelta(np.arange(n_samples), unit="D")
     )
 
-    nan_idx = rng.choice(n_samples, size=max(1, n_samples // 10), replace=False)
-    X.loc[nan_idx, "num_2"] = np.nan
+    if n_samples > 0:
+        nan_idx = rng.choice(n_samples, size=max(1, n_samples // 10), replace=False)
+        X.loc[nan_idx, "num_2"] = np.nan
     return X
 
 

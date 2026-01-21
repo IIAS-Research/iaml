@@ -40,11 +40,22 @@ class Dataset:
         groups_columns: list[str] = None,
         columns_types: dict = None
     ):
+        type_of_target_override = None
+        if isinstance(y, str):
+            type_of_target_override = y
+            y = []
+
+        if columns_types is None and isinstance(groups, dict) and not groups_columns:
+            if self._looks_like_columns_types(groups):
+                columns_types = groups
+                groups = None
+
         if groups is not None and groups_columns:
             raise ValueError("groups and groups_columns are not None. Only one must be set")
 
-        if groups is not None and set(groups.columns).intersection(X.columns):
-            raise ValueError("Group columns present in dataset!")
+        if isinstance(groups, pd.DataFrame):
+            if set(groups.columns).intersection(X.columns):
+                raise ValueError("Group columns present in dataset!")
 
         if groups_columns is None:
             groups_columns = []
@@ -66,7 +77,9 @@ class Dataset:
         if groups_columns:
             self.groups = X[groups_columns]
         else:
-            if type(groups) in [pd.Series, list, np.array]:
+            if isinstance(groups, dict):
+                self.groups = pd.DataFrame(groups)
+            elif isinstance(groups, (pd.Series, list, np.ndarray)):
                 self.groups = pd.DataFrame(groups)
             else:
                 self.groups = groups
@@ -80,7 +93,7 @@ class Dataset:
                 columns=['groups']
                 )
 
-        self.columns_types: dict = columns_types if columns_types else {}
+        self.columns_types: dict = self._normalize_columns_types(columns_types, self.__X)
         """Columns types to be applied to our dataframe columns"""
 
         self.__detect_columns_types()
@@ -88,8 +101,60 @@ class Dataset:
         self.type_of_target: str = None
         """Type of target to predict"""
 
-        if y is not None:
-            self.type_of_target: str = type_of_target(self.__y)
+        if type_of_target_override is not None:
+            self.type_of_target = type_of_target_override
+        elif y is not None:
+            self.type_of_target = type_of_target(self.__y)
+
+    @staticmethod
+    def _normalize_columns_types(columns_types: dict | None, X: pd.DataFrame) -> dict:
+        if not columns_types:
+            return {}
+
+        if all(isinstance(key, DataType) for key in columns_types.keys()):
+            normalized = {}
+            for data_type, columns in columns_types.items():
+                if columns is None:
+                    continue
+                if isinstance(columns, (str, bytes)):
+                    columns = [columns]
+                for column in columns:
+                    if column in X.columns:
+                        normalized[column] = (X[column].dtype, data_type)
+            return normalized
+
+        if all(isinstance(value, DataType) for value in columns_types.values()):
+            normalized = {}
+            for column, data_type in columns_types.items():
+                if column in X.columns:
+                    normalized[column] = (X[column].dtype, data_type)
+            return normalized
+
+        return columns_types
+
+    @staticmethod
+    def _looks_like_columns_types(columns_types: dict) -> bool:
+        if not columns_types:
+            return False
+
+        keys = columns_types.keys()
+        values = columns_types.values()
+
+        if all(isinstance(key, DataType) for key in keys):
+            return True
+
+        if all(isinstance(value, DataType) for value in values):
+            return True
+
+        if all(
+            isinstance(value, tuple)
+            and len(value) == 2
+            and isinstance(value[1], DataType)
+            for value in values
+        ):
+            return True
+
+        return False
 
     @property
     def features(self) -> list[str]:
@@ -272,13 +337,17 @@ class Dataset:
         column_value = self.X[column_name]
         detected: DataType = None
         if column_value.dtype == object:
-            if (len(column_value.unique()) / len(column_value) < 0.05 \
-                or len(column_value.unique()) < 7):
+            if len(column_value) == 0:
                 detected = DataType.CATEGORICAL
-            elif column_value.astype(str).apply(len).max() <= 85:
-                detected = DataType.SHORT_TEXT
             else:
-                detected = DataType.TEXT
+                unique_count = len(column_value.unique())
+                if (unique_count / len(column_value) < 0.05 \
+                    or unique_count < 7):
+                    detected = DataType.CATEGORICAL
+                elif column_value.astype(str).apply(len).max() <= 85:
+                    detected = DataType.SHORT_TEXT
+                else:
+                    detected = DataType.TEXT
         elif np.issubdtype(column_value.dtype, np.number):
             detected = DataType.NUMERIC
         elif np.issubdtype(column_value.dtype, np.datetime64):
