@@ -82,6 +82,8 @@ class TestStepWrapper(StepTestCase):
     def test_from_pipeline_loads_child_and_json(self) -> None:
         if not hasattr(iaml, "StepWrapper"):
             setattr(iaml, "StepWrapper", StepWrapper)
+        if not hasattr(iaml, "VoidStep"):
+            setattr(iaml, "VoidStep", VoidStep)
         wrapper = StepWrapper(VoidStep(step_to_mimic=Step()))
         pipeline = wrapper.json_pipeline()
 

@@ -101,6 +101,6 @@ class ActPowerTransformer(Actionable):
     def suitable(self, dataset: Dataset) -> bool:
         if not _is_numeric_matrix(dataset.X):
             return False
-        if self.get_config('method') == 'box-cox' and (dataset.X < 0).any().any():
+        if self.get_config('method') == 'box-cox' and not (dataset.X < 0).any().any():
             self.configure('method', 'yeo-johnson') # pylint: disable=too-many-function-args
         return True

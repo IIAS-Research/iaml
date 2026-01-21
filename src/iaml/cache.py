@@ -1,5 +1,6 @@
 # cache_singleton.py
 from typing import Any
+import pickle
 import pandas as pd
 
 from .meta_singleton import MetaSingleton
@@ -36,6 +37,6 @@ class Cache(metaclass=MetaSingleton):
             return
         try:
             self._backend.put(fingerprint, hash_df(dataset), output)
-        except (EOFError, OSError) as exc:
+        except (EOFError, OSError, pickle.PicklingError, TypeError) as exc:
             Logger().warning(f"Shared cache disabled after put failure: {exc!r}")
             self._backend = None

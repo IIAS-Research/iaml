@@ -1,8 +1,8 @@
 """Types of data used in Dataset"""
-from enum import Enum
+from enum import IntEnum
 
 
-class DataType(Enum):
+class DataType(IntEnum):
     """Types of data used in Dataset"""
     CATEGORICAL = 0
     TEXT = 1

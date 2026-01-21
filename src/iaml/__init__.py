@@ -57,3 +57,9 @@ from .meta_predictors import *
 
 # Type of target
 from .type_of_target import type_of_target
+
+# Ensure star imports expose all public names, even if __all__ is set elsewhere.
+__all__ = [
+    name for name in globals()
+    if not name.startswith("_") and name != "__all__"
+]

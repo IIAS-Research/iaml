@@ -285,6 +285,54 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         for collector in self.daemons_collectors:
             collector.start()
 
+    def _drain_queue(self, target_queue: queue.Queue | multiprocess.managers.BaseProxy) -> None:
+        """Clear queued tasks without blocking."""
+        while True:
+            try:
+                target_queue.get_nowait()
+            except Exception:
+                break
+
+    def _terminate_workers(self) -> None:
+        """Stop all worker processes immediately."""
+        for process in self.process:
+            try:
+                if process.is_alive():
+                    process.kill()
+            except Exception:
+                try:
+                    process.terminate()
+                except Exception:
+                    pass
+            try:
+                process.join(timeout=0.2)
+            except Exception:
+                pass
+        self.process = []
+
+    def _restart_workers(self) -> None:
+        """Restart worker processes after a timeout cancellation."""
+        if not self._mp_capable:
+            return
+
+        for _ in range(self.max_workers):
+            self.process.append(
+                multiprocess.Process( # pylint: disable=not-callable
+                    target=process_daemon,
+                    args=[self.to_run_queue,
+                        self.result_queue,
+                        self.error_queue,
+                        self.finally_queue,
+                        self.shared_cache
+                    ]
+                )
+            )
+            self.process[-1].start()
+
+        CoreDispatcher().affiliate(
+            [process.pid for process in self.process],
+            core_number=self.max_workers)
+
     def submit(self, target: callable, *args, **kwargs) -> None:
         """Submit a new task to sub process
 
@@ -399,8 +447,19 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         while not self.__finished() and remain_time() and not slide():
             time.sleep(0.5)
 
+        timed_out = not self.__finished() and remain_time() == 0
+        if timed_out:
+            if self._mp_capable and self.process:
+                self._terminate_workers()
+            self._drain_queue(self.to_run_queue)
+
         # Join collector thread, just to be sure we have collected all data
         self.__join_collectors()
+
+        if timed_out:
+            self.submit_count = self.finished_run
+            if self._mp_capable:
+                self._restart_workers()
 
         results = self.results # Save before reset!
 

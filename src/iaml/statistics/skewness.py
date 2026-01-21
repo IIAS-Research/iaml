@@ -26,7 +26,10 @@ class SkewnessStatistic(Statistic):
 
     def compute(self, dataset: Dataset, **kwargs) -> pd.DataFrame:
         """Compute skewness for numerical columns."""
-        if dataset.type_of_target in ['survival', 'continuous']:
+        if dataset.type_of_target == 'survival':
+            return pd.DataFrame()
+
+        if dataset.type_of_target == 'continuous':
             return pd.DataFrame()
 
         class_labels = list(pd.unique(dataset.y))
@@ -47,4 +50,4 @@ class SkewnessStatistic(Statistic):
 
     def suitable(self, dataset: Dataset) -> bool:  # pylint: disable=unused-argument
         """Does this statistic apply to the dataset?"""
-        return dataset.type_of_target not in ['survival', 'continuous']
+        return dataset.type_of_target != 'survival'

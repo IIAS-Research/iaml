@@ -2,7 +2,9 @@ import unittest, sys
 
 # Include tools lib
 sys.path.append('./src')
-from iaml import *
+from iaml.iaml import IAML
+from iaml.candidate import Candidate
+from iaml.plot import Plot
 from iaml.explanation import Explanation
 
 from tests.helpers.datasets import (

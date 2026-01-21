@@ -183,6 +183,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.descriptive_statistics: pd.DataFrame | None = None
         """Cached descriptive statistics for the last fitted dataset."""
 
+        self._last_dataset: Dataset | None = None
+        """Dataset used for the most recent fit, for on-demand statistics."""
+
     def __del__(self):
         """Delete the TimedPoolExecutor"""
         del self.executor
@@ -438,14 +441,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 groups=groups,
                 groups_columns=groups_columns)
 
-            try:
-                self.descriptive_statistics = self.__compute_descriptive_statistics(dataset)
-            except Exception as exc:  # noqa: BLE001
-                Logger().warning(f"Descriptive statistics computation failed: {exc}")
-                self.descriptive_statistics = pd.DataFrame()
-            
             if self.train_on_n_samples != None and self.train_on_n_samples > 0:
                 dataset = dataset.sample(self.train_on_n_samples)
+
+            self._last_dataset = dataset
+            self.descriptive_statistics = None
+            if self.generation_mode == "llm" or self.optimizer_mode == "llm":
+                self.__ensure_descriptive_statistics(dataset)
 
             ### INITIAL GENERATE CANDIDATE
             self.init_candidate: Candidate = Candidate(
@@ -586,6 +588,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def visualize_descriptive_statistics(self) -> list[StatisticPlot]:
         """Return a list of plots that show descriptive statistics."""
+        if self.descriptive_statistics is None and self._last_dataset is not None:
+            self.__ensure_descriptive_statistics(self._last_dataset)
+
         if self.descriptive_statistics is None or self.descriptive_statistics.empty:
             return []
 
@@ -629,6 +634,24 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 plots.append(plot_sub_class().compute(stats_df))
 
         return plots
+
+    def get_descriptive_statistics(self) -> pd.DataFrame:
+        """Return descriptive statistics, computing them on demand if needed."""
+        if self.descriptive_statistics is None and self._last_dataset is not None:
+            self.__ensure_descriptive_statistics(self._last_dataset)
+
+        return self.descriptive_statistics if self.descriptive_statistics is not None else pd.DataFrame()
+
+    def __ensure_descriptive_statistics(self, dataset: Dataset) -> None:
+        """Compute descriptive statistics once, for LLM and on-demand usage."""
+        if self.descriptive_statistics is not None:
+            return
+
+        try:
+            self.descriptive_statistics = self.__compute_descriptive_statistics(dataset)
+        except Exception as exc:  # noqa: BLE001
+            Logger().warning(f"Descriptive statistics computation failed: {exc}")
+            self.descriptive_statistics = pd.DataFrame()
 
     def __compute_descriptive_statistics(self, dataset: Dataset) -> pd.DataFrame:
         """Compute descriptive statistics on the dataset."""
@@ -739,6 +762,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def __build_optimizer(self, dataset: Dataset, duration: int) -> Optimizer:
         """Instantiate optimizer based on current mode."""
         if self.optimizer_mode == "llm":
+            self.__ensure_descriptive_statistics(dataset)
             provider = self.__ensure_llm_provider()
             return LLMOptimizer(
                 dataset=dataset,
@@ -906,6 +930,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def __run_llm(self, candidate: Candidate, dataset: Dataset) -> list[Candidate]:
         """Run LLM-driven candidate generation."""
+        self.__ensure_descriptive_statistics(dataset)
         provider = self.__ensure_llm_provider()
         Logger().info(
             "LLM generation enabled (model=%s, pool=%d, max_calls_total=%d, max_calls_gen=%d)",

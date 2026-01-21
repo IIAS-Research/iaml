@@ -95,6 +95,6 @@ class ActNystroem(Actionable):
     def suitable(self, dataset: Dataset) -> bool:
         if not _is_numeric_matrix(dataset.X):
             return False
-        if self.get_config('kernel') == 'chi2' and (dataset.X < 0).any().any():
+        if self.get_config('kernel') == 'chi2' and not (dataset.X < 0).any().any():
             self.configure('kernel', 'rbf') # pylint: disable=too-many-function-args
         return True

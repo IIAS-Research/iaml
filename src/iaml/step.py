@@ -390,20 +390,12 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.caches = []
 
     def _cache_key(self, candidate: Candidate) -> tuple:
-        dataset_fingerprint = None
-        if candidate is not None:
-            dataset = getattr(candidate, "dataset", None)
-            if dataset is not None and hasattr(dataset, "fingerprint"):
-                try:
-                    dataset_fingerprint = dataset.fingerprint()
-                except Exception:  # pylint: disable=broad-except
-                    dataset_fingerprint = None
-
-        return (self._cache_id, self.fingerprint(), dataset_fingerprint)
+        candidate_id = id(candidate) if candidate is not None else None
+        return (self._cache_id, self.fingerprint(), candidate_id)
 
     def _clone_output(self, output: Any) -> Any:
-        """Return a deep copy to avoid mutating cached outputs."""
-        return deepcopy(output)
+        """Return cached output without cloning to preserve identity semantics."""
+        return output
 
     @property
     def use_cache(self) -> bool:

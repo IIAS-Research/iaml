@@ -5,6 +5,7 @@ from typing import Iterable
 import sys
 from pathlib import Path
 import unittest
+import types
 
 import pandas as pd
 from pandas.testing import assert_frame_equal
@@ -14,6 +15,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.append(str(SRC_PATH))
+
+dataset_module = sys.modules.get("iaml.dataset")
+if isinstance(dataset_module, types.ModuleType) and not getattr(dataset_module, "__file__", None):
+    sys.modules.pop("iaml.dataset", None)
 
 from iaml.dataset import Dataset
 
