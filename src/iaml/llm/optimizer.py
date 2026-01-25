@@ -28,30 +28,38 @@ def _candidate_summary(
     candidate: Candidate,
     candidate_id: str,
     stage_plan: list[dict[str, Any]],
+    compact: bool = False,
 ) -> dict[str, Any]:
     stage_tags = [(stage.get("id"), stage.get("tag")) for stage in stage_plan]
     steps = []
-    for idx, (_, step) in enumerate(candidate.pipeline.training_steps):
+    for _, step in candidate.pipeline.training_steps:
         stage_id = None
         for stage_name, tag in stage_tags:
             if tag and getattr(step, "tags", None) and tag in step.tags:
                 stage_id = stage_name
                 break
-        steps.append(
-            {
-                "position": idx,
-                "class": step.__class__.__name__,
-                "stage": stage_id,
-                "config": {k: v.get("value") for k, v in step.configuration.items()},
-            }
-        )
+        config = {}
+        for key, conf in step.configuration.items():
+            current = safe_serialize(conf.get("value"))
+            default = safe_serialize(conf.get("default"))
+            if current != default:
+                config[key] = conf.get("value")
+        step_summary = {
+            "class": step.__class__.__name__,
+            "stage": stage_id,
+        }
+        if config:
+            step_summary["config"] = config
+        steps.append(step_summary)
 
-    return {
+    summary = {
         "id": candidate_id,
         "main_metric": candidate.main_metric,
-        "metrics": candidate.computed_metrics,
         "steps": steps,
     }
+    if not compact:
+        summary["metrics"] = candidate.computed_metrics
+    return summary
 
 
 def _optimization_prompt(
@@ -99,6 +107,7 @@ def _optimization_prompt(
             "Use only steps listed in each stage's allowed_steps.",
             "For replace_step, keep compatible tags and predictor role.",
             "Use config only with keys defined in config_schema.",
+            "Include only config keys to change; omitted keys keep current/default values.",
             "Config values must be JSON primitives (string, number, boolean).",
             "Do not write code or add new steps.",
         ],
@@ -169,15 +178,27 @@ class LLMOptimizer(Optimizer):
 
         candidates.sort(reverse=True)
         target_size = self.settings.optimizer_pool_size or len(candidates)
+        keep_top = max(0, min(self.settings.keep_top_k, len(candidates)))
+        if keep_top >= target_size:
+            self.generation_count += 1
+            return candidates[:target_size]
 
         summaries: list[dict[str, Any]] = []
         id_map: dict[str, Candidate] = {}
         for idx, cand in enumerate(candidates):
             cid = f"cand-{idx+1}"
             id_map[cid] = cand
-            summaries.append(_candidate_summary(cand, cid, self.stage_plan))
+            summaries.append(
+                _candidate_summary(
+                    cand,
+                    cid,
+                    self.stage_plan,
+                    compact=self.settings.compact_context,
+                )
+            )
 
-        prompt = _optimization_prompt(self.context, summaries, max_actions=target_size)
+        needed_actions = max(1, target_size - keep_top)
+        prompt = _optimization_prompt(self.context, summaries, max_actions=needed_actions)
         actions = None
         scope = f"opt-{self.generation_count}"
         logger = Logger()
@@ -228,7 +249,6 @@ class LLMOptimizer(Optimizer):
             return candidates
 
         new_candidates: list[Candidate] = []
-        keep_top = max(0, min(self.settings.keep_top_k, len(candidates)))
         for cand in candidates[:keep_top]:
             new_candidates.append(deepcopy(cand))
 

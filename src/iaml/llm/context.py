@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from ..data_type import DataType
 from ..dataset import Dataset
 from ..logger import Logger
 from ..metastep import MetaStep
@@ -115,29 +116,72 @@ def _target_summary(dataset: Dataset) -> dict[str, Any]:
     return summary
 
 
-def _columns_summary(dataset: Dataset) -> list[dict[str, Any]]:
+def _columns_profile(dataset: Dataset) -> dict[str, int]:
+    return {
+        "numeric": len(dataset.get_columns_names_by_type(DataType.NUMERIC)),
+        "categorical": len(dataset.get_columns_names_by_type(DataType.CATEGORICAL)),
+        "text": len(
+            dataset.get_columns_names_by_type([DataType.TEXT, DataType.SHORT_TEXT])
+        ),
+        "date": len(dataset.get_columns_names_by_type(DataType.DATE)),
+        "missing_columns": int(
+            sum(bool(dataset.X[col].isna().any()) for col in dataset.X.columns)
+        ),
+    }
+
+
+def _columns_summary(
+    dataset: Dataset,
+    settings: LLMSettings,
+    compact: bool,
+) -> list[dict[str, Any]]:
     rows = []
+    filtered = []
     for col in dataset.X.columns:
         series = dataset.X[col]
         dtype = str(series.dtype)
         data_type = dataset.columns_types.get(col, (None, None))[1]
+        data_type_name = getattr(data_type, "name", None)
         missing_ratio = float(series.isna().mean()) if len(series) else 0.0
-        rows.append(
-            {
-                "name": str(col),
-                "dtype": dtype,
-                "data_type": getattr(data_type, "name", None),
-                "missing_ratio": missing_ratio,
-                "unique_count": int(series.nunique(dropna=True)),
-            }
+        row = {
+            "name": str(col),
+            "dtype": dtype,
+            "data_type": data_type_name,
+            "missing_ratio": missing_ratio,
+            "unique_count": int(series.nunique(dropna=True)),
+        }
+        rows.append(row)
+        if not compact:
+            continue
+        is_non_numeric = data_type in (
+            DataType.CATEGORICAL,
+            DataType.TEXT,
+            DataType.SHORT_TEXT,
+            DataType.DATE,
         )
-    return rows
+        if missing_ratio > 0.0 or is_non_numeric:
+            filtered.append(row)
+
+    if not compact:
+        return rows
+
+    candidates = filtered or rows
+    if candidates:
+        candidates.sort(
+            key=lambda item: (
+                item["missing_ratio"],
+                item.get("data_type") != "NUMERIC",
+            ),
+            reverse=True,
+        )
+    return candidates[: settings.max_columns_summary]
 
 
 def build_step_catalog(
     dataset: Dataset,
     allowed_steps: set[str] | None = None,
     include_long_description: bool = False,
+    compact: bool = False,
 ) -> dict[str, dict[str, Any]]:
     catalog: dict[str, dict[str, Any]] = {}
     for step_cls, tags in Step.available_steps.items():
@@ -159,24 +203,46 @@ def build_step_catalog(
 
         config_schema = {}
         for key, conf in step.configuration.items():
-            config_schema[key] = {
+            entry = {
                 "default": safe_serialize(conf.get("default")),
-                "value": safe_serialize(conf.get("value")),
-                "description": str(conf.get("description", "")).replace("\n", " "),
-                "range": safe_serialize(conf.get("range")),
-                "categorical": safe_serialize(conf.get("categorical")),
             }
+            range_value = conf.get("range")
+            if isinstance(range_value, (list, tuple)):
+                if not any(item is not None for item in range_value):
+                    range_value = None
+            if range_value is not None:
+                entry["range"] = safe_serialize(range_value)
 
-        catalog[step_cls.__name__] = {
-            "tags": sorted(list(step.tags or tags)),
-            "usage": getattr(step, "_usage", ""),
-            "description": step.description,
-            "description_long": step.description_long if include_long_description else "",
+            categorical = conf.get("categorical")
+            if isinstance(categorical, (list, tuple)) and not categorical:
+                categorical = None
+            if categorical is not None:
+                entry["categorical"] = safe_serialize(categorical)
+            if not compact:
+                entry["value"] = safe_serialize(conf.get("value"))
+                entry["description"] = str(conf.get("description", "")).replace("\n", " ")
+            config_schema[key] = entry
+
+        catalog_entry: dict[str, Any] = {
             "config_schema": config_schema,
-            "optimizable": bool(step.optimizable),
-            "can_be_disabled": bool(step.can_be_disabled),
-            "suitable": suitable,
         }
+
+        if not compact:
+            catalog_entry.update(
+                {
+                    "tags": sorted(list(step.tags or tags)),
+                    "usage": getattr(step, "_usage", ""),
+                    "description": step.description,
+                    "description_long": step.description_long
+                    if include_long_description
+                    else "",
+                    "optimizable": bool(step.optimizable),
+                    "can_be_disabled": bool(step.can_be_disabled),
+                    "suitable": suitable,
+                }
+            )
+
+        catalog[step_cls.__name__] = catalog_entry
     return catalog
 
 
@@ -262,18 +328,28 @@ def build_llm_context(
     for stage in stages:
         allowed.update(stage.get("allowed_steps") or [])
 
+    compact = settings.compact_context
+    dataset_summary = {
+        "rows": int(dataset.X.shape[0]),
+        "columns": int(dataset.X.shape[1]),
+        "target_summary": _target_summary(dataset),
+        "columns_summary": _columns_summary(dataset, settings, compact),
+    }
+    if compact:
+        dataset_summary["columns_profile"] = _columns_profile(dataset)
+
+    statistics = {}
+    if not compact or settings.include_statistics:
+        statistics = _serialize_statistics(stats_df, settings)
+
     return {
-        "dataset": {
-            "rows": int(dataset.X.shape[0]),
-            "columns": int(dataset.X.shape[1]),
-            "target_summary": _target_summary(dataset),
-            "columns_summary": _columns_summary(dataset),
-        },
-        "statistics": _serialize_statistics(stats_df, settings),
+        "dataset": dataset_summary,
+        "statistics": statistics,
         "stages": stages,
         "steps": build_step_catalog(
             dataset,
             allowed_steps=allowed,
             include_long_description=settings.include_step_description_long,
+            compact=compact,
         ),
     }

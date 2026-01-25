@@ -23,6 +23,9 @@ class LLMSettings:
     max_value_counts: int = 10
     max_statistics_dict_items: int | None = 20
     statistics_exclude: tuple[str, ...] = ("violin",)
+    compact_context: bool = True
+    include_statistics: bool = False
+    max_columns_summary: int = 10
     strict_validation: bool = False
     include_minimal_candidates: bool = False
     log_llm_io: bool = False

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from typing import Any
 
 from ..candidate import Candidate
@@ -44,7 +45,9 @@ def _generation_prompt(context: dict[str, Any], pool_size: int) -> list[dict[str
             "Respect per-stage constraints (min_steps/max_steps).",
             "Each candidate must contain exactly one predictor step.",
             "Use config only with keys defined in config_schema.",
+            "Include only config keys that differ from defaults; omit config when empty.",
             "Config values must be JSON primitives (string, number, boolean).",
+            "Candidates should be distinct (different steps or configurations).",
             "Pipelines must be executable on the provided dataset: handle missing values and non-numeric columns before numeric-only steps or predictors.",
             "Prefer imputation/encoding/drop steps when the dataset contains missing values, text, categorical, or date columns.",
             "Do not write code or add new steps.",
@@ -116,71 +119,117 @@ class LLMCandidateGenerator:
                 )
             return prompt
 
-        prompt = build_prompt(pool_size)
-
-        last_error = None
-        for attempt in range(self.settings.max_attempts):
-            try:
-                raw = self.provider.submit(
-                    prompt,
-                    scope="generation",
-                    response_format={"type": "json_object"},
-                )
-                logger.info(
-                    "LLM generation response received (attempt=%d, chars=%d)",
-                    attempt + 1,
-                    len(raw),
-                )
-                if self.settings.log_llm_io:
+        def generate_batch(size: int) -> list[Candidate]:
+            prompt = build_prompt(size)
+            last_error = None
+            current_size = size
+            for attempt in range(self.settings.max_attempts):
+                try:
+                    raw = self.provider.submit(
+                        prompt,
+                        scope="generation",
+                        response_format={"type": "json_object"},
+                    )
                     logger.info(
-                        "LLM generation response: %s",
-                        truncate_text(raw, self.settings.log_llm_max_chars),
+                        "LLM generation response received (attempt=%d, chars=%d)",
+                        attempt + 1,
+                        len(raw),
                     )
-                payload = extract_json(raw)
+                    if self.settings.log_llm_io:
+                        logger.info(
+                            "LLM generation response: %s",
+                            truncate_text(raw, self.settings.log_llm_max_chars),
+                        )
+                    payload = extract_json(raw)
+                except Exception as exc:  # noqa: BLE001
+                    last_error = exc
+                    logger.warning("LLM generation attempt %d failed: %s", attempt + 1, exc)
+                    if isinstance(exc, ValueError) and current_size > 1:
+                        current_size = max(1, current_size // 2)
+                        logger.warning(
+                            "Reducing LLM generation pool to %d after parse error.",
+                            current_size,
+                        )
+                        prompt = build_prompt(current_size)
+                    continue
+
+                if isinstance(payload, list):
+                    specs = payload
+                elif isinstance(payload, dict):
+                    specs = payload.get("candidates", [])
+                else:
+                    specs = []
+                    logger.warning(
+                        "LLM generation returned unexpected payload type: %s",
+                        type(payload).__name__,
+                    )
+
+                if not isinstance(specs, list) or not specs:
+                    logger.warning("LLM generation returned no candidates.")
+                    if current_size > 1:
+                        current_size = max(1, current_size // 2)
+                        logger.warning(
+                            "Reducing LLM generation pool to %d after empty response.",
+                            current_size,
+                        )
+                        prompt = build_prompt(current_size)
+                    continue
+
+                candidates: list[Candidate] = []
+                for spec in specs:
+                    candidate = self.builder.build(base_candidate, spec or {})
+                    if candidate is not None:
+                        candidates.append(candidate)
+
+                if candidates:
+                    return candidates
+
+            message = "LLM candidate generation failed after retries."
+            if last_error is not None:
+                message = f"{message} Last error: {last_error}"
+            raise RuntimeError(message)
+
+        target_size = pool_size
+        collected: list[Candidate] = []
+        seen = set()
+        max_rounds = max(1, self.settings.max_calls_per_generation)
+
+        for _ in range(max_rounds):
+            if len(collected) >= target_size:
+                break
+            remaining = target_size - len(collected)
+            try:
+                batch = generate_batch(remaining)
             except Exception as exc:  # noqa: BLE001
-                last_error = exc
-                logger.warning("LLM generation attempt %d failed: %s", attempt + 1, exc)
-                if isinstance(exc, ValueError) and pool_size > 1:
-                    pool_size = max(1, pool_size // 2)
-                    logger.warning(
-                        "Reducing LLM generation pool to %d after parse error.",
-                        pool_size,
-                    )
-                    prompt = build_prompt(pool_size)
-                continue
+                if not collected:
+                    raise
+                logger.warning("LLM generation backfill failed: %s", exc)
+                break
 
-            if isinstance(payload, list):
-                specs = payload
-            elif isinstance(payload, dict):
-                specs = payload.get("candidates", [])
-            else:
-                specs = []
-                logger.warning(
-                    "LLM generation returned unexpected payload type: %s",
-                    type(payload).__name__,
-                )
+            prior_len = len(collected)
+            for candidate in batch:
+                fingerprint = candidate.pipeline.fingerprint()
+                if fingerprint in seen:
+                    continue
+                seen.add(fingerprint)
+                collected.append(candidate)
+                if len(collected) >= target_size:
+                    break
+            if len(collected) == prior_len:
+                break
 
-            if not isinstance(specs, list) or not specs:
-                logger.warning("LLM generation returned no candidates.")
-                if pool_size > 1:
-                    pool_size = max(1, pool_size // 2)
-                    logger.warning(
-                        "Reducing LLM generation pool to %d after empty response.",
-                        pool_size,
-                    )
-                    prompt = build_prompt(pool_size)
-                continue
+        if not collected:
+            raise RuntimeError("LLM candidate generation returned no candidates.")
 
-            candidates: list[Candidate] = []
-            for spec in specs:
-                candidate = self.builder.build(base_candidate, spec or {})
-                if candidate is not None:
-                    candidates.append(candidate)
+        if len(collected) < target_size:
+            logger.warning(
+                "LLM generation under-produced candidates (%d/%d).",
+                len(collected),
+                target_size,
+            )
+            idx = 0
+            while len(collected) < target_size:
+                collected.append(deepcopy(collected[idx % len(collected)]))
+                idx += 1
 
-            if candidates:
-                return candidates
-
-        message = "LLM candidate generation failed after retries."
-        if last_error is not None:
-            message = f"{message} Last error: {last_error}"
-        raise RuntimeError(message)
+        return collected
