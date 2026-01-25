@@ -73,6 +73,9 @@ class IAMLPipeline(Pipeline):
         self._transform_fingerprint_cache_version: tuple | None = None
         """Cached config versions for transforms/resamplers."""
 
+        self._trained_columns: list[str] | None = None
+        """Columns seen by the predictor during fit (after transforms)."""
+
         if estimator_type not in ['classifier', 'regressor', 'survival']:
             raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
                 survival or regressor")
@@ -224,6 +227,8 @@ class IAMLPipeline(Pipeline):
         dataset = Dataset(X, y, groups_columns=groups_columns)
 
         if self.predictor[1].suitable(dataset):
+            if isinstance(dataset.X, pd.DataFrame):
+                self._trained_columns = list(dataset.X.columns)
             self.predictor[1].fit(dataset, **kwargs)
         else:
             self.predictor = None
@@ -386,6 +391,8 @@ class IAMLPipeline(Pipeline):
         if not model_only:
             return super().predict(X, **kwargs)
 
+        if self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict(X)
 
     def predict_survival_function(
@@ -408,6 +415,8 @@ class IAMLPipeline(Pipeline):
         if not model_only:
             X = self.transform(X, **kwargs)
 
+        if model_only and self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict_survival_function(X)
 
     def predict_proba(self, X: pd.DataFrame, model_only: bool = False, **kwargs) -> list:
@@ -426,6 +435,8 @@ class IAMLPipeline(Pipeline):
         if not model_only:
             return super().predict_proba(X, **kwargs)
 
+        if self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict_proba(X)
 
     def __getattribute__(self, attr: str) -> bool:
