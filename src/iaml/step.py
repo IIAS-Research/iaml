@@ -67,9 +67,6 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self._config_version: int = 0
         """Incremented when configuration changes to invalidate fingerprints."""
 
-        self.caches: list = []
-        """Cached results (deprecated, StepCache is now the source of truth)."""
-
         self.explanations: list[str] = []
         """List of explanations that were computed during the step's execution."""
 
@@ -380,14 +377,22 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         cache_key = self._cache_key(input_candidate)
         frozen_output = self._clone_output(output_candidate)
         StepCache().put(cache_key, frozen_output, self._cache_id)
-        self.caches.append(frozen_output)
 
         return True
 
     def reset_cache(self) -> None:
         """Removes all cached candidates from the cache."""
         StepCache().clear(self._cache_id)
-        self.caches = []
+
+    @property
+    def caches(self) -> list:
+        """Deprecated view of cached results backed by StepCache."""
+        return StepCache().values_for_step(self._cache_id)
+
+    @caches.setter
+    def caches(self, value: list | None) -> None:
+        if not value:
+            StepCache().clear(self._cache_id)
 
     def _cache_key(self, candidate: Candidate) -> tuple:
         candidate_id = id(candidate) if candidate is not None else None

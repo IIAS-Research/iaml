@@ -52,6 +52,15 @@ class StepCache(metaclass=MetaSingleton):
             for key in keys:
                 self._data.pop(key, None)
 
+    def values_for_step(self, step_cache_id: str) -> list[Any]:
+        with self._lock:
+            if step_cache_id not in self._by_step:
+                return []
+            return [
+                value for key, value in self._data.items()
+                if key[0] == step_cache_id
+            ]
+
     def size_for_step(self, step_cache_id: str) -> int:
         with self._lock:
             keys = self._by_step.get(step_cache_id)

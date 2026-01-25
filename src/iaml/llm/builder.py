@@ -129,7 +129,17 @@ class LLMCandidateBuilder:
 
                     if "range" in step.configuration[key]:
                         lo, hi = step.configuration[key]["range"]
-                        if new_value < lo or new_value > hi:
+                        if new_value is None:
+                            errors.append(f"missing value {class_name}.{key}")
+                            if self.settings.strict_validation:
+                                return None
+                            continue
+                        if lo is not None and new_value < lo:
+                            errors.append(f"out of range {class_name}.{key}")
+                            if self.settings.strict_validation:
+                                return None
+                            continue
+                        if hi is not None and new_value > hi:
                             errors.append(f"out of range {class_name}.{key}")
                             if self.settings.strict_validation:
                                 return None
