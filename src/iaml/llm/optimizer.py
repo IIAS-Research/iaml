@@ -10,6 +10,7 @@ from ..logger import Logger
 from ..step import Step
 from ..optimizers.optimizer import Optimizer
 from .builder import LLMCandidateBuilder
+from .generator import LLMCandidateGenerator
 from .context import build_llm_context, build_stage_plan
 from .provider import LLMProvider
 from .settings import LLMSettings
@@ -65,7 +66,20 @@ def _optimization_prompt(
                 "candidate_id": "cand-1",
                 "step_class": "ActRandomForest",
                 "config": {"n_estimators": 300},
-            }
+            },
+            {
+                "op": "replace_step",
+                "candidate_id": "cand-1",
+                "old_step_class": "ActStandardScaler",
+                "new_step": {"class": "ActRobustScaler", "config": {}},
+            },
+            {
+                "op": "new_candidate",
+                "spec": {
+                    "id": "cand-new",
+                    "stages": [{"stage": "predictor", "steps": [{"class": "ActCox"}]}],
+                },
+            },
         ],
         "notes": "<short notes>",
         "confidence": "low|medium|high",
@@ -79,7 +93,7 @@ def _optimization_prompt(
             "Only keys: actions, notes, confidence.",
         ],
         "rules": [
-            f"Return at most {max_actions} actions.",
+            f"Return exactly {max_actions} actions when possible; if fewer, include new_candidate actions to fill.",
             "Allowed ops: set_config, replace_step, new_candidate.",
             "Use only candidate_id values provided.",
             "Use only steps listed in each stage's allowed_steps.",
@@ -134,6 +148,13 @@ class LLMOptimizer(Optimizer):
         self.stage_plan = build_stage_plan(root_step, settings, dataset)
         self.context = build_llm_context(dataset, stats_df, root_step, settings)
         self.builder = LLMCandidateBuilder(self.stage_plan, settings)
+        self.generator = LLMCandidateGenerator(
+            provider=provider,
+            settings=settings,
+            root_step=root_step,
+            dataset=dataset,
+            stats_df=stats_df,
+        )
         self.generation_count = 0
         self.max_generations = max_generations
         self.duration = duration
@@ -226,7 +247,7 @@ class LLMOptimizer(Optimizer):
                 idx += 1
 
         self.generation_count += 1
-        return self._dedupe(new_candidates)
+        return self._ensure_target_size(new_candidates, target_size, id_map)
 
     def _dedupe(self, candidates: list[Candidate]) -> list[Candidate]:
         seen = set()
@@ -238,6 +259,34 @@ class LLMOptimizer(Optimizer):
             seen.add(fp)
             unique.append(cand)
         return unique
+
+    def _ensure_target_size(
+        self,
+        candidates: list[Candidate],
+        target_size: int,
+        id_map: dict[str, Candidate],
+    ) -> list[Candidate]:
+        unique = self._dedupe(candidates)
+        if len(unique) >= target_size:
+            return unique[:target_size]
+
+        logger = Logger()
+        missing = target_size - len(unique)
+        base_candidate = next(iter(id_map.values()))
+        try:
+            generated = self.generator.generate(base_candidate, pool_size=missing)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("LLM optimizer backfill failed: %s", exc)
+            generated = []
+
+        for cand in generated:
+            if len(unique) >= target_size:
+                break
+            unique.append(cand)
+
+        if len(unique) < target_size:
+            logger.warning("LLM optimizer still under-produced candidates after backfill.")
+        return unique[:target_size]
 
     def _apply_action(self, action: dict[str, Any], id_map: dict[str, Candidate]) -> Candidate | None:
         op = action.get("op")
@@ -260,9 +309,13 @@ class LLMOptimizer(Optimizer):
             old_class = action.get("old_step_class")
             new_step = action.get("new_step") or {}
             new_class = new_step.get("class")
-            if not old_class or not new_class:
-                return None
-            return self._replace_step(base_candidate, old_class, new_step)
+            if old_class and new_class:
+                return self._replace_step(base_candidate, old_class, new_step)
+            step_class = action.get("step_class")
+            config = action.get("config") or {}
+            if step_class and config:
+                return self._set_config(base_candidate, step_class, config)
+            return None
 
         if op == "set_config":
             step_class = action.get("step_class")
@@ -313,7 +366,11 @@ class LLMOptimizer(Optimizer):
             new_value = normalize_config_value(value, template)
             if "range" in new_step.configuration[key]:
                 lo, hi = new_step.configuration[key]["range"]
-                if new_value < lo or new_value > hi:
+                if new_value is None:
+                    continue
+                if lo is not None and new_value < lo:
+                    continue
+                if hi is not None and new_value > hi:
                     continue
             if "categorical" in new_step.configuration[key]:
                 if new_value not in new_step.configuration[key]["categorical"]:
@@ -340,7 +397,11 @@ class LLMOptimizer(Optimizer):
             new_value = normalize_config_value(value, template)
             if "range" in step.configuration[key]:
                 lo, hi = step.configuration[key]["range"]
-                if new_value < lo or new_value > hi:
+                if new_value is None:
+                    continue
+                if lo is not None and new_value < lo:
+                    continue
+                if hi is not None and new_value > hi:
                     continue
             if "categorical" in step.configuration[key]:
                 if new_value not in step.configuration[key]["categorical"]:
