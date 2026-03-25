@@ -4,7 +4,7 @@ from __future__ import annotations
 import traceback
 import os
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from copy import copy, deepcopy
 from hashlib import md5
 import textwrap
@@ -67,6 +67,12 @@ class Candidate:
 
         self.computed_metrics: dict = {}
         """Result dictionnary for all the metrics computed"""
+
+        self.fold_metrics: list[dict[str, Any]] = []
+        """Per-fold metrics computed during the latest internal cross-validation."""
+
+        self.training_audit: dict[str, Any] | None = None
+        """Structured audit payload for the latest training evaluation."""
 
         self.stacked_path: list = copy(stacked_path) if stacked_path is not None else []
         """Stack of all steps used to build this Candidate"""
@@ -268,11 +274,108 @@ class Candidate:
             name = f"{main_metric} : {name}"
         return name
 
+    @classmethod
+    def __serialize_audit_value(cls, value: Any) -> Any:
+        """Convert runtime values into JSON-friendly audit payloads."""
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, dict):
+            return {
+                str(key): cls.__serialize_audit_value(current)
+                for key, current in value.items()
+            }
+        if isinstance(value, (list, tuple, set)):
+            return [cls.__serialize_audit_value(current) for current in value]
+        if callable(value):
+            return getattr(value, "__name__", str(value))
+        return str(value)
+
+    def __serialize_metric_values(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Convert metric outputs into a stable, serializable format."""
+        return {
+            str(name): self.__serialize_audit_value(value)
+            for name, value in values.items()
+        }
+
+    def __aggregate_metrics(self, fold_results: list[dict[str, Any]]) -> dict[str, float]:
+        """Aggregate fold-level metric dictionaries into global scores."""
+        computed_metrics: dict[str, float] = {}
+        for metric in self.metrics:
+            name = str(metric)
+            values = [
+                metric_values.get(name)
+                for metric_values in fold_results
+                if name in metric_values
+            ]
+            if values:
+                computed_metrics[name] = float(np.mean([
+                    value if value is not None else 0 for value in values
+                ]))
+            else:
+                computed_metrics[name] = 0
+        return computed_metrics
+
+    def pipeline_audit_summary(self) -> dict[str, Any]:
+        """Return a serializable summary of the pipeline steps and their config."""
+        summarized_steps: list[dict[str, Any]] = []
+        groups = [
+            ("resampler", self.pipeline.resamplers),
+            ("transformer", self.pipeline.transformers),
+            ("predictor", [self.pipeline.predictor] if self.pipeline.predictor else []),
+        ]
+
+        for role, steps in groups:
+            for name, step in steps:
+                summarized_steps.append(
+                    {
+                        "role": role,
+                        "name": name,
+                        "class": step.__class__.__name__,
+                        "tags": sorted(step.tags) if step.tags else [],
+                        "configuration": self.__serialize_audit_value(
+                            step.resume_configuration()
+                        ),
+                    }
+                )
+
+        return {
+            "fingerprint": self.pipeline.fingerprint(),
+            "estimator_type": self.pipeline.estimator_type,
+            "steps": summarized_steps,
+        }
+
+    def build_training_audit(
+        self,
+        dataset: Dataset,
+        fold_metrics: list[dict[str, Any]],
+        aggregated_metrics: dict[str, Any],
+        status: str,
+        error: str | None = None,
+    ) -> dict[str, Any]:
+        """Build a structured record for later audit on the IAML object."""
+        return {
+            "pipeline_fingerprint": self.pipeline.fingerprint(),
+            "dataset_fingerprint": dataset.fingerprint(),
+            "dataset_shape": {
+                "rows": int(dataset.X.shape[0]),
+                "columns": int(dataset.X.shape[1]),
+            },
+            "main_metric": self.main_metric,
+            "status": status,
+            "error": error,
+            "metrics": self.__serialize_metric_values(aggregated_metrics),
+            "fold_metrics": deepcopy(fold_metrics),
+            "pipeline": self.pipeline_audit_summary(),
+        }
+
     def training_evaluate(
         self,
         dataset: Dataset,
         splitter: callable = random_splitter,
-        cache_split: bool = True) -> dict:
+        cache_split: bool = True,
+        store_audit: bool = False) -> dict:
         """Evaluate pipeline model with self.metrics on dataset
         If evaluate is called in training process, result will be cached in
         self.computed_metrics.
@@ -284,6 +387,9 @@ class Candidate:
         if not self.pipeline.have_model:
             return None
         metrics: list[dict] = []
+        fold_metrics: list[dict[str, Any]] = []
+        self.fold_metrics = []
+        self.training_audit = None
 
         # without cache !
         from_cache: bool = cache_split
@@ -293,7 +399,7 @@ class Candidate:
             from_cache = False
             splitted_datasets = splitter(dataset)
 
-        for train_ds, test_ds in splitted_datasets:
+        for fold_index, (train_ds, test_ds) in enumerate(splitted_datasets, start=1):
             copied_pipe = deepcopy(self.pipeline)
 
             try:
@@ -310,16 +416,39 @@ class Candidate:
                 Logger().warning(
                     f"Skip candidate {self._pipeline_signature()} after training failure: {exc!r}"
                 )
+                if store_audit:
+                    self.training_audit = self.build_training_audit(
+                        dataset=dataset,
+                        fold_metrics=fold_metrics,
+                        aggregated_metrics=self.__aggregate_metrics(metrics),
+                        status="failed",
+                        error=f"training failure: {exc!r}",
+                    )
                 return {}
 
             try:
-                metrics.append(self.__compute_metrics(
+                fold_result = self.__compute_metrics(
                     test_ds.X,
                     test_ds.y,
                     pipeline=copied_pipe,
                     X_train=train_ds.X,
                     y_train=train_ds.y,
                     model_only= not self.is_meta)
+                metrics.append(fold_result)
+                if store_audit:
+                    fold_metrics.append(
+                        {
+                            "fold": fold_index,
+                            "train_shape": {
+                                "rows": int(train_ds.X.shape[0]),
+                                "columns": int(train_ds.X.shape[1]),
+                            },
+                            "test_shape": {
+                                "rows": int(test_ds.X.shape[0]),
+                                "columns": int(test_ds.X.shape[1]),
+                            },
+                            "metrics": self.__serialize_metric_values(fold_result),
+                        }
                     )
                 if cache_split and not from_cache:
                     to_cache.append((train_ds, test_ds))
@@ -328,26 +457,29 @@ class Candidate:
                     f"Skip candidate {self._pipeline_signature()} after metric computation failure "
                     f"(predict/predict_proba raised ValueError: {exc!r})"
                 )
+                if store_audit:
+                    self.training_audit = self.build_training_audit(
+                        dataset=dataset,
+                        fold_metrics=fold_metrics,
+                        aggregated_metrics=self.__aggregate_metrics(metrics),
+                        status="failed",
+                        error=f"metric failure: {exc!r}",
+                    )
                 return {}
 
         if cache_split and not from_cache:
             Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)
 
-        computed_metrics: dict[str, float] = {}
-        for metric in self.metrics:
-            name = str(metric)
-            values = [
-                metric_values.get(name)
-                for metric_values in metrics
-                if name in metric_values
-            ]
-            if values:
-                computed_metrics[name] = float(np.mean([
-                    value if value is not None else 0 for value in values
-                ]))
-            else:
-                computed_metrics[name] = 0
+        computed_metrics = self.__aggregate_metrics(metrics)
         self.computed_metrics = computed_metrics
+        if store_audit:
+            self.fold_metrics = deepcopy(fold_metrics)
+            self.training_audit = self.build_training_audit(
+                dataset=dataset,
+                fold_metrics=fold_metrics,
+                aggregated_metrics=computed_metrics,
+                status="success",
+            )
 
         return self.computed_metrics
 

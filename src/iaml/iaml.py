@@ -13,7 +13,7 @@ import time
 import math
 import textwrap
 import multiprocessing
-from typing import Iterator, TYPE_CHECKING
+from typing import Iterator, TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
@@ -68,6 +68,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param bool, optional preprocessor: Use preprocessor. Default to False.
     :param Metric, optional main_metric: Main Metric to use. Default to None.
     :param Optimizer, optional optimizer: Optimizer class to use. Default to GeneticOptimizer.
+    :param bool, optional keep_training_history: If True, store detailed CV audit records for
+        every evaluated pipeline. Default to False.
     """
     def __init__( # pylint: disable=too-many-arguments
         self,
@@ -80,7 +82,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         preprocessor: bool = False,
         main_metric: Metric = None,
         optimizer: Optimizer = GeneticOptimizer,
-        train_on_n_samples: int = None) -> None:
+        train_on_n_samples: int = None,
+        keep_training_history: bool = False) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -95,6 +98,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         self.train_on_n_samples = train_on_n_samples
         """If defined, pick n sample in the dataset before train"""
+
+        self.keep_training_history: bool = keep_training_history
+        """Whether to store detailed cross-validation audit records."""
+
+        self.training_history: list[dict[str, Any]] = []
+        """Detailed audit records for evaluated pipelines during the last fit."""
+
+        self._training_history_seen: set[tuple[Any, ...]] = set()
+        """Deduplicate audit records across warmup, cache hits, and repeated evaluations."""
 
         # if metalearner is None:
         #     if max_duration < 500 and max_duration != -1:
@@ -372,6 +384,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         start_time = time.monotonic()
         self.executor = TimedPoolExecutor(max_workers=self.max_workers)
+        self.training_history = []
+        self._training_history_seen = set()
 
         def remain_time():
             return self.max_duration - (time.monotonic() - start_time)
@@ -422,7 +436,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             warmup_candidate.training_evaluate(
                 dataset,
                 splitter=self.splitter,
-                cache_split=False)
+                cache_split=False,
+                store_audit=self.keep_training_history)
+            self.__collect_training_history([warmup_candidate])
             Logger().info(f"Warmed up !")
 
             ### INITIAL EVALUATION
@@ -643,7 +659,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     'IAML_'+candidate.pipeline.fingerprint(), dataset.X)
 
                 if from_cache:
-                    candidate.computed_metrics = from_cache
+                    self.__hydrate_cached_candidate(candidate, from_cache, dataset)
                     new_candidates.append(candidate)
                     update_progressbar() # Update progressbar even if data come from cache
                 else:
@@ -651,11 +667,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                             process_executor,
                             candidate,
                             dataset,
-                            splitter=self.splitter
+                            splitter=self.splitter,
+                            store_audit=self.keep_training_history,
                         )
 
             # Wait for all tasks to complete with a timeout
             new_candidates += self.executor.join(min(timeout, self.max_stage_duration))
+            self.__collect_training_history(new_candidates)
 
             if new_candidates:
                 skipped = sum(1 for candidate in new_candidates if not candidate.computed_metrics)
@@ -679,7 +697,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         for candidate in new_candidates:
             fingerprint = candidate.pipeline.fingerprint()
             if not Cache().from_cache('IAML_'+fingerprint, dataset.X):
-                Cache().add_to_cache('IAML_'+fingerprint, dataset.X, candidate.computed_metrics)
+                Cache().add_to_cache(
+                    'IAML_'+fingerprint,
+                    dataset.X,
+                    self.__build_cached_candidate(candidate),
+                )
 
         best_metric = new_candidates[0].get_main_metric_value() if new_candidates else None
         remaining_time = timeout - (time.monotonic() - start_time)
@@ -697,6 +719,63 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def __build_optimizer(self, duration: int) -> Optimizer:
         """Instantiate optimizer."""
         return self.optimizer(duration=duration)
+
+    def __build_cached_candidate(self, candidate: Candidate) -> dict[str, Any] | dict[str, float]:
+        """Build the payload stored in cache for evaluated candidates."""
+        if self.keep_training_history and candidate.training_audit is not None:
+            return {
+                "__computed_metrics__": deepcopy(candidate.computed_metrics),
+                "__training_audit__": deepcopy(candidate.training_audit),
+            }
+        return deepcopy(candidate.computed_metrics)
+
+    def __hydrate_cached_candidate(
+        self,
+        candidate: Candidate,
+        payload: dict[str, Any] | dict[str, float],
+        dataset: Dataset,
+    ) -> None:
+        """Restore cached evaluation results into a candidate."""
+        candidate.fold_metrics = []
+        candidate.training_audit = None
+
+        if isinstance(payload, dict) and "__computed_metrics__" in payload:
+            candidate.computed_metrics = deepcopy(payload["__computed_metrics__"])
+            audit = payload.get("__training_audit__")
+            if audit is not None:
+                candidate.training_audit = deepcopy(audit)
+                candidate.fold_metrics = deepcopy(audit.get("fold_metrics", []))
+                return
+        else:
+            candidate.computed_metrics = deepcopy(payload)
+
+        if self.keep_training_history:
+            candidate.training_audit = candidate.build_training_audit(
+                dataset=dataset,
+                fold_metrics=[],
+                aggregated_metrics=candidate.computed_metrics,
+                status="success",
+            )
+
+    def __collect_training_history(self, candidates: list[Candidate]) -> None:
+        """Collect unique candidate audit records for the last fit."""
+        if not self.keep_training_history:
+            return
+
+        for candidate in candidates:
+            record = getattr(candidate, "training_audit", None)
+            if not record:
+                continue
+            key = (
+                record.get("pipeline_fingerprint"),
+                record.get("dataset_fingerprint"),
+                record.get("status"),
+                record.get("error"),
+            )
+            if key in self._training_history_seen:
+                continue
+            self._training_history_seen.add(key)
+            self.training_history.append(deepcopy(record))
 
     def __optimize( # pylint: disable=too-many-arguments
         self,
