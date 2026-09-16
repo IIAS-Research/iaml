@@ -56,14 +56,14 @@ class ActARDRegression(Predictor):
                     Hyper-parameter : shape parameter for the Gamma
                     distribution prior over the lambda parameter.'''),
                 'default': 1e-10,
-                'range': [0.001, 1e-06]
+                'range': [1e-10, 0.001]
             },
             'lambda_2': {
                 'description': textwrap.dedent('''\
                     Hyper-parameter : inverse scale parameter (rate parameter)
                     for the Gamma distribution prior over the lambda parameter.'''),
                 'default': 1e-10,
-                'range': [0.001, 1e-06]
+                'range': [1e-10, 0.001]
             },
             'threshold_lambda': {
                 'description': textwrap.dedent('''\

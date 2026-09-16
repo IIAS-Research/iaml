@@ -1,5 +1,6 @@
 """Tests for ActARDRegression step."""
 import warnings
+from unittest.mock import patch
 
 import pandas as pd
 from sklearn.linear_model import ARDRegression
@@ -10,6 +11,8 @@ from .step_test_case import StepTestCase
 from iaml.actionables.predictors.regressor.act_ard_regression import (
     ActARDRegression,
 )
+from iaml.candidate import Candidate
+from iaml.optimizers.genetic_optimizer import GeneticOptimizer
 
 
 class TestActARDRegression(StepTestCase):
@@ -76,3 +79,33 @@ class TestActARDRegression(StepTestCase):
 
         self.assertTrue(step.suitable(continuous))
         self.assertFalse(step.suitable(categorical))
+
+    def test_lambda_parameters_can_mutate_from_their_defaults(self) -> None:
+        dataset = self.make_dataset(self._make_features(), y=[
+            0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6,
+        ])
+        for key in ("lambda_1", "lambda_2"):
+            with self.subTest(parameter=key):
+                step = ActARDRegression()
+                original = step.get_config(key)
+                candidate = Candidate(dataset)
+                candidate.pipeline.set_model(step)
+                optimizer = GeneticOptimizer()
+
+                # Select the requested parameter and an upward mutation deterministically.
+                with patch("iaml.optimizers.genetic_optimizer.random.choice",
+                           side_effect=lambda choices: key if key in choices else choices[0]), \
+                     patch("iaml.optimizers.genetic_optimizer.random.uniform", return_value=0.1):
+                    mutated = optimizer._GeneticOptimizer__mutate(candidate)
+
+                model = mutated.pipeline.predictor[1]
+                value = model.get_config(key)
+                self.assertGreater(value, original)
+                lower, upper = model.configuration[key]["range"]
+                self.assertLessEqual(lower, original)
+                self.assertLessEqual(original, upper)
+                self.assertLessEqual(lower, value)
+                self.assertLessEqual(value, upper)
+                self.assertEqual(step.get_config(key), original)
+                self._fit_without_warnings(model, dataset)
+                self.assertEqual(getattr(model.model, key), value)
