@@ -358,7 +358,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             return None
 
         cache_key = self._cache_key(candidate)
-        cached = StepCache().get(cache_key)
+        cached = StepCache().get(cache_key, candidate)
         if cached is None:
             return None
 
@@ -376,7 +376,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
 
         cache_key = self._cache_key(input_candidate)
         frozen_output = self._clone_output(output_candidate)
-        StepCache().put(cache_key, frozen_output, self._cache_id)
+        StepCache().put(cache_key, frozen_output, self._cache_id, input_candidate)
 
         return True
 
@@ -395,6 +395,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             StepCache().clear(self._cache_id)
 
     def _cache_key(self, candidate: Candidate) -> tuple:
+        """Index by address; StepCache also verifies the input through a weak reference."""
         candidate_id = id(candidate) if candidate is not None else None
         return (self._cache_id, self.fingerprint(), candidate_id)
 

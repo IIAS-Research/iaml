@@ -4,45 +4,61 @@ from __future__ import annotations
 from collections import OrderedDict
 from threading import RLock
 from typing import Any
+from weakref import ReferenceType, ref
 
 from .meta_singleton import MetaSingleton
 
 
 class StepCache(metaclass=MetaSingleton):
-    """LRU cache shared across deep-copied steps."""
+    """LRU cache shared across deep-copied steps, validating input identity."""
     def __init__(self, max_size: int = 1000) -> None:
         self._max_size = max_size
-        self._data: OrderedDict[tuple, Any] = OrderedDict()
+        self._data: OrderedDict[tuple, tuple[ReferenceType | None, Any]] = OrderedDict()
         self._by_step: dict[str, set[tuple]] = {}
         self._lock = RLock()
 
-    def get(self, key: tuple) -> Any | None:
+    def get(self, key: tuple, input_candidate: Any) -> Any | None:
+        """Return an output only while its original input still matches by identity."""
         with self._lock:
-            value = self._data.get(key)
+            entry = self._data.get(key)
+            if entry is None:
+                return None
+            input_ref, value = entry
+            original_input = input_ref() if input_ref is not None else None
+            if original_input is not input_candidate or (
+                input_ref is not None and original_input is None
+            ):
+                self._remove(key)
+                return None
             if value is None:
                 return None
             self._data.move_to_end(key)
             return value
 
-    def put(self, key: tuple, value: Any, step_cache_id: str) -> None:
+    def put(self, key: tuple, value: Any, step_cache_id: str, input_candidate: Any) -> None:
+        """Cache an output without keeping its input candidate alive."""
         with self._lock:
+            input_ref = ref(input_candidate) if input_candidate is not None else None
             if key in self._data:
                 self._data.move_to_end(key)
-                self._data[key] = value
             else:
-                self._data[key] = value
                 self._by_step.setdefault(step_cache_id, set()).add(key)
+            self._data[key] = (input_ref, value)
             self._evict()
+
+    def _remove(self, key: tuple) -> None:
+        """Remove an entry and its step index while holding the cache lock."""
+        self._data.pop(key, None)
+        step_cache_id = key[0]
+        keys = self._by_step.get(step_cache_id)
+        if keys is not None:
+            keys.discard(key)
+            if not keys:
+                self._by_step.pop(step_cache_id, None)
 
     def _evict(self) -> None:
         while len(self._data) > self._max_size:
-            old_key, _ = self._data.popitem(last=False)
-            step_cache_id = old_key[0]
-            keys = self._by_step.get(step_cache_id)
-            if keys:
-                keys.discard(old_key)
-                if not keys:
-                    self._by_step.pop(step_cache_id, None)
+            self._remove(next(iter(self._data)))
 
     def clear(self, step_cache_id: str) -> None:
         with self._lock:
@@ -57,7 +73,7 @@ class StepCache(metaclass=MetaSingleton):
             if step_cache_id not in self._by_step:
                 return []
             return [
-                value for key, value in self._data.items()
+                value for key, (_, value) in self._data.items()
                 if key[0] == step_cache_id
             ]
 
