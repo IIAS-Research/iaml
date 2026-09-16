@@ -5,7 +5,6 @@ import string
 import numpy as np
 import pandas as pd
 from gensim.models import Word2Vec
-from nltk import download
 from nltk.corpus import stopwords
 from nltk.stem import StemmerI, PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -14,10 +13,6 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 from ...data_type import DataType
-
-
-download('stopwords')
-download('punkt')
 
 
 @is_step('cleaning')
@@ -48,7 +43,7 @@ class ActWord2Vec(Actionable):
 
     def __init__(self):
         self.columns: list[tuple[str, Word2Vec]] = None
-        self.stop_words: set[str] = set(stopwords.words('english'))
+        self.stop_words: set[str] | None = None
         self.stemmer: StemmerI = PorterStemmer()
 
     @staticmethod
@@ -86,7 +81,8 @@ class ActWord2Vec(Actionable):
         table = str.maketrans('', '', string.punctuation)
         text = text.translate(table)
 
-        tokens = word_tokenize(text)
+        # Punctuation has already been removed; sentence splitting is unnecessary.
+        tokens = word_tokenize(text, preserve_line=True)
         tokens = [ self.stemmer.stem(word) for word in tokens if word not in self.stop_words ]
 
         return tokens
@@ -96,9 +92,24 @@ class ActWord2Vec(Actionable):
 
         :param Dataset dataset: Data.
         :return: Transformed candidate.
+        :raises LookupError: The NLTK stopwords corpus is missing when processing text.
         """
         self.columns = []
-        for column in dataset.get_columns_names_by_type([DataType.TEXT]):
+        self.explanations = []
+        text_columns = dataset.get_columns_names_by_type([DataType.TEXT])
+        if not text_columns or dataset.X.empty:
+            return self
+
+        if self.stop_words is None:
+            try:
+                self.stop_words = set(stopwords.words('english'))
+            except LookupError as exc:
+                raise LookupError(
+                    "Word2Vec requires the NLTK English stopwords corpus for text data. "
+                    "Install it with: python -m nltk.downloader stopwords"
+                ) from exc
+
+        for column in text_columns:
             values = dataset.X[column].fillna('').apply(self.__preprocess)
             vectorizer = Word2Vec(sentences = values,
                                 vector_size = 100,

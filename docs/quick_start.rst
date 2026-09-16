@@ -15,6 +15,21 @@ Python environment:
 For development, ``uv sync --locked`` installs the locked dependencies,
 including the testing and documentation tools.
 
+Word2Vec text support
+---------------------
+
+Importing IAML and creating a search require no NLTK corpus. To use
+``ActWord2Vec`` on text columns, install the English stopwords corpus explicitly:
+
+.. code-block:: bash
+
+    python -m nltk.downloader stopwords
+
+For offline use, install the corpus beforehand and set ``NLTK_DATA`` to its
+data directory. IAML never downloads corpora automatically. Word2Vec loads
+stopwords only when fitting text and uses word tokenization without the
+``punkt`` or ``punkt_tab`` resources.
+
 Train and evaluate a candidate
 ==============================
 

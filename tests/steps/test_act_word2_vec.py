@@ -1,26 +1,29 @@
 """Tests for ActWord2Vec step."""
 from __future__ import annotations
 
-import importlib
-import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest import mock
 
 import numpy as np
 import pandas as pd
+from nltk.corpus.reader import WordListCorpusReader
 
+from iaml.actionables.cleaning import act_word2vec
+from iaml.actionables.cleaning.act_word2vec import ActWord2Vec
 from .step_test_case import StepTestCase
 
 
-with mock.patch("nltk.download", return_value=True):
-    if "iaml.actionables.cleaning.act_word2vec" in sys.modules:
-        act_word2vec = importlib.reload(sys.modules["iaml.actionables.cleaning.act_word2vec"])
-    else:
-        act_word2vec = importlib.import_module("iaml.actionables.cleaning.act_word2vec")
-
-ActWord2Vec = act_word2vec.ActWord2Vec
-
-
 class TestActWord2Vec(StepTestCase):
+    def setUp(self) -> None:
+        corpus_dir = TemporaryDirectory()
+        self.addCleanup(corpus_dir.cleanup)
+        Path(corpus_dir.name, "english").write_text("the\nand\nis\n", encoding="utf-8")
+        corpus = WordListCorpusReader(corpus_dir.name, ["english"])
+        patch = mock.patch.object(act_word2vec, "stopwords", corpus)
+        patch.start()
+        self.addCleanup(patch.stop)
+
     def make_long_text(self, suffix: str = "") -> str:
         return ("alpha beta gamma delta epsilon zeta eta theta iota kappa " * 2) + suffix
 
@@ -28,10 +31,7 @@ class TestActWord2Vec(StepTestCase):
         return [self.make_long_text(str(i)) for i in range(start, start + count)]
 
     def make_step(self) -> ActWord2Vec:
-        fake_stopwords = mock.Mock()
-        fake_stopwords.words.return_value = ["the", "and", "is"]
-        with mock.patch.object(act_word2vec, "stopwords", fake_stopwords):
-            return ActWord2Vec()
+        return ActWord2Vec()
 
     def test_transform_adds_vector_columns_and_drops_text(self) -> None:
         texts = self.make_long_texts(7)
@@ -43,8 +43,7 @@ class TestActWord2Vec(StepTestCase):
         )
         step = self.make_step()
 
-        with mock.patch.object(act_word2vec, "word_tokenize", side_effect=lambda text: text.split()):
-            result = self.apply_transform(step, df)
+        result = self.apply_transform(step, df)
 
         vector_cols = [f"review_vec_{i}" for i in range(100)]
         expected_columns = ["count"] + vector_cols
@@ -64,8 +63,7 @@ class TestActWord2Vec(StepTestCase):
         )
         step = self.make_step()
 
-        with mock.patch.object(act_word2vec, "word_tokenize", side_effect=lambda text: text.split()):
-            result = self.apply_transform(step, df)
+        result = self.apply_transform(step, df)
 
         vector_cols = [f"review_vec_{i}" for i in range(100)]
         for row_index in [1, 2, 3]:
