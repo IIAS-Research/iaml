@@ -5,6 +5,7 @@ import textwrap
 import pandas as pd
 import numpy as np
 from sksurv.metrics import brier_score
+from ._survival_times import brier_evaluation_times
 from ..metric import Metric
 from ..dataset import Dataset
 
@@ -58,9 +59,13 @@ class BrierScoreMetric(Metric):
         y_train: pd.DataFrame = None,
         **kwargs) -> float:
         """Compute metric given y, y_pred and an optional y_train. 
+
+        Evaluate at the last point of a 100-point evenly spaced grid over
+        [min(test time), max(test time)), after limiting follow-up to the
+        training horizon. The time unit does not determine the grid spacing.
         
         :param pd.DataFrame y: Ground truth to compute the metric.
-        :param pd.DataFrame y_pred: Prediction to compute the metric.
+        :param y_pred: Predicted survival probability functions, one per sample.
         :param pd.DataFrame, optional y_train: Training ground truth. Default to None.
         :param dict, optional \\**kwargs: Additional parameters
         :return: Computed value
@@ -77,14 +82,8 @@ class BrierScoreMetric(Metric):
             dtype=[('event', 'bool'), ('time', 'float')]
         )
 
-        # Extract time from y test
-        _, times = zip(*y_samples)
-
-        time = max(times)
-        if isinstance(time, float):
-            time -= 1
-
+        time = brier_evaluation_times(y_struct['time'])[-1]
         predictions = [fn(time) for fn in y_pred]
 
-        # Calculate integrated Brier score using sksurv function
+        # Calculate the Brier score at the selected evaluation time.
         return brier_score(y_train_struct, y_struct, predictions, time)[1][0]

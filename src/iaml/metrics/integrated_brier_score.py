@@ -4,6 +4,7 @@ import textwrap
 import pandas as pd
 import numpy as np
 from sksurv.metrics import integrated_brier_score
+from ._survival_times import brier_evaluation_times
 from ..metric import Metric
 from ..dataset import Dataset
 
@@ -61,8 +62,12 @@ class IntegratedBrierScoreMetric(Metric):
         **kwargs) -> float:
         """Compute the Integrated Brier Score (IBS) with the predicted data.
 
+        Integrate over a 100-point evenly spaced grid over
+        [min(test time), max(test time)), after limiting follow-up to the
+        training horizon. At least two distinct evaluation times are required.
+
         :param pd.DataFrame y: Ground truth data (duration and event status).
-        :param pd.DataFrame y_pred: Predicted data (risk scores or predicted survival times).
+        :param y_pred: Predicted survival probability functions, one per sample.
         :param pd.DataFrame y_train: Training data (duration and event status).
         :param dict, optional \\**kwargs: Additional parameters
         :return: Computed value
@@ -79,11 +84,13 @@ class IntegratedBrierScoreMetric(Metric):
             dtype=[('event', 'bool'), ('time', 'float')]
         )
 
-        # Extract time from y test
-        _, time = zip(*y_samples)
-        times = np.arange(min(time), max(time))
+        times = brier_evaluation_times(y_struct['time'])
+        if times.size < 2:
+            raise ValueError(
+                "Integrated Brier score requires at least two distinct evaluation times."
+            )
 
-        # Extract risk score for each time point
+        # Evaluate survival probabilities on the same grid for every sample.
         predictions = np.asarray([[fn(t) for t in times] for fn in y_pred])
 
         # Calculate integrated Brier score using sksurv function
