@@ -258,13 +258,19 @@ class IAMLPipeline(Pipeline):
         for _, step in [*self.resamplers, *self.transformers]:
             # FIT
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
-                from_cache = Cache().from_cache(f"fit_{step.fingerprint()}", dataset.X)
-                if from_cache:
-                    self.replace_step(step, from_cache)
+                fit_key = f"fit_{step.fingerprint()}"
+                fit_data_key = dataset.fingerprint()
+                from_cache = Cache().from_cache(fit_key, fit_data_key)
+                if from_cache is not None:
+                    fitted_step, dataset = from_cache
+                    self.replace_step(step, fitted_step)
+                    step = fitted_step
                 else:
                     if step.suitable(dataset):
                         step.fit(dataset)
-                        Cache().add_to_cache(f"fit_{step.fingerprint()}", dataset.X, step)
+                        # Copy together to preserve shared references to training data
+                        # (e.g. a target encoder's out-of-fold training transform).
+                        Cache().add_to_cache(fit_key, fit_data_key, (step, dataset))
                     else:
                         if step.is_interchangeable:
                             old_step = step
@@ -277,17 +283,19 @@ class IAMLPipeline(Pipeline):
                 step.fit(dataset.X, dataset.y, **kwargs)
 
             # APPLY TRANSFORM / RESAMPLE
-            dataset_from_cache = Cache().from_cache(f"apply_{step.fingerprint()}", dataset.X)
-            
-            if dataset_from_cache:
+            apply_key = f"apply_{step.fingerprint()}"
+            # Freeze before a step can mutate X or y in place.
+            apply_data_key = dataset.fingerprint()
+            dataset_from_cache = Cache().from_cache(apply_key, apply_data_key)
+
+            if dataset_from_cache is not None:
                 dataset = dataset_from_cache
             else:
-                prev_X = dataset.X.copy()
                 if hasattr(step, 'transform'):
-                    dataset = Dataset(step.transform(dataset.X), dataset.y)
+                    dataset.transform(step.transform)
                 elif hasattr(step, 'resample'):
-                    dataset = Dataset(*step.resample(dataset.X, dataset.y))
-                Cache().add_to_cache(f"apply_{step.fingerprint()}", prev_X, dataset)
+                    dataset = dataset.resample(step.resample)
+                Cache().add_to_cache(apply_key, apply_data_key, dataset)
 
         return dataset.X, dataset.y
 

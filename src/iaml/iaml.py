@@ -19,6 +19,7 @@ import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
 from .step import Step
 from .cache import Cache
+from .cache_keys import hash_evaluation_context
 from .metastep import MetaStep
 from .candidate import Candidate
 from .dataset import Dataset
@@ -644,6 +645,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param callable, optional callback: Method called after evaluation. Default to None.
         """
         new_candidates: list[Candidate] = []
+        splitter_fingerprint = hash_evaluation_context(self.splitter)
+        dataset_key = dataset.fingerprint() if splitter_fingerprint is not None else None
+        evaluation_cache_keys: set[str] = set()
         start_time = time.monotonic()
         with Logger().progress as progress:
             task = progress.add_task(
@@ -655,8 +659,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             self.executor.set_callback(update_progressbar)
             for candidate in candidates:
-                from_cache = Cache().from_cache( \
-                    'IAML_'+candidate.pipeline.fingerprint(), dataset.X)
+                cache_key = self.__evaluation_cache_key(candidate, splitter_fingerprint)
+                if cache_key is not None:
+                    evaluation_cache_keys.add(cache_key)
+                from_cache = Cache().from_cache(cache_key, dataset_key) if cache_key else None
 
                 if from_cache:
                     self.__hydrate_cached_candidate(candidate, from_cache, dataset)
@@ -695,11 +701,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         # Add to cache
         for candidate in new_candidates:
-            fingerprint = candidate.pipeline.fingerprint()
-            if not Cache().from_cache('IAML_'+fingerprint, dataset.X):
+            cache_key = self.__evaluation_cache_key(candidate, splitter_fingerprint)
+            if cache_key in evaluation_cache_keys and not Cache().from_cache(cache_key, dataset_key):
                 Cache().add_to_cache(
-                    'IAML_'+fingerprint,
-                    dataset.X,
+                    cache_key,
+                    dataset_key,
                     self.__build_cached_candidate(candidate),
                 )
 
@@ -715,6 +721,20 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 if stage_number is not None else "Initial evaluation finished")
 
         return new_candidates
+
+    def __evaluation_cache_key(
+        self, candidate: Candidate, splitter_fingerprint: str | None
+    ) -> str | None:
+        """Keep scores separate for each splitter and metric configuration."""
+        if splitter_fingerprint is None:
+            return None
+        context = hash_evaluation_context(
+            candidate.pipeline.fingerprint(), candidate.metrics, candidate.main_metric,
+            candidate.is_meta, self.keep_training_history,
+        )
+        if context is None:
+            return None
+        return f"IAML_{splitter_fingerprint}_{context}"
 
     def __build_optimizer(self, duration: int) -> Optimizer:
         """Instantiate optimizer."""

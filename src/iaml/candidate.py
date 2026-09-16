@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
+from .cache_keys import hash_evaluation_context
 from .splitters import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .metric_plot import MetricPlot
@@ -391,12 +392,20 @@ class Candidate:
         self.fold_metrics = []
         self.training_audit = None
 
-        # without cache !
-        from_cache: bool = cache_split
+        splitter_fingerprint = (
+            hash_evaluation_context(splitter) if cache_split and not self.is_meta else None
+        )
+        cache_key = (
+            f"splits_{self.fingerprint()}_{splitter_fingerprint}"
+            if splitter_fingerprint is not None else None
+        )
+        dataset_key = dataset.fingerprint() if cache_key else None
+        from_cache = False
         to_cache: list[tuple[Dataset, Dataset]] = []
-        splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X) if cache_split else None
-        if not splitted_datasets or self.is_meta: # Cannot use cache with meta for now
-            from_cache = False
+        splitted_datasets = Cache().from_cache(cache_key, dataset_key) if cache_key else None
+        if splitted_datasets:
+            from_cache = True
+        else:
             splitted_datasets = splitter(dataset)
 
         for fold_index, (train_ds, test_ds) in enumerate(splitted_datasets, start=1):
@@ -450,7 +459,7 @@ class Candidate:
                             "metrics": self.__serialize_metric_values(fold_result),
                         }
                     )
-                if cache_split and not from_cache:
+                if cache_key and not from_cache:
                     to_cache.append((train_ds, test_ds))
             except ValueError as exc:
                 Logger().warning(
@@ -467,8 +476,8 @@ class Candidate:
                     )
                 return {}
 
-        if cache_split and not from_cache:
-            Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)
+        if cache_key and not from_cache:
+            Cache().add_to_cache(cache_key, dataset_key, to_cache)
 
         computed_metrics = self.__aggregate_metrics(metrics)
         self.computed_metrics = computed_metrics
