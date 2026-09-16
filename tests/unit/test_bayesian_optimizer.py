@@ -1,21 +1,28 @@
-"""The Bayesian backend must optimize the same score direction as IAML."""
+"""The Bayesian backend must preserve IAML's score direction and parameter domains."""
 import unittest
 
 import numpy as np
 import pandas as pd
+from skopt.space import Categorical
 
 from iaml.actionables.predictors.classifier.act_decision_tree_classifier import (
     ActDecisionTreeClassifier,
 )
+from iaml.actionables.predictors.classifier.act_hist_gradient_boosting_classifier import (
+    ActHistGradientBoostingClassifier,
+)
+from iaml.actionables.predictors.classifier.act_randomforest import ActRandomForest
 from iaml.actionables.predictors.regressor.act_decision_tree_regressor import (
     ActDecisionTreeRegressor,
 )
+from iaml.actionables.predictors.survival.act_random_survival_forest import ActRandomSurvivalForest
 from iaml.candidate import Candidate
 from iaml.dataset import Dataset
 from iaml.iaml_pipeline import IAMLPipeline
 from iaml.logger import Logger
 from iaml.metrics import AccuracyMetric, MeanSquaredErrorMetric, R2ScoreMetric
 from iaml.optimizers.bayesian_optimizer import BayesianOptimizer
+from tests.helpers.datasets import make_classification_data, make_survival_data
 
 
 class TestBayesianOptimizerDirection(unittest.TestCase):
@@ -130,3 +137,84 @@ class TestBayesianOptimizerDirection(unittest.TestCase):
         self.assert_backend_prefers(optimizer, depth=3, score=0.48, greater_is_better=False)
         backend = next(iter(optimizer.skopt_optimizers.values()))["optimizer"]
         self.assertEqual(len(backend.get_result().func_vals), 1)
+
+
+class TestBayesianOptimizerParameters(unittest.TestCase):
+    def setUp(self):
+        previous_verbose = Logger().verbose
+        Logger().verbose = 0
+        self.addCleanup(setattr, Logger(), "verbose", previous_verbose)
+
+    def make_candidate(self, predictor, survival=False):
+        make_data = make_survival_data if survival else make_classification_data
+        candidate = Candidate(Dataset(*make_data(n_samples=24, seed=42)))
+        candidate.pipeline.set_model(predictor)
+        candidate.computed_metrics = {candidate.main_metric: 0.5}
+        return candidate
+
+    def optimize(self, candidate):
+        optimizer = BayesianOptimizer()
+        optimizer.max_candidates = 2
+        outputs = optimizer.run([candidate])
+        self.assertEqual(len(outputs), 2)
+        self.assertIs(outputs[0], candidate)
+        backend = next(iter(optimizer.skopt_optimizers.values()))
+        self.assertEqual(len(backend["param_keys"]), len(backend["dimensions"]))
+        self.assertEqual(len(backend["optimizer"].Xi), 1)
+        return outputs[1], backend
+
+    def test_bootstrap_is_boolean_in_observations_and_suggestions(self):
+        for value in (False, True, np.bool_(False), np.bool_(True)):
+            with self.subTest(value=value, value_type=type(value)):
+                model = ActRandomForest()
+                model.configure("bootstrap", value)
+                candidate = self.make_candidate(model)
+                suggested, backend = self.optimize(candidate)
+                index = backend["param_keys"].index("0_bootstrap")
+                dimension = backend["dimensions"][index]
+                self.assertIsInstance(dimension, Categorical)
+                self.assertEqual(set(dimension.categories), {True, False})
+                self.assertIs(backend["optimizer"].Xi[0][index], bool(value))
+                self.assertIs(type(suggested.pipeline.predictor[1].get_config("bootstrap")), bool)
+                self.assertIs(model.get_config("bootstrap"), value)
+
+    def test_survival_forest_keeps_unbounded_depth_and_optimizes_other_parameters(self):
+        for depth in (None, 4):
+            with self.subTest(depth=depth):
+                model = ActRandomSurvivalForest()
+                model.configure("max_depth", depth)
+                candidate = self.make_candidate(model, survival=True)
+                suggested, backend = self.optimize(candidate)
+                self.assertEqual(backend["param_keys"], [
+                    "0_min_samples_leaf", "0_min_samples_split", "0_n_estimators",
+                ])
+                self.assertEqual(backend["optimizer"].Xi[0], [1, 2, 100])
+                proposed_model = suggested.pipeline.predictor[1]
+                self.assertEqual(proposed_model.get_config("max_depth"), depth)
+                for key, dimension in zip(backend["param_keys"], backend["dimensions"]):
+                    self.assertIn(proposed_model.get_config(key[2:]), dimension)
+                # Exercise the generated configuration with the real survival estimator.
+                proposed_model.fit(candidate.dataset)
+                self.assertEqual(proposed_model.model.max_depth, depth)
+
+    def test_numeric_categories_and_none_are_not_treated_as_numeric_bounds(self):
+        for depth in (None, 5, 15):
+            with self.subTest(depth=depth):
+                model = ActHistGradientBoostingClassifier()
+                model.configure("max_depth", depth)
+                suggested, backend = self.optimize(self.make_candidate(model))
+                index = backend["param_keys"].index("0_max_depth")
+                dimension = backend["dimensions"][index]
+                self.assertIsInstance(dimension, Categorical)
+                self.assertEqual(dimension.categories, (None, 3, 5, 10, 15))
+                self.assertEqual(backend["optimizer"].Xi[0][index], depth)
+                self.assertIn(suggested.pipeline.predictor[1].get_config("max_depth"), dimension)
+
+    def test_candidate_without_search_dimensions_is_preserved(self):
+        candidate = self.make_candidate(ActRandomSurvivalForest(), survival=True)
+        optimizer = BayesianOptimizer()
+        optimizer.ignored_configs.update({"min_samples_leaf", "min_samples_split", "n_estimators"})
+        outputs = optimizer.run([candidate])
+        self.assertEqual(len(outputs), 1)
+        self.assertIs(outputs[0], candidate)
+        self.assertEqual(optimizer.skopt_optimizers, {})
