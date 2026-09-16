@@ -52,31 +52,31 @@ class ActGradientBoostingSurvivalAnalysis(Predictor):
                 'description': 'Number of boosting stages to be run.',
                 'default': 100,
                 'range': [1, 1000],
-                'passthrough': False
+                'passthrough': True
             },
             'learning_rate': {
                 'description': 'Learning rate shrinks the contribution of each tree by this value.',
                 'default': 0.1,
                 'range': [0.01, 1.0],
-                'passthrough': False
+                'passthrough': True
             },
             'max_depth': {
                 'description': 'The maximum depth of the individual trees.',
                 'default': 3,
                 'range': [1, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node.',
                 'default': 2,
                 'range': [2, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_leaf': {
                 'description': 'The minimum number of samples required to be at a leaf node.',
                 'default': 1,
                 'range': [1, 20],
-                'passthrough': False
+                'passthrough': True
             }
         }
         self.model: GradientBoostingSurvivalAnalysis = None
