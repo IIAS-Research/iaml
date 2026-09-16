@@ -1,96 +1,13 @@
 """Tests for ActVIFSelector."""
 from __future__ import annotations
 
-import sys
-import types
-from pathlib import Path
 import unittest
 
-try:
-    import numpy as np
-    import pandas as pd
-    from pandas.testing import assert_frame_equal
-except ImportError as exc:  # pragma: no cover - optional test dependency
-    raise unittest.SkipTest(f"Optional dependency missing: {exc.name}") from exc
+import pandas as pd
+from pandas.testing import assert_frame_equal
 
-
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_IAML_PATH = _PROJECT_ROOT / "src" / "iaml"
-
-
-def _import_act_vif_selector() -> tuple[type, type]:
-    import importlib
-
-    existing = set(sys.modules)
-
-    def _cleanup() -> None:
-        for name in list(sys.modules):
-            if name.startswith("iaml") and name not in existing:
-                sys.modules.pop(name, None)
-
-    def _ensure_package(name: str, path: Path) -> None:
-        if name in sys.modules:
-            return
-        package = types.ModuleType(name)
-        package.__path__ = [str(path)]
-        sys.modules[name] = package
-
-    _ensure_package("iaml", _IAML_PATH)
-    _ensure_package("iaml.actionables", _IAML_PATH / "actionables")
-    _ensure_package(
-        "iaml.actionables.features_selection",
-        _IAML_PATH / "actionables" / "features_selection",
-    )
-
-    if "iaml.candidate" not in sys.modules:
-        candidate_module = types.ModuleType("iaml.candidate")
-
-        class Candidate:  # pragma: no cover - stub only
-            pass
-
-        candidate_module.Candidate = Candidate
-        sys.modules["iaml.candidate"] = candidate_module
-
-    try:
-        dataset_module = importlib.import_module("iaml.dataset")
-        Dataset = dataset_module.Dataset
-    except Exception:
-        sys.modules.pop("iaml.dataset", None)
-        dataset_module = types.ModuleType("iaml.dataset")
-
-        class Dataset:  # pragma: no cover - stub only
-            def __init__(self, X: pd.DataFrame, y=None) -> None:
-                self.X = X
-                if y is None:
-                    y = [0] * len(X)
-                self.y = np.array(y)
-
-            def get_columns_names_by_type(self, data_type) -> list[str]:
-                if getattr(data_type, "name", None) not in (None, "NUMERIC"):
-                    return []
-                return [
-                    col for col in self.X.columns
-                    if pd.api.types.is_numeric_dtype(self.X[col])
-                ]
-
-        dataset_module.Dataset = Dataset
-        sys.modules["iaml.dataset"] = dataset_module
-
-    try:
-        module = importlib.import_module(
-            "iaml.actionables.features_selection.act_vif_selector"
-        )
-        ActVIFSelector = module.ActVIFSelector
-    except Exception as exc:  # pragma: no cover - optional dependencies
-        _cleanup()
-        raise unittest.SkipTest(f"Unable to import ActVIFSelector: {exc}") from exc
-
-    _cleanup()
-
-    return ActVIFSelector, Dataset
-
-
-ActVIFSelector, Dataset = _import_act_vif_selector()
+from iaml.actionables.features_selection.act_vif_selector import ActVIFSelector
+from iaml.dataset import Dataset
 
 
 class TestActVIFSelector(unittest.TestCase):
