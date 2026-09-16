@@ -65,7 +65,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param int | str, optional time_before_sample_use: Time before we use sampled data. 
         Default to None.
     :param bool, optional preprocessor: Use preprocessor. Default to False.
-    :param Metric, optional main_metric: Main Metric to use. Default to None.
+    :param Metric, optional main_metric: Main metric instance, preserving its parameters.
+        Default to None.
     :param Optimizer, optional optimizer: Optimizer class to use. Default to GeneticOptimizer.
     :param bool, optional keep_training_history: If True, store detailed CV audit records for
         every evaluated pipeline. Default to False.
@@ -882,8 +883,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         metrics = []
 
         for metric_sub_class in Metric.all_subclasses():
-            # Instantiate a subclass
-            metric = metric_sub_class()
+            # Reuse the configured main metric instead of resetting its parameters.
+            metric = (
+                self.main_metric
+                if type(self.main_metric) is metric_sub_class
+                else metric_sub_class()
+            )
             # Verify if a subclass is suitable or not
             if metric.suitable(X, y, type_of_target):
                 metrics.append(metric)

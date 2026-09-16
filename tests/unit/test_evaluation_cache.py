@@ -176,6 +176,25 @@ class TestEvaluationCache(unittest.TestCase):
         self.evaluate(engine, dataset, PrecisionMetric(pos_label=1))
         self.assertEqual(engine.executor.submissions, 2)
 
+    def test_score_cache_uses_main_metric_configuration_selected_by_iaml(self):
+        engine = self.make_iaml()
+        dataset = Dataset(self.X, np.tile([0, 0, 1], 8))
+        for pos_label, submissions in ((0, 1), (1, 2), (1, 2)):
+            with self.subTest(pos_label=pos_label, submissions=submissions):
+                engine.main_metric = PrecisionMetric(pos_label=pos_label)
+                candidate = self.make_candidate(dataset, engine.main_metric)
+                candidate.metrics = engine._IAML__metrics_selection(
+                    dataset.X, dataset.y, dataset.type_of_target,
+                )
+                selected = next(metric for metric in candidate.metrics if str(metric) == "precision")
+                self.assertIs(selected, engine.main_metric)
+
+                results = engine._IAML__run_evaluations([candidate], dataset, timeout=60)
+
+                self.assertEqual(len(results), 1)
+                self.assertEqual(engine.executor.submissions, submissions)
+                self.assertIn("precision", results[0].computed_metrics)
+
     def test_score_cache_distinguishes_groups_and_splitter(self):
         engine = self.make_iaml()
         dataset = Dataset(self.X, self.y)
