@@ -4,6 +4,8 @@ from __future__ import annotations
 import traceback
 import os
 import time
+from math import isfinite
+from numbers import Real
 from typing import TYPE_CHECKING, Any
 from copy import copy, deepcopy
 from hashlib import md5
@@ -331,6 +333,14 @@ class Candidate:
             for name, value in values.items()
         }
 
+    def __valid_main_metric(self, scores: dict[str, Any]) -> bool:
+        """A main metric must be a finite numeric scalar; zero remains valid."""
+        value = scores.get(self.main_metric)
+        try:
+            return isinstance(value, Real) and isfinite(value)
+        except (TypeError, ValueError, OverflowError):
+            return False
+
     def __aggregate_metrics(self, fold_results: list[dict[str, Any]]) -> dict[str, float]:
         """Aggregate fold-level metric dictionaries into global scores."""
         computed_metrics: dict[str, float] = {}
@@ -415,12 +425,13 @@ class Candidate:
         :param callable, optional splitter: The split method to be used. Default to random_splitter.
         :return: Metric name as key and result as value
         """
+        self.computed_metrics = {}
+        self.fold_metrics = []
+        self.training_audit = None
         if not self.pipeline.have_model:
             return None
         metrics: list[dict] = []
         fold_metrics: list[dict[str, Any]] = []
-        self.fold_metrics = []
-        self.training_audit = None
 
         splitter_fingerprint = (
             hash_evaluation_context(splitter) if cache_split else None
@@ -456,7 +467,7 @@ class Candidate:
                     self.training_audit = self.build_training_audit(
                         dataset=dataset,
                         fold_metrics=fold_metrics,
-                        aggregated_metrics=self.__aggregate_metrics(metrics),
+                        aggregated_metrics={},
                         status="failed",
                         error=f"training failure: {exc!r}",
                     )
@@ -470,6 +481,10 @@ class Candidate:
                     X_train=train_ds.X,
                     y_train=train_ds.y,
                     model_only=True)
+                if not self.__valid_main_metric(fold_result):
+                    raise ValueError(
+                        f"Main metric '{self.main_metric}' is missing or invalid on fold {fold_index}"
+                    )
                 metrics.append(fold_result)
                 if store_audit:
                     fold_metrics.append(
@@ -490,14 +505,13 @@ class Candidate:
                     to_cache.append((train_ds, test_ds))
             except ValueError as exc:
                 Logger().warning(
-                    f"Skip candidate {self._pipeline_signature()} after metric computation failure "
-                    f"(predict/predict_proba raised ValueError: {exc!r})"
+                    f"Skip candidate {self._pipeline_signature()} after metric failure: {exc!r}"
                 )
                 if store_audit:
                     self.training_audit = self.build_training_audit(
                         dataset=dataset,
                         fold_metrics=fold_metrics,
-                        aggregated_metrics=self.__aggregate_metrics(metrics),
+                        aggregated_metrics={},
                         status="failed",
                         error=f"metric failure: {exc!r}",
                     )
@@ -506,7 +520,14 @@ class Candidate:
         if cache_key and not from_cache:
             Cache().add_to_cache(cache_key, dataset_key, to_cache)
 
-        computed_metrics = self.__aggregate_metrics(metrics)
+        computed_metrics = self.__aggregate_metrics(metrics) if metrics else {}
+        if not self.__valid_main_metric(computed_metrics):
+            if store_audit:
+                self.training_audit = self.build_training_audit(
+                    dataset, fold_metrics, {}, status="failed",
+                    error=f"Main metric '{self.main_metric}' has no valid aggregate",
+                )
+            return {}
         self.computed_metrics = computed_metrics
         if store_audit:
             self.fold_metrics = deepcopy(fold_metrics)

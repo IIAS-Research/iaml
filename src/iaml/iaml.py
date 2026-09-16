@@ -890,7 +890,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 else metric_sub_class()
             )
             # Verify if a subclass is suitable or not
-            if metric.suitable(X, y, type_of_target):
+            if metric is self.main_metric or metric.suitable(X, y, type_of_target):
                 metrics.append(metric)
         return metrics
 

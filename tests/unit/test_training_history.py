@@ -23,8 +23,8 @@ class TestTrainingHistory(unittest.TestCase):
     def test_candidate_training_audit_captures_fold_metrics(self):
         X, y = make_classification_data(n_samples=24, seed=101)
         dataset = Dataset(X, y)
-        candidate = Candidate(dataset)
-        candidate.add_metric(AccuracyMetric())
+        metric = AccuracyMetric()
+        candidate = Candidate(dataset, metrics=[metric], main_metric=metric)
         candidate = ActDecisionTreeClassifier().run(candidate)[0]
 
         metrics = candidate.training_evaluate(

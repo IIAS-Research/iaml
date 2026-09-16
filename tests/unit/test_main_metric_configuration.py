@@ -11,7 +11,7 @@ from iaml.dataset import Dataset
 from iaml.iaml import IAML
 from iaml.iaml_pipeline import IAMLPipeline
 from iaml.logger import Logger
-from iaml.metrics import F1ScoreMetric, PrecisionMetric, RecallMetric
+from iaml.metrics import AccuracyMetric, F1ScoreMetric, PrecisionMetric, RecallMetric
 
 
 class TestMainMetricConfiguration(unittest.TestCase):
@@ -74,3 +74,12 @@ class TestMainMetricConfiguration(unittest.TestCase):
             matching = [metric for metric in metrics if type(metric) is metric_class]
             self.assertEqual(len(matching), 1)
             self.assertIsNone(matching[0].pos_label)
+
+    def test_explicit_main_metric_is_kept_despite_automatic_selection_filter(self):
+        self.dataset = Dataset(self.dataset.X, np.tile([0, 1], 12))
+        requested = AccuracyMetric()
+        self.assertFalse(requested.suitable(
+            self.dataset.X, self.dataset.y, self.dataset.type_of_target,
+        ))
+        self.assertIn(requested, self.select_metrics(requested))
+        self.assertFalse(any(isinstance(metric, AccuracyMetric) for metric in self.select_metrics()))
