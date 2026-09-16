@@ -164,7 +164,8 @@ class BayesianOptimizer(BaseOptimizer):
                 continue
             
             try:
-                optimizer_data['optimizer'].tell([params], [main_metric])
+                # skopt minimizes its objective, while IAML maximizes candidate scores.
+                optimizer_data['optimizer'].tell([params], [-main_metric])
             except ValueError as e:
                 Logger().error(f"Error in skopt.tell(): {str(e)}. Params: {params}, Bounds: {optimizer_data['optimizer'].space.bounds}")
                 continue
