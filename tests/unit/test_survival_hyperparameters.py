@@ -24,7 +24,6 @@ ENSEMBLE_STEPS = (
     ActRandomSurvivalForest,
     ActExtraSurvivalTrees,
     ActGradientBoostingSurvivalAnalysis,
-    ActSurvivalXGBoost,
     ActComponentwiseGradientBoostingSurvivalAnalysis,
 )
 SURVIVAL_STEPS = ENSEMBLE_STEPS + (ActCox, ActSurvivalTree)
@@ -120,7 +119,7 @@ class TestSurvivalHyperparameters(unittest.TestCase):
         self._check_gradient_boosting(ActGradientBoostingSurvivalAnalysis)
 
     def test_survival_xgboost_uses_configured_parameters(self):
-        """The second registered gradient-boosting implementation also honors parameters."""
+        """The legacy import retains configurable parameters on the canonical model."""
         self._check_gradient_boosting(ActSurvivalXGBoost)
 
     def test_componentwise_boosting_uses_configured_parameters(self):
