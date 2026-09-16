@@ -352,25 +352,24 @@ class Candidate:
     def pipeline_audit_summary(self) -> dict[str, Any]:
         """Return a serializable summary of the pipeline steps and their config."""
         summarized_steps: list[dict[str, Any]] = []
-        groups = [
-            ("resampler", self.pipeline.resamplers),
-            ("transformer", self.pipeline.transformers),
-            ("predictor", [self.pipeline.predictor] if self.pipeline.predictor else []),
-        ]
-
-        for role, steps in groups:
-            for name, step in steps:
-                summarized_steps.append(
-                    {
-                        "role": role,
-                        "name": name,
-                        "class": step.__class__.__name__,
-                        "tags": sorted(step.tags) if step.tags else [],
-                        "configuration": self.__serialize_audit_value(
-                            step.resume_configuration()
-                        ),
-                    }
-                )
+        for name, step in self.pipeline.training_steps:
+            if self.pipeline.predictor is not None and step is self.pipeline.predictor[1]:
+                role = "predictor"
+            elif callable(getattr(step, 'transform', None)):
+                role = "transformer"
+            else:
+                role = "resampler"
+            summarized_steps.append(
+                {
+                    "role": role,
+                    "name": name,
+                    "class": step.__class__.__name__,
+                    "tags": sorted(step.tags) if step.tags else [],
+                    "configuration": self.__serialize_audit_value(
+                        step.resume_configuration()
+                    ),
+                }
+            )
 
         return {
             "fingerprint": self.pipeline.fingerprint(),
