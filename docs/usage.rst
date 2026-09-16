@@ -141,6 +141,38 @@ Once the model is trained, you can evaluate its performance on your own test dat
     #   ROC AUC = 0.883023061961656
 
 
+Positive Class for Binary Metrics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``PrecisionMetric``, ``RecallMetric`` and ``F1ScoreMetric`` use a fixed convention
+for the positive class, independent of row order:
+
+- For labels ``0/1``, ``False/True`` or ``-1/1``, the positive class is ``1``.
+- For other binary labels, it is the last label in sorted order (numerical or
+  alphabetical).
+- Candidate evaluation uses the training labels as a reference, including when
+  the test set contains only one class.
+
+For a direct metric calculation, choose a different positive class explicitly:
+
+.. code-block:: python
+
+    from iaml import PrecisionMetric, RecallMetric, F1ScoreMetric
+
+    metrics = [
+        PrecisionMetric(pos_label="case"),
+        RecallMetric(pos_label="case"),
+        F1ScoreMetric(pos_label="case"),
+    ]
+    scores = {str(metric): metric.compute(y_test, y_pred) for metric in metrics}
+
+When only one nonstandard label is available, automatic selection is ambiguous:
+provide ``pos_label`` or pass ``y_train`` containing both classes to ``compute``.
+Undefined binary scores return zero. Multiclass targets use weighted averaging,
+including when a test subset is missing classes present in the training data.
+Multilabel targets use sample averaging. Historical binary scores may differ
+because older versions used the first observation's label as the positive class.
+
+
 Make Predictions
 -----------------------
 Once a model is trained, use the :py:meth:`~iaml.candidate.Candidate.predict` or :py:meth:`~iaml.candidate.Candidate.predict_proba` method to generate predictions on new data.

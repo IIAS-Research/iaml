@@ -139,6 +139,36 @@ Here’s another example of an Actionable Step that trains a Random Forest class
         def suitable(self, dataset: Dataset) -> bool:
             return dataset.type_of_target == 'continuous'
 
+Configuring Survival Models
+---------------------------
+Configure a survival step before fitting it. The fitted estimator must receive
+the configured values, not silently fall back to its own defaults:
+
+.. code-block:: python
+
+    from iaml import ActRandomSurvivalForest, Dataset
+
+    step = ActRandomSurvivalForest()
+    step.configure({"n_estimators": 7, "max_depth": 3})
+    step.fit(Dataset(X, y))  # y contains (event, time) pairs
+    assert len(step.model.estimators_) == 7
+    assert step.model.get_params()["max_depth"] == 3
+
+In a step's configuration, ``passthrough=True`` forwards a parameter to the
+estimator constructor through ``passthrough_parameters()``. ``passthrough=False``
+is reserved for parameters handled explicitly by the step. Discrete search choices
+use ``categorical``, rather than ``options``.
+
+Cox, survival forests, survival trees and both gradient boosting implementations
+now apply their declared settings. This also applies to IAML's declared defaults,
+which can differ from the estimator library's defaults. Historical results may
+therefore change after refitting.
+
+Componentwise gradient boosting uses linear components, not trees. Existing
+configurations must remove ``max_depth``, ``min_samples_split`` and
+``min_samples_leaf`` for this step: those unsupported settings were previously
+ignored. ``n_estimators`` and ``learning_rate`` remain configurable.
+
 How Tags Enable Automation
 --------------------------
 Tags allow IAML to automatically add Steps to appropriate pipelines. When you decorate a Step with `@is_step(tags)`, it is registered in IAML with the specified tags. Pipelines can then include the Step dynamically based on context, ensuring that custom Steps integrate seamlessly.
