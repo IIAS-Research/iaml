@@ -3,11 +3,18 @@ from typing import Any
 import textwrap
 import pandas as pd
 from sklearn.metrics import f1_score
+from sklearn.utils.multiclass import type_of_target as get_type_of_target
+from ._classification import resolve_pos_label
 from ..metric import Metric
-from ..type_of_target import type_of_target as get_type_of_target
 
 class F1ScoreMetric(Metric):
-    """[METRIC] F1 Score"""
+    """[METRIC] F1 Score.
+
+    :param pos_label: Binary positive class. If None, use 1 for 0/1 or -1/1
+        labels, otherwise the last sorted class. Training labels passed to
+        compute as y_train take precedence for automatic class selection.
+        Ignored for multiclass and multilabel targets.
+    """
 
     name: str = 'F1 Score'
     _description: str = textwrap.dedent('''\
@@ -35,6 +42,9 @@ class F1ScoreMetric(Metric):
         }
     ]
 
+    def __init__(self, pos_label: Any = None) -> None:
+        self.pos_label = pos_label
+
     def __str__(self) -> str:
         return 'f1_score'
 
@@ -50,12 +60,12 @@ class F1ScoreMetric(Metric):
         y: pd.DataFrame,
         y_pred:pd.DataFrame,
         **kwargs) -> float:
-        match get_type_of_target(y):
+        y_train = kwargs.get('y_train')
+        match get_type_of_target(y if y_train is None else y_train):
             case 'multiclass':
                 return f1_score(y, y_pred, average ='weighted')
             case 'multilabel-indicator':
                 return f1_score(y, y_pred, average ='samples')
             case _:
-                # Binary case otherwise
-                # TODO Find something less arbitrary (about pos_label)
-                return f1_score(y, y_pred, pos_label=y[0])
+                pos_label = resolve_pos_label(y, self.pos_label, y_train)
+                return f1_score(y, y_pred, pos_label=pos_label, zero_division=0.0)
