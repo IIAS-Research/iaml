@@ -51,19 +51,19 @@ class ActRandomSurvivalForest(Predictor):
                 'description': 'Number of trees in the forest.',
                 'default': 100,
                 'range': [1, 1000],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node.',
                 'default': 2,
                 'range': [2, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_leaf': {
                 'description': 'The minimum number of samples required to be at a leaf node.',
                 'default': 1,
                 'range': [1, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'max_depth': {
                 'description': textwrap.dedent('''\
@@ -71,7 +71,7 @@ class ActRandomSurvivalForest(Predictor):
                     expanded until all leaves are pure.'''),
                 'default': None,
                 'range': [1, None],
-                'passthrough': False
+                'passthrough': True
             }
         }
         self.model: RandomSurvivalForest = None

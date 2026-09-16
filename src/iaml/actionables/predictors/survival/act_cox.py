@@ -69,7 +69,7 @@ class ActCox(Predictor):
                     regularization. alpha=0 means no regularization.'''),
                 'default': 1,
                 'range': [0, 100],
-                'passthrough': False
+                'passthrough': True
             },
             'ties': {
                 'description': textwrap.dedent('''\
@@ -82,7 +82,7 @@ class ActCox(Predictor):
                 'description': 'Maximum number of iterations for fitting the model.',
                 'default': 100,
                 'range': [1, 10000],
-                'passthrough': False
+                'passthrough': True
             },
             'tol': {
                 'description': textwrap.dedent('''\
@@ -90,7 +90,7 @@ class ActCox(Predictor):
                     of the solution.'''),
                 'default': 1e-09,
                 'range': [1e-12, 1e-03],
-                'passthrough': False
+                'passthrough': True
             }
         }
         self.model: CoxPHSurvivalAnalysis = None

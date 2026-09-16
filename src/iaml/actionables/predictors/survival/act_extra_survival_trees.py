@@ -50,39 +50,38 @@ class ActExtraSurvivalTrees(Predictor):
                 'description': 'The number of trees in the forest.',
                 'default': 100,
                 'range': [1, 1000],
-                'passthrough': False
+                'passthrough': True
             },
             'max_depth': {
                 'description': 'The maximum depth of the trees.',
                 'default': None,
                 'range': [1, None],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node.',
                 'default': 2,
                 'range': [2, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_leaf': {
                 'description': 'The minimum number of samples required to be at a leaf node.',
                 'default': 1,
                 'range': [1, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'max_features': {
                 'description': textwrap.dedent('''\
                     The number of features to consider when looking for the
                     best split.'''),
                 'default': "sqrt",
-                'options': ["auto", "sqrt", "log2", None],
-                'passthrough': False
+                'categorical': ["sqrt", "log2", None],
+                'passthrough': True
             },
             'random_state': {
-                'description': 'Controls the randomness of the estimator.',
+                'description': 'Random seed (integer or None) for the estimator.',
                 'default': None,
-                'options': [None, 'int'],
-                'passthrough': False
+                'passthrough': True
             }
         }
         self.model: ExtraSurvivalTrees = None
