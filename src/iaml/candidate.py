@@ -66,7 +66,7 @@ class Candidate:
             else:
                 self.main_metric = 'r2_score'
         else:
-            self.main_metric = str(main_metric)
+            self.main_metric = main_metric
 
         self.computed_metrics: dict = {}
         """Result dictionnary for all the metrics computed"""
@@ -87,6 +87,24 @@ class Candidate:
         """
         self.stacked_path.append(stack)
 
+    @property
+    def main_metric(self) -> str:
+        """Name of the metric used to rank candidates."""
+        return str(self._main_metric)
+
+    @main_metric.setter
+    def main_metric(self, metric: Metric | str) -> None:
+        self._main_metric = metric
+
+    def get_main_metric(self) -> Metric | str:
+        """Return the metric definition, or its name when no definition is available."""
+        if isinstance(self._main_metric, str):
+            return next(
+                (metric for metric in self.metrics if str(metric) == self.main_metric),
+                self._main_metric,
+            )
+        return self._main_metric
+
     def get_main_metric_value(self) -> float:
         """Get computed value of the main metric from saved metrics
 
@@ -95,6 +113,18 @@ class Candidate:
         if self.computed_metrics and self.main_metric in self.computed_metrics:
             return self.computed_metrics[self.main_metric]
         return -1
+
+    def get_main_metric_score(self) -> float:
+        """Return a ranking score where higher is better, preserving raw metrics.
+
+        Metric names are resolved against the candidate's evaluation metrics.
+        A candidate without its main metric always ranks below an evaluated one.
+        """
+        if self.main_metric not in self.computed_metrics:
+            return float('-inf')
+        metric = self.get_main_metric()
+        value = self.get_main_metric_value()
+        return value if getattr(metric, 'greater_is_better', True) else -value
 
     def __gt__(self, other: 'Candidate') -> bool:
         """Check if a candidate is greater than another by various methods.
@@ -107,7 +137,7 @@ class Candidate:
         :return: Greater than?
         """
         if self.computed_metrics and other.computed_metrics:
-            return self.get_main_metric_value() > other.get_main_metric_value()
+            return self.get_main_metric_score() > other.get_main_metric_score()
         if self.computed_metrics:
             return True
         if other.computed_metrics:
@@ -126,7 +156,7 @@ class Candidate:
         :return: Less than?
         """
         if self.computed_metrics and other.computed_metrics:
-            return self.get_main_metric_value() < other.get_main_metric_value()
+            return self.get_main_metric_score() < other.get_main_metric_score()
         if self.computed_metrics:
             return False
         if other.computed_metrics:
@@ -145,7 +175,7 @@ class Candidate:
         :return: Equal to?
         """
         if self.computed_metrics and other.computed_metrics:
-            return self.get_main_metric_value() == other.get_main_metric_value()
+            return self.get_main_metric_score() == other.get_main_metric_score()
 
         return id(self) == id(other)
 
@@ -218,7 +248,7 @@ class Candidate:
             metrics or copy(self.metrics),
             iaml_pipeline=iaml_pipeline,
             stacked_path=self.stacked_path,
-            main_metric=self.main_metric)
+            main_metric=self._main_metric)
 
     def to_input(self,
                 dataset: Dataset = None,

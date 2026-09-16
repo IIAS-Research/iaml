@@ -108,7 +108,7 @@ class WrapGeneticGridSearch(StepWrapper):
             ranked = []
             for step in generation:
                 for result in step.candidate or []:
-                    result.main_metric = candidate.main_metric
+                    result.main_metric = candidate.get_main_metric()
                     if self.evaluator is not None:
                         result.computed_metrics = self.evaluator(result) or {}
                         score = result.computed_metrics.get(result.main_metric)
@@ -130,7 +130,7 @@ class WrapGeneticGridSearch(StepWrapper):
             if not candidates or i_gen + 1 == generations:
                 break
 
-            ranked.sort(key=lambda item: item[0].get_main_metric_value(), reverse=True)
+            ranked.sort(key=lambda item: item[0], reverse=True)
             nb_to_keep = max(1, population_size // 4)
             steps_to_keep = []
             seen = set()

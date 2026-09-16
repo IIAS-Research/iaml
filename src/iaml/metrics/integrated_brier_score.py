@@ -13,6 +13,7 @@ class IntegratedBrierScoreMetric(Metric):
     """[METRIC] Integrated Brier Score for Survival Models"""
 
     name: str = 'Integrated Brier Score'
+    greater_is_better = False
     _description: str = textwrap.dedent('''\
         The Integrated Brier Score (IBS) is a measure used to evaluate how well survival 
         models predict the likelihood of an event happening over time. It looks at the 

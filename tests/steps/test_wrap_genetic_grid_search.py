@@ -14,6 +14,7 @@ from iaml.actionables.predictors.regressor.act_decision_tree_regressor import (
 from iaml.candidate import Candidate
 from iaml.decorators.all import is_step, runner
 from iaml.metrics.r2_score_metric import R2ScoreMetric
+from iaml.metrics.mean_squared_error_metric import MeanSquaredErrorMetric
 from iaml.step import Step
 from iaml.wrapper.wrap_genetic_gridsearch import WrapGeneticGridSearch
 
@@ -217,6 +218,27 @@ class TestWrapGeneticGridSearch(StepTestCase):
 
         self.assertEqual(len(results), 4)
         self.assertEqual({result.config_snapshot["score"] for result in results}, {0, 1, 2, 3})
+
+    def test_selection_keeps_the_lowest_loss(self) -> None:
+        custom_metric = R2ScoreMetric()
+        custom_metric.greater_is_better = False
+        for metric in (MeanSquaredErrorMetric(), custom_metric):
+            for include_metrics in (False, True):
+                with self.subTest(metric=str(metric), include_metrics=include_metrics):
+                    candidate = self._make_candidate()
+                    candidate.metrics = [metric] if include_metrics else []
+                    candidate.main_metric = metric
+                    wrapper = WrapGeneticGridSearch(self._scored_step(0))
+                    wrapper.configure({"nb_generations": 2, "nb_estimators": 4})
+                    initial = [self._scored_step(score) for score in [3, 1, 4, 2]]
+
+                    with patch.object(wrapper, "random_generation", side_effect=[
+                        *initial, self._scored_step(5)
+                    ]), patch.object(wrapper, "random_mutation", side_effect=deepcopy):
+                        results = wrapper.run(candidate)
+
+                    self.assertEqual({result.get_main_metric_value() for result in results}, {1, 5})
+                    self.assertEqual({result.config_snapshot["score"] for result in results}, {1, 5})
 
     def test_deduplicated_population_of_one_survives_multiple_generations(self) -> None:
         step = ScoredGeneticStep({"score": {"default": 1, "range": [1, 1]}})

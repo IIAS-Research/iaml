@@ -7,6 +7,9 @@ from .reference import Reference
 class Metric:
     """[METRIC] Parent of all others Metrics, implement the default behavior"""
 
+    greater_is_better: bool = True
+    """Whether larger values are better. Set to False for error metrics."""
+
     name: str = ""
     """Name of the metric"""
 

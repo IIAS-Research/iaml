@@ -8,6 +8,7 @@ from ..metric import Metric
 
 class ClassificationErrorMetric(Metric):
     """[METRIC] Classification Error"""
+    greater_is_better = False
     name: str = 'Classification Error'
     _description: str = textwrap.dedent('''\
         Classification Error measures a model's performance 

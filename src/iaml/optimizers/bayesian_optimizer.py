@@ -145,7 +145,7 @@ class BayesianOptimizer(BaseOptimizer):
         if self.current_iteration == 0:
             self._initialize_search_space(candidates)
         
-        candidates.sort(key=lambda c: c.get_main_metric_value(), reverse=True)
+        candidates.sort(reverse=True)
         
         for candidate in candidates:
             structure_id = self._generate_structure_id(candidate)
@@ -156,11 +156,11 @@ class BayesianOptimizer(BaseOptimizer):
             
             params = self._export_params(candidate, optimizer_data)
             
-            main_metric = candidate.get_main_metric_value()
+            main_metric = candidate.get_main_metric_score()
             if isinstance(main_metric, (np.integer, np.floating)):
                 main_metric = main_metric.item()
-            if not isinstance(main_metric, (int, float)):
-                Logger().error(f"Invalid main_metric: expected scalar, got {type(main_metric)} - {main_metric}")
+            if not isinstance(main_metric, (int, float)) or not np.isfinite(main_metric):
+                Logger().error(f"Invalid main_metric: expected finite scalar, got {type(main_metric)} - {main_metric}")
                 continue
             
             try:

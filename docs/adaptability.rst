@@ -196,6 +196,12 @@ Metrics
 
 Example: Custom Metric
 ----------------------
+Metrics maximize their value by default (``greater_is_better = True``).
+Set ``greater_is_better = False`` on an error metric to minimize it when selected
+as ``main_metric``. Return the original, positive error from ``compute``;
+IAML handles the direction for ranking and optimization while keeping raw values
+in reports.
+
 This example creates a balanced accuracy metric based on the one of scikit-learn.
 
 .. code-block:: python

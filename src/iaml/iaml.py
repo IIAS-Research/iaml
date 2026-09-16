@@ -805,6 +805,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         # init
         candidates.sort(reverse=True)
         best_result: float = candidates[0].get_main_metric_value()
+        best_score: float = candidates[0].get_main_metric_score()
         iterations_without_improvement: int = 0
         iterations_count: int = 0
         duration: int = 0
@@ -850,9 +851,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             previous_candidates = candidates
 
             # Improvement ?
-            new_best: float = candidates[0].get_main_metric_value()
-            if new_best > best_result:
-                best_result = new_best
+            new_score: float = candidates[0].get_main_metric_score()
+            if new_score > best_score:
+                best_score = new_score
+                best_result = candidates[0].get_main_metric_value()
                 iterations_without_improvement = 0
             else:
                 iterations_without_improvement += 1

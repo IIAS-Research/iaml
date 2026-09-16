@@ -9,6 +9,7 @@ class MeanAbsoluteErrorMetric(Metric):
     """[METRIC] Mean Absolute Error"""
 
     name: str = 'Mean Absolute Error'
+    greater_is_better = False
     _description: str = textwrap.dedent('''\
         Mean Absolute Error (MAE) evaluates the accuracy of a predictive model by calculating 
         the average of the absolute differences between predicted and actual values. It is a simple and intuitive metric 
