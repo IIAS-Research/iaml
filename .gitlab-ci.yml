@@ -4,12 +4,13 @@
 stages:
   - build
   - linting
-  - perfs # CI
+  - test
   - docs
   - deploy
 
 variables:
-  UV_PROJECT_ENVIRONMENT: /home/gitlab-runner/.automl_venv
+  UV_PROJECT_ENVIRONMENT: "$CI_PROJECT_DIR/.venv"
+  MPLBACKEND: Agg
 
 job:build:pythonEnv:
   stage: build
@@ -18,7 +19,7 @@ job:build:pythonEnv:
     - test
     - calcul
   script:
-    - 'uv sync'
+    - 'uv sync --locked'
 
 job:linting:PyLint:
   stage: linting
@@ -28,19 +29,31 @@ job:linting:PyLint:
     - calcul
   allow_failure: true
   script:
-    - 'uv run pylint --rcfile=.pylintrc ./src/iaml/iaml'
+    - 'uv run --locked pylint --rcfile=.pylintrc src/iaml'
 
 job:test:unit:
-  stage: perfs
+  stage: test
   tags:
     - unix
     - test
     - calcul
   script:
-    - 'uv run ./tests/tests.py unit'
+    - 'uv run --locked python -m tests unit'
+
+job:test:components:
+  stage: test
+  tags:
+    - unix
+    - test
+    - calcul
+  parallel:
+    matrix:
+      - TEST_SUITE: [steps, statistics]
+  script:
+    - 'uv run --locked python -m tests "$TEST_SUITE"'
 
 job:test:full:
-  stage: perfs
+  stage: test
   only:
     - main
   tags:
@@ -48,45 +61,7 @@ job:test:full:
     - test
     - calcul
   script:
-    - 'uv run ./tests/tests.py integration'
-
-# Uncomment et complet below to enable CD
-# job:deploy:
-#   stage: deploy
-#   tags:
-#     - <HERE> # Add tag here. Tag will be useful to select gitlab-runner
-#   script:
-#     - <HERE> # Add shell command here
-#   only:
-#     - main # Deploy only after push on the main branch
-    
-
-###################
-## PERFORMANCES  ##
-###################
-
-# job:perfs:compute:
-#   stage: perfs
-#   timeout: 24h
-#   tags:
-#     - unix
-#     - calcul
-#   only:
-#     - main
-#   script:
-#     - 'if [ -e "./src/perf_logger/tests_data/history.log" ]; then rm ./src/perf_logger/tests_data/history.log ;fi'
-#     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then cp /home/gitlab-runner/automl_history.log ./src/perf_logger/tests_data/history.log ;fi'
-#     - cp -R /home/gitlab-runner/dont_push /home/gitlab-runner/builds/w-N4hyQH/0/DataScience/automl/src/perf_logger/tests_data/
-#     - 'uv run src/perf_logger/perf_logger.py $CI_COMMIT_SHORT_SHA' # Compute perfs
-#     - 'uv run src/perf_logger/perf_comparator.py' # Compute perfs
-#     - 'if [ -e "/home/gitlab-runner/automl_history.log.old" ]; then rm /home/gitlab-runner/automl_history.log.old ;fi'
-#     - 'if [ -e "/home/gitlab-runner/automl_history.log" ]; then mv /home/gitlab-runner/automl_history.log /home/gitlab-runner/automl_history.log.old ;fi'
-#     - 'cp ./src/perf_logger/tests_data/history.log /home/gitlab-runner/automl_history.log'
-#   artifacts:
-#     expose_as: 'Compute performances of AutoMed'
-#     paths:
-#       - docs
-#       - ./src/perf_logger/tests_data/history.log
+    - 'uv run --locked python -m tests integration'
 
 ###################
 ## DOCUMENTATION ##
@@ -96,10 +71,8 @@ job:docs:create:
   stage: docs
   tags:
     - unix
-  only: 
-    - main
   script:
-    - 'uv run mkdocs build -d public'
+    - 'uv run --locked sphinx-build -W --keep-going -b html docs public'
   artifacts:
     expose_as: 'HTML Static documentation'
     paths:

@@ -1,136 +1,111 @@
-==========
-QuickStart
-==========
-
-Welcome to the IAML QuickStart!
-This guide will help you get up and running with IAML in just a few steps. You'll learn how to train a model, evaluate its performance, and interpret the results using IAML's simple and intuitive API.
+===========
+Quick Start
+===========
 
 Installing IAML
 ===============
-First, ensure that IAML is installed. You can install it using pip:
+
+Use Python 3.10 or newer. From the repository root, install IAML in your
+Python environment:
 
 .. code-block:: bash
 
-    pip install iaml
+    python -m pip install .
 
-Basic Workflow
---------------
-Using IAML to build and evaluate a machine learning model is straightforward. Here's how you can do it:
+For development, ``uv sync --locked`` installs the locked dependencies,
+including the testing and documentation tools.
 
-1. Load your raw dataset.
-2. Create an instance of the IAML framework.
-3. Train the model on your data.
-4. Evaluate the model's performance.
-5. Interpret the results.
+Train and evaluate a candidate
+==============================
 
-Minimal Code
-============
+``IAML.fit`` searches for pipelines and returns trained
+:py:class:`~iaml.candidate.Candidate` objects, ordered by score. Use the first
+candidate to predict and evaluate on data that was held out from the search.
+Pass pandas DataFrames for both features and targets.
 
-IAML is designed for ease of use, enabling you to build and evaluate a machine learning model with just a few lines of code.
+Save this example as ``example.py`` and run ``python example.py`` (or
+``uv run --locked python example.py`` in the development environment):
 
 .. code-block:: python
+
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split
 
     from iaml import IAML
 
-    # Load your data (replace with your dataset)
-    X_train, X_test, y_train, y_test = ...  # Your training and test datasets
 
-    # Train and evaluate the model
-    model = IAML(max_duration=120)  # Optional duration limit
-    model.fit(X_train, y_train)
-    results = model.evaluate(X_test, y_test)
+    def main():
+        data = load_breast_cancer(as_frame=True)
+        X_train, X_test, y_train, y_test = train_test_split(
+            data.data,
+            data.target.to_frame(),
+            test_size=0.2,
+            random_state=42,
+            stratify=data.target,
+        )
 
-    print("Performance Metrics:", results)
+        search = IAML(max_duration=30, max_workers=1)
+        candidates = search.fit(X_train, y_train)
+        best_candidate = candidates[0]
 
-With just a few lines of code:
+        predictions = best_candidate.predict(X_test)
+        print(predictions[:5])
+        print(best_candidate.evaluate(X_test, y_test))
 
-- The dataset is preprocessed.
-- A pipeline is automatically built and optimized.
-- Model performance is evaluated using key metrics.
 
-Basic Customization
+    if __name__ == "__main__":
+        main()
+
+The main guard is needed when worker processes start a new Python interpreter.
+``max_duration`` sets the search budget in seconds; initialization and fitting
+already running candidates can extend the total runtime.
+
+Basic customization
 ===================
-IAML allows you to customize various parameters to better suit your needs. For example:
+
+The default metric depends on the target: balanced accuracy for classification,
+R² for regression, and IPCW concordance for survival. To choose a metric
+explicitly, pass a metric instance:
 
 .. code-block:: python
 
-    model = IAML(
-        main_metric='roc_auc',  # Metric to optimize
-        max_workers=4,          # Number of parallel workers
-        max_duration=300        # Training duration (in seconds)
+    from iaml import IAML, RocAucMetric
+
+    search = IAML(
+        main_metric=RocAucMetric(),
+        max_workers=4,
+        max_duration=300,
     )
 
-    model.fit(X_train, y_train)
+Call ``search.fit`` in the same way as in the complete example. ROC AUC is
+intended for binary classification. See :doc:`usage` and the API reference for
+the other settings.
 
-You can check the API Reference section to explore all IAML parameters.
-For deeper customization, refer to the :ref:`adaptability` page.
+Explain a trained candidate
+===========================
 
-Explainability Features
-=======================
-IAML provides tools to explain model behavior and feature importance. Here's how you can use them:
-
-.. code-block:: python
-
-    candidates = model.fit(X_train, y_train)
-
-    bestmodel = candidates[0]
-
-    # Generate a summary of the pipeline
-    bestmodel.describe_steps()
-    bestmodel.describe_metrics()
-
-    # Perform detailed feature importance analysis
-    explanation = bestmodel.explain_feature_importance(X_test)
-    explanation.to_markdown_shap()
-    explanation.to_markdown_plots()
-
-    # Visualizations (e.g., confusion matrix)
-    bestmodel.explain_model_performance(X_test, y_test)
-
-    # Get scientific references
-    bestmodel.bibliography()
-
-Full example
-============
-Below is a basic example of using IAML to solve a classification problem.
+After training, use ``best_candidate`` from the example above:
 
 .. code-block:: python
 
-    from iaml import IAML
-    from sklearn.model_selection import train_test_split
-    from sklearn.datasets import load_breast_cancer
+    print(best_candidate.describe_steps())
+    print(best_candidate.describe_metrics())
 
-    # Load dataset
-    data = load_breast_cancer(as_frame=True)
-    X, y = data.data, data.target
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    explanation = best_candidate.explain_feature_importance(X_test)
+    print(explanation.to_markdown_shap())
+    print(explanation.to_markdown_plots())
 
-    # Create an IAML instance
-    model = IAML(max_duration=120)
+    plots = best_candidate.explain_model_performance(X_test, y_test)
+    print(best_candidate.bibliography())
 
-    # Train the model
-    candidates = model.fit(X_train, y_train)
-    bestmodel = candidates[0]
+SHAP explanations and performance plots are computed on demand and require
+additional time.
 
-    # Make predictions
-    predictions = bestmodel.predict(X_test)
+Next steps
+==========
 
-    # Evaluate the model
-    results = bestmodel.evaluate(X_test, y_test)
-    print("Performance Metrics:", results)
-
-.. note::
-
-    This is an example for a classification task, but IAML automatically adapts to the input data. The code remains the same for regression tasks.
-
-What's Next?
-============
-
-Explore more advanced features and applications of IAML:
-
-- **Make science with IAML:** Learn how IAML can help you :doc:`create scientific knowledge<scientific>`.
-- **Explore all explainability possibilities:** Fully understand your IAML pipeline in the :ref:`explainability` documentation.
-- **Preprocessing and Feature Engineering:** Discover how IAML handles data cleaning and transformation automatically in the :ref:`architecture` documentation.
-- **Adaptability:** Refer to :ref:`adaptability` to dive deeper into IAML's architecture and learn how to add your own code.
-
-Check out the full documentation for additional details and best practices.
+- :doc:`usage`: training parameters, metrics and predictions.
+- :doc:`architecture`: how IAML constructs and evaluates pipelines.
+- :doc:`explainability`: inspect a trained pipeline and its predictions.
+- :doc:`adaptability`: add components or customize the search.
+- :doc:`scientific`: reporting models and their references.

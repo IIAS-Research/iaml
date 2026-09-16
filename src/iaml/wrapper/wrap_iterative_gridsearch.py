@@ -41,7 +41,10 @@ class WrapIterativeGridSearch(StepWrapper):
 
     @runner
     def run(self, candidate: Candidate) -> list[Candidate]:
-        """Iterative GridSearch
+        """Iterative GridSearch.
+
+        Search numeric parameters as follows::
+
             Numeric values
                 -> First run -> 100% of the value
                 -> Next runs -> +10% and - 10% (100% * modificator value)
@@ -50,7 +53,9 @@ class WrapIterativeGridSearch(StepWrapper):
                     -> Result is worst ? Keep previous result, update modificator
                 -> STOP Conditions ? -> Number of iterations OR no improvement since X interations
             -> Remember the range and then do a dichotomous to find the best parameters
-        Same as basic for the others types
+
+        Use the basic grid search for other parameter types::
+
             Categorical values -> 1 run each
             Boolean values -> Run with True and False
             Other -> keep current value

@@ -235,11 +235,12 @@ class Candidate:
 
     def add_to_pipeline(self, instance: 'Step') -> 'Candidate':
         """Add a Step to prediction Pipeline.
-        instance must implement one of these methods :
-            - transform(X) : Apply column transformations to Dataset.
-            - predict(X) : Predict values with AI model.
-            - resample(X,y) : Apply row transformations to Dataset (will be run just 
-                before prediction).
+
+        The instance must implement one of these methods:
+
+        - ``transform(X)``: Apply column transformations to the dataset.
+        - ``predict(X)``: Predict values with an AI model.
+        - ``resample(X, y)``: Apply row transformations to the training dataset.
         
         :param Step instance: Add a step to the pipeline.
         :return: New Candidate

@@ -1,76 +1,109 @@
 # IAML
 
+IAML (Incremental AutoML) is a Python framework developed by IIAS for building,
+optimizing and explaining machine learning pipelines for tabular data.
 
-AutoML platform developed by IIAS. The aim is to simplify the implementation of Data Scientist projects through the automatic generation and execution of pipelines.
-The data aspect is handled by the Python package development. A web interface will also be developed so that the tool can be used by everyone.
+## Installation
 
-- **Documentation** : __coming_soon__
-
-***
-## 🔧 1 - Installation
-
-### As a project
-
-To install this project, follow these steps:
-
-1. Install Python 3 ([download](https://www.python.org/downloads/))
-2. Install `uv` (the easiest way is to install it globally, outside a virtual environment)
-3. Install dependencies (virtual environment creation is automatic):
-    - With support for Jupyter and mkDocs notebooks, run `uv sync`
-    - Otherwise, run `uv sync --no-dev`
-
-### As a library
-
-Insert one of the following lines in your `requirements.txt` file :
+Use Python 3.10 or later. From a local checkout of this repository, install the
+project and its development tools with [uv](https://docs.astral.sh/uv/):
 
 ```bash
-iaml @ git+ssh://git@github.com:iias_research/iaml
-iaml[cudf] @ git+ssh://git@github.com:iias_research/iaml # Avec cuDF
+uv sync --locked
 ```
 
-***
-## 🚀 2 - How to run
+For runtime dependencies only, use `uv sync --locked --no-dev`.
+To install the library from a local checkout with pip, use `python -m pip install .`.
+The distribution is named `PyIAML`; the Python import is `iaml`.
 
-TODO
+## How to run
 
-### Tests
+Save this example as `example.py` and run it with `uv run --locked python example.py`.
+It uses a dataset bundled with scikit-learn, so no dataset download is needed.
 
-Run all tests:
+```python
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+
+from iaml import IAML
+
+
+def main():
+    X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
+    )
+
+    automl = IAML(max_duration=30, max_workers=1)
+    candidates = automl.fit(X_train, y_train, verbose=0)
+    best_candidate = candidates[0]
+
+    predictions = best_candidate.predict(X_test)
+    scores = best_candidate.evaluate(X_test, y_test)
+    print("Predictions:", predictions[:5])
+    print("Test metrics:", scores)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+`fit` returns a list of fitted `Candidate` objects ordered by performance.
+Prediction and evaluation are methods of a candidate. Keep the `__main__` guard
+when running scripts because training uses multiprocessing. `max_duration` sets
+the search time budget; initialization and final fitting can take additional time.
+
+## Development checks
+
+Install development dependencies with `uv sync --locked`, then run all tests:
 
 ```bash
-python -m tests
+uv run --locked python -m tests
 ```
 
-Run a subset:
+Or run an individual suite:
 
 ```bash
-python -m tests unit
-python -m tests integration
-python -m tests steps
-python -m tests statistics
+uv run --locked python -m tests unit
+uv run --locked python -m tests steps
+uv run --locked python -m tests statistics
+uv run --locked python -m tests integration
 ```
 
-***
-## 💡 3 - General information
+Run the linter:
 
-Directory structure :
+```bash
+uv run --locked pylint --rcfile=.pylintrc src/iaml
+```
 
-- src/scripts/ : Contains python script files
-- notbooks/ : Contains notebooks
-- libs/ : Contains python libraries
-- data/ : Contains database files (git-ignored)
-- assets/ : Contains various SQL, JSON, XML files..
-- docs/ : Contains markdown files for generating documentation
-- tests : Contains unit and integration testing
+CI runs `unit`, `steps` and `statistics` on every branch, plus `integration` on
+`main`. Pylint currently reports existing issues without blocking the pipeline.
 
-***
-## 📌 4 - Tools and packages used
+## Documentation
 
-- MKDOCS version 1.5.3
+The guides in [`docs/`](docs/index.rst) and the API reference are built with Sphinx
+and AutoAPI:
 
-***
-## 💪 5 -  Credits
+```bash
+uv run --locked sphinx-build -W --keep-going -b html docs public
+```
+
+Open `public/index.html` in a browser. CI builds the documentation on every branch
+and keeps the HTML as an artifact; deployment runs only on `main`.
+
+The [component status guide](docs/component_status.rst) lists available and
+experimental components.
+
+## Repository structure
+
+- `src/iaml/`: library, pipeline components, metrics, statistics and plots.
+- `tests/`: unit, component (`steps`), statistics and integration tests.
+- `docs/`: Sphinx configuration and reStructuredText documentation.
+- `local/`: ignored local experiments and data.
+
+## Credits
 
 - Rudy MERIEUX
 - Robin BOURACHOT
 - Hugo RUELLET
+- Youssouf DAHLOUK

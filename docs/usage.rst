@@ -7,11 +7,11 @@ This guide explains, with more details than :doc:`quick_start`, how to use IAML 
 Setup
 =====
 
-Before diving into the specifics, ensure that you have IAML installed:
+From the repository root, install IAML in your Python environment:
 
 .. code-block:: bash
 
-    pip install iaml
+    python -m pip install .
 
 How to Create and Train a Model
 ===============================
@@ -26,15 +26,22 @@ Example:
 
 .. code-block:: python
 
-    from iaml import IAML
+    from iaml import AccuracyMetric, IAML
 
     # Create an IAML instance
-    model = IAML(max_duration=120, main_metric='accuracy')
+    search = IAML(max_duration=120, main_metric=AccuracyMetric(), max_workers=1)
 
     # Train the model
-    model.fit(X_train, y_train)
+    candidates = search.fit(X_train, y_train)
+    model = candidates[0]
 
     # Output: Trained pipeline ready for evaluation and prediction.
+
+The remaining examples use ``model`` for the trained
+:py:class:`~iaml.candidate.Candidate` returned by ``fit``. Features and targets
+are pandas DataFrames; convert a target Series with ``y.to_frame()``. In a
+Python script, place training inside an ``if __name__ == "__main__":`` guard
+as shown in :doc:`quick_start`.
 
 IAML Class Parameters
 ---------------------
@@ -62,13 +69,13 @@ Below is a detailed explanation of the most importants parameters. Please consid
 - **main_metric (Metric, optional):**  
     The primary metric to optimize during training (e.g., accuracy, ROC AUC).
 
-    - **Default:** ``None`` (must be specified).  
-    - **Use Case:** Choose the most relevant metric for your task, such as `'accuracy'` for classification or `'r2'` for regression.
+    - **Default:** ``None`` (selected from the task type).
+    - **Use Case:** Pass a metric instance, such as ``AccuracyMetric()`` for classification or ``R2ScoreMetric()`` for regression. The defaults are balanced accuracy for classification, R² for regression, and IPCW concordance for survival.
 
 
 Fit Parameters
 --------------
-The :py:meth:`~iaml.IAML.fit` method trains pipeline and model on your data. Below are the most useful parameters. Please consider using the API reference to learn the other parameters.
+The :py:meth:`~iaml.iaml.IAML.fit` method trains pipeline and model on your data. Below are the most useful parameters. Please consider using the API reference to learn the other parameters.
 
 - **X (pd.DataFrame):**  
     The input features for training.  
@@ -195,7 +202,7 @@ Example:
 .. code-block:: python
 
     # Perform detailed feature importance analysis
-    explanation = model.explain_feature_importance(X_test, y_test)
+    explanation = model.explain_feature_importance(X_test)
 
     # Generate a Markdown table of the feature importances
     explanation.to_markdown_shap()

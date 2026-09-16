@@ -31,10 +31,12 @@ Here is an example to get started with IAML:
 
    from iaml import IAML
 
-   iaml = IAML()
-   iaml.fit(X_train, Y_train)
-   predictions = iaml.chosen_model.predict(X_test)
+   if __name__ == "__main__":
+       search = IAML(max_duration=30, max_workers=1)
+       candidates = search.fit(X_train, y_train)
+       predictions = candidates[0].predict(X_test)
 
+See :doc:`quick_start` for a complete example with pandas DataFrames.
 For more advanced usage, such as custom metrics or explainability features, refer to the :doc:`usage` section.
 
 Documentation Structure
@@ -43,8 +45,8 @@ Documentation Structure
 - **Quick Start:** Step-by-step guide to start your IAML journey.
 - **Architecture:** Explanation of the modular design and optimization strategy.
 - **IAML for science:** Learn how IAML can help you :doc:`create scientific knowledge<scientific>`.
-- **Explainability:** Fully understand your IAML pipeline in the :ref:`explainability` documentation.
-- **Adaptability:** Refer to :ref:`adaptability` to dive deeper into IAML's architecture and learn how to add your own code.
+- **Explainability:** Fully understand your IAML pipeline in the :doc:`explainability` documentation.
+- **Adaptability:** Refer to :doc:`adaptability` to dive deeper into IAML's architecture and learn how to add your own code.
 - **References:** Detailed citations and additional resources.
 
 How to Cite IAML

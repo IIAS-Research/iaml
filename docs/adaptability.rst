@@ -181,10 +181,10 @@ For example:
 Optimizer
 =========
 
-The **optimizer** is responsible for selecting and optimizing the best-performing candidates in a pipeline. IAML only implements one optimizer, which is based on a genetic algorithm. An :py:class:`~iaml.optimizers.Optimizer` implements the following:
+The **optimizer** is responsible for selecting and optimizing the best-performing candidates in a pipeline. IAML uses a genetic algorithm by default. An :py:class:`~iaml.optimizers.optimizer.Optimizer` implements the following:
 
-1. :py:attr:`~iaml.optimizers.Optimizer.finished`: Whether the optimizer is done running.
-2. :py:meth:`~iaml.optimizers.Optimizer.run`: Receives a list of candidates, optimizes these candidates and returns a new list of candidates.
+1. :py:attr:`~iaml.optimizers.optimizer.Optimizer.finished`: Whether the optimizer is done running.
+2. :py:meth:`~iaml.optimizers.optimizer.Optimizer.run`: Receives a list of candidates, optimizes these candidates and returns a new list of candidates.
 
 Metrics
 =======
@@ -195,7 +195,7 @@ Metrics
 2. :py:meth:`~iaml.metric.Metric.suitable`: Receives the training dataset (both the features and the labels) and the type of target to predict (e.g.: `continuous`, `binary`), and tells whether it is relevant to compute the metric.
 
 Example: Custom Metric
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 This example creates a balanced accuracy metric based on the one of scikit-learn.
 
 .. code-block:: python
@@ -269,7 +269,7 @@ Plots
 2. :py:meth:`~iaml.plot.Plot.suitable`: Receives the type of target to predict (e.g.: `continuous`, `binary`), and tells whether it is relevant to generate the plot.
 
 Example: Custom Metric Plot
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 This example creates a metric plot which generates the ROC curve.
 
 .. code-block:: python
