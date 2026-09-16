@@ -1,11 +1,14 @@
 """Tests for ActXGBoostRegressor step."""
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
+from xgboost import XGBRegressor
 
 from .step_test_case import StepTestCase
 from iaml.actionables.predictors.regressor.act_xgboost_regressor import (
     ActXGBoostRegressor,
 )
+from iaml.actionables.predictors.regressor.act_gboost_regressor import ActGBoostRegressor
 
 
 class TestActXGBoostRegressor(StepTestCase):
@@ -25,45 +28,67 @@ class TestActXGBoostRegressor(StepTestCase):
         step.configure({"n_estimators": 5, "max_depth": 2, "random_state": 7})
         dataset = self.make_dataset(df, y)
 
-        result = self.fit_step(step, dataset)
+        result = step.fit(dataset)
 
         self.assertIs(result, step)
         self.assertIsNotNone(step.model)
-        self.assertIsInstance(step.model, GradientBoostingRegressor)
+        self.assertIsInstance(step.model, XGBRegressor)
+        self.assertEqual(step.model.get_booster().num_boosted_rounds(), 5)
 
         predictions = step.predict(df)
         self.assertEqual(len(predictions), len(df))
+        self.assertTrue(np.isfinite(predictions).all())
 
     def test_configuration_passthrough(self) -> None:
         df = self._make_features()
         y = [1.6, 1.4, 1.2, 1.0, 0.8, 0.6, 0.4, 0.2]
         step = ActXGBoostRegressor()
-        step.configure(
-            {
-                "learning_rate": 0.25,
-                "loss": "huber",
-                "criterion": "squared_error",
-                "max_depth": 3,
-                "min_samples_leaf": 2,
-                "min_samples_split": 4,
-                "max_features": 0.5,
-                "n_estimators": 7,
-                "random_state": 11,
-            }
-        )
+        parameters = {
+            "learning_rate": 0.25,
+            "max_depth": 3,
+            "min_child_weight": 2.0,
+            "subsample": 0.75,
+            "colsample_bytree": 0.5,
+            "n_estimators": 7,
+            "random_state": 11,
+        }
+        step.configure(parameters)
         dataset = self.make_dataset(df, y)
 
-        self.fit_step(step, dataset)
+        step.fit(dataset)
 
-        self.assertAlmostEqual(step.model.learning_rate, 0.25)
-        self.assertEqual(step.model.loss, "huber")
-        self.assertEqual(step.model.criterion, "squared_error")
-        self.assertEqual(step.model.max_depth, 3)
-        self.assertEqual(step.model.min_samples_leaf, 2)
-        self.assertEqual(step.model.min_samples_split, 4)
-        self.assertAlmostEqual(step.model.max_features, 0.5)
-        self.assertEqual(step.model.n_estimators, 7)
-        self.assertEqual(step.model.random_state, 11)
+        actual = step.model.get_params()
+        for name, value in parameters.items():
+            with self.subTest(parameter=name):
+                self.assertEqual(actual[name], value)
+        self.assertEqual(actual["objective"], "reg:squarederror")
+        self.assertEqual(actual["tree_method"], "hist")
+        self.assertEqual(actual["n_jobs"], 1)
+        self.assertEqual(step.model.get_booster().num_boosted_rounds(), 7)
+
+    def test_default_configuration_uses_xgboost(self) -> None:
+        df = self._make_features()
+        dataset = self.make_dataset(df, [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6])
+        step = ActXGBoostRegressor()
+
+        step.fit(dataset)
+
+        self.assertIsInstance(step.model, XGBRegressor)
+        self.assertEqual(step.model.get_booster().num_boosted_rounds(), 100)
+        self.assertTrue(np.isfinite(step.predict(df)).all())
+
+    def test_gboost_remains_a_distinct_backend(self) -> None:
+        df = self._make_features()
+        dataset = self.make_dataset(df, [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6])
+        xgboost = ActXGBoostRegressor()
+        gradient_boosting = ActGBoostRegressor()
+        for step in (xgboost, gradient_boosting):
+            step.configure({"n_estimators": 5, "max_depth": 2})
+            step.fit(dataset)
+
+        self.assertIsInstance(xgboost.model, XGBRegressor)
+        self.assertIsInstance(gradient_boosting.model, GradientBoostingRegressor)
+        self.assertFalse(np.allclose(xgboost.predict(df), gradient_boosting.predict(df)))
 
     def test_suitable_target_types(self) -> None:
         df = pd.DataFrame({"f1": [0, 1, 2, 3], "f2": [1, 0, 1, 0]})

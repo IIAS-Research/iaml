@@ -101,6 +101,29 @@ saved wrapper, supply it again with
 The normal IAML optimisation workflow can instead use ``GeneticOptimizer``,
 which receives candidates scored by IAML.
 
+XGBoost
+-------
+
+``ActXGBoost`` and ``ActXGBoostRegressor`` use the real XGBoost estimators,
+``XGBClassifier`` and ``XGBRegressor``. XGBoost is a required dependency.
+``ActGBoostRegressor`` remains available as the separate scikit-learn
+gradient boosting implementation.
+
+Both XGBoost components expose ``n_estimators``, ``max_depth``, ``learning_rate``,
+``subsample``, ``colsample_bytree``, ``min_child_weight`` and ``random_state``.
+They use histogram-based trees and one thread per estimator, since IAML
+already evaluates candidates in parallel. Regression uses squared-error loss;
+classification selects the binary or multiclass objective from the target.
+The classifier preserves the original labels in predictions and ``classes_``;
+probability columns follow that same order. Multilabel targets are not supported
+by this adapter.
+
+Configurations saved with the previous scikit-learn implementation must be
+updated: ``loss``, ``criterion``, ``min_samples_leaf``, ``min_samples_split``
+and ``max_features`` are no longer XGBoost configuration keys. See the
+`XGBoost parameter reference <https://xgboost.readthedocs.io/en/release_3.0.0/parameter.html>`_
+for the meaning of the new parameters.
+
 Survival gradient boosting
 --------------------------
 

@@ -37,6 +37,7 @@ dependencies = [
     "yellowbrick>=1.5",
     "scikit-optimize>=0.10.2",
     "miceforest>=6.0.3",
+    "xgboost>=3.0.5",
 ]
 
 [dependency-groups]
