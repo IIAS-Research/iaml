@@ -1,4 +1,8 @@
-"""[STEP] Decompose features with PolynomialFeatures"""
+"""Experimental polynomial expansion, available only through an explicit import.
+
+Unbounded output dimensionality can exhaust memory during automatic exploration.
+Kept outside the default preprocessing stage; see docs/component_status.rst.
+"""
 import textwrap
 import pandas as pd
 from sklearn.preprocessing import PolynomialFeatures
@@ -16,7 +20,7 @@ def _is_numeric_matrix(values: pd.DataFrame) -> bool:
     return not values.isna().any().any()
 
 
-@is_step('features_preprocessing')
+@is_step('experimental')
 class ActPolynomialFeatures(Actionable):
     """[STEP] Preprocess with PolynomialFeatures"""
 

@@ -7,8 +7,7 @@ from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
-# @is_step('predictor', 'tabular', 'regressor')
-@is_step('disabled')
+@is_step('predictor', 'tabular', 'regressor')
 class ActHistGradientBoostingRegressor(Predictor):
     """[STEP] HistGradient Boosting Regressor"""
 
@@ -52,7 +51,7 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'description': 'If loss is “quantile”, this parameter specifies which quantile to \
                     be estimated and must be between 0 and 1.',
                 'default': 0.5,
-                'range': [0.1, 1.0]
+                'range': [0.1, 0.99]
                 },
             'learning_rate': {
                 'description': 'The learning rate, also known as shrinkage.',

@@ -1,70 +1,21 @@
 """Tests for ActStandardScaler."""
-import sys
-from pathlib import Path
-import types
-import unittest
-
 import pandas as pd
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SRC_PATH = PROJECT_ROOT / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.append(str(SRC_PATH))
+from iaml import ActStandardScaler, Candidate, Step
+from iaml.decorators.is_step import find_steps_by_tag
+from .step_test_case import StepTestCase
 
 
-def _load_step():
-    # Avoid importing iaml/__init__.py and actionables/__init__.py during tests.
-    stubs = {}
-
-    def _stub_package(name: str, path: Path) -> None:
-        stubs[name] = sys.modules.get(name)
-        if stubs[name] is None:
-            module = types.ModuleType(name)
-            module.__path__ = [str(path)]
-            sys.modules[name] = module
-
-    _stub_package("iaml", SRC_PATH / "iaml")
-    _stub_package("iaml.actionables", SRC_PATH / "iaml" / "actionables")
-    _stub_package("iaml.actionables.normalize", SRC_PATH / "iaml" / "actionables" / "normalize")
-
-    candidate_prev = sys.modules.get("iaml.candidate")
-    if candidate_prev is None:
-        candidate_module = types.ModuleType("iaml.candidate")
-
-        class Candidate:
-            pass
-
-        candidate_module.Candidate = Candidate
-        sys.modules["iaml.candidate"] = candidate_module
-
-    try:
-        from .step_test_case import StepTestCase
-        from iaml.actionables.normalize.act_standard_scaler import ActStandardScaler
-
-        return StepTestCase, ActStandardScaler
-    finally:
-        for name, module in stubs.items():
-            if module is None:
-                sys.modules.pop(name, None)
-            else:
-                sys.modules[name] = module
-        if candidate_prev is None:
-            sys.modules.pop("iaml.candidate", None)
-
-
-SKIP_REASON = None
-try:
-    StepTestCase, ActStandardScaler = _load_step()
-except ModuleNotFoundError as exc:
-    if exc.name and exc.name.startswith("iaml"):
-        raise
-    SKIP_REASON = f"Missing optional dependency: {exc.name}"
-    StepTestCase = unittest.TestCase
-    ActStandardScaler = None
-
-
-@unittest.skipIf(SKIP_REASON is not None, SKIP_REASON)
 class TestActStandardScaler(StepTestCase):
+    def test_normal_import_registers_a_serializable_step(self) -> None:
+        step = ActStandardScaler()
+
+        self.assertIn(ActStandardScaler, find_steps_by_tag("normalize"))
+        self.assertEqual(step.tags, {"normalize"})
+        restored = Step.from_pipeline(step.json_pipeline())
+        self.assertIsInstance(restored, ActStandardScaler)
+        self.assertTrue(restored.enable)
+
     def test_scales_numeric_columns_only(self) -> None:
         df = pd.DataFrame(
             {
@@ -126,3 +77,26 @@ class TestActStandardScaler(StepTestCase):
 
         expected = pd.DataFrame({"city": ["paris", "lyon"], "code": ["a", "b"]})
         self.assertFrameEqual(result, expected)
+
+    def test_run_builds_a_pipeline_that_reuses_training_statistics(self) -> None:
+        train = pd.DataFrame({"age": [0.0, 10.0], "city": ["a", "b"]})
+        candidate = Candidate(self.make_dataset(train, [0, 1]))
+        step = ActStandardScaler()
+
+        outputs = step.run(candidate)
+
+        self.assertEqual(len(outputs), 1)
+        # The runner decorator wraps Step.run's Candidate return value in a list.
+        result = outputs[0]  # pylint: disable=unsubscriptable-object
+        self.assertFrameEqual(
+            result.dataset.X,
+            pd.DataFrame({"age": [-1.0, 1.0], "city": ["a", "b"]}),
+        )
+        self.assertEqual(len(result.pipeline.transformers), 1)
+        self.assertIsInstance(result.pipeline.transformers[0][1], ActStandardScaler)
+
+        new = pd.DataFrame({"age": [5.0, 15.0], "city": ["c", "d"]})
+        self.assertFrameEqual(
+            result.pipeline.transform(new),
+            pd.DataFrame({"age": [0.0, 2.0], "city": ["c", "d"]}),
+        )

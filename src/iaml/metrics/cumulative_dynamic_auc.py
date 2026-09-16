@@ -1,4 +1,9 @@
-"""[METRIC] Cumulative Dynamic AUC for Survival Models"""
+"""Experimental cumulative AUC implementation for explicit manual investigation.
+
+The current implementation passes survival probabilities where risk scores are
+required, and its time grid and aggregation need validation. Importing this module
+must not activate the metric in AutoML. See docs/component_status.rst.
+"""
 from typing import Any
 import textwrap
 import pandas as pd
@@ -71,7 +76,8 @@ class CumulativeDynamicAUCMetric(Metric):
         return 'predict_survival_function'
 
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
-        return type_of_target == 'survival'
+        """Keep this unvalidated implementation outside automatic metric selection."""
+        return False
 
     def compute(
         self,

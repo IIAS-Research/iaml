@@ -12,7 +12,6 @@ from .act_split_date import ActSplitDate
 from .act_word2vec import ActWord2Vec
 from .act_mice import ActMICEForestImputer
 from .act_simple_imputer import ActSimpleImputer
-# from .act_encode_target_column import ActCategoryStringToNumeric
 from .act_knn_imputer import ActKNNImputer
 from .act_categorical_imputer import ActCategoricalImputer
 from .act_rare_category_grouper import ActRareCategoryGrouper

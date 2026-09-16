@@ -67,6 +67,10 @@ ActAalenAdditiveFitter = _import_step()
 
 
 class TestActAalenAdditiveFitter(StepTestCase):
+    def test_adapter_stays_outside_automatic_prediction(self) -> None:
+        step = ActAalenAdditiveFitter()
+        self.assertEqual(step.tags, {'experimental'})
+
     def _make_survival_dataset(self) -> tuple[pd.DataFrame, list[tuple[bool, float]]]:
         X = pd.DataFrame(
             {

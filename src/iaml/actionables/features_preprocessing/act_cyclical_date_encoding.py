@@ -1,4 +1,9 @@
-"""[STEP] Encode date columns with cyclical sine/cosine features."""
+"""Manual cyclical date encoding, available only through an explicit module import.
+
+Date conversion and cleaning precede automatic feature preprocessing, so this
+component needs an explicit position while datetime columns are still available.
+See docs/component_status.rst.
+"""
 import textwrap
 import numpy as np
 import pandas as pd
@@ -9,7 +14,7 @@ from ...data_type import DataType
 from ...decorators.all import is_step
 
 
-@is_step('features_preprocessing')
+@is_step('experimental')
 class ActCyclicalDateEncoding(Actionable):
     """[STEP] Encode date columns with cyclical sine/cosine features."""
 

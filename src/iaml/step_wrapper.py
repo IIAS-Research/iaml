@@ -14,7 +14,8 @@ class StepWrapper(Step):
     """
     _usage = "Use when you need a minimal wrapper around exactly one child step for delegation. Applicable to any dataset and single-step pipelines. Avoid when Actionable or MetaStep provides the intended behavior."
 
-    def __init__(self, step: Step):
+    def __init__(self, step: Step, **kwargs):  # pylint: disable=unused-argument
+        # is_step forwards subclass constructor options through every parent.
         self.step: Step = step
         """The step to wrap"""
 
@@ -30,7 +31,7 @@ class StepWrapper(Step):
             raise TypeError('invalid pipeline: StepWrapper must have exactly one child')
 
         child = Step.from_pipeline(pipeline['children'][0])
-        step = super().from_pipeline(pipeline, child)
+        step = super().from_pipeline(pipeline, child, *args, **kwargs)
 
         return step
 

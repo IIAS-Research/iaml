@@ -1,4 +1,9 @@
-"""[STEP] Aalen's Additive Model for Survival Analysis"""
+"""Experimental Aalen adapter, available only through an explicit module import.
+
+Requires the optional, undeclared lifelines dependency. Parameter forwarding and
+the time-by-sample hazard output do not implement IAML's predictor contract yet.
+Excluded from automatic model selection; see docs/component_status.rst.
+"""
 import textwrap
 from typing import Any
 from lifelines import AalenAdditiveFitter
@@ -10,8 +15,7 @@ from ....dataset import Dataset
 from ....decorators.all import is_step
 
 
-# @is_step('predictor', 'tabular', 'survival')
-@is_step('disabled')
+@is_step('experimental')
 class ActAalenAdditiveFitter(Predictor):
     """[STEP] Aalen's Additive Model for Survival Analysis"""
 

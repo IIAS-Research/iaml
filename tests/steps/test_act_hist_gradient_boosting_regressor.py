@@ -74,3 +74,14 @@ class TestActHistGradientBoostingRegressor(StepTestCase):
 
         self.assertTrue(step.suitable(continuous))
         self.assertFalse(step.suitable(categorical))
+
+    def test_quantile_search_bounds_support_real_fit(self) -> None:
+        df = self._make_features()
+        dataset = self.make_dataset(df, [value * 0.1 for value in range(len(df))])
+        bounds = ActHistGradientBoostingRegressor().configuration['quantile']['range']
+        for quantile in bounds:
+            with self.subTest(quantile=quantile):
+                step = ActHistGradientBoostingRegressor()
+                step.configure({'loss': 'quantile', 'quantile': quantile})
+                step.fit(dataset)
+                self.assertEqual(len(step.predict(df)), len(df))

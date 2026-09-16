@@ -6,9 +6,9 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...data_type import DataType
+from ...decorators.all import is_step
 
-# TODO Fix this step
-# @is_step('normalize')
+@is_step('normalize')
 class ActStandardScaler(Actionable):
     """[STEP] Standard Scaler"""
 
