@@ -8,6 +8,8 @@ credentials.yml
 */dont_push/*
 *.log
 catboost_info/
+/generate_errors/
+/generate_step_errors/
 
 # Python
 __pycache__
