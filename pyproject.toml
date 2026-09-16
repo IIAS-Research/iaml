@@ -32,7 +32,6 @@ dependencies = [
     "rich>=13.8.1",
     "scikit-learn>=1.5.2",
     "shap==0.47.1",
-    "tpot>=0.12.2",
     "scikit-survival>=0.23.0",
     "psutil>=6.0.0",
     "yellowbrick>=1.5",
