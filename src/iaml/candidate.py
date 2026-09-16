@@ -32,6 +32,8 @@ class Candidate:
     :param IAMLPipeline, optional iaml_pipeline: Pipeline being built. Default to None.
     :param list, optional stacked_path: Stack of all steps used to build this Candidate.
         Default to None.
+    :param main_metric: Metric or metric name used to rank candidates.
+        If None, use the default metric for the task.
     """
 
     def __init__(
@@ -40,7 +42,7 @@ class Candidate:
         metrics: list[Metric] = None,
         iaml_pipeline: IAMLPipeline = None,
         stacked_path: list = None,
-        main_metric: 'Metric' = None) -> None:
+        main_metric: Metric | str | None = None) -> None:
 
         self.dataset: Dataset = dataset
         """Dataset used for this candidate"""
@@ -155,7 +157,7 @@ class Candidate:
         dataset: Dataset = None,
         metrics: list[Metric] = None,
         iaml_pipeline: IAMLPipeline = None) -> 'Candidate':
-        """Create a copy of current instance and assign parameters values to attributes 
+        """Create a copy of the current instance, preserving its ranking metric.
 
         :param Dataset, optional dataset: Replace current dataset. Defaults to None.
         :param Metric, optional metrics: Replace current metrics. Defaults to None.
@@ -218,7 +220,8 @@ class Candidate:
             dataset,
             metrics or copy(self.metrics),
             iaml_pipeline=iaml_pipeline,
-            stacked_path=self.stacked_path)
+            stacked_path=self.stacked_path,
+            main_metric=self.main_metric)
 
     def to_input(self,
                 dataset: Dataset = None,
@@ -680,9 +683,10 @@ class Candidate:
         return self.pipeline.predict(X)
 
     def predict_proba(self, X: pd.DataFrame) -> list:
-        """Run all the steps to predict labels from candidate data
+        """Run all pipeline steps to predict class probabilities.
 
         :param pd.DataFrame X: Features used as candidate of the pipeline.
-        :return: Predicted values
+        :return: Class probabilities in the predictor's class order.
+        :raise AttributeError: The model does not support probability predictions.
         """
-        return self.pipeline.predict(X)
+        return self.pipeline.predict_proba(X)
