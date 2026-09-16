@@ -13,7 +13,7 @@ import time
 import math
 import textwrap
 import multiprocessing
-from typing import Iterator, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
@@ -31,7 +31,6 @@ from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
 from .meta_partial_explorer_step import MetaPartialExplorerStep
 from .optimizers import Optimizer, GeneticOptimizer, RandomOptimizer, BayesianOptimizer
-from .meta_predictor import MetaPredictor
 from .predictor import Predictor
 from .logger import Logger
 from .plot import StatisticPlot
@@ -61,7 +60,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     :param int, optional max_workers: Maximum parallel workers. Default to cpu count.
     :param int, optional max_stage_duration: Maximum duration of a stage. Default to None.
-    :param bool, optional metalearner: Use a metalearner. Default to None.
     :param callable, optional splitter: Split function to use. Default to kfold_splitter.
     :param int, optional max_duration: Maximum training duration. Default to -1.
     :param int | str, optional time_before_sample_use: Time before we use sampled data. 
@@ -76,7 +74,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self,
         max_workers: int = None,
         max_stage_duration: int = None,
-        metalearner: bool = None,
         splitter: callable = None,
         max_duration: int = -1,
         time_before_sample_use: int | str = None,
@@ -91,9 +88,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.preprocessor: bool = preprocessor
         """Enable / Disable preprocessor"""
 
-        self.metalearner: bool = metalearner
-        """Enable / Disable Meta Learner"""
-        
         self.optimizer = optimizer
         """Choose Optimizer"""
         
@@ -108,16 +102,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         self._training_history_seen: set[tuple[Any, ...]] = set()
         """Deduplicate audit records across warmup, cache hits, and repeated evaluations."""
-
-        # if metalearner is None:
-        #     if max_duration < 500 and max_duration != -1:
-        #         Logger().warning("Max duration under 500 seconds : \
-        #             Meta learner are disabled (you can enable it, \
-        #             with the parameter 'metalearner')")
-        #         self.metalearner = False
-        #     else:
-        #         self.metalearner = True
-        metalearner = False # Disable -> In this version, metalearner have bad results ?
 
         # Set max duration of each stage
         if max_stage_duration is None:
@@ -730,7 +714,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return None
         context = hash_evaluation_context(
             candidate.pipeline.fingerprint(), candidate.metrics, candidate.main_metric,
-            candidate.is_meta, self.keep_training_history,
+            self.keep_training_history,
         )
         if context is None:
             return None
@@ -840,15 +824,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             # Generate new candidates
             generated_candidates = optimizer.run(previous_candidates)
 
-            if self.metalearner:
-                # Generate metapredictor
-                if len(generated_candidates) > 1:
-                    for metapredictor in self.__meta_predictor_iter(dataset.type_of_target):
-                        meta_candidate: MetaPredictor = metapredictor(
-                            [candidate for candidate in generated_candidates if not candidate.is_meta][0:5]
-                            ).to_candidate()
-                        generated_candidates.append(meta_candidate)
-
             Logger().info(f'Finetuning... \
                 stage={iterations_count} \
                 candidates={len(generated_candidates)} \
@@ -911,17 +886,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             if metric.suitable(X, y, type_of_target):
                 metrics.append(metric)
         return metrics
-
-    def __meta_predictor_iter(self, type_of_target: str) -> Iterator[Predictor]:
-        """Yield list of suitable predictors
-        
-        :param str type_of_target: type of label. Example : continuous, binary
-        :return: Iterator of Predictor
-        """
-        for subclass in MetaPredictor.__subclasses__():
-            # Verify if a subclass is suitable or not
-            if subclass.suitable(type_of_target):
-                yield subclass
 
     def __apply_minimal_preprocessing(self, candidate: Candidate) -> Candidate:
         """Ensure minimalist candidates have a basic imputer in their pipeline."""

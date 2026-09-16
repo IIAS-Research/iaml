@@ -86,7 +86,7 @@ class IAMLPipeline(Pipeline):
 
     @property
     def _estimator_type(self) -> str:
-        """Needed because used by Scikit-learn metalearner
+        """Expose the estimator type to scikit-learn.
         
         :return: estimator type.
         """
@@ -94,7 +94,7 @@ class IAMLPipeline(Pipeline):
 
     @property
     def estimator_type(self) -> str:
-        """Needed because used by Scikit-learn metalearner (yes also without "_" ...)
+        """Return the estimator type configured for this pipeline.
         
         :return: estimator type.
         """

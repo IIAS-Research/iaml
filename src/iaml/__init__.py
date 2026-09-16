@@ -21,7 +21,6 @@ from .metric import Metric
 from .plot import Plot, StatisticPlot
 from .statistic import Statistic
 from .cache import Cache
-from .meta_predictor import MetaPredictor
 from .void_step import VoidStep
 
 from .meta_ordered_step import MetaOrderedStep
@@ -48,9 +47,6 @@ from .stack import Stack
 
 # Optimizer
 from .optimizers import *
-
-# Meta predictors
-from .meta_predictors import *
 
 # Type of target
 from .type_of_target import type_of_target

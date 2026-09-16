@@ -73,7 +73,7 @@ class ActSVMSVC(Predictor):
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         self.model = svm.SVC(
-            probability = True, # Needed to predict_proba (thus MetaLearner)
+            probability = True, # Enable predict_proba.
             **self.passthrough_parameters()
             )
         self.model.fit(dataset.X, dataset.y)

@@ -80,9 +80,6 @@ class Candidate:
         self.stacked_path: list = copy(stacked_path) if stacked_path is not None else []
         """Stack of all steps used to build this Candidate"""
 
-        self.is_meta: bool = False
-        """Whether it's a meta candidate or not"""
-
     def add_stack(self, stack: 'Step') -> None:
         """Add a step to the stack
 
@@ -397,7 +394,7 @@ class Candidate:
         self.training_audit = None
 
         splitter_fingerprint = (
-            hash_evaluation_context(splitter) if cache_split and not self.is_meta else None
+            hash_evaluation_context(splitter) if cache_split else None
         )
         cache_key = (
             f"splits_{self.fingerprint()}_{splitter_fingerprint}"
@@ -416,15 +413,12 @@ class Candidate:
             copied_pipe = deepcopy(self.pipeline)
 
             try:
-                if self.is_meta:
-                    copied_pipe.fit(train_ds.X, train_ds.y)
-                else:
-                    # Fit in two step to allow caching
-                    if not from_cache:
-                        train_ds = train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
-                        test_ds = test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
+                # Fit in two steps to allow caching.
+                if not from_cache:
+                    train_ds = train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
+                    test_ds = test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
 
-                    copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
+                copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
             except (ValueError, np.linalg.LinAlgError) as exc:
                 Logger().warning(
                     f"Skip candidate {self._pipeline_signature()} after training failure: {exc!r}"
@@ -446,7 +440,7 @@ class Candidate:
                     pipeline=copied_pipe,
                     X_train=train_ds.X,
                     y_train=train_ds.y,
-                    model_only= not self.is_meta)
+                    model_only=True)
                 metrics.append(fold_result)
                 if store_audit:
                     fold_metrics.append(
