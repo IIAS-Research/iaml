@@ -1,4 +1,7 @@
 """[WRAPPER] Wrap a step to apply Grid Search configuration parameters"""
+from copy import deepcopy
+from itertools import product
+
 from ..step_wrapper import StepWrapper
 from ..candidate import Candidate
 from ..decorators.all import is_step, runner
@@ -27,7 +30,7 @@ class WrapBasicGridSearch(StepWrapper):
         to_explore = {}
 
         for key, item in self.step.configuration.items():
-            if key in self.to_avoid:
+            if key in self.to_avoid or item.get('no_gridsearch'):
                 continue
 
             if 'categorical' in item.keys(): # Categorical
@@ -35,10 +38,8 @@ class WrapBasicGridSearch(StepWrapper):
             elif type(item['value']) in [int, float]: # Numeric
                 current_value = item['value']
 
-                # pylint: disable=cell-var-from-loop
-                tmp = map(lambda x: x*current_value, \
-                    [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]\
-                )
+                tmp = [factor * current_value for factor in
+                       [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]]
 
                 # Keep int
                 if isinstance(item['value'], int):
@@ -46,37 +47,22 @@ class WrapBasicGridSearch(StepWrapper):
 
                 # Check range
                 if 'range' in item.keys():
-                    tmp = filter(lambda x: item['range'][0] >= x <= item['range'][1], tmp)  # pylint: disable=cell-var-from-loop
+                    lower, upper = item['range']
+                    tmp = [value for value in tmp
+                           if (lower is None or lower <= value)
+                           and (upper is None or value <= upper)]
 
-                to_explore[key] = set(tmp)
+                to_explore[key] = list(dict.fromkeys(tmp))
 
             elif isinstance(item['value'], bool): # Bool
                 to_explore[key] = [True, False]
             else: # Other
                 to_explore[key] = [item['value']]
 
-        candidates = self.__recursive_run(candidate, to_explore)
-
+        candidates = []
+        for values in product(*to_explore.values()):
+            step = deepcopy(self.step)
+            step.configure(dict(zip(to_explore, values)))
+            results = step.run(candidate.to_output())
+            candidates.extend([results] if isinstance(results, Candidate) else results)
         return candidates
-
-    def __recursive_run(self, candidate: Candidate, to_explore: dict) -> Candidate:
-        """Run recursively
-        
-        :param Candidate candidate: Candidate to run recursive.
-        :param dict to_explore: Path to explore.
-        :return: New Candidate.
-        """
-        if any(list(to_explore.keys())):
-            results = []
-            key = list(to_explore.keys())[0]
-            values = to_explore[key]
-
-            del to_explore[key]
-
-            for value in values:
-                self.step.configure(key, value)
-                candidate = self.__recursive_run(candidate, to_explore)
-                results = results + ([candidate] if isinstance(candidate, Candidate) else candidate)
-
-            return results
-        return self.step.run(candidate)
