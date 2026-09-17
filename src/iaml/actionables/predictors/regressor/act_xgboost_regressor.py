@@ -2,6 +2,7 @@
 import textwrap
 from typing import Any
 from xgboost import XGBRegressor
+from .._xgboost import xgboost_features
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
@@ -78,8 +79,16 @@ class ActXGBoostRegressor(Predictor):
             tree_method='hist',
             n_jobs=1,
         )
-        self.model.fit(dataset.X, dataset.y)
+        self.model.fit(xgboost_features(dataset.X), dataset.y)
         return self
+
+    def predict(self, X):
+        """Predict values using XGBoost-safe feature names."""
+        return super().predict(xgboost_features(X))
+
+    def score(self, X, y, sample_weight=None):
+        """Compute R² using XGBoost-safe feature names."""
+        return super().score(xgboost_features(X), y, sample_weight=sample_weight)
 
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']

@@ -7,6 +7,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.multiclass import check_classification_targets
 from xgboost import XGBClassifier
 
+from .._xgboost import xgboost_features
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
@@ -83,8 +84,16 @@ class ActXGBoost(Predictor):
         self.model = XGBClassifier(
             n_jobs=1, tree_method='hist', **self.passthrough_parameters()
         )
-        self.model.fit(dataset.X, encoded_target)
+        self.model.fit(xgboost_features(dataset.X), encoded_target)
         return self
+
+    def predict(self, X):
+        """Predict original class labels using XGBoost-safe feature names."""
+        return super().predict(xgboost_features(X))
+
+    def predict_proba(self, X):
+        """Predict class probabilities using XGBoost-safe feature names."""
+        return super().predict_proba(xgboost_features(X))
 
     @property
     def classes_(self):
