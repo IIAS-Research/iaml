@@ -334,8 +334,11 @@ class Dataset:
         :return  Type of the columns.
         """
         column_value = self.X[column_name]
+        dtype = column_value.dtype
         detected: DataType = None
-        if column_value.dtype == object:
+        if isinstance(dtype, pd.CategoricalDtype) or pd.api.types.is_bool_dtype(dtype):
+            detected = DataType.CATEGORICAL
+        elif pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(dtype):
             if len(column_value) == 0:
                 detected = DataType.CATEGORICAL
             else:
@@ -347,12 +350,12 @@ class Dataset:
                     detected = DataType.SHORT_TEXT
                 else:
                     detected = DataType.TEXT
-        elif np.issubdtype(column_value.dtype, np.number):
+        elif pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_timedelta64_dtype(dtype):
             detected = DataType.NUMERIC
-        elif np.issubdtype(column_value.dtype, np.datetime64):
+        elif pd.api.types.is_datetime64_any_dtype(dtype):
             detected = DataType.DATE
 
-        return column_value.dtype, detected
+        return dtype, detected
 
     @property
     def needed_estimator(self) -> str:
