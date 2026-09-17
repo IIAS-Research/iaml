@@ -1,5 +1,7 @@
 """[STEP] Impute missing values with MICE (miceforest/LightGBM)"""
+from copy import deepcopy
 import os
+import pickle
 import textwrap
 import pandas as pd
 import numpy as np
@@ -30,7 +32,12 @@ except Exception:
 
 @is_step('cleaning')
 class ActMICEForestImputer(Actionable):
-    """[STEP] Impute missing values with MICE (miceforest/LightGBM)."""
+    """[STEP] Impute missing values with MICE (miceforest/LightGBM).
+
+    Copies and serialized steps retain fitted state without rebuilding models.
+    Accessing ``kernel`` or transforming data restores a private kernel; refitting
+    replaces that state directly.
+    """
 
     name: str = 'Impute missing values (MICE - miceforest)'
     _description: str = textwrap.dedent('''\
@@ -45,7 +52,8 @@ class ActMICEForestImputer(Actionable):
 
     def __init__(self):
         self.columns: list[str] = None
-        self.kernel: mf.ImputationKernel | None = None
+        self._kernel: mf.ImputationKernel | None = None
+        self._kernel_snapshot: bytes | None = None
         self._nan_stats: dict[str, tuple[int, int, float]] = {}
         self._all_nan_cols: list[str] = []
         self._prefill_values: dict[str, object] = {}
@@ -69,6 +77,52 @@ class ActMICEForestImputer(Actionable):
             }
         }
         self._n_jobs = self._detect_parallel_jobs()
+
+    @property
+    def kernel(self) -> mf.ImputationKernel | None:
+        """Restore a private kernel only when this copy needs its fitted state."""
+        snapshot = self._kernel_snapshot
+        if snapshot is not None:
+            self._kernel = pickle.loads(snapshot)
+            # A live kernel can mutate, so its previous snapshot must not be reused.
+            self._kernel_snapshot = None
+        return self._kernel
+
+    @kernel.setter
+    def kernel(self, value: mf.ImputationKernel | None) -> None:
+        self._kernel = value
+        self._kernel_snapshot = None
+
+    def __getstate__(self) -> dict:
+        """Transport fitted state without rebuilding Parquet tables or LightGBM models."""
+        state = self.__dict__.copy()
+        kernel = state.pop('_kernel')
+        if kernel is not None:
+            state['_kernel_snapshot'] = pickle.dumps(kernel, protocol=pickle.HIGHEST_PROTOCOL)
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        state = state.copy()
+        # Previously saved steps stored the live kernel directly as a public attribute.
+        kernel = state.pop('kernel', None)
+        self.__dict__.update(state)
+        self._kernel = kernel
+        self._kernel_snapshot = state.get('_kernel_snapshot')
+
+    def __deepcopy__(self, memo: dict) -> 'ActMICEForestImputer':
+        copied = type(self).__new__(type(self))
+        memo[id(self)] = copied
+        state = {}
+        for key, value in self.__getstate__().items():
+            # Preserve Step's treatment of runtime references and caches.
+            if key == 'candidate':
+                state[key] = None
+            elif key == 'caches':
+                state[key] = []
+            else:
+                state[key] = deepcopy(value, memo)
+        copied.__setstate__(state)
+        return copied
 
     # --- helpers -----------------------------------------------------------------
     def _select_columns(self, df: pd.DataFrame) -> list[str]:
@@ -94,6 +148,8 @@ class ActMICEForestImputer(Actionable):
 
     # --- core API ----------------------------------------------------------------
     def fit(self, dataset: Dataset) -> Actionable:
+        # Refitting (including skipped fits) replaces old state without restoring it.
+        self.kernel = None
         X = dataset.X.copy()
         self.columns = self._select_columns(X)
         if not self.columns:
