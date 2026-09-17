@@ -1,6 +1,7 @@
 """Preparation and submission must consume the evaluation time budget."""
 
 import unittest
+import math
 from unittest.mock import Mock, patch
 
 import pandas as pd
@@ -10,6 +11,8 @@ from iaml.dataset import Dataset
 from iaml.iaml import IAML
 from iaml.logger import Logger
 from iaml.metrics.accuracy_metric import AccuracyMetric
+from iaml.optimizers.genetic_optimizer import GeneticOptimizer
+from iaml.optimizers.optimizer import Optimizer
 
 
 class TestDurationBudget(unittest.TestCase):
@@ -145,6 +148,89 @@ class TestDurationBudget(unittest.TestCase):
         self.assertTrue(all(candidate.get_main_metric_value() == 0.75 for candidate in results))
         self.engine.executor.submit.assert_not_called()
         self.engine.executor.join.assert_called_once_with(0.0)
+
+    def scored_candidate(self):
+        candidate = self.candidates[0]
+        candidate.computed_metrics = {"accuracy": 0.75}
+        self.engine.executor.join.return_value = [candidate]
+        return candidate
+
+    def test_unlimited_optimization_keeps_stage_budget_after_elapsed_time(self):
+        candidate = self.scored_candidate()
+        for duration in (-1, math.inf):
+            with self.subTest(duration=duration):
+                self.engine.executor.reset_mock()
+                optimizer = Mock(spec=Optimizer)
+                optimizer.finished = False
+
+                def generate(previous):
+                    self.now += 1000
+                    return previous
+
+                optimizer.run.side_effect = generate
+                results = self.engine._IAML__optimize(
+                    self.dataset, [candidate], optimizer=optimizer,
+                    max_duration=duration, patience=1,
+                )
+
+                self.assertEqual(results, [candidate])
+                optimizer.run.assert_called_once()
+                self.engine.executor.submit.assert_called_once()
+                self.engine.executor.join.assert_called_once_with(10.0)
+
+    def test_unlimited_default_patience_stops_after_twenty_stagnant_stages(self):
+        candidate = self.scored_candidate()
+        optimizer = Mock(spec=Optimizer)
+        optimizer.finished = False
+        # Fail promptly if the patience guard disappears, instead of looping forever.
+        optimizer.run.side_effect = [[candidate]] * 21
+
+        self.engine._IAML__optimize(
+            self.dataset, [candidate], optimizer=optimizer,
+            max_duration=math.inf, patience=-1,
+        )
+
+        self.assertEqual(optimizer.run.call_count, 20)
+        self.assertEqual(self.engine.executor.submit.call_count, 20)
+
+    def test_finished_optimizer_stops_unlimited_search(self):
+        candidate = self.scored_candidate()
+        optimizer = Optimizer()
+
+        results = self.engine._IAML__optimize(
+            self.dataset, [candidate], optimizer=optimizer,
+            max_duration=-1, patience=-1,
+        )
+
+        self.assertEqual(results, [candidate])
+        self.assertTrue(optimizer.finished)
+        self.engine.executor.submit.assert_called_once()
+
+    def test_finite_optimization_budget_still_expires(self):
+        candidate = self.scored_candidate()
+        optimizer = Mock(spec=Optimizer)
+        optimizer.finished = False
+
+        def generate(previous):
+            self.now += 2
+            return previous
+
+        optimizer.run.side_effect = generate
+        self.engine._IAML__optimize(
+            self.dataset, [candidate], optimizer=optimizer,
+            max_duration=1, patience=-1,
+        )
+
+        optimizer.run.assert_called_once()
+        self.engine.executor.submit.assert_not_called()
+        self.engine.executor.join.assert_called_once_with(0.0)
+
+    def test_unlimited_optimizer_uses_default_mutation_ratio(self):
+        self.engine.optimizer = GeneticOptimizer
+        optimizer = self.engine._IAML__build_optimizer(math.inf)
+        self.assertIsNone(optimizer.duration)
+        self.assertEqual(optimizer._GeneticOptimizer__mutate_ratio, 0.5)
+        self.assertEqual(self.engine._IAML__build_optimizer(30).duration, 30)
 
 
 if __name__ == "__main__":

@@ -65,6 +65,7 @@ Below is a detailed explanation of the most importants parameters. Please consid
     Initialization and final fitting can take additional time.
 
     - **Default:** ``-1`` (no limit).  
+    - The per-stage limit still applies. Optimization stops according to patience or the optimizer's own iteration limit.
     - **Use Case:** Limit the overall training time for faster iterations or resource constraints.
 
 - **main_metric (Metric, optional):**  
@@ -104,7 +105,8 @@ The :py:meth:`~iaml.iaml.IAML.fit` method trains pipeline and model on your data
 - **patience (int, optional):**  
     Number of generations without improvement before training stops.  
 
-    - **Default:** ``-1`` (no early stopping based on patience).  
+    - **Default:** ``-1`` (no early stopping based on patience when a time budget is set).
+      With ``max_duration=-1``, this defaults to 20 generations without improvement.
     - **Use Case:** Set to a positive integer to control convergence and prevent unnecessary iterations.
 
 - **verbose (int, optional):**  

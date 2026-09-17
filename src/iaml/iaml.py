@@ -61,7 +61,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param int, optional max_workers: Maximum parallel workers. Default to cpu count.
     :param int, optional max_stage_duration: Maximum duration of a stage. Default to None.
     :param callable, optional splitter: Split function to use. Default to kfold_splitter.
-    :param int, optional max_duration: Maximum training duration. Default to -1.
+    :param int, optional max_duration: Search time budget; -1 means no global limit.
     :param int | str, optional time_before_sample_use: Time before we use sampled data. 
         Default to None.
     :param bool, optional preprocessor: Use preprocessor. Default to False.
@@ -374,7 +374,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self._training_history_seen = set()
 
         def remain_time():
-            return self.max_duration - (time.monotonic() - start_time)
+            if self.max_duration == -1:
+                return math.inf
+            return max(0.0, self.max_duration - (time.monotonic() - start_time))
 
         try:
             dataset:Dataset = Dataset(
@@ -729,9 +731,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return None
         return f"IAML_{splitter_fingerprint}_{context}"
 
-    def __build_optimizer(self, duration: int) -> Optimizer:
+    def __build_optimizer(self, duration: float) -> Optimizer:
         """Instantiate optimizer."""
-        return self.optimizer(duration=duration)
+        return self.optimizer(duration=None if math.isinf(duration) else duration)
 
     def __build_cached_candidate(self, candidate: Candidate) -> dict[str, Any] | dict[str, float]:
         """Build the payload stored in cache for evaluated candidates."""
@@ -811,6 +813,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         if not candidates:
             return []
 
+        if max_duration == -1:
+            max_duration = math.inf
+
         # init
         candidates.sort(reverse=True)
         best_result: float = candidates[0].get_main_metric_value()
@@ -821,7 +826,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         starting_time: int = time.monotonic() # seconds
 
         # If there is not, define an arbitrary stop condition
-        if max_duration == -1 and patience == -1:
+        if math.isinf(max_duration) and patience == -1:
             Logger().warning('You have not defined any stop condition. \
                 Patient has arbitrary set to 20')
             patience = 20
@@ -830,7 +835,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         while   not(optimizer.finished) \
                 and (patience == -1 or iterations_without_improvement < patience) \
-                and (max_duration == -1 or max_duration > duration):
+                and max_duration > duration:
             # Generate new candidates
             generated_candidates = optimizer.run(previous_candidates)
 
