@@ -58,3 +58,32 @@ class TestMetaPartialExplorerStep(StepTestCase):
         step = MetaPartialExplorerStep(tag=MISSING_TAG)
 
         self.assertFalse(getattr(step, "steps", None))
+
+    def test_explicit_initial_step_is_the_only_interchangeable_choice(self) -> None:
+        initial = MultiTaggedStepA()
+        step = MetaPartialExplorerStep(tag=MULTI_TAG, initial_step=initial,
+                                      also_explore_without=True)
+
+        self.assertEqual(step.steps, [initial])
+        self.assertTrue(initial.is_interchangeable)
+        self.assertIn(id(step), initial.parents_steps)
+        self.assertFalse(step.also_explore_without)
+
+    def test_initial_step_must_match_the_tag(self) -> None:
+        with self.assertRaisesRegex(ValueError, "match"):
+            MetaPartialExplorerStep(tag=SINGLE_TAG, initial_step=MultiTaggedStepA())
+        with self.assertRaisesRegex(TypeError, "Step"):
+            MetaPartialExplorerStep(tag=SINGLE_TAG, initial_step=object())
+        with self.assertRaisesRegex(ValueError, "match"):
+            MetaPartialExplorerStep(tag=SINGLE_TAG, initial_step=Step())
+
+    def test_initial_step_survives_pipeline_export_and_import(self) -> None:
+        from iaml.actionables.normalize.act_standard_scaler import ActStandardScaler
+        original = MetaPartialExplorerStep(tag='normalize', initial_step=ActStandardScaler())
+
+        restored = Step.from_pipeline(original.json_pipeline())
+
+        self.assertIsInstance(restored, MetaPartialExplorerStep)
+        self.assertEqual(len(restored.steps), 1)
+        self.assertIsInstance(restored.steps[0], ActStandardScaler)
+        self.assertTrue(restored.steps[0].is_interchangeable)

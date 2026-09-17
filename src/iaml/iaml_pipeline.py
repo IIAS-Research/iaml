@@ -463,11 +463,12 @@ class IAMLPipeline(Pipeline):
 
     @property
     def optimizable_step(self) -> list['Step']:
-        """Return a list of optimizable step.
+        """Return steps whose parameters or choice of implementation can change.
         
         :return: List of optimizable step
         """
-        return [step for _, step in self.training_steps if step.optimizable]
+        return [step for _, step in self.training_steps
+                if step.optimizable or step.is_interchangeable]
 
     def __eq__(self, other: 'IAMLPipeline') -> bool:
         """Compare two pipelines

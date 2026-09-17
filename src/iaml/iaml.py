@@ -35,6 +35,7 @@ from .predictor import Predictor
 from .logger import Logger
 from .plot import StatisticPlot
 from .actionables.cleaning.act_simple_imputer import ActSimpleImputer
+from .actionables.normalize.act_standard_scaler import ActStandardScaler
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
@@ -174,6 +175,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """Load the default pipeline.
         Default pipeline is the recommended way to create classifier and regressor
 
+        Genetic search starts with one normalization and no resampling, then
+        explores alternatives through mutations. Other optimizers retain full
+        initial exploration because they only change hyperparameters.
+
         :param bool, optional fast: If true, will only load fast machine learning model.
             Fast mode is use to create fast pipeline and iterate
             quickly when debugging code. Defaults to False.
@@ -194,12 +199,18 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             name='Features Selection',
             description=textwrap.dedent('''\
                 Decrease number of column to improve the models' performance.''')))
-        self.first_step.add_step(MetaExplorerStep(tag='normalize',
+        partial_exploration = (isinstance(self.optimizer, type)
+                               and issubclass(self.optimizer, GeneticOptimizer))
+        explorer = MetaPartialExplorerStep if partial_exploration else MetaExplorerStep
+        normalization_options = {'initial_step': ActStandardScaler()} if partial_exploration else {}
+        imbalance_options = {} if partial_exploration else {'also_explore_without': True}
+        self.first_step.add_step(explorer(tag='normalize',
+            **normalization_options,
             name='Features Normalization',
             description=textwrap.dedent('''\
                 Normalize data to help model to give the same interest to each column''')))
-        self.first_step.add_step(MetaExplorerStep(tag='imbalance',
-            also_explore_without=True,
+        self.first_step.add_step(explorer(tag='imbalance',
+            **imbalance_options,
             name='Handle Imbalanced Data',
             description=textwrap.dedent('''\
                 Balance the dataset to ensure the model does not favor the
