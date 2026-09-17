@@ -61,7 +61,8 @@ Below is a detailed explanation of the most importants parameters. Please consid
     - **Use Case:** Fine-tune the allocation of time for different pipeline stages.
 
 - **max_duration (int, optional):**  
-    The total time (in seconds) allocated for the entire training process.
+    The search time budget in seconds, including candidate submission and evaluation.
+    Initialization and final fitting can take additional time.
 
     - **Default:** ``-1`` (no limit).  
     - **Use Case:** Limit the overall training time for faster iterations or resource constraints.

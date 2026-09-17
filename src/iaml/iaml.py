@@ -618,22 +618,25 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self,
         candidates: list[Candidate],
         dataset: Dataset,
-        timeout: int = None,
+        timeout: float = None,
         stage_number: int = None,
-        callback: callable = None) -> None:
+        callback: callable = None) -> list[Candidate]:
         """Evaluate candidates
         
         :param list[Candidate] candidates: Candidates to evaluate.
         :param Dataset dataset: Dataset used for evaluation.
-        :param int, optional timeout: Timeout for evaluation process. Default to None.
+        :param float, optional timeout: Budget including preparation and submission.
+            Defaults to the stage duration limit.
         :param int, optional stage_number: Stage number running. Default to None.
         :param callable, optional callback: Method called after evaluation. Default to None.
         """
+        start_time = time.monotonic()
+        budget = self.max_stage_duration if timeout is None else min(timeout, self.max_stage_duration)
+        deadline = start_time + max(0.0, budget)
         new_candidates: list[Candidate] = []
         splitter_fingerprint = hash_evaluation_context(self.splitter)
         dataset_key = dataset.fingerprint() if splitter_fingerprint is not None else None
         evaluation_cache_keys: set[str] = set()
-        start_time = time.monotonic()
         with Logger().progress as progress:
             task = progress.add_task(
                 f'Stage {stage_number}' if stage_number is not None else "Initial evaluation",
@@ -644,6 +647,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             self.executor.set_callback(update_progressbar)
             for candidate in candidates:
+                if time.monotonic() >= deadline:
+                    break
                 cache_key = self.__evaluation_cache_key(candidate, splitter_fingerprint)
                 if cache_key is not None:
                     evaluation_cache_keys.add(cache_key)
@@ -654,16 +659,19 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     new_candidates.append(candidate)
                     update_progressbar() # Update progressbar even if data come from cache
                 else:
-                    self.executor.submit(
+                    submitted = self.executor.submit(
                             process_executor,
                             candidate,
                             dataset,
+                            deadline=deadline,
                             splitter=self.splitter,
                             store_audit=self.keep_training_history,
                         )
+                    if not submitted:
+                        break
 
-            # Wait for all tasks to complete with a timeout
-            new_candidates += self.executor.join(min(timeout, self.max_stage_duration))
+            # Preparation and submission have already consumed part of the budget.
+            new_candidates += self.executor.join(max(0.0, deadline - time.monotonic()))
             self.__collect_training_history(new_candidates)
 
             if new_candidates:
@@ -695,7 +703,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 )
 
         best_metric = new_candidates[0].get_main_metric_value() if new_candidates else None
-        remaining_time = timeout - (time.monotonic() - start_time)
+        remaining_time = (budget if timeout is None else timeout) - (time.monotonic() - start_time)
 
         self.__callback(callback, # pylint: disable=too-many-function-args
             generation = stage_number,

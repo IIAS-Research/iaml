@@ -205,7 +205,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             if isinstance(result, str) and result == 'stop':
                 break
 
-            if callback_id and callable(self.callbacks[callback_id]):
+            if callback_id is not None and callable(self.callbacks[callback_id]):
                 self.callbacks[callback_id](result)
 
             Logger().info(str(result))
@@ -333,33 +333,49 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             [process.pid for process in self.process],
             core_number=self.max_workers)
 
-    def submit(self, target: callable, *args, **kwargs) -> None:
-        """Submit a new task to sub process
+    def submit(self, target: callable, *args, deadline: float | None = None, **kwargs) -> bool:
+        """Submit a task, waiting for space when a deadline is specified.
 
         :param callable target: Method to run
         :param Tuple, optional args: parameters passed to the callable
+        :param float, optional deadline: Absolute time from ``time.monotonic()``.
         :param Dict, optional kwargs: parameters passed to the callable
+        :return: False if the deadline expires before submission, otherwise True.
         """
-        if self.stop_flag:
-            raise TerminatedError("Job submission failed: Executor is currently \
-                shutdown and cannot accept new tasks.")
+        while True:
+            if self.stop_flag:
+                raise TerminatedError("Job submission failed: Executor is currently \
+                    shutdown and cannot accept new tasks.")
+
+            remaining = float("inf") if deadline is None else deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+
+            # Keep at most one waiting task per worker in addition to those running.
+            # Large candidate objects otherwise make both submission and cancellation
+            # spend most of the training budget serializing an unbounded backlog.
+            if deadline is None or self.submit_count - self.finished_run < self.max_workers * 2:
+                break
+            time.sleep(min(0.05, remaining))
 
         callback_id = len(self.callbacks) - 1
 
         if self.debug:
             result = target(*args, **kwargs)
-            if callback_id and callable(self.callbacks[callback_id]):
+            if callback_id is not None and callable(self.callbacks[callback_id]):
                 self.callbacks[callback_id](result)
             Logger().info(str(result))
             self.results.append(result)
             self.submit_count += 1
             self.finished_run += 1
-            return
+            return True
 
         try:
             self.to_run_queue.put((target, args, kwargs, callback_id))
             self.submit_count += 1
         except pickle.PicklingError as exc:
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
             if not self._mp_fallback:
                 warnings.warn(
                     f"TimedPoolExecutor fallback to sequential mode (pickle failed: {exc!r})"
@@ -367,12 +383,14 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 self._mp_fallback = True
             self.debug = True
             result = target(*args, **kwargs)
-            if callback_id and callable(self.callbacks[callback_id]):
+            if callback_id is not None and callable(self.callbacks[callback_id]):
                 self.callbacks[callback_id](result)
             Logger().info(str(result))
             self.results.append(result)
             self.submit_count += 1
             self.finished_run += 1
+
+        return True
 
     def __finished(self) -> bool:
         """Are all the submitted tasks finished?
@@ -415,18 +433,20 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         self.callbacks.append(callback)
 
-    def join(self, timeout: int, reset: bool = True) -> list:
+    def join(self, timeout: float | None, reset: bool = True) -> list:
         """Wait until all the task are finished or timeout is reach
         If timeout is reach -> Remaining tasks will be kill without sending results
 
-        :param int timeout: Maximum seconds to wait
+        :param float timeout: Maximum seconds to wait; None waits without a timeout.
         :param bool, optional reset: Reset the instance after join(). Defaults to True.
 
         :return: All finished task results
         """
         start_time = time.monotonic()
         def remain_time():
-            return max(0, int(timeout - (time.monotonic() - start_time)))
+            if timeout is None:
+                return float("inf")
+            return max(0.0, timeout - (time.monotonic() - start_time))
 
         def slide():
             try:
@@ -444,8 +464,11 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     and self.results # We have got at least one result
                 )
 
-        while not self.__finished() and remain_time() and not slide():
-            time.sleep(0.5)
+        while not self.__finished():
+            remaining = remain_time()
+            if remaining <= 0 or slide():
+                break
+            time.sleep(min(0.05, remaining))
 
         timed_out = not self.__finished() and remain_time() == 0
         if timed_out:

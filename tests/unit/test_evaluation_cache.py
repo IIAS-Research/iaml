@@ -42,10 +42,11 @@ class SynchronousExecutor:
     def set_callback(self, callback):
         self.callback = callback
 
-    def submit(self, function, *args, **kwargs):
+    def submit(self, function, *args, deadline=None, **kwargs):
         self.submissions += 1
         self.pending.append(function(*args, **kwargs))
         self.callback()
+        return True
 
     def join(self, timeout):
         result, self.pending = self.pending, []
