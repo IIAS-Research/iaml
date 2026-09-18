@@ -96,6 +96,19 @@ Call ``search.fit`` in the same way as in the complete example. ROC AUC is
 intended for binary classification. See :doc:`usage` and the API reference for
 the other settings.
 
+To limit the number of training rows, use ``train_on_n_samples``. By default,
+``refit_on_sample=True`` reuses that same initial sample for the final fit:
+
+.. code-block:: python
+
+    search = IAML(train_on_n_samples=10000, max_workers=1)
+
+Set ``refit_on_sample=False`` to search on that sample but refit the selected
+pipeline on all input rows. Without a positive sample limit, final fitting uses
+all input rows. Any further automatic downsizing during the search does not
+reduce the initial sample retained for the final fit. This is a row limit, not
+a timeout for final fitting.
+
 Explain a trained candidate
 ===========================
 

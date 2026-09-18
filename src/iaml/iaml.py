@@ -69,8 +69,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param Metric, optional main_metric: Main metric instance, preserving its parameters.
         Default to None.
     :param Optimizer, optional optimizer: Optimizer class to use. Default to GeneticOptimizer.
+    :param int, optional train_on_n_samples: Limit the initial search dataset to this many
+        rows. None or nonpositive values use all rows.
     :param bool, optional keep_training_history: If True, store detailed CV audit records for
         every evaluated pipeline. Default to False.
+    :param bool, optional refit_on_sample: Reuse the initial train_on_n_samples sample for
+        final fitting. If False, refit on all input rows. Default to True; has no effect
+        without a positive train_on_n_samples limit.
     """
     def __init__( # pylint: disable=too-many-arguments
         self,
@@ -83,7 +88,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         main_metric: Metric = None,
         optimizer: Optimizer = GeneticOptimizer,
         train_on_n_samples: int = None,
-        keep_training_history: bool = False) -> None:
+        keep_training_history: bool = False,
+        refit_on_sample: bool = True) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -95,6 +101,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         
         self.train_on_n_samples = train_on_n_samples
         """If defined, pick n sample in the dataset before train"""
+
+        self.refit_on_sample: bool = refit_on_sample
+        """Apply the explicit search sample limit to final fitting as well."""
 
         self.keep_training_history: bool = keep_training_history
         """Whether to store detailed cross-validation audit records."""
@@ -390,6 +399,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return max(0.0, self.max_duration - (time.monotonic() - start_time))
 
         try:
+            refit_X, refit_y, refit_groups_columns = X, y, groups_columns
             dataset:Dataset = Dataset(
                 deepcopy(X),
                 deepcopy(y),
@@ -398,6 +408,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             if self.train_on_n_samples != None and self.train_on_n_samples > 0:
                 dataset = dataset.sample(self.train_on_n_samples)
+                if self.refit_on_sample:
+                    # Preserve this sample even if the search later downsizes again.
+                    # Dataset.X already excludes the grouping columns.
+                    refit_X, refit_y, refit_groups_columns = dataset.X, dataset.y, []
 
             self._last_dataset = dataset
             self.descriptive_statistics = None
@@ -486,7 +500,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             ### FINAL FIT
             self.executor.shutdown()
 
-            # Fit candidates with the whole dataset
+            # Fit candidates on the requested sample or all original input rows.
             fit_candidates = []
             last_fit_error = None
             for candidate in candidates:
@@ -495,10 +509,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 Cache.reset()
                 current_candidate = deepcopy(candidate)
                 try:
+                    Logger().info(f"Final fit: {len(refit_X)} rows, {current_candidate.pipeline.name}")
                     current_candidate.pipeline.fit(
-                        X,
-                        y,
-                        groups_columns=groups_columns,
+                        refit_X,
+                        refit_y,
+                        groups_columns=refit_groups_columns,
                         metrics=current_candidate.metrics,
                     )
                 except (ValueError, np.linalg.LinAlgError) as exc:
