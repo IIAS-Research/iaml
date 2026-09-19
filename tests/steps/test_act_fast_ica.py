@@ -92,18 +92,83 @@ class TestActFastICA(StepTestCase):
                 "f3": [0.0, 1.0, 0.0, 1.0],
             }
         )
+        for dtype in ("float32", "float64", "int64", "Float64"):
+            for whiten in ("unit-variance", "arbitrary-variance"):
+                with self.subTest(dtype=dtype, whiten=whiten):
+                    values = df.astype(dtype)
+                    original = values.copy(deep=True)
+                    step = ActFastICA()
+                    step.configure("n_components", 10)
+                    step.configure("whiten", whiten)
+                    dataset = self.make_dataset(values)
+                    dataset_original = dataset.X.copy(deep=True)
+
+                    self.fit_step(step, dataset)
+                    result = step.transform(values)
+
+                    self.assertEqual(step.get_config("n_components"), 2)
+                    self.assertEqual(step.component_names, ["ica_0", "ica_1"])
+                    self.assertEqual(result.shape, (len(values), 2))
+                    self.assertEqual(list(result.columns), ["ica_0", "ica_1"])
+                    self.assertTrue(np.isfinite(result.to_numpy()).all())
+                    self.assertFrameEqual(values, original)
+                    self.assertFrameEqual(dataset.X, dataset_original)
+
+    def test_fit_keeps_all_components_for_full_rank_data(self) -> None:
+        df = pd.DataFrame({
+            "f1": [-1.0] * 4 + [1.0] * 4,
+            "f2": [-1.0, -1.0, 1.0, 1.0] * 2,
+            "f3": [-1.0, 1.0] * 4,
+        })
+        # Mix the independent signals to avoid a degenerate singular-value basis.
+        df["f2"] += 0.2 * df["f1"]
+        df["f3"] += 0.3 * df["f1"] + 0.4 * df["f2"]
         step = ActFastICA()
         step.configure("n_components", 10)
 
-        dataset = self.make_dataset(df)
-        self.fit_step(step, dataset)
+        result = self.apply_transform(step, df)
 
         self.assertEqual(step.get_config("n_components"), 3)
-        self.assertEqual(step.component_names, ["ica_0", "ica_1", "ica_2"])
-
-        result = step.transform(df.copy())
-        self.assertEqual(result.shape, (len(df), 3))
         self.assertEqual(list(result.columns), ["ica_0", "ica_1", "ica_2"])
+        self.assertTrue(np.isfinite(result.to_numpy()).all())
+
+    def test_constant_column_does_not_add_a_component(self) -> None:
+        df = pd.DataFrame({
+            "f1": [1.0, 2.0, 3.0, 4.0],
+            "f2": [2.0, 0.0, 2.0, 0.0],
+            "constant": [7.0] * 4,
+        })
+        step = ActFastICA()
+
+        result = self.apply_transform(step, df)
+
+        self.assertEqual(result.shape, (len(df), 2))
+        self.assertTrue(np.isfinite(result.to_numpy()).all())
+
+    def test_transform_noop_with_fewer_than_two_independent_features(self) -> None:
+        for f1 in ([1.0] * 4, [1.0, 2.0, 3.0, 4.0]):
+            with self.subTest(f1=f1):
+                df = pd.DataFrame({"f1": f1, "f2": [2 * x + 1 for x in f1]})
+                step = ActFastICA()
+
+                result = self.apply_transform(step, df)
+
+                self.assertIsNone(step.preprocessor)
+                self.assertFrameEqual(result, df)
+
+    def test_without_whitening_keeps_uncentered_components(self) -> None:
+        df = pd.DataFrame({
+            "f1": [1.0, 2.0, 3.0, 4.0],
+            "f2": [2.0, 0.0, 2.0, 0.0],
+            "f3": [0.0, 1.0, 0.0, 1.0],
+        })
+        step = ActFastICA()
+        step.configure("whiten", False)
+        with self.assertWarnsRegex(UserWarning, "Ignoring n_components"):
+            result = self.apply_transform(step, df)
+
+        self.assertEqual(result.shape, (len(df), 3))
+        self.assertTrue(np.isfinite(result.to_numpy()).all())
 
     def test_transform_noop_with_single_sample(self) -> None:
         df = pd.DataFrame({"f1": [1.0], "f2": [2.0]})

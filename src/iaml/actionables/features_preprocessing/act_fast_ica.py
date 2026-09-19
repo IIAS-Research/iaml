@@ -1,7 +1,9 @@
 """[STEP] Reduce dimensions with FastICA"""
 import textwrap
+import numpy as np
 import pandas as pd
 from sklearn.decomposition import FastICA
+from sklearn.utils.validation import check_array
 from ...actionable import Actionable
 from ...candidate import Candidate
 from ...dataset import Dataset
@@ -75,8 +77,12 @@ class ActFastICA(Actionable):
         except (TypeError, ValueError):
             return default
 
-    def _resolve_n_components(self, n_samples: int, n_features: int) -> int | None:
-        max_components = min(n_samples, n_features)
+    def _resolve_n_components(self, values: pd.DataFrame) -> int | None:
+        max_components = min(values.shape)
+        if max_components >= 2 and self.get_config('whiten'):
+            # Whitening can only use nonzero directions after centering.
+            numeric = check_array(values, dtype=[np.float64, np.float32])
+            max_components = int(np.linalg.matrix_rank(numeric - numeric.mean(axis=0)))
         if max_components < 2:
             return None
         n_components = self._coerce_int(self.get_config('n_components'), max_components)
@@ -101,7 +107,7 @@ class ActFastICA(Actionable):
         values = dataset.X[self.columns]
         if values.isna().any().any():
             return self
-        n_components = self._resolve_n_components(*values.shape)
+        n_components = self._resolve_n_components(values)
         if n_components is None:
             return self
 
