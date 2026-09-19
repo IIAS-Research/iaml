@@ -116,8 +116,8 @@ class WarmupBudgetTests(unittest.TestCase):
         result = self.fit()
         self.assertEqual([item.pipeline.predictor[0] for item, _ in self.stages[0]["queued"]], ["minimal"])
         self.assertEqual([item.pipeline.predictor[0] for item, _ in self.stages[1]["queued"]], ["minimal", "normal"])
-        self.assertEqual(self.stages[0]["timeout"], 15)
-        self.assertEqual(self.stages[0]["queued"][0][1]["deadline"], 27)
+        self.assertAlmostEqual(self.stages[0]["timeout"], 9.6)
+        self.assertAlmostEqual(self.stages[0]["queued"][0][1]["deadline"], 21.6)
         self.assertEqual(self.callback.call_args_list[0].kwargs["remaining_time"], 47.5)
         self.assertEqual(self.optimize.call_args.kwargs["max_duration"], 46.5)
         self.assertEqual(result[0].pipeline.predictor[0], "normal")
@@ -127,11 +127,12 @@ class WarmupBudgetTests(unittest.TestCase):
 
     def test_remaining_global_budget_can_be_shorter_than_stage_limit(self):
         self.generation_seconds = 55
-        self.responses = [(100, {})]
+        self.responses = [(100, {}), (100, {})]
         with self.assertRaises(TimeoutError):
             self.fit()
-        self.assertEqual(self.stages[0]["timeout"], 5)
-        self.assertEqual(self.stages[0]["queued"][0][1]["deadline"], 60)
+        self.assertEqual(self.stages[0]["timeout"], 1)
+        self.assertEqual(self.stages[0]["queued"][0][1]["deadline"], 56)
+        self.assertEqual(self.stages[1]["timeout"], 4)
         self.assertEqual(self.now, 60)
         self.final_fit.assert_not_called()
         self.direct.assert_not_called()
@@ -148,25 +149,26 @@ class WarmupBudgetTests(unittest.TestCase):
     def test_timed_out_warmup_leaves_all_candidates_for_initial_evaluation(self):
         self.responses = [(100, {}), (1, {"normal": 0.75})]
         result = self.fit()
-        self.assertEqual(self.stages[0]["timeout"], 15)
-        self.assertEqual(self.stages[1]["started"], 15)
-        self.assertEqual([item.pipeline.predictor[0] for item, _ in self.stages[1]["queued"]], ["minimal", "normal"])
+        self.assertEqual(self.stages[0]["timeout"], 12)
+        self.assertEqual(self.stages[1]["started"], 12)
+        self.assertEqual([item.pipeline.predictor[0] for item, _ in self.stages[1]["queued"]], ["normal", "minimal"])
         self.assertEqual(result[0].pipeline.predictor[0], "normal")
         self.assertEqual(self.callback.call_args_list[0].kwargs["generation_size"], 0)
         self.assertEqual(self.callback.call_args_list[1].kwargs["generation_size"], 1)
 
-    def test_only_completed_cv_warmup_can_be_refitted_after_global_deadline(self):
+    def test_completed_warmup_can_be_refitted_after_initial_evaluation_times_out(self):
         self.generation_seconds = 55
-        self.responses = [(5, {"minimal": 0.0})]
+        self.responses = [(0.5, {"minimal": 0.0}), (100, {})]
         result = self.fit()
         self.assertEqual(result[0].pipeline.predictor[0], "minimal")
         self.assertEqual(result[0].get_main_metric_value(), 0.0)
-        self.assertEqual(len(self.stages), 1)
+        self.assertEqual(len(self.stages), 2)
+        self.assertEqual(self.now, 60)
         self.final_fit.assert_called_once()
 
     def test_incomplete_warmup_metrics_never_become_fallback_scores(self):
         self.generation_seconds = 55
-        self.responses = [(5, {"minimal": None})]
+        self.responses = [(0.5, {"minimal": None}), (100, {})]
         with self.assertRaises(TimeoutError):
             self.fit()
         self.assertEqual(self.callback.call_args.kwargs["generation_size"], 0)
@@ -177,8 +179,23 @@ class WarmupBudgetTests(unittest.TestCase):
         self.responses = [(0.5, {"normal": 0.7}), (1, {"normal": 0.7})]
         self.fit()
         self.assertEqual(self.stages[0]["queued"][0][0].pipeline.predictor[0], "normal")
-        self.assertEqual(self.stages[0]["timeout"], 15)
+        self.assertEqual(self.stages[0]["timeout"], 12)
         self.direct.assert_not_called()
+
+    def test_default_stage_limit_cannot_give_all_remaining_time_to_warmup(self):
+        self.engine.max_stage_duration = IAML(max_duration=60, max_workers=1).max_stage_duration
+        self.responses = [(100, {}), (1, {"normal": 0.75})]
+        result = self.fit()
+        self.assertEqual(self.stages[0]["timeout"], 12)
+        self.assertEqual(self.stages[1]["timeout"], 48)
+        self.assertEqual(result[0].pipeline.predictor[0], "normal")
+
+    def test_shorter_explicit_stage_limit_still_caps_warmup(self):
+        self.engine.max_stage_duration = 3
+        self.responses = [(100, {}), (1, {"normal": 0.75})]
+        self.fit()
+        self.assertEqual(self.stages[0]["timeout"], 3)
+        self.assertEqual(self.stages[1]["started"], 3)
 
     def test_unlimited_search_still_bounds_warmup_by_stage_duration(self):
         self.engine.max_duration = -1

@@ -467,14 +467,24 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             # honestly evaluated starting point without removing full pipelines.
             warmup_candidate = None
             if candidates and remain_time() >= 1:
-                Logger().info("Warming up (bounded evaluation)...")
+                # A single slow baseline must leave time to evaluate the other
+                # candidates. Unlimited searches retain the stage duration cap.
+                remaining = remain_time()
+                warmup_timeout = remaining / 5
+                Logger().info(
+                    f"Warming up (at most {min(warmup_timeout, self.max_stage_duration):.2f}s): "
+                    f"{candidates[0].pipeline.name}")
                 warmup_candidates = self.__run_evaluations(
-                    candidates[:1], dataset, timeout=remain_time(), callback=callback)
+                    candidates[:1], dataset, timeout=remaining, callback=callback,
+                    stage_timeout=warmup_timeout)
                 if warmup_candidates:
                     warmup_candidate = warmup_candidates[0]
                     Logger().info("Warmed up !")
                 else:
                     Logger().info("No warmup result within the stage budget.")
+                    # Try alternatives before retrying the same candidate,
+                    # especially when only one worker is available.
+                    candidates = candidates[1:] + candidates[:1]
 
             ### INITIAL EVALUATION
             # Evaluate candidates
@@ -670,7 +680,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         dataset: Dataset,
         timeout: float = None,
         stage_number: int = None,
-        callback: callable = None) -> list[Candidate]:
+        callback: callable = None,
+        stage_timeout: float = None) -> list[Candidate]:
         """Evaluate candidates
         
         :param list[Candidate] candidates: Candidates to evaluate.
@@ -679,9 +690,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             Defaults to the stage duration limit.
         :param int, optional stage_number: Stage number running. Default to None.
         :param callable, optional callback: Method called after evaluation. Default to None.
+        :param float, optional stage_timeout: Additional cap for this evaluation only;
+            the callback still reports the remaining ``timeout`` budget.
         """
         start_time = time.monotonic()
         budget = self.max_stage_duration if timeout is None else min(timeout, self.max_stage_duration)
+        if stage_timeout is not None:
+            budget = min(budget, stage_timeout)
         deadline = start_time + max(0.0, budget)
         new_candidates: list[Candidate] = []
         splitter_fingerprint = hash_evaluation_context(self.splitter)

@@ -77,9 +77,10 @@ class TestUnlimitedDuration(unittest.TestCase):
         return stages, optimizers[0]
 
     def assert_search_ran(self, stages, optimizer):
-        self.assertEqual([stage["generation"] for stage in stages], [None, 0])
-        self.assertEqual(stages[0]["generation_size"], 2)
-        self.assertGreater(stages[1]["generation_size"], 0)
+        self.assertEqual([stage["generation"] for stage in stages], [None, None, 0])
+        self.assertEqual(stages[0]["generation_size"], 1)
+        self.assertEqual(stages[1]["generation_size"], 2)
+        self.assertGreater(stages[2]["generation_size"], 0)
         self.assertEqual(optimizer.generation_count, 1)
 
     def test_default_duration_evaluates_and_optimizes(self):
@@ -99,10 +100,10 @@ class TestUnlimitedDuration(unittest.TestCase):
         self.assertLessEqual(optimizer.duration, 10)
 
     def test_expired_finite_budget_does_not_start_optimization(self):
-        stages, optimizer = self.run_search(max_duration=0)
-        self.assertEqual(stages, [])
-        self.assertEqual(optimizer.generation_count, 0)
-        self.assertEqual(optimizer.duration, 0)
+        with patch.object(IAML, "_IAML__build_optimizer") as build_optimizer:
+            with self.assertRaises(TimeoutError):
+                self.run_search(max_duration=0)
+        build_optimizer.assert_not_called()
 
 
 if __name__ == "__main__":
