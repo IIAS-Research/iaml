@@ -1,5 +1,5 @@
 """Based on Scikit-learn Pipeline but for IAML Pipelines !
-Transform, resample and then predict from Candidate instance 
+Apply preprocessing in construction order, then predict from Candidate instance.
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 class IAMLPipeline(Pipeline):
     """Based on Scikit-learn Pipeline but for IAML Pipelines !
-    Transform, resample and then predict from Candidate instance.
+    Apply preprocessing in construction order, then predict from Candidate instance.
     
     :param list[tuple[str, Step]], optional steps: Ordered list of IAML.Steps. Defaults to None.
     :param pd.DataFrame, optional original_dataset: Untransformed dataset to use as a masker 
@@ -49,11 +49,8 @@ class IAMLPipeline(Pipeline):
         self.original_dataset: pd.DataFrame = original_dataset
         """Original dataset used for this pipeline"""
 
-        self.transformers: list[tuple[str, object]] = []
-        """List of transformers that'll be used in this pipeline."""
-
-        self.resamplers: list[tuple[str, object]] = []
-        """List of resamplers that'll be used in this pipeline."""
+        self._preprocessing_steps: list[tuple[str, object]] = []
+        """Transformers and resamplers in their construction order."""
 
         self.predictor: tuple[str, object] = None
         """Predictor that'll be used in this pipeline"""
@@ -61,17 +58,32 @@ class IAMLPipeline(Pipeline):
         self.metrics: list[Metric] = []
         """List of metrics that'll be computed in this pipeline"""
 
+        self._fingerprint_cache: str | None = None
+        """Cached fingerprint of training steps."""
+
+        self._transform_fingerprint_cache: str | None = None
+        """Cached fingerprint of transforms/resamplers."""
+
+        self._fingerprint_cache_version: tuple | None = None
+        """Cached config versions for training steps."""
+
+        self._transform_fingerprint_cache_version: tuple | None = None
+        """Cached config versions for transforms/resamplers."""
+
+        self._trained_columns: list[str] | None = None
+        """Columns seen by the predictor during fit (after transforms)."""
+
         if estimator_type not in ['classifier', 'regressor', 'survival']:
             raise ValueError(f"Estimator type ({estimator_type}) must be classifier, \
                 survival or regressor")
         self.__estimator_type: str = estimator_type
         """Estimator type"""
 
-        super().__init__(steps) # split steps into transformers, resamplers and predictor
+        super().__init__(steps)
 
     @property
     def _estimator_type(self) -> str:
-        """Needed because used by Scikit-learn metalearner
+        """Expose the estimator type to scikit-learn.
         
         :return: estimator type.
         """
@@ -79,15 +91,28 @@ class IAMLPipeline(Pipeline):
 
     @property
     def estimator_type(self) -> str:
-        """Needed because used by Scikit-learn metalearner (yes also without "_" ...)
+        """Return the estimator type configured for this pipeline.
         
         :return: estimator type.
         """
         return self.__estimator_type
 
     @property
+    def transformers(self) -> list[tuple[str, object]]:
+        """Transform steps in execution order, excluding training-only resamplers."""
+        return [step for step in self._preprocessing_steps
+                if callable(getattr(step[1], 'transform', None))]
+
+    @property
+    def resamplers(self) -> list[tuple[str, object]]:
+        """Resampling steps in execution order."""
+        return [step for step in self._preprocessing_steps
+                if not callable(getattr(step[1], 'transform', None))
+                and callable(getattr(step[1], 'resample', None))]
+
+    @property
     def steps(self) -> list[tuple[str, object]]:
-        """Get all pipeline steps.
+        """Get prediction steps, excluding training-only resamplers.
         
         :return: list of steps
         """
@@ -95,11 +120,11 @@ class IAMLPipeline(Pipeline):
 
     @property
     def training_steps(self) -> list[tuple[str, object]]:
-        """Steps used to fit pipeline (same as steps property but with resamplers)
+        """Steps used to fit the pipeline, preserving preprocessing order.
 
         :return: list of steps
         """
-        return [item for item in [*self.resamplers, *self.transformers, self.predictor] \
+        return [item for item in [*self._preprocessing_steps, self.predictor] \
             if item is not None]
 
     @steps.setter
@@ -109,9 +134,9 @@ class IAMLPipeline(Pipeline):
         :param list[tuple[str, object]] values: List of steps to add.
         :return: List of new steps.
         """
-        self.transformers = []
-        self.resamplers = []
+        self._preprocessing_steps = []
         self.predictor = None
+        self._invalidate_fingerprint_cache()
 
         for value in values:
             self.__add_step(value)
@@ -124,12 +149,12 @@ class IAMLPipeline(Pipeline):
         :param tuple[str,object] step: The step to add.
         """
         _, instance = step
+        self._invalidate_fingerprint_cache()
         if hasattr(instance, 'predict') and callable(instance.predict):
             self.predictor = step
-        elif hasattr(instance, 'transform') and callable(instance.transform):
-            self.transformers.append(step)
-        elif hasattr(instance, 'resample') and callable(instance.resample):
-            self.resamplers.append(step)
+        elif callable(getattr(instance, 'transform', None)) \
+                or callable(getattr(instance, 'resample', None)):
+            self._preprocessing_steps.append(step)
 
     def replace_step(self, old: 'Step', new: 'Step') -> bool:
         """Replace a step in the pipeline by another (by id)
@@ -138,16 +163,14 @@ class IAMLPipeline(Pipeline):
         :param Step new: The new step.
         :return: Was replaced ?
         """
-        for idx, step in enumerate(self.transformers):
-            if id(old) == id(step[1]):
-                self.transformers[idx] = (new.name, new)
+        for idx, step in enumerate(self._preprocessing_steps):
+            if old is step[1]:
+                self._preprocessing_steps[idx] = (new.name, new)
+                self._invalidate_fingerprint_cache()
                 return True
-        for idx, step in enumerate(self.resamplers):
-            if id(old) == id(step[1]):
-                self.resamplers[idx] = (new.name, new)
-                return True
-        if id(old) == id(self.predictor[1]):
+        if self.predictor is not None and old is self.predictor[1]:
             self.predictor = (new.name, new)
+            self._invalidate_fingerprint_cache()
             return True
 
         return False
@@ -158,16 +181,14 @@ class IAMLPipeline(Pipeline):
         :param Step to_remove: Step to remove.
         :return: Step was removed ?
         """
-        for idx, step in enumerate(self.transformers):
-            if id(to_remove) == id(step[1]):
-                del self.transformers[idx]
+        for idx, step in enumerate(self._preprocessing_steps):
+            if to_remove is step[1]:
+                del self._preprocessing_steps[idx]
+                self._invalidate_fingerprint_cache()
                 return True
-        for idx, step in enumerate(self.resamplers):
-            if id(to_remove) == id(step[1]):
-                del self.resamplers[idx]
-                return True
-        if id(to_remove) == id(self.predictor[1]):
+        if self.predictor is not None and to_remove is self.predictor[1]:
             self.predictor = None
+            self._invalidate_fingerprint_cache()
             return True
 
         return False
@@ -204,6 +225,8 @@ class IAMLPipeline(Pipeline):
         dataset = Dataset(X, y, groups_columns=groups_columns)
 
         if self.predictor[1].suitable(dataset):
+            if isinstance(dataset.X, pd.DataFrame):
+                self._trained_columns = list(dataset.X.columns)
             self.predictor[1].fit(dataset, **kwargs)
         else:
             self.predictor = None
@@ -230,16 +253,23 @@ class IAMLPipeline(Pipeline):
 
         dataset = Dataset(X, y, groups_columns=groups_columns)
 
-        for _, step in [*self.resamplers, *self.transformers]:
+        # Cached fits can replace steps, and unsuitable steps can be removed.
+        for _, step in list(self._preprocessing_steps):
             # FIT
             if 'Step' in map(lambda s: s.__name__, step.__class__.__mro__):
-                from_cache = Cache().from_cache(f"fit_{step.fingerprint()}", dataset.X)
-                if from_cache:
-                    self.replace_step(step, from_cache)
+                fit_key = f"fit_{step.fingerprint()}"
+                fit_data_key = dataset.fingerprint()
+                from_cache = Cache().from_cache(fit_key, fit_data_key)
+                if from_cache is not None:
+                    fitted_step, dataset = from_cache
+                    self.replace_step(step, fitted_step)
+                    step = fitted_step
                 else:
                     if step.suitable(dataset):
                         step.fit(dataset)
-                        Cache().add_to_cache(f"fit_{step.fingerprint()}", dataset.X, step)
+                        # Copy together to preserve shared references to training data
+                        # (e.g. a target encoder's out-of-fold training transform).
+                        Cache().add_to_cache(fit_key, fit_data_key, (step, dataset))
                     else:
                         if step.is_interchangeable:
                             old_step = step
@@ -252,16 +282,19 @@ class IAMLPipeline(Pipeline):
                 step.fit(dataset.X, dataset.y, **kwargs)
 
             # APPLY TRANSFORM / RESAMPLE
-            dataset_from_cache = Cache().from_cache(f"apply_{step.fingerprint()}", dataset.X)
-            if dataset_from_cache:
+            apply_key = f"apply_{step.fingerprint()}"
+            # Freeze before a step can mutate X or y in place.
+            apply_data_key = dataset.fingerprint()
+            dataset_from_cache = Cache().from_cache(apply_key, apply_data_key)
+
+            if dataset_from_cache is not None:
                 dataset = dataset_from_cache
             else:
-                prev_X = dataset.X.copy()
                 if hasattr(step, 'transform'):
-                    dataset = Dataset(step.transform(dataset.X), dataset.y)
+                    dataset.transform(step.transform)
                 elif hasattr(step, 'resample'):
-                    dataset = Dataset(*step.resample(dataset.X, dataset.y))
-                Cache().add_to_cache(f"apply_{step.fingerprint()}", prev_X, dataset)
+                    dataset = dataset.resample(step.resample)
+                Cache().add_to_cache(apply_key, apply_data_key, dataset)
 
         return dataset.X, dataset.y
 
@@ -288,7 +321,8 @@ class IAMLPipeline(Pipeline):
         :raise ValueError: Step must implement transform method.
         """
         if instance and hasattr(instance, 'transform'):
-            self.transformers.append((str(instance), instance))
+            self._invalidate_fingerprint_cache()
+            self._preprocessing_steps.append((str(instance), instance))
         else:
             raise ValueError("Step must implement transform method")
 
@@ -299,7 +333,8 @@ class IAMLPipeline(Pipeline):
         :raise ValueError: Step must implement resample method.
         """
         if instance and hasattr(instance, 'resample'):
-            self.resamplers.append((str(instance), instance))
+            self._invalidate_fingerprint_cache()
+            self._preprocessing_steps.append((str(instance), instance))
         else:
             raise ValueError("Step must implement resample method")
 
@@ -310,6 +345,7 @@ class IAMLPipeline(Pipeline):
         :param Step instance: Step to add (must implement predict).
         :raise ValueError: Step must implement predict method.
         """
+        self._invalidate_fingerprint_cache()
         self.predictor = (str(instance), instance)
 
     def copy(self) -> IAMLPipeline:
@@ -362,6 +398,8 @@ class IAMLPipeline(Pipeline):
         if not model_only:
             return super().predict(X, **kwargs)
 
+        if self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict(X)
 
     def predict_survival_function(
@@ -384,6 +422,8 @@ class IAMLPipeline(Pipeline):
         if not model_only:
             X = self.transform(X, **kwargs)
 
+        if model_only and self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict_survival_function(X)
 
     def predict_proba(self, X: pd.DataFrame, model_only: bool = False, **kwargs) -> list:
@@ -402,6 +442,8 @@ class IAMLPipeline(Pipeline):
         if not model_only:
             return super().predict_proba(X, **kwargs)
 
+        if self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict_proba(X)
 
     def __getattribute__(self, attr: str) -> bool:
@@ -421,11 +463,12 @@ class IAMLPipeline(Pipeline):
 
     @property
     def optimizable_step(self) -> list['Step']:
-        """Return a list of optimizable step.
+        """Return steps whose parameters or choice of implementation can change.
         
         :return: List of optimizable step
         """
-        return [step for _, step in self.training_steps if step.optimizable]
+        return [step for _, step in self.training_steps
+                if step.optimizable or step.is_interchangeable]
 
     def __eq__(self, other: 'IAMLPipeline') -> bool:
         """Compare two pipelines
@@ -503,9 +546,37 @@ class IAMLPipeline(Pipeline):
 
         :return: md5 sting
         """
-        to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
+        current_version = tuple(
+            (id(step), getattr(step, "_config_version", None))
+            for _, step in self.training_steps
+        )
+        if self._fingerprint_cache is None or self._fingerprint_cache_version != current_version:
+            to_hash = "\n".join([step.fingerprint() for _, step in self.training_steps])
+            self._fingerprint_cache = md5(to_hash.encode()).hexdigest()
+            self._fingerprint_cache_version = current_version
+        return self._fingerprint_cache
 
-        return md5(to_hash.encode()).hexdigest()
+    def transformers_resamplers_fingerprint(self) -> str:
+        """Fingerprint for transformers/resamplers only (used by Candidate)."""
+        current_version = tuple(
+            (id(step), getattr(step, "_config_version", None))
+            for _, step in self._preprocessing_steps
+        )
+        if self._transform_fingerprint_cache is None \
+            or self._transform_fingerprint_cache_version != current_version:
+            to_hash = "\n".join([
+                step.fingerprint()
+                for _, step in self._preprocessing_steps
+            ])
+            self._transform_fingerprint_cache = md5(to_hash.encode()).hexdigest()
+            self._transform_fingerprint_cache_version = current_version
+        return self._transform_fingerprint_cache
+
+    def _invalidate_fingerprint_cache(self) -> None:
+        self._fingerprint_cache = None
+        self._transform_fingerprint_cache = None
+        self._fingerprint_cache_version = None
+        self._transform_fingerprint_cache_version = None
 
     def bibliography(self, structured: bool) -> str | list[dict]:
         """Return a string listing all step's references or a structured list of dict.

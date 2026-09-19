@@ -30,6 +30,7 @@ class ActCox(Predictor):
         rates, or in engineering to predict equipment failure. Unlike many other
         models, it doesn't predict the exact time of the event but estimates the
         risk over time, handling cases where the event has not yet occurred (censored data).''')
+    _usage: str = "Use when you need a Cox model; compare ActCoxnetSurvivalAnalysis for regularization or ActRandomSurvivalForest for nonlinearity. Applicable to tabular survival data with censoring and proportional hazards. Avoid when hazards are non-proportional or interactions dominate."
     refs: list[dict[str, Any]] = [
         {
             'year': 1972,
@@ -68,7 +69,7 @@ class ActCox(Predictor):
                     regularization. alpha=0 means no regularization.'''),
                 'default': 1,
                 'range': [0, 100],
-                'passthrough': False
+                'passthrough': True
             },
             'ties': {
                 'description': textwrap.dedent('''\
@@ -81,7 +82,7 @@ class ActCox(Predictor):
                 'description': 'Maximum number of iterations for fitting the model.',
                 'default': 100,
                 'range': [1, 10000],
-                'passthrough': False
+                'passthrough': True
             },
             'tol': {
                 'description': textwrap.dedent('''\
@@ -89,7 +90,7 @@ class ActCox(Predictor):
                     of the solution.'''),
                 'default': 1e-09,
                 'range': [1e-12, 1e-03],
-                'passthrough': False
+                'passthrough': True
             }
         }
         self.model: CoxPHSurvivalAnalysis = None

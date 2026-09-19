@@ -9,6 +9,15 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
+def _is_numeric_matrix(values: pd.DataFrame) -> bool:
+    if values.empty:
+        return False
+    for column in values.columns:
+        if not pd.api.types.is_numeric_dtype(values[column]):
+            return False
+    return not values.isna().any().any()
+
+
 @is_step('features_preprocessing')
 class ActPowerTransformer(Actionable):
     """[STEP] Preprocess with PowerTransformer"""
@@ -24,6 +33,7 @@ class ActPowerTransformer(Actionable):
         machine learning models that assume normal distribution,
         even if your original data doesn't meet this assumption.
         It helps make your data more compatible with many common ML algorithms.''')
+    _usage: str = "Use when numeric features are skewed and need Gaussian-like scaling, instead of ActKernelPCA or ActFastICA. Applicable to continuous numeric data with unimodal, non-normal distributions. Avoid when data are categorical/one-hot, already near-normal, or highly multimodal."
     refs: list[dict[str, Any]] = [
         {
             'year': 1964,
@@ -66,6 +76,9 @@ class ActPowerTransformer(Actionable):
         self.preprocessor: bool = None
 
     def fit(self, dataset: Dataset) -> Actionable:
+        self.preprocessor = None
+        if not _is_numeric_matrix(dataset.X):
+            return self
         self.preprocessor = PowerTransformer(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X)
 
@@ -78,12 +91,16 @@ class ActPowerTransformer(Actionable):
         :return: Transformed dataset
         """
 
+        if self.preprocessor is None:
+            return X
         return pd.DataFrame(self.preprocessor.transform(X))
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5
 
     def suitable(self, dataset: Dataset) -> bool:
-        if self.get_config('method') == 'box-cox' and not(dataset.X < 0).any().any():
+        if not _is_numeric_matrix(dataset.X):
+            return False
+        if self.get_config('method') == 'box-cox' and not (dataset.X < 0).any().any():
             self.configure('method', 'yeo-johnson') # pylint: disable=too-many-function-args
         return True

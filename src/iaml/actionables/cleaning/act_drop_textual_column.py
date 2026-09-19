@@ -14,6 +14,7 @@ class ActDropTextualColumn(Actionable):
 
     name: str = 'Remove textual columns'
     _description: str = 'Remove all columns containing textual data from the dataset'
+    _usage: str = 'Use when text columns are irrelevant for modeling or downstream steps. Applicable to datasets with free-text or short-text fields detected as text/object. Avoid when text should be vectorized or cleaned; consider ActCountVectorizer or ActCategoricalImputer.'
     _description_long: str = textwrap.dedent('''\
         Remove all columns containing textual data from the dataset.
         This step is used to clean the dataset in order to perform other actions later on

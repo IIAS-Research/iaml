@@ -9,6 +9,15 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
+def _is_numeric_matrix(values: pd.DataFrame) -> bool:
+    if values.empty:
+        return False
+    for column in values.columns:
+        if not pd.api.types.is_numeric_dtype(values[column]):
+            return False
+    return not values.isna().any().any()
+
+
 @is_step('features_preprocessing')
 class ActFeatureAgglomeration(Actionable):
     """[STEP] Apply FeatureAgglomeration for dimensionality reduction"""
@@ -21,6 +30,7 @@ class ActFeatureAgglomeration(Actionable):
         essential information. This technique is unsupervised, meaning it does not
         require labeled data, as it identifies clusters of features based on similarity.
     ''')
+    _usage: str = "Use when you want to cluster highly correlated numeric features for dimensionality reduction, instead of ActKernelPCA or ActFastICA. Applicable to wide tabular data with many continuous features and no labels. Avoid when features are mostly categorical or you need interpretable original features."
 
     def __init__(self):
         self.configuration: dict = {
@@ -49,10 +59,13 @@ class ActFeatureAgglomeration(Actionable):
             }
 
         self.optimizable: bool = True
-        self.preprocessor: bool = None
+        self.preprocessor: FeatureAgglomeration | None = None
 
     def fit(self, dataset: Dataset) -> Actionable:
         # pylint: disable=too-many-function-args
+        self.preprocessor = None
+        if not _is_numeric_matrix(dataset.X):
+            return self
         self.configure('n_clusters', min(self.get_config('n_clusters'), dataset.X.shape[1]))
 
         self.preprocessor = FeatureAgglomeration(**self.passthrough_parameters())
@@ -66,7 +79,12 @@ class ActFeatureAgglomeration(Actionable):
         :param pd.DataFrame X: DataFrame to transform
         :return: Transformed dataset
         """
+        if self.preprocessor is None:
+            return X
         return pd.DataFrame(self.preprocessor.transform(X))
+
+    def suitable(self, dataset: Dataset) -> bool:
+        return _is_numeric_matrix(dataset.X)
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5

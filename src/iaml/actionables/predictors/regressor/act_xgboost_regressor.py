@@ -1,62 +1,44 @@
 """[STEP]  XGBoost Regressor"""
 import textwrap
 from typing import Any
-from sklearn.ensemble import GradientBoostingRegressor
+from xgboost import XGBRegressor
+from .._xgboost import xgboost_features
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'regressor')
+@is_step('predictor', 'tabular', 'regressor', 'minimal_predictor')
 class ActXGBoostRegressor(Predictor):
     """[STEP]  XGBoost Regressor"""
 
     name: str = "XGBoost Regressor"
     _description: str = textwrap.dedent('''\
-        GradientBoostingRegressor is a machine learning algorithm that models the
-        relationship between input features and a continuous output variable using
-        gradient boosting.''')
+        XGBoost predicts continuous targets using regularized gradient-boosted
+        decision trees.''')
     _description_long: str = textwrap.dedent('''\
-        It works by building multiple decision trees in a sequential manner,
-        where each tree is trained to correct the errors made by the previous tree. The final
-        prediction is made by summing the predictions of all the trees.''')
+        Uses XGBoost's histogram tree builder with a squared-error objective.
+        Trees are trained sequentially to improve the ensemble's predictions,
+        with row and column sampling available to control overfitting.''')
+    _usage: str = "Use when you want boosted-tree regression on tabular data, balancing against ActCatBoostRegressor or ActExtraTreesRegressor. Applicable to continuous targets with numeric or encoded categorical features. Avoid when you need native categorical handling or a very fast baseline."
     refs: list[dict[str, Any]] = [
         {
-            'name': 'Stochastic Gradient Boosting',
-            'year': 1999,
+            'name': 'XGBoost: A Scalable Tree Boosting System',
+            'year': 2016,
             'authors': [
-                'Jerome H. Friedman'  
+                'Tianqi Chen',
+                'Carlos Guestrin'
             ],
-            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2',
-            'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
-        },
-        {
-            'year': 2001,
-            'name': 'Greedy Function Approximation: A Gradient Boosting Machine',
-            'authors': [
-                'Jerome H. Friedman'  
-            ],
-            'doi': 'https://doi.org/10.1214/aos/1013203451',
-            'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'
-        },
-        {
-            'year': 2009,
-            'name': 'The Elements of Statistical Learning',
-            'authors': [
-                'Trevor Hastie',
-                'Robert Tibshirani',
-                'Jerome H. Friedman'  
-            ],
-            'doi': 'https://doi.org/10.1007/978-0-387-84858-7',
-            'publisher': 'Springer New York'
+            'doi': 'https://doi.org/10.1145/2939672.2939785',
+            'publisher': 'ACM SIGKDD 2016, pages 785--794'
         }
     ]
     def __init__(self):
         self.configuration = {
             'max_depth': {
                 'description': 'Max depth of each tree',
-                'default': 15,
-                'range': [1, 100]
+                'default': 6,
+                'range': [1, 16]
             },
             'random_state': {
                 'description': 'random_state',
@@ -65,45 +47,48 @@ class ActXGBoostRegressor(Predictor):
             'learning_rate': {
                 'description': 'Learning rate',
                 'default': 0.1,
-                'range': [0.000000001, 5.0]
+                'range': [0.001, 1.0]
+            },
+            'subsample': {
+                'description': 'Fraction of training rows sampled for each tree',
+                'default': 1.0,
+                'range': [0.1, 1.0]
             },
             'n_estimators': {
                 'description': 'Number of estimators',
                 'default': 100,
                 'range': [1, 500]
             },
-            'loss': {
-                'description': 'The loss function to use in the boosting process.',
-                'default': "squared_error",
-                'categorical': ['squared_error', 'absolute_error', 'huber', 'quantile']
+            'min_child_weight': {
+                'description': 'Minimum sum of instance Hessians required in a child',
+                'default': 1.0,
+                'range': [0.0, 20.0]
             },
-            'criterion': {
-                'description': 'The function to measure the quality of a split',
-                'default': "friedman_mse",
-                'categorical': ['friedman_mse', 'squared_error']
-            },
-            'min_samples_leaf': {
-                'description': 'The minimum number of samples required to be at a leaf node.',
-                'default': 1,
-                'range': [1, 15]
-            },
-            'max_features': {
-                'description': 'The number of features to consider when looking for the best split',
+            'colsample_bytree': {
+                'description': 'Fraction of feature columns sampled for each tree',
                 'default': 1.0,
                 'range': [0.1, 1.0]
-            },
-            'min_samples_split': {
-                'description': 'The minimum number of samples required to split an internal node',
-                'default': 2,
-                'range': [2, 20]
             }
         }
-        self.model: GradientBoostingRegressor = None
+        self.model: XGBRegressor = None
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        self.model = GradientBoostingRegressor(**self.passthrough_parameters())
-        self.model.fit(dataset.X, dataset.y)
+        self.model = XGBRegressor(
+            **self.passthrough_parameters(),
+            objective='reg:squarederror',
+            tree_method='hist',
+            n_jobs=1,
+        )
+        self.model.fit(xgboost_features(dataset.X), dataset.y)
         return self
+
+    def predict(self, X):
+        """Predict values using XGBoost-safe feature names."""
+        return super().predict(xgboost_features(X))
+
+    def score(self, X, y, sample_weight=None):
+        """Compute R² using XGBoost-safe feature names."""
+        return super().score(xgboost_features(X), y, sample_weight=sample_weight)
 
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in ['continuous']

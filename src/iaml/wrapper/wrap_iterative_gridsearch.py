@@ -1,6 +1,7 @@
 """[WRAPPER] Wrap a step to apply an Iterative Grid Search implementation"""
 from copy import deepcopy
-from typing import Any
+from math import isfinite
+from typing import Any, Callable
 from ..step_wrapper import StepWrapper
 from ..candidate import Candidate
 from ..step import Step
@@ -13,10 +14,17 @@ class WrapIterativeGridSearch(StepWrapper):
     """[WRAPPER] Wrap a step to apply an Iterative Grid Search implementation
     
     :param Step step: Step to apply grid search on.
+    :param evaluator: Callback returning metric scores, for example using
+        Candidate.training_evaluate with the original dataset and desired splitter.
+        Required unless the wrapped step supplies evaluation scores itself.
     """
 
     name = "Wrap : Iterative GridSearch"
-    def __init__(self, step: Step) -> None:
+    _usage = "Use when you need iterative narrowing of numeric grids, faster than WrapBasicGridSearch. Applicable to numeric-heavy configs with ordered ranges and small categorical/bool sets. Avoid when spaces are huge or unstructured; consider WrapGeneticGridSearch."
+    def __init__(self, step: Step, *, evaluator: Callable[[Candidate], dict] = None) -> None:
+        self.evaluator = evaluator
+        # Evaluation callbacks may capture data that changes between runs.
+        self.use_cache = False
         self.configuration = {
             'modificator': {
                 'description': 'Value modificator for each iteration',
@@ -40,7 +48,10 @@ class WrapIterativeGridSearch(StepWrapper):
 
     @runner
     def run(self, candidate: Candidate) -> list[Candidate]:
-        """Iterative GridSearch
+        """Iterative GridSearch.
+
+        Search numeric parameters as follows::
+
             Numeric values
                 -> First run -> 100% of the value
                 -> Next runs -> +10% and - 10% (100% * modificator value)
@@ -49,7 +60,9 @@ class WrapIterativeGridSearch(StepWrapper):
                     -> Result is worst ? Keep previous result, update modificator
                 -> STOP Conditions ? -> Number of iterations OR no improvement since X interations
             -> Remember the range and then do a dichotomous to find the best parameters
-        Same as basic for the others types
+
+        Use the basic grid search for other parameter types::
+
             Categorical values -> 1 run each
             Boolean values -> Run with True and False
             Other -> keep current value
@@ -57,23 +70,21 @@ class WrapIterativeGridSearch(StepWrapper):
         :param Candidate candidate: The candidate on which we run the grid search.
         :return: All generated Candidates.
         """
+        step = deepcopy(self.step)
+        config = deepcopy({key: item for key, item in step.configuration.items()
+                           if key not in self.to_avoid and not item.get('no_gridsearch', False)})
+        pending = [GridIteration(
+            step, self.get_config('modificator'), copy_config=config,
+            patience=self.get_config('patience'), max_iterations=self.get_config('max_iterations'),
+            evaluator=self.evaluator,
+        )]
         results = []
-        configs = deepcopy(self.step.configuration)
-        self.step.keep_only_first_config() # Avoid run several config for each run
-        for config in configs:
-
-            # Avoid useless config
-            for item in self.to_avoid:
-                if item in config.keys():
-                    del config[item]
-
-            gi = GridIteration(self.step, self.get_config('modificator'), \
-                copy_config=config, patience=self.get_config('patience'))
-            candidate, _ = gi.run(candidate)
-            results = results + ([candidate] if type(candidate) in [Candidate] else candidate)
-
-        self.step.reset_cache()
-        return results
+        while pending:
+            iteration = pending.pop(0)
+            current_results, siblings = iteration.run(candidate)
+            results.extend(current_results)
+            pending.extend(siblings)
+        return sorted(results, reverse=True)[:10]
 
 
 class GridIteration:  # pylint: disable=too-many-instance-attributes
@@ -89,7 +100,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
     :param int, optional max_iterations: Maximum number of iterations. Default to 10.
     :param int, optional number_of_results: Maximum number of results. Default to 10.
     :param float, optional minimal_range_diff: Minimal range diff. Default to None.
-    :param int, optional best_result: Best result. Default to -1.
+    :param float, optional best_result: Best ranking score. Default to negative infinity.
     """
     # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,R0915,R0917
     def __init__(
@@ -104,9 +115,11 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         max_iterations: int = 10,
         number_of_results: int = 10,
         minimal_range_diff: float = None,
-        best_result: int = -1) -> None:
+        best_result: float = float('-inf'),
+        evaluator: Callable[[Candidate], dict] = None) -> None:
         self.step: Step = step
         """The step we are working on"""
+        self.evaluator = evaluator
 
         self.modificator_rate: float = modificator_rate
         """Modificator ratio"""
@@ -114,7 +127,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         self.patience: int = patience
         """Patience"""
 
-        self.config: dict = (copy_config or deepcopy(step.configuration))
+        self.config: dict = deepcopy(step.configuration) if copy_config is None else copy_config
         """Config used"""
 
         if key:
@@ -127,7 +140,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         self.max_iterations: int = max_iterations
         """Maximum number of iterations"""
 
-        self.count_iterations: int = -1
+        self.count_iterations: int = 0
         """Iteration counter"""
 
         self.iterations_without_improvement: int = 0
@@ -143,21 +156,23 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         """List of possible values"""
 
         if self.key:
-            self.value = (value or self.config[self.key]['value'])
+            self.value = self.config[self.key]['value'] if value is None else value
 
             self.modificator = None
             self.minimal_range_diff = None
-            if minimal_range_diff:
+            if minimal_range_diff is not None:
                 self.minimal_range_diff = minimal_range_diff
 
             # Type
             self.can_generate_sibling = False
-            if type(self.value) in [int, float]:
+            if 'categorical' in self.config[self.key]:
+                self.values = list(self.config[self.key]['categorical'])
+            elif type(self.value) in [int, float]:
                 self.can_generate_sibling = True
                 if value_range:
-                    self.modificator = (value_range[0]-value_range[1])/2 * modificator_rate
+                    self.modificator = abs(value_range[1]-value_range[0])/2 * modificator_rate
                 else:
-                    self.modificator = self.value * self.modificator_rate
+                    self.modificator = abs(self.value) * self.modificator_rate
 
                 for way_ind, way in enumerate([1, -1]):
                     way_values = [self.value+(self.modificator*ind*way) \
@@ -167,17 +182,17 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
 
                     if ('range' in self.config[self.key]) or value_range:
                         limits = value_range or self.config[self.key]['range']
-                        way_values = list(filter(lambda x: (limits[0] < x < limits[1]), way_values))  # pylint: disable=cell-var-from-loop
+                        way_values = [v for v in way_values
+                                      if (limits[0] is None or limits[0] <= v)
+                                      and (limits[1] is None or v <= limits[1])]
 
-                    self.ways.append(way_values)
+                    self.ways.append(list(dict.fromkeys(way_values)))
 
                 self.__next_way()
 
-                if not self.minimal_range_diff:
+                if self.minimal_range_diff is None:
                     self.minimal_range_diff = self.modificator * 0.1 # TODO improve this
 
-            elif 'categorical' in self.config[self.key].keys(): # Categorial
-                self.values = self.config[self.key]['categorical']
             elif isinstance(self.value, bool): # Bool
                 self.values = [True, False]
             else: # Other
@@ -192,7 +207,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
             self.number_of_results: int = number_of_results
             """Number of results"""
 
-            self.best_result: int = best_result
+            self.best_result: float = best_result
             """Best result"""        
 
     def done(self) -> bool:
@@ -200,6 +215,8 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         
         :return: Finished ?
         """
+        if not self.can_generate_sibling:
+            return self.count_iterations >= len(self.values)
         return (self.iterations_without_improvement >= self.patience) \
             or (self.count_iterations >= self.max_iterations) \
             or (len(self.values)-1 < self.count_iterations)
@@ -221,7 +238,9 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
             self.modificator_rate,
             patience=self.patience,
             best_result = self.best_result,
-            copy_config=child_config))
+            copy_config=child_config,
+            max_iterations=self.max_iterations,
+            evaluator=self.evaluator))
 
     def __get_best_range(self) -> tuple:
         """Get the best range using previous results. 
@@ -232,17 +251,11 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         if len(self.results) < 2:
             return None, None
 
-        max_index = -1
-        max_value = -1
-
-        for index, result in enumerate(self.results):
-            if result['result'] > max_value:
-                max_value = result['result']
-                max_index = index
-
-        around = self.results[max(0, max_index-1):(max_index+2)]
+        ordered = sorted(self.results, key=lambda result: result['value'])
+        max_index = max(range(len(ordered)), key=lambda index: ordered[index]['result'])
+        around = ordered[max(0, max_index-1):(max_index+2)]
         around = sorted(around, key=lambda x: x['result'])
-        return around[-2]['value'], around[-1]['value']
+        return tuple(sorted((around[-2]['value'], around[-1]['value'])))
 
     def __generate_siblings(self) -> list:
         """Generate siblings
@@ -279,7 +292,10 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
             patience=self.patience,
             copy_config=self.config,
             best_result = self.best_result,
-            key=self.key)
+            key=self.key,
+            max_iterations=self.max_iterations,
+            minimal_range_diff=self.minimal_range_diff,
+            evaluator=self.evaluator)
 
         return [next_iter]
 
@@ -287,10 +303,12 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         """Go to the next direction. 
         Iterator values will go up and then go down.
         """
-        if any(self.ways):
+        while self.ways:
             self.values = self.ways.pop(0)
             self.count_iterations = 0
             self.iterations_without_improvement = 0
+            if self.values:
+                break
 
     def next_iteration(self) -> None:
         """
@@ -312,12 +330,8 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         if not any(results):
             return None
 
-        best_val, best_index = (0, 0)
-        for index, result in enumerate(results):
-            current_val = result.evaluate()
-            if current_val > best_val:
-                best_index = index
-                best_val = current_val
+        best = max(results, key=lambda result: result.get_main_metric_score())
+        best_val = best.get_main_metric_score()
 
         self.results.append({'value': self.current_value(), 'result': best_val})
 
@@ -327,7 +341,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
             self.best_result = best_val
             self.iterations_without_improvement = 0
 
-        self.candidates = self.candidates + [results[best_index]]
+        self.candidates.append(best)
 
         # Keep only n best
         self.candidates.sort(reverse=True)
@@ -345,7 +359,7 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
         """
         # Run and Stack results
         if not self.key:
-            return self.step.run(candidate), []
+            return self.step.run(candidate.to_input()), []
 
         while not self.done():
             results = []
@@ -362,8 +376,20 @@ class GridIteration:  # pylint: disable=too-many-instance-attributes
                     if siblings:
                         self.children = self.children + siblings
             else:
-                results = results + self.step.run(candidate)
-                # print("# RUN # ", self.step, self.step.resume_configuration())
+                for result in deepcopy(self.step).run(candidate.to_input()):
+                    result.main_metric = candidate.get_main_metric()
+                    if self.evaluator is not None:
+                        result.computed_metrics = self.evaluator(result) or {}
+                    score = result.computed_metrics.get(result.main_metric)
+                    if score is None or not isfinite(score):
+                        if self.evaluator is None:
+                            raise ValueError(
+                                'WrapIterativeGridSearch needs an evaluator returning the main '
+                                'metric. Pass evaluator=... using Candidate.training_evaluate '
+                                'on the original dataset.'
+                            )
+                        continue
+                    results.append(result)
 
             self.__stack_results(results)
             self.next_iteration()

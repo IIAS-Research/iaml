@@ -44,15 +44,21 @@ class BayesianOptimizer(BaseOptimizer):
                     if key in self.ignored_configs:
                         continue
                     param_key = f"{step_idx}_{key}"
-                    param_keys.append(param_key)
                     
                     value = config['value']
-                    if isinstance(value, (np.integer, np.floating)):
+                    if isinstance(value, (np.integer, np.floating, np.bool_)):
                         value = value.item()
                     
-                    if isinstance(value, (int, float)):
+                    if 'categorical' in config:
+                        dimensions.append(Categorical(config['categorical']))
+                    elif isinstance(value, bool):
+                        dimensions.append(Categorical([True, False]))
+                    elif isinstance(value, (int, float)):
                         if 'range' in config:
                             low, high = config['range']
+                            # Keep parameters with unbounded ranges fixed.
+                            if low is None or high is None:
+                                continue
                             if low > high:
                                 low, high = high, low
                             if isinstance(value, float):
@@ -66,11 +72,13 @@ class BayesianOptimizer(BaseOptimizer):
                                 dimensions.append(Real(-1e6, 1e6))
                             else:
                                 dimensions.append(Integer(1, 1_000_000)) # TODO Pas de int négatif ? 
-                    elif 'categorical' in config.keys():
-                        dimensions.append(Categorical(config['categorical']))
-                    elif isinstance(value, bool):
-                        dimensions.append(Categorical([True, False]))
+                    else:
+                        # None and other values without a search domain stay unchanged.
+                        continue
+                    param_keys.append(param_key)
             
+            if not dimensions:
+                continue
             Logger().info(f"Initializing Bayesian Optimizer for structure {structure_id} with {len(dimensions)} dimensions")
             self.skopt_optimizers[structure_id] = {'optimizer': Optimizer(dimensions), 'param_keys': param_keys, 'dimensions': dimensions}
     
@@ -102,9 +110,7 @@ class BayesianOptimizer(BaseOptimizer):
                             continue
                         param_key = f"{step_idx}_{key}"
                         if param_key in optimizer_data['param_keys']:
-                            if isinstance(config['value'], bool):
-                                step[1].configure(key, bool(new_params[idx]))
-                            elif isinstance(new_params[idx], (np.integer, np.floating)):
+                            if isinstance(new_params[idx], (np.integer, np.floating, np.bool_)):
                                 step[1].configure(key, new_params[idx].item())
                             else:
                                 step[1].configure(key, new_params[idx])
@@ -124,11 +130,12 @@ class BayesianOptimizer(BaseOptimizer):
                     try:
                         param_index = optimizer_data['param_keys'].index(param_key)
                         value = config['value']
-                        if isinstance(value, (np.integer, np.floating)):
+                        if isinstance(value, (np.integer, np.floating, np.bool_)):
                             value = value.item()
                         
-                        bounds = optimizer_data['dimensions'][param_index].bounds
-                        if isinstance(bounds, tuple) and isinstance(value, (int, float)):
+                        dimension = optimizer_data['dimensions'][param_index]
+                        if isinstance(dimension, (Integer, Real)) and isinstance(value, (int, float)):
+                            bounds = dimension.bounds
                             value = max(min(value, bounds[1]), bounds[0])
                         params[param_index] = value
                     except IndexError as e:
@@ -145,7 +152,7 @@ class BayesianOptimizer(BaseOptimizer):
         if self.current_iteration == 0:
             self._initialize_search_space(candidates)
         
-        candidates.sort(key=lambda c: c.get_main_metric_value(), reverse=True)
+        candidates.sort(reverse=True)
         
         for candidate in candidates:
             structure_id = self._generate_structure_id(candidate)
@@ -156,15 +163,16 @@ class BayesianOptimizer(BaseOptimizer):
             
             params = self._export_params(candidate, optimizer_data)
             
-            main_metric = candidate.get_main_metric_value()
+            main_metric = candidate.get_main_metric_score()
             if isinstance(main_metric, (np.integer, np.floating)):
                 main_metric = main_metric.item()
-            if not isinstance(main_metric, (int, float)):
-                Logger().error(f"Invalid main_metric: expected scalar, got {type(main_metric)} - {main_metric}")
+            if not isinstance(main_metric, (int, float)) or not np.isfinite(main_metric):
+                Logger().error(f"Invalid main_metric: expected finite scalar, got {type(main_metric)} - {main_metric}")
                 continue
             
             try:
-                optimizer_data['optimizer'].tell([params], [main_metric])
+                # skopt minimizes its objective, while IAML maximizes candidate scores.
+                optimizer_data['optimizer'].tell([params], [-main_metric])
             except ValueError as e:
                 Logger().error(f"Error in skopt.tell(): {str(e)}. Params: {params}, Bounds: {optimizer_data['optimizer'].space.bounds}")
                 continue

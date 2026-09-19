@@ -38,6 +38,23 @@ class MetricPlot(Plot):
         raise NotImplementedError('Subclass must implement abstract method')
 
 
+def _estimator_is_fitted(estimator) -> bool:
+    checker = getattr(estimator, "__sklearn_is_fitted__", None)
+    if callable(checker):
+        try:
+            fitted = bool(checker())
+        except Exception:  # noqa: BLE001
+            return False
+        if fitted and hasattr(estimator, "predictor"):
+            predictor = getattr(estimator, "predictor", None)
+            if predictor and isinstance(predictor, tuple):
+                model = getattr(predictor[1], "model", None)
+                if model is None:
+                    return False
+        return fitted
+    return False
+
+
 def yellowbrick_plot(yellowbrick_visualizer: Type[Visualizer]):
     """Decorator for creating metric plots based on Yellowbrick visualizers.
 
@@ -47,9 +64,10 @@ def yellowbrick_plot(yellowbrick_visualizer: Type[Visualizer]):
         @capture
         def compute(self, estimator, X, y, X_train = None, y_train = None, **kwargs): # pylint: disable=missing-function-docstring, unused-argument
             self._binary_image = io.BytesIO() # pylint: disable=protected-access
-            visualizer = yellowbrick_visualizer(estimator, is_fitted=True)
+            already_fitted = _estimator_is_fitted(estimator)
+            visualizer = yellowbrick_visualizer(estimator, is_fitted=already_fitted)
 
-            if X_train is not None and y_train is not None:
+            if X_train is not None and y_train is not None and not already_fitted:
                 visualizer.fit(X_train, y_train)
 
             visualizer.score(X, y)

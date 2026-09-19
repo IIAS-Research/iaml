@@ -1,4 +1,9 @@
-"""[METRIC] Cumulative Dynamic AUC for Survival Models"""
+"""Experimental cumulative AUC implementation for explicit manual investigation.
+
+The current implementation passes survival probabilities where risk scores are
+required, and its time grid and aggregation need validation. Importing this module
+must not activate the metric in AutoML. See docs/component_status.rst.
+"""
 from typing import Any
 import textwrap
 import pandas as pd
@@ -71,7 +76,8 @@ class CumulativeDynamicAUCMetric(Metric):
         return 'predict_survival_function'
 
     def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
-        return type_of_target == 'survival'
+        """Keep this unvalidated implementation outside automatic metric selection."""
+        return False
 
     def compute(
         self,
@@ -87,19 +93,27 @@ class CumulativeDynamicAUCMetric(Metric):
         :param dict, optional \\**kwargs: Additional parameters
         :return: Computed value
         """
-        y_train = np.array(y_train, dtype=[('event', 'bool'), ('time', 'float')])
-        y = Dataset.fix_y_survival(y, y_train)
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float')])
+        y_train_samples = Dataset.normalize_survival_target(y_train)
+        y_samples = Dataset.fix_y_survival(y, y_train_samples)
+
+        y_train_struct = np.array(
+            y_train_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
+        y_struct = np.array(
+            y_samples,
+            dtype=[('event', 'bool'), ('time', 'float')]
+        )
 
         # Extract time from y test
-        _, time = zip(*y)
+        _, time = zip(*y_samples)
         times = np.arange(min(time), max(time))
 
         # Extract risk score for each time point
         predictions = np.asarray([[fn(t) for t in times] for fn in y_pred])
 
         # Calculate cumulative dynamic AUC using sksurv function
-        all_points, _ = cumulative_dynamic_auc(y_train, y, predictions, times)
+        all_points, _ = cumulative_dynamic_auc(y_train_struct, y_struct, predictions, times)
 
         # Return mean AUC across time points
         return np.nanmean(all_points)

@@ -8,12 +8,16 @@ import time
 import traceback
 import warnings
 import threading
+import queue
+import pickle
 import multiprocess
 import multiprocess.managers
 import multiprocess.process
 
 from .logger import Logger
 from .core_dispatcher import CoreDispatcher
+from .shared_cache import start_cache_manager
+from .cache import Cache
 
 
 class TerminatedError(RuntimeError):
@@ -26,7 +30,8 @@ def process_daemon(
     to_run_queue: multiprocess.Queue,
     queue: multiprocess.Queue,
     error_queue: multiprocess.Queue,
-    finally_queue: multiprocess.Queue) -> None:
+    finally_queue: multiprocess.Queue,
+    shared_cache) -> None:
     """Will be run by TimedPoolExecutor -> Daemon process able to handle actions
 
     :param multiprocess.Queue to_run_queue: List of action to run
@@ -36,6 +41,8 @@ def process_daemon(
         Used to count number of ran actions
     """
     result = None
+    
+    Cache().configure(shared_cache)
 
     time.sleep(random.random()) # Weird thing to un-sync the threads
 
@@ -91,20 +98,35 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         self.daemons_collectors: list[threading.Thread] = None
         """List of running daemons"""
 
-        self.manager: multiprocess.Manager = multiprocess.Manager()
-        """Manager object handling multiprocess Queues"""
+        self._mp_capable: bool = True
+        """Flag indicating whether multiprocessing primitives are available."""
+        self._mp_fallback: bool = False
+        """Flag indicating whether we already fell back to sequential execution."""
 
-        self.to_run_queue: multiprocess.Manager.Queue = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        try:
+            self.manager: multiprocess.Manager = multiprocess.Manager()
+        except Exception as exc:  # pylint: disable=broad-except
+            warnings.warn(f"TimedPoolExecutor fallback to sequential mode (manager start failed: {exc!r})")
+            self.manager = None
+            self._mp_capable = False
 
-        self.error_queue: multiprocess.Manager.Queue  = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        if self._mp_capable:
+            self.to_run_queue = self.manager.Queue()
+            self.error_queue = self.manager.Queue()
+            self.result_queue = self.manager.Queue()
+            self.finally_queue = self.manager.Queue()
+        else:
+            self.to_run_queue = queue.Queue()
+            self.error_queue = queue.Queue()
+            self.result_queue = queue.Queue()
+            self.finally_queue = queue.Queue()
+        # Queues used to exchange data with subprocesses
 
-        self.result_queue: multiprocess.Manager.Queue  = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        self.cache_manager: multiprocess.managers.BaseManager | None = None
+        """Keep a strong reference to the shared cache manager process"""
 
-        self.finally_queue: multiprocess.Manager.Queue  = self.manager.Queue()
-        """Queue used to exchange data with sub process"""
+        self.shared_cache = None
+        """Proxy object used by workers to talk to the shared cache"""
 
         self.callbacks: list[callable] = [callback]
         """Method to call after each run"""
@@ -120,24 +142,41 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
 
         self.process: list[multiprocess.Process] = []
         """List of sub processes"""
+        
+        if not self._mp_capable:
+            self.debug = True
+            self.max_workers = 1
+            self.cache_manager = None
+            self.shared_cache = None
+            Cache().configure(None)
+        else:
+            try:
+                self.cache_manager, self.shared_cache = start_cache_manager(max_cache_size=500)
+                Cache().configure(self.shared_cache)
+            except OSError as exc:
+                warnings.warn(f"Shared cache disabled (start_cache_manager failed: {exc!r})")
+                self.cache_manager = None
+                self.shared_cache = None
+                Cache().configure(None)
 
-        # Create and start sub process (will only wait until first submit)
-        for _ in range(max_workers):
-            self.process.append(
-                multiprocess.Process( # pylint: disable=not-callable
-                    target=process_daemon,
-                    args=[self.to_run_queue,
-                        self.result_queue,
-                        self.error_queue,
-                        self.finally_queue
-                    ]
+            # Create and start sub process (will only wait until first submit)
+            for _ in range(max_workers):
+                self.process.append(
+                    multiprocess.Process( # pylint: disable=not-callable
+                        target=process_daemon,
+                        args=[self.to_run_queue,
+                            self.result_queue,
+                            self.error_queue,
+                            self.finally_queue,
+                            self.shared_cache
+                        ]
+                    )
                 )
-            )
-            self.process[-1].start()
+                self.process[-1].start()
 
-        CoreDispatcher().affiliate(
-            [process.pid for process in self.process],
-            core_number=self.max_workers)
+            CoreDispatcher().affiliate(
+                [process.pid for process in self.process],
+                core_number=self.max_workers)
 
         self.__run_daemon() # Run the daemon THREAD
 
@@ -154,7 +193,8 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """Shutdown TimedPoolExecutor : Kill subprocess and thread
         """
         self.stop_flag = True # Main daemon thread will kill process
-        self.main_daemon.join()
+        if self.main_daemon:
+            self.main_daemon.join()
 
     def __collect_results(self) -> None:
         """Collect results from queues and run callback
@@ -165,26 +205,37 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
             if isinstance(result, str) and result == 'stop':
                 break
 
-            if callback_id and callable(self.callbacks[callback_id]):
+            if callback_id is not None and callable(self.callbacks[callback_id]):
                 self.callbacks[callback_id](result)
 
             Logger().info(str(result))
             self.results.append(result)
 
     def __collect_finally(self) -> None:
-        while self.finally_queue.get() != "stop":
+        while True:
+            item = self.finally_queue.get()
+            if item == "stop":
+                break
             self.finished_run += 1
 
     def __print_errors(self) -> None:
         """Collect and print error from error_queue"""
         while True:
-            error, callback_id = self.error_queue.get()
+            item = self.error_queue.get()
+
+            if item is None:
+                continue
+
+            error, callback_id = item
 
             if error == 'stop':
                 break
 
             Logger().error("Error in a subprocess : ", error)
-            self.callbacks[callback_id](None)
+            if callback_id is not None and callback_id < len(self.callbacks):
+                callback = self.callbacks[callback_id]
+                if callable(callback):
+                    callback(None)
 
     def __keep_running(self) -> None:
         """Daemon THREAD process. Infinite loop to catch results & errors"""
@@ -201,7 +252,14 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                 while not self.to_run_queue.empty():
                     self.to_run_queue.get()
 
-                self.manager.shutdown()
+                if self.manager is not None:
+                    self.manager.shutdown()
+                if self.cache_manager is not None:
+                    self.cache_manager.shutdown()
+                    self.cache_manager = None
+
+                self.shared_cache = None
+                Cache().configure(None)
 
                 break
 
@@ -227,22 +285,112 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         for collector in self.daemons_collectors:
             collector.start()
 
-    def submit(self, target: callable, *args, **kwargs) -> None:
-        """Submit a new task to sub process
+    def _drain_queue(self, target_queue: queue.Queue | multiprocess.managers.BaseProxy) -> None:
+        """Clear queued tasks without blocking."""
+        while True:
+            try:
+                target_queue.get_nowait()
+            except Exception:
+                break
+
+    def _terminate_workers(self) -> None:
+        """Stop all worker processes immediately."""
+        for process in self.process:
+            try:
+                if process.is_alive():
+                    process.kill()
+            except Exception:
+                try:
+                    process.terminate()
+                except Exception:
+                    pass
+            try:
+                process.join(timeout=0.2)
+            except Exception:
+                pass
+        self.process = []
+
+    def _restart_workers(self) -> None:
+        """Restart worker processes after a timeout cancellation."""
+        if not self._mp_capable:
+            return
+
+        for _ in range(self.max_workers):
+            self.process.append(
+                multiprocess.Process( # pylint: disable=not-callable
+                    target=process_daemon,
+                    args=[self.to_run_queue,
+                        self.result_queue,
+                        self.error_queue,
+                        self.finally_queue,
+                        self.shared_cache
+                    ]
+                )
+            )
+            self.process[-1].start()
+
+        CoreDispatcher().affiliate(
+            [process.pid for process in self.process],
+            core_number=self.max_workers)
+
+    def submit(self, target: callable, *args, deadline: float | None = None, **kwargs) -> bool:
+        """Submit a task, waiting for space when a deadline is specified.
 
         :param callable target: Method to run
         :param Tuple, optional args: parameters passed to the callable
+        :param float, optional deadline: Absolute time from ``time.monotonic()``.
         :param Dict, optional kwargs: parameters passed to the callable
+        :return: False if the deadline expires before submission, otherwise True.
         """
-        if self.stop_flag:
-            raise TerminatedError("Job submission failed: Executor is currently \
-                shutdown and cannot accept new tasks.")
+        while True:
+            if self.stop_flag:
+                raise TerminatedError("Job submission failed: Executor is currently \
+                    shutdown and cannot accept new tasks.")
+
+            remaining = float("inf") if deadline is None else deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+
+            # Keep at most one waiting task per worker in addition to those running.
+            # Large candidate objects otherwise make both submission and cancellation
+            # spend most of the training budget serializing an unbounded backlog.
+            if deadline is None or self.submit_count - self.finished_run < self.max_workers * 2:
+                break
+            time.sleep(min(0.05, remaining))
+
+        callback_id = len(self.callbacks) - 1
 
         if self.debug:
-            self.result_queue.put((target(*args, **kwargs), len(self.callbacks)-1))
-        else:
-            self.to_run_queue.put((target, args, kwargs, len(self.callbacks)-1))
+            result = target(*args, **kwargs)
+            if callback_id is not None and callable(self.callbacks[callback_id]):
+                self.callbacks[callback_id](result)
+            Logger().info(str(result))
+            self.results.append(result)
             self.submit_count += 1
+            self.finished_run += 1
+            return True
+
+        try:
+            self.to_run_queue.put((target, args, kwargs, callback_id))
+            self.submit_count += 1
+        except pickle.PicklingError as exc:
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
+            if not self._mp_fallback:
+                warnings.warn(
+                    f"TimedPoolExecutor fallback to sequential mode (pickle failed: {exc!r})"
+                )
+                self._mp_fallback = True
+            self.debug = True
+            result = target(*args, **kwargs)
+            if callback_id is not None and callable(self.callbacks[callback_id]):
+                self.callbacks[callback_id](result)
+            Logger().info(str(result))
+            self.results.append(result)
+            self.submit_count += 1
+            self.finished_run += 1
+
+        return True
 
     def __finished(self) -> bool:
         """Are all the submitted tasks finished?
@@ -285,18 +433,20 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """
         self.callbacks.append(callback)
 
-    def join(self, timeout: int, reset: bool = True) -> list:
+    def join(self, timeout: float | None, reset: bool = True) -> list:
         """Wait until all the task are finished or timeout is reach
         If timeout is reach -> Remaining tasks will be kill without sending results
 
-        :param int timeout: Maximum seconds to wait
+        :param float timeout: Maximum seconds to wait; None waits without a timeout.
         :param bool, optional reset: Reset the instance after join(). Defaults to True.
 
         :return: All finished task results
         """
         start_time = time.monotonic()
         def remain_time():
-            return max(0, int(timeout - (time.monotonic() - start_time)))
+            if timeout is None:
+                return float("inf")
+            return max(0.0, timeout - (time.monotonic() - start_time))
 
         def slide():
             try:
@@ -314,11 +464,25 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
                     and self.results # We have got at least one result
                 )
 
-        while not self.__finished() and remain_time() and not slide():
-            time.sleep(0.5)
+        while not self.__finished():
+            remaining = remain_time()
+            if remaining <= 0 or slide():
+                break
+            time.sleep(min(0.05, remaining))
+
+        timed_out = not self.__finished() and remain_time() == 0
+        if timed_out:
+            if self._mp_capable and self.process:
+                self._terminate_workers()
+            self._drain_queue(self.to_run_queue)
 
         # Join collector thread, just to be sure we have collected all data
         self.__join_collectors()
+
+        if timed_out:
+            self.submit_count = self.finished_run
+            if self._mp_capable:
+                self._restart_workers()
 
         results = self.results # Save before reset!
 

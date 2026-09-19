@@ -20,6 +20,7 @@ class ActDropNumericalColumn(Actionable):
         Remove numerical columns from the dataset where the proportion of empty
         rows in the dataset is higher than {empty_threshold:.0%}. This ensure that every columns will
         be relevant for the model to train on.''')
+    _usage: str = "Use when numeric columns are mostly empty and dropping is acceptable; compare ActDropCategoricalColumn for non-numeric drops. Applicable to datasets with numeric fields and high missingness. Avoid when you should impute or the numeric signal is critical."
 
     def __init__(self):
         self.columns_to_drop: list[str] = None

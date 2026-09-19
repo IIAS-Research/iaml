@@ -13,6 +13,7 @@ class ActRemoveHighCorrelatedColumn(Actionable):
 
     name: str = "Remove High Correlated Columns"
     _description: str = "Remove columns that have high correlation with each other"
+    _usage: str = "Use when you need quick unsupervised pruning of highly correlated numeric features vs ActVIFSelector. Applicable to tabular data with continuous or ordinal columns. Avoid when labels should drive selection (use ActSelectKBest) or features are mostly categorical or nonlinear."
     _description_long: str = textwrap.dedent('''\
         Removing high correlated columns helps to reduce multicollinearity
         in a dataset. When two columns are highly correlated, they contain

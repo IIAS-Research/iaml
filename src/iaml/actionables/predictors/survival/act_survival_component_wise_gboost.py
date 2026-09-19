@@ -9,11 +9,12 @@ from ....dataset import Dataset
 from ....decorators.all import is_step
 
 
-@is_step('predictor', 'tabular', 'survival')
+@is_step('predictor', 'tabular', 'survival', 'minimal_predictor')
 class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
     """[STEP] Componentwise Gradient Boosting Survival Analysis"""
 
     name: str = "ComponentwiseGradientBoostingSurvivalAnalysis"
+    _usage: str = "Use when you want stagewise boosting with feature selection for survival instead of ActGradientBoostingSurvivalAnalysis. Applicable to tabular censored survival data, especially with many features. Avoid when a linear model like ActCox or ActCoxnetSurvivalAnalysis is preferred."
     _description: str = textwrap.dedent('''\
         ComponentwiseGradientBoostingSurvivalAnalysis is a survival analysis
         algorithm that uses gradient boosting with componentwise (stagewise) updates
@@ -37,7 +38,7 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
             'name': 'Survival ensembles',
             'authors': [
                 'T. Hothorn',
-                'P. Bühlmann',
+                'P. B5hlmann',
                 'S. Dudoit',
                 'A. Molinaro',
                 'M. J. van der Laan'
@@ -53,31 +54,13 @@ class ActComponentwiseGradientBoostingSurvivalAnalysis(Predictor):
                 'description': 'Number of boosting stages to be run.',
                 'default': 100,
                 'range': [1, 1000],
-                'passthrough': False
+                'passthrough': True
             },
             'learning_rate': {
-                'description': 'Learning rate shrinks the contribution of each tree by this value.',
+                'description': 'Learning rate shrinks the contribution of each component.',
                 'default': 0.1,
                 'range': [0.01, 1.0],
-                'passthrough': False
-            },
-            'max_depth': {
-                'description': 'The maximum depth of the individual trees.',
-                'default': 1,
-                'range': [1, 10],
-                'passthrough': False
-            },
-            'min_samples_split': {
-                'description': 'The minimum number of samples required to split an internal node.',
-                'default': 2,
-                'range': [2, 20],
-                'passthrough': False
-            },
-            'min_samples_leaf': {
-                'description': 'The minimum number of samples required to be at a leaf node.',
-                'default': 1,
-                'range': [1, 20],
-                'passthrough': False
+                'passthrough': True
             }
         }
         self.model: ComponentwiseGradientBoostingSurvivalAnalysis = None

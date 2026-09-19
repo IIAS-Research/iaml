@@ -32,6 +32,7 @@ class MetaStep(Step):
     """
     name: str = "Steps group"
     description: str = 'Execute steps one by one'
+    _usage: str = "Use when you need a meta step to run several child Steps and pass candidates between them. Applicable to pipelines with multiple child steps or tagged steps producing Candidate outputs. Avoid when you need fixed ordering or exploration; consider MetaOrderedStep or MetaExplorerStep."
     description_long: str = None
 
     def __init__(
@@ -42,11 +43,14 @@ class MetaStep(Step):
         name: str = None,
         description: str = None,
         **kwargs) -> None:
+        self.tag: str | None = None
+        """Optional tag used to populate this meta step."""
         self.steps: list[Step] = [] # Initialize steps to empty
         """List of steps"""
 
         # If there is a tag -> add all Steps with this tag
         if tag:
+            self.tag = tag
             self.add_step_by_tag(tag, wrap=wrap)
             self.name = f"Steps from : {tag}"
 
@@ -111,6 +115,8 @@ class MetaStep(Step):
         :param str tag: tag to search Steps.
         :param StepWrapper, optional wrap: Wrap Step in it. Default to None.
         """
+        if self.tag is None:
+            self.tag = tag
         steps_to_add = find_steps_by_tag(tag)
 
         if wrap is not None:
@@ -130,10 +136,13 @@ class MetaStep(Step):
         return to_return
 
     def json_pipeline(self) -> dict[str, Any]:
-        return {
+        payload = {
             **Step.json_pipeline(self),
             'children': [ step.json_pipeline() for step in self.steps ]
         }
+        if self.tag:
+            payload['tag'] = self.tag
+        return payload
 
     def all_steps(self) -> list[Step]:
         children = []

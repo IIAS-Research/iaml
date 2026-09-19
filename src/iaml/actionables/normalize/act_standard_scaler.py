@@ -6,9 +6,9 @@ from ...actionable import Actionable
 from ...dataset import Dataset
 from ...candidate import Candidate
 from ...data_type import DataType
+from ...decorators.all import is_step
 
-# TODO Fix this step
-# @is_step('normalize')
+@is_step('normalize')
 class ActStandardScaler(Actionable):
     """[STEP] Standard Scaler"""
 
@@ -44,8 +44,11 @@ class ActStandardScaler(Actionable):
         :param pd.DataFrame X: DataFrame to transform
         :return: Transformed dataset
         """
-        if self.scaler:
-            X[self.columns] = self.scaler.transform(X[self.columns])
+        if self.scaler and self.columns:
+            columns = [column for column in self.columns if column in X.columns]
+            if not columns:
+                return X
+            X[columns] = self.scaler.transform(X[columns])
         return X
 
     def priorize(self, candidate: Candidate = None) -> float:

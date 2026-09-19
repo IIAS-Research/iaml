@@ -14,6 +14,7 @@ class ActRandomSurvivalForest(Predictor):
     """[STEP] Random Survival Forest"""
 
     name: str = "RandomSurvivalForest"
+    _usage: str = "Use when you want a flexible tree-ensemble survival model; choose over ActCox when PH is doubtful, or consider ActExtraSurvivalTrees for more randomness. Applicable to tabular time-to-event data with censoring. Avoid when data are tiny or effects are well modeled by linear PH."
     _description: str = textwrap.dedent('''\
         RandomSurvivalForest is a survival analysis algorithm
         that uses an ensemble of decision trees to estimate the survival function
@@ -50,19 +51,19 @@ class ActRandomSurvivalForest(Predictor):
                 'description': 'Number of trees in the forest.',
                 'default': 100,
                 'range': [1, 1000],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node.',
                 'default': 2,
                 'range': [2, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_leaf': {
                 'description': 'The minimum number of samples required to be at a leaf node.',
                 'default': 1,
                 'range': [1, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'max_depth': {
                 'description': textwrap.dedent('''\
@@ -70,7 +71,7 @@ class ActRandomSurvivalForest(Predictor):
                     expanded until all leaves are pure.'''),
                 'default': None,
                 'range': [1, None],
-                'passthrough': False
+                'passthrough': True
             }
         }
         self.model: RandomSurvivalForest = None

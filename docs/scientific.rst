@@ -14,6 +14,9 @@ When conducting scientific research, it is crucial to ensure that the methodolog
 - **Customizability:** Adapt pipelines and integrate domain-specific methods to meet the unique requirements of your research.
 - **Performance:** Achieve state-of-the-art results with minimal effort, ensuring your findings are backed by reliable models and analysis.
 
+The examples below use ``model = candidates[0]``, the trained candidate
+returned by ``candidates = search.fit(X_train, y_train)`` in :doc:`quick_start`.
+
 Key Features for Scientific Work
 ================================
 .. 1. **Descriptive Statistics and Visualizations**
@@ -56,7 +59,8 @@ Key Features for Scientific Work
 
     .. code-block:: python
 
-        explanation = model.explain_feature_importance(X_test, y_test)  # Provides SHAP-based insights.
+        explanation = model.explain_feature_importance(X_test)
+        importance = explanation.features_importance()
 
         # Example output:
         # {'Pclass': 0.09936865575659631,
@@ -81,7 +85,7 @@ Key Features for Scientific Work
 
     .. code-block:: python
 
-        plots = model.explain_model_performance(X_test, y_test)  # Provides SHAP-based insights.
+        plots = model.explain_model_performance(X_test, y_test)
 
         # Example output:
         # [<iaml.plots.class_prediction_error_plot.ClassPredictionErrorPlot object at 0x7f7d884260b0>,

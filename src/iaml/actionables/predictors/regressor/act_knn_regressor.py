@@ -13,6 +13,7 @@ class ActKNNRegressor(Predictor):
     """[STEP] KNN"""
 
     name: str = "KNN"
+    _usage: str = "Use when local neighbor patterns matter and you need a fast baseline; compare ActDecisionTreeRegressor or ActExtraTreesRegressor. Applicable to numeric tabular regression with moderate feature scales. Avoid when data is high-dimensional, very large, or needs extrapolation."
     _description: str = textwrap.dedent('''\
         KNeighborsRegressor is a machine learning algorithm that makes
         predictions for regression tasks using k-nearest neighbors.''')

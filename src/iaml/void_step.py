@@ -1,4 +1,7 @@
 """[STEP] Void step -> Just a step that do nothing and can be mutated to siblings"""
+from hashlib import md5
+import json
+
 import pandas as pd
 from .step import Step
 from .decorators.all import is_step
@@ -41,6 +44,7 @@ class VoidStep(Step):
     :param Step, optional step_to_mimic: The step to mimic, if provided
     :param Dict, optional kwargs: Additional parameters
     """
+    _usage: str = "Use when you need a no-op placeholder that mimics another step during search, unlike Actionable. Applicable to any dataset when inputs must pass through unchanged. Avoid when you need a real operation or orchestration; consider MetaStep or MetaOrderedStep."
     name: str = "VoidStep"
     def __init__(self, *args, step_to_mimic: Step = None, **kwargs) -> None:  # pylint: disable=unused-argument
         """VoidStep : Do nothing"""
@@ -56,6 +60,16 @@ class VoidStep(Step):
                 self.transform = transform
             elif hasattr(step_to_mimic, 'resample') and callable(step_to_mimic.resample):
                 self.resample = resample
+
+    def fingerprint(self) -> str:
+        """Keep cached placeholders in their own operation and mutation family."""
+        mimic = getattr(self, 'step_to_mimic', None)
+        signature = (
+            super().fingerprint(),
+            sorted(self.tags or []),
+            mimic.fingerprint() if mimic is not None else None,
+        )
+        return md5(json.dumps(signature).encode()).hexdigest()
 
     @classmethod
     def from_pipeline(cls, pipeline: dict, *args, **kwargs) -> Step:

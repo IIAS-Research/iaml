@@ -10,6 +10,7 @@ class MeanSquaredErrorMetric(Metric):
     """[METRIC] Mean Squared Error"""
 
     name: str = 'Mean Squared Error'
+    greater_is_better = False
     _description: str = textwrap.dedent('''\
         Mean Squared Error (MSE) measures the average of the squares of the errors 
         in predictions. It emphasizes larger errors, making it useful for assessing prediction accuracy.

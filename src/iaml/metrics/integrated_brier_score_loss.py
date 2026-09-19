@@ -8,6 +8,7 @@ class IntegratedBrierScoreLossMetric(IntegratedBrierScoreMetric):
     """[METRIC] Integrated Brier Score Loss for Survival Models"""
 
     name: str = 'Reverse Integrated Brier Score'
+    greater_is_better = True  # This metric returns 1 - IBS.
     _description: str = textwrap.dedent('''\
         The Integrated Brier Score (IBS) is a measure used to evaluate how well survival 
         models predict the likelihood of an event happening over time. Here we compute 1 - IBS''')

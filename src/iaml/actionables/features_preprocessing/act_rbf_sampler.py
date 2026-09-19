@@ -8,11 +8,21 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
+def _is_numeric_matrix(values: pd.DataFrame) -> bool:
+    if values.empty:
+        return False
+    for column in values.columns:
+        if not pd.api.types.is_numeric_dtype(values[column]):
+            return False
+    return not values.isna().any().any()
+
+
 @is_step('features_preprocessing')
 class ActRBFSampler(Actionable):
     """[STEP] Approximate with RBFSampler"""
 
     name: str = "Approximate with RBFSampler"
+    _usage: str = "Use when you want a fast nonlinear kernel approximation for numeric features, as a lighter alternative to ActKernelPCA. Applicable to dense tabular data where scaling is reasonable. Avoid when data are categorical heavy, very sparse, or when you need exact kernel features."
     _description: str = textwrap.dedent('''\
         RBFSampler is a tool that helps computers understand complex relationships
         between things by turning them into simpler numbers.''')
@@ -53,6 +63,9 @@ class ActRBFSampler(Actionable):
         self.preprocessor: bool = None
 
     def fit(self, dataset: Dataset) -> Actionable:
+        self.preprocessor = None
+        if not _is_numeric_matrix(dataset.X):
+            return self
         self.preprocessor = RBFSampler(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X)
 
@@ -64,7 +77,12 @@ class ActRBFSampler(Actionable):
         :param pd.DataFrame X: DataFrame to transform
         :return: Transformed dataset
         """
+        if self.preprocessor is None:
+            return X
         return pd.DataFrame(self.preprocessor.transform(X))
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5
+
+    def suitable(self, dataset: Dataset) -> bool:
+        return _is_numeric_matrix(dataset.X)

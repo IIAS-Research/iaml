@@ -19,6 +19,7 @@ class ActGaussianProcessRegressor(Predictor):
         GaussianProcessRegressor is a powerful algorithm for regression tasks,
         especially when the relationship between the input features and the output variable is
         complex and non-linear, and when uncertainty estimates are important.''')
+    _usage: str = "Use when you need nonlinear regression with uncertainty on small tabular data; compare ActCatBoostRegressor or ActExtraTreesRegressor for larger data. Applicable to continuous-target tabular features. Avoid when datasets are large/high-dimensional or latency is strict."
     refs: list[dict[str, Any]] = [
         {
             'year': 2006,

@@ -1,8 +1,10 @@
 """[METRIC] Concordance Index for Survival Models using sksurv"""
 from typing import Any
 import textwrap
+import numpy as np
 import pandas as pd
 from sksurv.metrics import concordance_index_censored
+from ..dataset import Dataset
 from ..metric import Metric
 
 class ConcordanceIndexMetric(Metric):
@@ -52,9 +54,14 @@ class ConcordanceIndexMetric(Metric):
         y: pd.DataFrame,
         y_pred: pd.DataFrame,
         **kwargs) -> float:
-        event, time = zip(*y)
+        samples = Dataset.normalize_survival_target(y)
+        if not samples:
+            raise ValueError("Survival targets are empty.")
+
+        events = np.asarray([event for event, _ in samples], dtype=bool)
+        times = np.asarray([time for _, time in samples], dtype=float)
 
         # Calculate concordance index using sksurv function
-        result = concordance_index_censored(event, time, y_pred)
+        result = concordance_index_censored(events, times, y_pred)
 
         return result[0]  # The first value in the result is the concordance index

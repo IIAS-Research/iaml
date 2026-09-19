@@ -22,6 +22,7 @@ class ActTfIdf(Actionable):
         This algorithm is used to evaluate the importance of a word inside
         it\'s corpus. A word with a lot of repetitions will
         have more importance than a word appearing once.''')
+    _usage: str = 'Use when short text needs weighted term features; prefer over ActCountVectorizer for damping frequent terms. Applicable to short text columns. Avoid when you need raw counts or want to drop the column (ActCountVectorizer, ActDropCategoricalColumn).'
     refs: list[dict[str, Any]] = [
         {
             'year': 1972,

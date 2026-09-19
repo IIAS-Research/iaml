@@ -12,6 +12,7 @@ class ActSGDRegressor(Predictor):
     """[STEP] SGD Regressor"""
 
     name: str = "SGD Regressor"
+    _usage: str = "Use when you need a fast linear baseline on large tabular data, e.g., vs ActElasticNetRegressor. Applicable to scaled numeric features with a continuous target. Avoid when strong nonlinearities or best accuracy is needed; prefer ActCatBoostRegressor or ActExtraTreesRegressor."
     _description: str = textwrap.dedent('''\
         SGDRegressor is a machine learning algorithm that models
         the relationship between input features and a continuous output variable

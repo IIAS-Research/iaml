@@ -21,6 +21,7 @@ class ActTrimSpaces(Actionable):
         This step remove spaces in front and back of columns values.
         This ensures that columns can be casted correctly with having spaces throwing
         an error.''')
+    _usage = "Use when columns or string values have leading/trailing spaces; use before ActCoerceNumericStrings or ActNormalizeColumnNames. Applicable to object/string columns and column names. Avoid when spaces are meaningful or data is already clean."
 
     refs = []
 

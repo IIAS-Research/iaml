@@ -1,4 +1,8 @@
-"""[STEP] Decompose features with PolynomialFeatures"""
+"""Experimental polynomial expansion, available only through an explicit import.
+
+Unbounded output dimensionality can exhaust memory during automatic exploration.
+Kept outside the default preprocessing stage; see docs/component_status.rst.
+"""
 import textwrap
 import pandas as pd
 from sklearn.preprocessing import PolynomialFeatures
@@ -7,11 +11,21 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-@is_step('features_preprocessing')
+def _is_numeric_matrix(values: pd.DataFrame) -> bool:
+    if values.empty:
+        return False
+    for column in values.columns:
+        if not pd.api.types.is_numeric_dtype(values[column]):
+            return False
+    return not values.isna().any().any()
+
+
+@is_step('experimental')
 class ActPolynomialFeatures(Actionable):
     """[STEP] Preprocess with PolynomialFeatures"""
 
     name: str = "Preprocess with PolynomialFeatures"
+    _usage: str = "Use when you want explicit polynomial interactions for linear models; consider ActKernelPCA for projection-based nonlinearity. Applicable to numeric tabular features with moderate dimensionality. Avoid when feature count will explode or when ActKBinsDiscretizer is a better match."
     _description: str = textwrap.dedent('''\
         PolynomialFeatures creates new features by combining existing
         features mathematically. It squares, cubes, and multiplies features to
@@ -46,6 +60,9 @@ class ActPolynomialFeatures(Actionable):
         self.preprocessor: bool = None
 
     def fit(self, dataset: Dataset) -> Actionable:
+        self.preprocessor = None
+        if not _is_numeric_matrix(dataset.X):
+            return self
 
         self.preprocessor = PolynomialFeatures(**self.passthrough_parameters())
         self.preprocessor.fit(dataset.X)
@@ -58,7 +75,12 @@ class ActPolynomialFeatures(Actionable):
         :param pd.DataFrame X: DataFrame to transform
         :return: Transformed dataset
         """
+        if self.preprocessor is None:
+            return X
         return pd.DataFrame(self.preprocessor.transform(X))
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5
+
+    def suitable(self, dataset: Dataset) -> bool:
+        return _is_numeric_matrix(dataset.X)

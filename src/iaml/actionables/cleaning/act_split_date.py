@@ -14,6 +14,7 @@ class ActSplitDate(Actionable):
     """[STEP] Transform string column to date"""
 
     name: str = 'Create Date Elements columns'
+    _usage: str = "Use when you want to expand a date column into components rather than ActDropDateColumn. Applicable to date-typed columns with usable timestamps. Avoid when dates are already split or you plan to drop them via ActDropDateColumn."
     _descrption: str = textwrap.dedent('''\
         Transform a textual date column into multiple columns
         for day, month, year, hour, minute, second''')

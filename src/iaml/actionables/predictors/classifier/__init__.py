@@ -15,3 +15,12 @@ from .act_linear_discriminant_analysis import ActLinearDiscriminantAnalysis
 from .act_mlp_classifier import ActMLPClassifier
 from .act_multinomial_nb import ActMultinomialNB
 from .act_quadratic_discriminant_analysis import ActQuadraticDiscriminantAnalysis
+from .act_decision_tree_classifier import ActDecisionTreeClassifier
+from .act_hist_gradient_boosting_classifier import ActHistGradientBoostingClassifier
+from .act_sgd_classifier import ActSGDClassifier
+from .act_ridge_classifier import ActRidgeClassifier
+from .act_linear_svc import ActLinearSVC
+from .act_passive_aggressive_classifier import ActPassiveAggressiveClassifier
+from .act_bagging_classifier import ActBaggingClassifier
+from .act_complement_nb import ActComplementNB
+from .act_light_gbm_classifier import ActLightGBMClassifier

@@ -1,128 +1,111 @@
-"""[STEP]  XGBoost"""
+"""[STEP] XGBoost classifier."""
 import textwrap
 from typing import Any
-from sklearn.ensemble import GradientBoostingClassifier
+
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder
+from sklearn.utils.multiclass import check_classification_targets
+from xgboost import XGBClassifier
+
+from .._xgboost import xgboost_features
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
-@is_step('predictor', 'tabular', 'classifier')
+
+@is_step('predictor', 'tabular', 'classifier', 'minimal_predictor')
 class ActXGBoost(Predictor):
-    """[STEP]  XGBoost"""
+    """[STEP] XGBoost classifier."""
 
     name: str = "XGBoost"
     _description: str = textwrap.dedent('''\
-        GradientBoostingClassifier is a machine learning algorithm that models the
-        relationship between input features and a categorical output variable using
-        gradient boosting.''')
+        XGBoost trains an ensemble of boosted decision trees for binary
+        or multiclass classification.''')
     _description_long: str = textwrap.dedent('''\
-        It works by building multiple decision trees in a sequential manner,
-        where each tree is trained to correct the errors made by the previous tree.
-        The final prediction is made by summing the predictions of all the trees.''')
+        XGBoost adds trees sequentially to improve predictions, using regularized
+        gradient boosting and histogram-based split finding. Class labels are
+        encoded during training and restored when predicting.''')
+    _usage: str = "Use for boosted-tree classification on numeric or encoded tabular features. Supports binary and multiclass targets."
     refs: list[dict[str, Any]] = [
         {
-            'name': 'Stochastic Gradient Boosting',
-            'year': 1999,
-            'authors': [
-                'Jerome H. Friedman'  
-            ],
-            'doi': 'https://doi.org/10.1016/S0167-9473(01)00065-2',
-            'publisher': 'Computational Statistics & Data Analysis, Vol.38, No.4 page 367--378'
-        },
-        {
-            'year': 2001,
-            'name': 'Greedy Function Approximation: A Gradient Boosting Machine',
-            'authors': [
-                'Jerome H. Friedman'  
-            ],
-            'doi': 'https://doi.org/10.1214/aos/1013203451',
-            'publisher': 'The Annals of Statistics, Vol.29, No.5 page 1189--1232'
-        },
-        {
-            'year': 2009,
-            'name': 'The Elements of Statistical Learning',
-            'authors': [
-                'Trevor Hastie',
-                'Robert Tibshirani',
-                'Jerome H. Friedman'  
-            ],
-            'doi': 'https://doi.org/10.1007/978-0-387-84858-7',
-            'publisher': 'Springer New York'
+            'name': 'XGBoost: A Scalable Tree Boosting System',
+            'year': 2016,
+            'authors': ['Tianqi Chen', 'Carlos Guestrin'],
+            'doi': 'https://doi.org/10.1145/2939672.2939785',
+            'publisher': 'Proceedings of the 22nd ACM SIGKDD International Conference, pages 785–794'
         }
     ]
 
     def __init__(self):
         self.configuration = {
             'max_depth': {
-                'description': 'Max depth of each tree',
-                'default': 15,
-                'range': [1, 100]
+                'description': 'Maximum depth of each tree.',
+                'default': 6,
+                'range': [1, 16]
             },
             'random_state': {
-                'description': 'random_state',
+                'description': 'Random seed for reproducibility.',
                 'default': 42
             },
             'learning_rate': {
-                'description': 'Learning rate',
+                'description': 'Shrinkage applied to each boosting round.',
                 'default': 0.1,
-                'range': [0.0000001, 5.0]
+                'range': [1e-3, 1.0]
             },
             'subsample': {
-                'description': textwrap.dedent('''\
-                    The fraction of samples to be used for fitting the
-                    individual base learners.'''),
+                'description': 'Fraction of training rows sampled for each tree.',
                 'default': 1.0,
                 'range': [0.1, 1.0]
             },
             'n_estimators': {
-                'description': 'Number of estimators',
+                'description': 'Number of boosting rounds.',
                 'default': 100,
                 'range': [1, 500]
             },
-            'loss': {
-                'description': 'The loss function to use in the boosting process.',
-                'default': "log_loss",
-                'categorical': ['log_loss', 'exponential']
+            'min_child_weight': {
+                'description': 'Minimum sum of instance Hessians needed in a child.',
+                'default': 1.0,
+                'range': [0.0, 20.0]
             },
-            'criterion': {
-                'description': 'The function to measure the quality of a split',
-                'default': "friedman_mse",
-                'categorical': ['friedman_mse', 'squared_error']
-            },
-            'min_samples_leaf': {
-                'description': 'The minimum number of samples required to be at a leaf node.',
-                'default': 1,
-                'range': [1, 15]
-            },
-            'max_features': {
-                'description': 'The number of features to consider when looking for the best split',
-                'default': 1,
-                'range': [0.1, 1]
-            },
-            'min_samples_split': {
-                'description': 'The minimum number of samples required to split an internal node',
-                'default': 2,
-                'range': [2, 20]
+            'colsample_bytree': {
+                'description': 'Fraction of features sampled for each tree.',
+                'default': 1.0,
+                'range': [0.1, 1.0]
             }
         }
-        self.model: GradientBoostingClassifier = None
+        self.model: XGBClassifier = None
+        self.label_encoder = LabelEncoder()
 
-    def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        if dataset.type_of_target == 'binary':
-            self.configuration['loss']['categorical'] = ['log_loss', 'exponential']
-        else:
-            self.configuration['loss']['categorical'] = ['log_loss']
-        self.check_configuration()
-
-        self.model = GradientBoostingClassifier(**self.passthrough_parameters())
-        self.model.fit(dataset.X, dataset.y)
-
+    def fit(self, dataset: Dataset):
+        check_classification_targets(dataset.y)
+        encoded_target = self.label_encoder.fit_transform(dataset.y)
+        # IAML schedules candidates in parallel; keep each estimator single-threaded.
+        self.model = XGBClassifier(
+            n_jobs=1, tree_method='hist', **self.passthrough_parameters()
+        )
+        self.model.fit(xgboost_features(dataset.X), encoded_target)
         return self
 
+    def predict(self, X):
+        """Predict original class labels using XGBoost-safe feature names."""
+        return super().predict(xgboost_features(X))
+
+    def predict_proba(self, X):
+        """Predict class probabilities using XGBoost-safe feature names."""
+        return super().predict_proba(xgboost_features(X))
+
+    @property
+    def classes_(self):
+        """Original labels, in the order of predict_proba columns."""
+        return self.label_encoder.classes_
+
+    def score(self, X, y, sample_weight=None):
+        """Compute accuracy with the original class labels."""
+        return accuracy_score(y, self.predict(X), sample_weight=sample_weight)
+
     def suitable(self, dataset: Dataset) -> bool:
-        return dataset.type_of_target in \
-            ['binary', 'multiclass',  'multilabel-indicator']
+        return dataset.type_of_target in ['binary', 'multiclass']
 
     def priorize(self, candidate: Candidate = None) -> float:
-        return 0.5 # neutral
+        return 0.5

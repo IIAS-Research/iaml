@@ -3,11 +3,12 @@ Add features like data type detection and splitting
 """
 import copy
 from copy import deepcopy
-from typing import Iterator, TYPE_CHECKING
+from typing import Any, Iterator, TYPE_CHECKING
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 import numpy as np
 import pandas as pd
 
+from .cache_keys import hash_dataset
 from .data_type import DataType
 from .type_of_target import type_of_target
 from .logger import Logger
@@ -39,11 +40,22 @@ class Dataset:
         groups_columns: list[str] = None,
         columns_types: dict = None
     ):
+        type_of_target_override = None
+        if isinstance(y, str):
+            type_of_target_override = y
+            y = []
+
+        if columns_types is None and isinstance(groups, dict) and not groups_columns:
+            if self._looks_like_columns_types(groups):
+                columns_types = groups
+                groups = None
+
         if groups is not None and groups_columns:
             raise ValueError("groups and groups_columns are not None. Only one must be set")
 
-        if groups is not None and set(groups.columns).intersection(X.columns):
-            raise ValueError("Group columns present in dataset!")
+        if isinstance(groups, pd.DataFrame):
+            if set(groups.columns).intersection(X.columns):
+                raise ValueError("Group columns present in dataset!")
 
         if groups_columns is None:
             groups_columns = []
@@ -62,7 +74,9 @@ class Dataset:
         if groups_columns:
             self.groups = X[groups_columns]
         else:
-            if type(groups) in [pd.Series, list, np.array]:
+            if isinstance(groups, dict):
+                self.groups = pd.DataFrame(groups)
+            elif isinstance(groups, (pd.Series, list, np.ndarray)):
                 self.groups = pd.DataFrame(groups)
             else:
                 self.groups = groups
@@ -76,7 +90,10 @@ class Dataset:
                 columns=['groups']
                 )
 
-        self.columns_types: dict = columns_types if columns_types else {}
+        if self.groups is not None and len(self.groups) != len(self.__X):
+            raise ValueError("Groups must have one row per feature row")
+
+        self.columns_types: dict = self._normalize_columns_types(columns_types, self.__X)
         """Columns types to be applied to our dataframe columns"""
 
         self.__detect_columns_types()
@@ -84,8 +101,60 @@ class Dataset:
         self.type_of_target: str = None
         """Type of target to predict"""
 
-        if y is not None:
-            self.type_of_target: str = type_of_target(self.__y)
+        if type_of_target_override is not None:
+            self.type_of_target = type_of_target_override
+        elif y is not None:
+            self.type_of_target = type_of_target(self.__y)
+
+    @staticmethod
+    def _normalize_columns_types(columns_types: dict | None, X: pd.DataFrame) -> dict:
+        if not columns_types:
+            return {}
+
+        if all(isinstance(key, DataType) for key in columns_types.keys()):
+            normalized = {}
+            for data_type, columns in columns_types.items():
+                if columns is None:
+                    continue
+                if isinstance(columns, (str, bytes)):
+                    columns = [columns]
+                for column in columns:
+                    if column in X.columns:
+                        normalized[column] = (X[column].dtype, data_type)
+            return normalized
+
+        if all(isinstance(value, DataType) for value in columns_types.values()):
+            normalized = {}
+            for column, data_type in columns_types.items():
+                if column in X.columns:
+                    normalized[column] = (X[column].dtype, data_type)
+            return normalized
+
+        return columns_types
+
+    @staticmethod
+    def _looks_like_columns_types(columns_types: dict) -> bool:
+        if not columns_types:
+            return False
+
+        keys = columns_types.keys()
+        values = columns_types.values()
+
+        if all(isinstance(key, DataType) for key in keys):
+            return True
+
+        if all(isinstance(value, DataType) for value in values):
+            return True
+
+        if all(
+            isinstance(value, tuple)
+            and len(value) == 2
+            and isinstance(value[1], DataType)
+            for value in values
+        ):
+            return True
+
+        return False
 
     @property
     def features(self) -> list[str]:
@@ -160,7 +229,8 @@ class Dataset:
                     ShuffleSplit(n_splits=1, test_size=n, random_state=42
                     ).split(self.X, self.y))
 
-        return self.decline(self.X.iloc[test_idx], self.y[test_idx])
+        groups = self.groups.iloc[test_idx].copy() if self.has_groups else None
+        return self.decline(self.X.iloc[test_idx], self.y[test_idx], groups=groups)
 
     def transform(self, method: callable) -> None:
         """Apply transform method to X or y data based on the method signature
@@ -199,6 +269,15 @@ class Dataset:
                             groups=X[self.groups.columns])
         return self.decline(*resampler(self.X, self.y))
 
+    def fingerprint(self) -> str:
+        """Hash the current features, targets, groups and interpretation metadata.
+
+        Recompute because X, y and groups are exposed as mutable objects.
+        """
+        return hash_dataset(
+            self.__X, self.__y, self.groups, self.columns_types, self.type_of_target
+        )
+
     def split(self, splitter: callable, *args, **kwargs) -> Iterator[tuple['Dataset', 'Dataset']]:
         """Use splitter to split dataset into a list of tuple (train set, test set) 
 
@@ -215,8 +294,10 @@ class Dataset:
 
             if self.has_groups:
                 groups = self.groups.iloc[i_train].copy()
+                test_groups = self.groups.iloc[i_test].copy()
             else:
                 groups = None
+                test_groups = None
 
             if y is not None:
                 y_train = self.__y[i_train].copy()
@@ -226,7 +307,7 @@ class Dataset:
                 y_test = None
 
             yield (self.decline(X_train, y_train, groups=groups),
-                   self.decline(X_test, y_test))
+                   self.decline(X_test, y_test, groups=test_groups))
 
     def x_with_groups(self) -> pd.DataFrame:
         """Return X dataframe with groups columns if not None. Return X otherwise.
@@ -259,21 +340,28 @@ class Dataset:
         :return  Type of the columns.
         """
         column_value = self.X[column_name]
+        dtype = column_value.dtype
         detected: DataType = None
-        if column_value.dtype == object:
-            if (len(column_value.unique()) / len(column_value) < 0.05 \
-                or len(column_value.unique()) < 7):
+        if isinstance(dtype, pd.CategoricalDtype) or pd.api.types.is_bool_dtype(dtype):
+            detected = DataType.CATEGORICAL
+        elif pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(dtype):
+            if len(column_value) == 0:
                 detected = DataType.CATEGORICAL
-            elif column_value.astype(str).apply(len).max() <= 85:
-                detected = DataType.SHORT_TEXT
             else:
-                detected = DataType.TEXT
-        elif np.issubdtype(column_value.dtype, np.number):
+                unique_count = len(column_value.unique())
+                if (unique_count / len(column_value) < 0.05 \
+                    or unique_count < 7):
+                    detected = DataType.CATEGORICAL
+                elif column_value.astype(str).apply(len).max() <= 85:
+                    detected = DataType.SHORT_TEXT
+                else:
+                    detected = DataType.TEXT
+        elif pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_timedelta64_dtype(dtype):
             detected = DataType.NUMERIC
-        elif np.issubdtype(column_value.dtype, np.datetime64):
+        elif pd.api.types.is_datetime64_any_dtype(dtype):
             detected = DataType.DATE
 
-        return column_value.dtype, detected
+        return dtype, detected
 
     @property
     def needed_estimator(self) -> str:
@@ -305,35 +393,111 @@ class Dataset:
         """Turn dataframe to survival compatibility"""
         return Dataset.fix_survival(self.X, self.y)
 
+    @staticmethod
+    def _normalize_survival_pair(value: Any) -> tuple[bool, float]:
+        """Normalize a single survival sample to a (event, time) tuple."""
+        if isinstance(value, np.void):
+            if value.dtype.names and \
+                'event' in value.dtype.names and 'time' in value.dtype.names:
+                return bool(value['event']), float(value['time'])
+            value = value.tolist()
+
+        if isinstance(value, dict):
+            if 'event' not in value or 'time' not in value:
+                raise KeyError("Survival sample dictionary must include 'event' and 'time'.")
+            return bool(value['event']), float(value['time'])
+
+        if isinstance(value, np.ndarray):
+            if value.shape == ():
+                return Dataset._normalize_survival_pair(value.item())
+            if value.ndim >= 1 and value.shape[0] >= 2:
+                return bool(value[0]), float(value[1])
+
+        if isinstance(value, (tuple, list)):
+            if len(value) < 2:
+                raise ValueError("Survival sample must provide event indicator and time.")
+            return bool(value[0]), float(value[1])
+
+        raise TypeError(f"Unsupported survival sample format: {type(value)}")
+
     @classmethod
-    def fix_survival(cls, X: pd.DataFrame, y: np.ndarray) -> tuple[pd.DataFrame, np.ndarray]:
+    def normalize_survival_target(cls, y: Any) -> list[tuple[bool, float]]:
+        """Return survival targets as a list of (event, time) tuples."""
+        if y is None:
+            return []
+
+        if isinstance(y, pd.DataFrame):
+            if not len(y.columns):
+                return []
+            if {'event', 'time'}.issubset(y.columns):
+                iterator = zip(y['event'], y['time'])
+            elif len(y.columns) >= 2:
+                iterator = (row[:2] for row in y.itertuples(index=False, name=None))
+            else:
+                raise ValueError("Survival DataFrame must contain at least two columns.")
+            return [cls._normalize_survival_pair(sample) for sample in iterator]
+
+        if isinstance(y, pd.Series):
+            return cls.normalize_survival_target(y.to_frame())
+
+        if isinstance(y, np.ndarray):
+            if y.dtype.names and 'event' in y.dtype.names and 'time' in y.dtype.names:
+                return [cls._normalize_survival_pair((row['event'], row['time'])) for row in y]
+            if y.ndim == 0:
+                return [cls._normalize_survival_pair(y.item())]
+            if y.ndim == 1:
+                return [cls._normalize_survival_pair(sample) for sample in y.tolist()]
+            if y.ndim >= 2 and y.shape[1] >= 2:
+                return [cls._normalize_survival_pair(sample[:2]) for sample in y]
+
+        if isinstance(y, (list, tuple)):
+            return [cls._normalize_survival_pair(sample) for sample in y]
+
+        if hasattr(y, '__iter__'):
+            return cls.normalize_survival_target(list(y))
+
+        raise TypeError(f"Unsupported survival target format: {type(y)}")
+
+    @classmethod
+    def fix_survival(cls, X: pd.DataFrame, y: Any) -> tuple[pd.DataFrame, np.ndarray]:
         """Turn dataframe to survival compatibility
         
         :param pd.DataFrame X: The dataframe to fix.
-        :param np.ndarray y: The dataframe target to fix.
+        :param Any y: The dataframe target to fix.
         :return: Fixed dataframe
         """
-        y = np.array(y, dtype=[('event', 'bool'), ('time', 'float32')])
+        from sksurv.util import Surv
+
+        samples = cls.normalize_survival_target(y)
+        if samples:
+            events, times = zip(*samples)
+            y_surv = Surv.from_arrays(
+                event=np.asarray(events, dtype=bool),
+                time=np.asarray(times, dtype=float)
+            )
+        else:
+            y_surv = np.array([], dtype=[('event', 'bool'), ('time', 'float')])
+        
         X = deepcopy(X)
         X[X.select_dtypes(include=['float64']).columns] = \
                 X.select_dtypes(include=['float64']).astype('float32')
 
-        return X, y
+        return X, y_surv
 
     @classmethod
-    def fix_y_survival(cls, y: np.ndarray, y_train: np.ndarray) -> list:
-        """Just a tool to avoid survivial crash. 
-        TODO to something better
-        
-        :param np.ndarray y: The whole dataframe target.
-        :param np.ndarray y_train: The train target.
-        :return: Fixed train target.
-        """
-        _, times = zip(*y_train)
+    def fix_y_survival(cls, y: Any, y_train: Any) -> list[tuple[bool, float]]:
+        """Adjust survival targets to avoid censoring beyond the training horizon."""
+        y_samples = cls.normalize_survival_target(y)
+        y_train_samples = cls.normalize_survival_target(y_train)
+
+        if not y_train_samples:
+            return y_samples
+
+        _, times = zip(*y_train_samples)
         censure_time = max(times)
 
-        new_y = list([])
-        for event, time in y:
+        new_y: list[tuple[bool, float]] = []
+        for event, time in y_samples:
             if time >= censure_time:
                 time = censure_time
                 event = False

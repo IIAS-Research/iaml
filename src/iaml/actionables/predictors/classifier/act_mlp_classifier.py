@@ -25,6 +25,7 @@ class ActMLPClassifier(Predictor):
         It works by transforming the input features through one or more hidden layers with
         non-linear activation functions, and then using a final layer with a softmax activation
         function to output a probability distribution over the classes.''')
+    _usage: str = "Use when you need a nonlinear tabular classifier and can tune, versus ActDecisionTreeClassifier or ActExtraTreesClassifier. Applicable to binary or multiclass tabular features. Avoid when data are small, very sparse, or you need fast, transparent models like ActBernoulliNb."
     refs: list[dict[str, Any]] = [
         {
             'year': 1989,

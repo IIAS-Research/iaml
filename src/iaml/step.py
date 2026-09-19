@@ -12,6 +12,7 @@ from __future__ import annotations
 import sys
 import json
 import textwrap
+import uuid
 from hashlib import md5
 from typing import TYPE_CHECKING
 from typing import Any
@@ -20,6 +21,7 @@ from multipledispatch import dispatch
 from .dataset import Dataset
 from .decorators.runner import runner
 from .reference import Reference
+from .step_cache import StepCache
 
 if TYPE_CHECKING:
     from .candidate import Candidate
@@ -46,6 +48,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
     _description_long: str = ''
     """Longer description of the step."""
 
+    _usage: str = ''
+    """Concise guidance on when to use (and avoid) this step."""
+
     can_be_disabled: bool = True
     """Whether this step can be disabled."""
 
@@ -56,8 +61,11 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         self.__use_cache: bool = use_cache
         """Whether this step should benefit from the cache."""
 
-        self.caches: list = []
-        """Cached results."""
+        self._cache_id: str = uuid.uuid4().hex
+        """Shared cache namespace id for this step across deep copies."""
+
+        self._config_version: int = 0
+        """Incremented when configuration changes to invalidate fingerprints."""
 
         self.explanations: list[str] = []
         """List of explanations that were computed during the step's execution."""
@@ -86,6 +94,21 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
             self.references = [ Reference(ref, type(self).__name__) for ref in self.refs ]
 
         self.default_configuration() # Loads the default configuration
+
+    def __deepcopy__(self, memo: dict) -> 'Step':
+        """Custom deepcopy to avoid copying per-step runtime caches."""
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for key, value in self.__dict__.items():
+            if key == 'candidate':
+                setattr(result, key, None)
+                continue
+            if key == 'caches':
+                setattr(result, key, [])
+                continue
+            setattr(result, key, deepcopy(value, memo))
+        return result
 
     @classmethod
     def from_pipeline(cls, pipeline: dict[str, Any], *args, **kwargs) -> 'Step':
@@ -196,6 +219,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         """
         if key in self.configuration:
             self.configuration[key]['value'] = value
+            self._config_version += 1
         else:
             raise AttributeError(f"Configurable Key '{key}' does not exist.")
 
@@ -333,12 +357,12 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         if not self.use_cache:
             return None
 
-        for cache in self.caches:
-            is_same_type = same_types(self.resume_configuration(), cache['config'])
-            if is_same_type and id(candidate) == cache['input_id']:
-                return cache['output']
+        cache_key = self._cache_key(candidate)
+        cached = StepCache().get(cache_key, candidate)
+        if cached is None:
+            return None
 
-        return None
+        return self._clone_output(cached)
 
     def add_cache(self, input_candidate: Candidate, output_candidate: Candidate) -> bool:
         """Adds a candidate in the cache of this step.
@@ -350,17 +374,34 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         if not self.use_cache:
             return False
 
-        self.caches.append({
-            'input_id': id(input_candidate),
-            'config': deepcopy(self.resume_configuration()),
-            'output': output_candidate
-        })
+        cache_key = self._cache_key(input_candidate)
+        frozen_output = self._clone_output(output_candidate)
+        StepCache().put(cache_key, frozen_output, self._cache_id, input_candidate)
 
         return True
 
     def reset_cache(self) -> None:
         """Removes all cached candidates from the cache."""
-        self.caches = []
+        StepCache().clear(self._cache_id)
+
+    @property
+    def caches(self) -> list:
+        """Deprecated view of cached results backed by StepCache."""
+        return StepCache().values_for_step(self._cache_id)
+
+    @caches.setter
+    def caches(self, value: list | None) -> None:
+        if not value:
+            StepCache().clear(self._cache_id)
+
+    def _cache_key(self, candidate: Candidate) -> tuple:
+        """Index by address; StepCache also verifies the input through a weak reference."""
+        candidate_id = id(candidate) if candidate is not None else None
+        return (self._cache_id, self.fingerprint(), candidate_id)
+
+    def _clone_output(self, output: Any) -> Any:
+        """Return cached output without cloning to preserve identity semantics."""
+        return output
 
     @property
     def use_cache(self) -> bool:
@@ -377,10 +418,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         :param bool value: If True, enables caching; if False, disables caching.
         :raise ValueError: When `value` is not a boolean.
         """
-        if isinstance(value, bool):
-            self.__use_cache = value
-
-        raise ValueError('Value must be a boolean')
+        if not isinstance(value, bool):
+            raise ValueError('Value must be a boolean')
+        self.__use_cache = value
 
     def json_pipeline(self) -> dict[str, Any]:
         """Exports a representation of this step as a dictionary.
@@ -459,6 +499,11 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         :param Candidate candidate: Candidate to run the step for.
         :return: Run candidate.
         """
+        
+        # Never fit predictor during generation of candidates
+        if self.tags and 'predictor' in self.tags:
+            return candidate.add_to_pipeline(self)
+
         self.fit(candidate.dataset)
 
         return candidate.add_to_pipeline(self)

@@ -22,6 +22,7 @@ class ActLogisticRegression(Predictor):
         output variable using a logistic function.
         It works by finding the best-fitting line or hyperplane that
         maximizes the likelihood of the observed output variables given the input features.''')
+    _usage: str = "Use when you need a fast linear baseline over ActDecisionTreeClassifier. Applicable to tabular binary or multiclass data with numeric or one-hot inputs. Avoid when nonlinear interactions dominate or max accuracy is required; prefer ActCatBoost."
     refs: list[dict[str, Any]] = [
         {
             'year': 1944,

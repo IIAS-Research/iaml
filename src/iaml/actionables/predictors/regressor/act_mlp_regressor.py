@@ -12,6 +12,7 @@ class ActMLPRegressor(Predictor):
     """[STEP] MLP Regressor"""
 
     name: str = "MLP Regressor"
+    _usage: str = "Use when nonlinear tabular regression needs a flexible MLP, beyond ActElasticNetRegressor or ActDecisionTreeRegressor. Applicable to continuous targets with mostly numeric, scaled features. Avoid when data are tiny, mostly categorical, or you need fast/transparent models."
     _description: str = textwrap.dedent('''\
         MLPRegressor is a machine learning algorithm that models the
         relationship between input features and a continuous output variable using

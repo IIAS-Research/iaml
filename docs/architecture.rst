@@ -47,6 +47,23 @@ The candidates are ranked based on a key metric defined by the user (e.g., accur
     The number of folds in the cross-validation is fixed to **5** by default but, as with everything in IAML, it can be changed.
     If you plan to optimize pipelines for longer durations (e.g., more than 30 minutes), consider increasing this value using IAML’s parameters. 
 
+Shared Evaluation Cache
+-----------------------
+Training and evaluation caches identify a dataset by its features, targets,
+groups, column types and target type. The fingerprint is recomputed from the
+current contents, so changing labels or groups cannot reuse results from the
+previous dataset. Keys are captured before preprocessing can mutate the data.
+
+Cached preprocessing restores both the fitted step and its training dataset,
+preserving shared references needed by transformations such as target encoding.
+The shared cache returns copies so later transformations cannot modify its entries.
+
+Validation partitions also depend on the splitter and its parameters. Cached
+evaluation scores additionally depend on the metrics and their configuration.
+Custom splitters must be deterministic for the same inputs and settings. When
+their configuration cannot be serialized (for example, a local lambda), partition
+and score caching is bypassed; evaluation still runs normally.
+
 Candidate Optimization
 ----------------------
 IAML’s default optimization process is inspired by **genetic algorithms**. This stage iteratively refines the pipelines by:

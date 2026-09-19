@@ -2,7 +2,11 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING
+import os
+import time
+from math import isfinite
+from numbers import Real
+from typing import TYPE_CHECKING, Any
 from copy import copy, deepcopy
 from hashlib import md5
 import textwrap
@@ -10,10 +14,12 @@ import numpy as np
 import pandas as pd
 from .dataset import Dataset
 from .cache import Cache
+from .cache_keys import hash_evaluation_context
 from .splitters import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .metric_plot import MetricPlot
 from .logger import Logger
+from .step_cache import StepCache
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -28,6 +34,8 @@ class Candidate:
     :param IAMLPipeline, optional iaml_pipeline: Pipeline being built. Default to None.
     :param list, optional stacked_path: Stack of all steps used to build this Candidate.
         Default to None.
+    :param main_metric: Metric or metric name used to rank candidates.
+        If None, use the default metric for the task.
     """
 
     def __init__(
@@ -36,7 +44,7 @@ class Candidate:
         metrics: list[Metric] = None,
         iaml_pipeline: IAMLPipeline = None,
         stacked_path: list = None,
-        main_metric: 'Metric' = None) -> None:
+        main_metric: Metric | str | None = None) -> None:
 
         self.dataset: Dataset = dataset
         """Dataset used for this candidate"""
@@ -60,16 +68,19 @@ class Candidate:
             else:
                 self.main_metric = 'r2_score'
         else:
-            self.main_metric = str(main_metric)
+            self.main_metric = main_metric
 
         self.computed_metrics: dict = {}
         """Result dictionnary for all the metrics computed"""
 
+        self.fold_metrics: list[dict[str, Any]] = []
+        """Per-fold metrics computed during the latest internal cross-validation."""
+
+        self.training_audit: dict[str, Any] | None = None
+        """Structured audit payload for the latest training evaluation."""
+
         self.stacked_path: list = copy(stacked_path) if stacked_path is not None else []
         """Stack of all steps used to build this Candidate"""
-
-        self.is_meta: bool = False
-        """Whether it's a meta candidate or not"""
 
     def add_stack(self, stack: 'Step') -> None:
         """Add a step to the stack
@@ -77,6 +88,24 @@ class Candidate:
         :param Step stack: Step to add
         """
         self.stacked_path.append(stack)
+
+    @property
+    def main_metric(self) -> str:
+        """Name of the metric used to rank candidates."""
+        return str(self._main_metric)
+
+    @main_metric.setter
+    def main_metric(self, metric: Metric | str) -> None:
+        self._main_metric = metric
+
+    def get_main_metric(self) -> Metric | str:
+        """Return the metric definition, or its name when no definition is available."""
+        if isinstance(self._main_metric, str):
+            return next(
+                (metric for metric in self.metrics if str(metric) == self.main_metric),
+                self._main_metric,
+            )
+        return self._main_metric
 
     def get_main_metric_value(self) -> float:
         """Get computed value of the main metric from saved metrics
@@ -86,6 +115,18 @@ class Candidate:
         if self.computed_metrics and self.main_metric in self.computed_metrics:
             return self.computed_metrics[self.main_metric]
         return -1
+
+    def get_main_metric_score(self) -> float:
+        """Return a ranking score where higher is better, preserving raw metrics.
+
+        Metric names are resolved against the candidate's evaluation metrics.
+        A candidate without its main metric always ranks below an evaluated one.
+        """
+        if self.main_metric not in self.computed_metrics:
+            return float('-inf')
+        metric = self.get_main_metric()
+        value = self.get_main_metric_value()
+        return value if getattr(metric, 'greater_is_better', True) else -value
 
     def __gt__(self, other: 'Candidate') -> bool:
         """Check if a candidate is greater than another by various methods.
@@ -98,7 +139,7 @@ class Candidate:
         :return: Greater than?
         """
         if self.computed_metrics and other.computed_metrics:
-            return self.get_main_metric_value() > other.get_main_metric_value()
+            return self.get_main_metric_score() > other.get_main_metric_score()
         if self.computed_metrics:
             return True
         if other.computed_metrics:
@@ -117,7 +158,7 @@ class Candidate:
         :return: Less than?
         """
         if self.computed_metrics and other.computed_metrics:
-            return self.get_main_metric_value() < other.get_main_metric_value()
+            return self.get_main_metric_score() < other.get_main_metric_score()
         if self.computed_metrics:
             return False
         if other.computed_metrics:
@@ -136,7 +177,7 @@ class Candidate:
         :return: Equal to?
         """
         if self.computed_metrics and other.computed_metrics:
-            return self.get_main_metric_value() == other.get_main_metric_value()
+            return self.get_main_metric_score() == other.get_main_metric_score()
 
         return id(self) == id(other)
 
@@ -145,21 +186,71 @@ class Candidate:
         dataset: Dataset = None,
         metrics: list[Metric] = None,
         iaml_pipeline: IAMLPipeline = None) -> 'Candidate':
-        """Create a copy of current instance and assign parameters values to attributes 
+        """Create a copy of the current instance, preserving its ranking metric.
 
         :param Dataset, optional dataset: Replace current dataset. Defaults to None.
         :param Metric, optional metrics: Replace current metrics. Defaults to None.
         :param IAMLPipeline, optional iaml_pipeline: Replace current pipeline. Defaults to None.
         :return: New Candidate
         """
+        logger = None
+        diag_enabled = os.environ.get("IAML_DIAG", "").lower() in ["1", "true", "yes"]
+        if diag_enabled:
+            from .logger import Logger  # pylint: disable=import-outside-toplevel
+            logger = Logger()
+            if logger.verbose <= 1:
+                logger = None
+
+        pipeline_copy_time = 0.0
+        dataset_copy_time = 0.0
         if iaml_pipeline is None:
+            start = time.perf_counter()
             iaml_pipeline = self.pipeline.copy()
+            pipeline_copy_time = time.perf_counter() - start
+
+        if dataset is None:
+            start = time.perf_counter()
+            dataset = deepcopy(self.dataset)
+            dataset_copy_time = time.perf_counter() - start
+
+        if logger is not None:
+            try:
+                steps = self.pipeline.training_steps
+                step_count = len(steps)
+                cache_count = 0
+                step_cache = StepCache()
+                for _, step in steps:
+                    if hasattr(step, "_cache_id"):
+                        cache_count += step_cache.size_for_step(step._cache_id)
+                    elif hasattr(step, "caches") and step.caches is not None:
+                        cache_count += len(step.caches)
+                candidate_refs = 0
+                for _, step in steps:
+                    if hasattr(step, "candidate") and step.candidate is not None:
+                        if isinstance(step.candidate, list):
+                            candidate_refs += len(step.candidate)
+                        else:
+                            candidate_refs += 1
+            except Exception:  # pylint: disable=broad-except
+                step_count = None
+                cache_count = None
+                candidate_refs = None
+
+            logger.info(
+                "diag: to_output copy pipeline=%.3fs dataset=%.3fs steps=%s caches=%s candidates=%s",
+                pipeline_copy_time,
+                dataset_copy_time,
+                step_count,
+                cache_count,
+                candidate_refs,
+            )
 
         return Candidate(
-            dataset or deepcopy(self.dataset),
+            dataset,
             metrics or copy(self.metrics),
             iaml_pipeline=iaml_pipeline,
-            stacked_path=self.stacked_path)
+            stacked_path=self.stacked_path,
+            main_metric=self._main_metric)
 
     def to_input(self,
                 dataset: Dataset = None,
@@ -176,11 +267,12 @@ class Candidate:
 
     def add_to_pipeline(self, instance: 'Step') -> 'Candidate':
         """Add a Step to prediction Pipeline.
-        instance must implement one of these methods :
-            - transform(X) : Apply column transformations to Dataset.
-            - predict(X) : Predict values with AI model.
-            - resample(X,y) : Apply row transformations to Dataset (will be run just 
-                before prediction).
+
+        The instance must implement one of these methods:
+
+        - ``transform(X)``: Apply column transformations to the dataset.
+        - ``predict(X)``: Predict values with an AI model.
+        - ``resample(X, y)``: Apply row transformations to the training dataset.
         
         :param Step instance: Add a step to the pipeline.
         :return: New Candidate
@@ -216,10 +308,115 @@ class Candidate:
             name = f"{main_metric} : {name}"
         return name
 
+    @classmethod
+    def __serialize_audit_value(cls, value: Any) -> Any:
+        """Convert runtime values into JSON-friendly audit payloads."""
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, dict):
+            return {
+                str(key): cls.__serialize_audit_value(current)
+                for key, current in value.items()
+            }
+        if isinstance(value, (list, tuple, set)):
+            return [cls.__serialize_audit_value(current) for current in value]
+        if callable(value):
+            return getattr(value, "__name__", str(value))
+        return str(value)
+
+    def __serialize_metric_values(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Convert metric outputs into a stable, serializable format."""
+        return {
+            str(name): self.__serialize_audit_value(value)
+            for name, value in values.items()
+        }
+
+    def __valid_main_metric(self, scores: dict[str, Any]) -> bool:
+        """A main metric must be a finite numeric scalar; zero remains valid."""
+        value = scores.get(self.main_metric)
+        try:
+            return isinstance(value, Real) and isfinite(value)
+        except (TypeError, ValueError, OverflowError):
+            return False
+
+    def __aggregate_metrics(self, fold_results: list[dict[str, Any]]) -> dict[str, float]:
+        """Aggregate fold-level metric dictionaries into global scores."""
+        computed_metrics: dict[str, float] = {}
+        for metric in self.metrics:
+            name = str(metric)
+            values = [
+                metric_values.get(name)
+                for metric_values in fold_results
+                if name in metric_values
+            ]
+            if values:
+                computed_metrics[name] = float(np.mean([
+                    value if value is not None else 0 for value in values
+                ]))
+            else:
+                computed_metrics[name] = 0
+        return computed_metrics
+
+    def pipeline_audit_summary(self) -> dict[str, Any]:
+        """Return a serializable summary of the pipeline steps and their config."""
+        summarized_steps: list[dict[str, Any]] = []
+        for name, step in self.pipeline.training_steps:
+            if self.pipeline.predictor is not None and step is self.pipeline.predictor[1]:
+                role = "predictor"
+            elif callable(getattr(step, 'transform', None)):
+                role = "transformer"
+            else:
+                role = "resampler"
+            summarized_steps.append(
+                {
+                    "role": role,
+                    "name": name,
+                    "class": step.__class__.__name__,
+                    "tags": sorted(step.tags) if step.tags else [],
+                    "configuration": self.__serialize_audit_value(
+                        step.resume_configuration()
+                    ),
+                }
+            )
+
+        return {
+            "fingerprint": self.pipeline.fingerprint(),
+            "estimator_type": self.pipeline.estimator_type,
+            "steps": summarized_steps,
+        }
+
+    def build_training_audit(
+        self,
+        dataset: Dataset,
+        fold_metrics: list[dict[str, Any]],
+        aggregated_metrics: dict[str, Any],
+        status: str,
+        error: str | None = None,
+    ) -> dict[str, Any]:
+        """Build a structured record for later audit on the IAML object."""
+        return {
+            "pipeline_fingerprint": self.pipeline.fingerprint(),
+            "dataset_fingerprint": dataset.fingerprint(),
+            "dataset_shape": {
+                "rows": int(dataset.X.shape[0]),
+                "columns": int(dataset.X.shape[1]),
+            },
+            "main_metric": self.main_metric,
+            "status": status,
+            "error": error,
+            "metrics": self.__serialize_metric_values(aggregated_metrics),
+            "fold_metrics": deepcopy(fold_metrics),
+            "pipeline": self.pipeline_audit_summary(),
+        }
+
     def training_evaluate(
         self,
         dataset: Dataset,
-        splitter: callable = random_splitter) -> dict:
+        splitter: callable = random_splitter,
+        cache_split: bool = True,
+        store_audit: bool = False) -> dict:
         """Evaluate pipeline model with self.metrics on dataset
         If evaluate is called in training process, result will be cached in
         self.computed_metrics.
@@ -228,51 +425,118 @@ class Candidate:
         :param callable, optional splitter: The split method to be used. Default to random_splitter.
         :return: Metric name as key and result as value
         """
+        self.computed_metrics = {}
+        self.fold_metrics = []
+        self.training_audit = None
         if not self.pipeline.have_model:
             return None
         metrics: list[dict] = []
+        fold_metrics: list[dict[str, Any]] = []
 
-        # without cache !
-        from_cache: bool = True
-        to_cache: list = True
-        splitted_datasets = Cache().from_cache(self.fingerprint(), dataset.X)
-        if not splitted_datasets or self.is_meta: # Cannot use cache with meta for now
-            from_cache = False
-            to_cache: list = []
-            splitted_datasets: list[tuple[Dataset, Dataset]] = splitter(dataset)
+        splitter_fingerprint = (
+            hash_evaluation_context(splitter) if cache_split else None
+        )
+        cache_key = (
+            f"splits_{self.fingerprint()}_{splitter_fingerprint}"
+            if splitter_fingerprint is not None else None
+        )
+        dataset_key = dataset.fingerprint() if cache_key else None
+        from_cache = False
+        to_cache: list[tuple[Dataset, Dataset]] = []
+        splitted_datasets = Cache().from_cache(cache_key, dataset_key) if cache_key else None
+        if splitted_datasets:
+            from_cache = True
+        else:
+            splitted_datasets = splitter(dataset)
 
-        for train_ds, test_ds in splitted_datasets:
+        for fold_index, (train_ds, test_ds) in enumerate(splitted_datasets, start=1):
             copied_pipe = deepcopy(self.pipeline)
 
-            if self.is_meta:
-                copied_pipe.fit(train_ds.X, train_ds.y)
-            else:
-                # Fit in two step to allow caching
+            try:
+                # Fit in two steps to allow caching.
                 if not from_cache:
-                    train_ds =  train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
-                    test_ds =  test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
+                    train_ds = train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
+                    test_ds = test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
 
                 copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
+            except (ValueError, np.linalg.LinAlgError) as exc:
+                Logger().warning(
+                    f"Skip candidate {self._pipeline_signature()} after training failure: {exc!r}"
+                )
+                if store_audit:
+                    self.training_audit = self.build_training_audit(
+                        dataset=dataset,
+                        fold_metrics=fold_metrics,
+                        aggregated_metrics={},
+                        status="failed",
+                        error=f"training failure: {exc!r}",
+                    )
+                return {}
 
             try:
-                metrics.append(self.__compute_metrics(
+                fold_result = self.__compute_metrics(
                     test_ds.X,
                     test_ds.y,
                     pipeline=copied_pipe,
                     X_train=train_ds.X,
                     y_train=train_ds.y,
-                    model_only= not self.is_meta)
+                    model_only=True)
+                if not self.__valid_main_metric(fold_result):
+                    raise ValueError(
+                        f"Main metric '{self.main_metric}' is missing or invalid on fold {fold_index}"
                     )
-                if not from_cache:
+                metrics.append(fold_result)
+                if store_audit:
+                    fold_metrics.append(
+                        {
+                            "fold": fold_index,
+                            "train_shape": {
+                                "rows": int(train_ds.X.shape[0]),
+                                "columns": int(train_ds.X.shape[1]),
+                            },
+                            "test_shape": {
+                                "rows": int(test_ds.X.shape[0]),
+                                "columns": int(test_ds.X.shape[1]),
+                            },
+                            "metrics": self.__serialize_metric_values(fold_result),
+                        }
+                    )
+                if cache_key and not from_cache:
                     to_cache.append((train_ds, test_ds))
-            except ValueError:
+            except ValueError as exc:
+                Logger().warning(
+                    f"Skip candidate {self._pipeline_signature()} after metric failure: {exc!r}"
+                )
+                if store_audit:
+                    self.training_audit = self.build_training_audit(
+                        dataset=dataset,
+                        fold_metrics=fold_metrics,
+                        aggregated_metrics={},
+                        status="failed",
+                        error=f"metric failure: {exc!r}",
+                    )
                 return {}
 
-        if not from_cache:
-            Cache().add_to_cache(self.fingerprint(), dataset.X, to_cache)
+        if cache_key and not from_cache:
+            Cache().add_to_cache(cache_key, dataset_key, to_cache)
 
-        self.computed_metrics = { k: np.mean([ metric[k] or 0 for metric in metrics ]) \
-            for k in map(str, self.metrics) }
+        computed_metrics = self.__aggregate_metrics(metrics) if metrics else {}
+        if not self.__valid_main_metric(computed_metrics):
+            if store_audit:
+                self.training_audit = self.build_training_audit(
+                    dataset, fold_metrics, {}, status="failed",
+                    error=f"Main metric '{self.main_metric}' has no valid aggregate",
+                )
+            return {}
+        self.computed_metrics = computed_metrics
+        if store_audit:
+            self.fold_metrics = deepcopy(fold_metrics)
+            self.training_audit = self.build_training_audit(
+                dataset=dataset,
+                fold_metrics=fold_metrics,
+                aggregated_metrics=computed_metrics,
+                status="success",
+            )
 
         return self.computed_metrics
 
@@ -337,7 +601,9 @@ class Candidate:
                     except Exception:  # pylint: disable=broad-exception-caught
                         Logger().error(traceback.format_exc())
             except AttributeError:
-                pass
+                Logger().warning(
+                    f"Pipeline {self._pipeline_signature()} does not expose '{need}' needed by metrics."
+                )
         return computed
 
     def __metric_value(self, metric: Metric) -> float | None:
@@ -364,10 +630,24 @@ class Candidate:
 
         :return: String fingerprint
         """
-        to_hash = "\n".join([step.fingerprint() \
-                for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]])
+        if hasattr(self.pipeline, "transformers_resamplers_fingerprint"):
+            return self.pipeline.transformers_resamplers_fingerprint()
 
+        to_hash = "\n".join([
+            step.fingerprint()
+            for _, step in [*self.pipeline.transformers, *self.pipeline.resamplers]
+        ])
         return md5(to_hash.encode()).hexdigest()
+
+    def _pipeline_signature(self) -> str:
+        """Return a short, logging-safe pipeline identifier."""
+        try:
+            names = [name for name, _ in self.pipeline.training_steps if name]
+            if names:
+                return " -> ".join(names)
+        except Exception:
+            pass
+        return getattr(self.pipeline, "name", self.pipeline.__class__.__name__)
 
     def describe_metrics(self) -> str:
         """Explain all metrics
@@ -447,9 +727,10 @@ class Candidate:
         return self.pipeline.predict(X)
 
     def predict_proba(self, X: pd.DataFrame) -> list:
-        """Run all the steps to predict labels from candidate data
+        """Run all pipeline steps to predict class probabilities.
 
         :param pd.DataFrame X: Features used as candidate of the pipeline.
-        :return: Predicted values
+        :return: Class probabilities in the predictor's class order.
+        :raise AttributeError: The model does not support probability predictions.
         """
-        return self.pipeline.predict(X)
+        return self.pipeline.predict_proba(X)

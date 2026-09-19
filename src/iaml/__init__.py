@@ -18,9 +18,9 @@ from .dataset import Dataset
 from .data_type import DataType
 from .metric_plot import MetricPlot
 from .metric import Metric
-from .plot import Plot
+from .plot import Plot, StatisticPlot
+from .statistic import Statistic
 from .cache import Cache
-from .meta_predictor import MetaPredictor
 from .void_step import VoidStep
 
 from .meta_ordered_step import MetaOrderedStep
@@ -36,6 +36,9 @@ from .wrapper import *
 # Metrics
 from .metrics import *
 
+# Statistics
+from .statistics import *
+
 # Plots
 from .plots import *
 
@@ -45,8 +48,11 @@ from .stack import Stack
 # Optimizer
 from .optimizers import *
 
-# Meta predictors
-from .meta_predictors import *
-
 # Type of target
 from .type_of_target import type_of_target
+
+# Ensure star imports expose all public names, even if __all__ is set elsewhere.
+__all__ = [
+    name for name in globals()
+    if not name.startswith("_") and name != "__all__"
+]

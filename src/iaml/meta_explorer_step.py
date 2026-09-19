@@ -16,6 +16,7 @@ class MetaExplorerStep(MetaStep):
     name: str = "MetaExplorerStep"
     _description: str = 'Execute all steps and keep the best result'
     _description_long: str = None
+    _usage: str = "Use when running all child steps in parallel to pick the best result, rather than MetaOrderedStep or MetaPartialExplorerStep. Applicable to interchangeable steps on the same candidate input. Avoid when you need deterministic ordering, a single path, or lower compute."
 
     def __init__(self, *args, also_explore_without: bool = False, **kwargs):  # pylint: disable=unused-argument
         self.candidate = []

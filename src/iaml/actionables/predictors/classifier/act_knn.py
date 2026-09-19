@@ -14,6 +14,7 @@ class ActKNN(Predictor):
     """[STEP]  KNN"""
 
     name: str = "KNN"
+    _usage: str = "Use when you want a simple distance-based baseline on small to medium data; compare ActDecisionTreeClassifier or ActCatBoost for stronger baselines. Applicable to tabular data with numeric features and meaningful distance metrics. Avoid when data is high-dimensional, very large, or needs fast prediction."
     _description: str = textwrap.dedent('''\
         KNeighborsClassifier is a machine learning algorithm that makes
         predictions for classification tasks using k-nearest neighbors.''')

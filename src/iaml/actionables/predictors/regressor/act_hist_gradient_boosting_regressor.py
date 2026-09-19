@@ -7,8 +7,7 @@ from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
 
-# @is_step('predictor', 'tabular', 'regressor')
-@is_step('disabled')
+@is_step('predictor', 'tabular', 'regressor')
 class ActHistGradientBoostingRegressor(Predictor):
     """[STEP] HistGradient Boosting Regressor"""
 
@@ -26,6 +25,7 @@ class ActHistGradientBoostingRegressor(Predictor):
         usage compared to other tree-based algorithms.
         HistGradientBoostingRegressor also includes options for regularization,
         such as L1 and L2 regularization, to prevent overfitting.''')
+    _usage: str = "Use when you need fast nonlinear tabular regression; leaner than ActCatBoostRegressor or ActExtraTreesRegressor. Applicable to medium to large tabular continuous targets with mostly numeric features. Avoid when data is tiny, mostly linear, or interpretability is critical."
     refs: list[dict[str, Any]] = [
         {
             'year': 2006,
@@ -51,7 +51,7 @@ class ActHistGradientBoostingRegressor(Predictor):
                 'description': 'If loss is “quantile”, this parameter specifies which quantile to \
                     be estimated and must be between 0 and 1.',
                 'default': 0.5,
-                'range': [0.1, 1.0]
+                'range': [0.1, 0.99]
                 },
             'learning_rate': {
                 'description': 'The learning rate, also known as shrinkage.',

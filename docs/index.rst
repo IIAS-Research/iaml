@@ -17,6 +17,7 @@ Table of contents
    How it works <architecture>
    explainability
    adaptability
+   component_status
    scientific
    references
 

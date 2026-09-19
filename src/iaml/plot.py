@@ -117,3 +117,22 @@ class Plot:
             self.description,
             f"![{self.title}](data:image/png;base64,{self.b64_image})"
         ])
+
+
+class StatisticPlot(Plot):
+    """Base class for descriptive statistics plots."""
+
+    enabled: bool = True
+    """Whether this plot should be considered for rendering."""
+
+    group_by_feature: bool = False
+    """Whether to build one plot per feature column."""
+
+    def compute(self, dataframe: pd.DataFrame, **kwargs) -> 'StatisticPlot':
+        """Compute plot given a descriptive statistics dataframe.
+
+        :param pd.DataFrame dataframe: The descriptive statistics dataframe.
+        :param optional \\**kwargs: Additional parameters for plotting.
+        :return: A StatisticPlot object.
+        """
+        raise NotImplementedError('Subclass must implement abstract method')

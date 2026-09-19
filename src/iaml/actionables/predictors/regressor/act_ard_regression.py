@@ -25,6 +25,7 @@ class ActARDRegression(Predictor):
         more important than others.
         These weights are determined automatically during training,
         hence the "automatic relevance determination.''')
+    _usage = "Use when you want Bayesian linear regression with automatic relevance on tabular data, as a sparse alternative to ActElasticNetRegressor. Applicable to continuous targets with many features. Avoid when strong nonlinearity or interactions suggest ActExtraTreesRegressor."
     refs = [
         {
             'year': 1996,
@@ -55,14 +56,14 @@ class ActARDRegression(Predictor):
                     Hyper-parameter : shape parameter for the Gamma
                     distribution prior over the lambda parameter.'''),
                 'default': 1e-10,
-                'range': [0.001, 1e-06]
+                'range': [1e-10, 0.001]
             },
             'lambda_2': {
                 'description': textwrap.dedent('''\
                     Hyper-parameter : inverse scale parameter (rate parameter)
                     for the Gamma distribution prior over the lambda parameter.'''),
                 'default': 1e-10,
-                'range': [0.001, 1e-06]
+                'range': [1e-10, 0.001]
             },
             'threshold_lambda': {
                 'description': textwrap.dedent('''\

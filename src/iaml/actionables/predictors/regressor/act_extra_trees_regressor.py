@@ -2,6 +2,7 @@
 import textwrap
 from typing import Any
 from sklearn.ensemble import ExtraTreesRegressor
+from ....data_type import DataType
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
@@ -23,6 +24,7 @@ class ActExtraTreesRegressor(Predictor):
         random subset of the input features and a random subset of the training data.
         At prediction time, the algorithm aggregates the outputs of all the
         decision trees to make a final prediction.''')
+    _usage: str = "Use when you want a strong nonparametric tabular regressor, often a better default than ActDecisionTreeRegressor or ActAdaBoostRegressor. Applicable to numeric or mixed features with continuous targets. Avoid when data is tiny, very sparse/high-dimensional, or a linear/transparent model is required."
     refs: list[dict[str, Any]] = [
         {
             'year': 2006,
@@ -80,15 +82,32 @@ class ActExtraTreesRegressor(Predictor):
             }
         }
         self.model: ExtraTreesRegressor = None
+        self.columns: list[str] = []
+
+    def _select_features(self, X):
+        if self.columns and hasattr(X, 'columns'):
+            return X[self.columns]
+        return X
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
+        self.columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
+        if not self.columns:
+            self.columns = dataset.features
+
         self.model = ExtraTreesRegressor(**self.passthrough_parameters())
-        self.model.fit(dataset.X, dataset.y)
+        self.model.fit(self._select_features(dataset.X), dataset.y)
 
         return self
 
+    def predict(self, X):
+        return super().predict(self._select_features(X))
+
+    def score(self, X, y=None, *args, **kwargs):
+        return self.model.score(self._select_features(X), y, *args, **kwargs)
+
     def suitable(self, dataset: Dataset) -> bool:
-        return dataset.type_of_target == 'continuous'
+        return dataset.type_of_target == 'continuous' \
+            and bool(dataset.get_columns_names_by_type(DataType.NUMERIC))
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5 # neutral

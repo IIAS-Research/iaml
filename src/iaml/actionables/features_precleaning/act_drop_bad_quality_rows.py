@@ -1,5 +1,7 @@
-"""
-[STEP] Drop Rows with a ratio of Empty Columns
+"""Experimental row filter, available only through an explicit module import.
+
+Its missingness threshold, minimum sample policy and alignment of resampled data
+need integration tests before automatic use. See docs/component_status.rst.
 """
 from typing import Any
 import textwrap
@@ -9,8 +11,7 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
-
-@is_step('features_precleaning')
+@is_step('experimental')
 class ActDropBadQualityRows(Actionable):
     """
     [STEP] Drop Rows with a ratio of Empty Columns

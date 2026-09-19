@@ -23,6 +23,7 @@ class ActSVMSVC(Predictor):
         relationship between input features and a categorical output variable using a support vecto
         machine (SVM). It works by finding the optimal hyperplane or boundary that separates the
         data into different classes with the maximum margin.''')
+    _usage: str = "Use when tabular classes need nonlinear boundaries on small-to-medium data; consider ActCatBoost or ActExtraTreesClassifier for baseline alternatives. Applicable to binary, multiclass, or multilabel targets. Avoid when data is huge, very sparse, or interpretability is required."
     refs: list[dict[str, Any]] = [
         {
             'year': 1999,
@@ -72,7 +73,7 @@ class ActSVMSVC(Predictor):
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         self.model = svm.SVC(
-            probability = True, # Needed to predict_proba (thus MetaLearner)
+            probability = True, # Enable predict_proba.
             **self.passthrough_parameters()
             )
         self.model.fit(dataset.X, dataset.y)

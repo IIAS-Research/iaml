@@ -1,0 +1,464 @@
+"""[STEP] Impute missing values with MICE (miceforest/LightGBM)"""
+from copy import deepcopy
+import os
+import pickle
+import textwrap
+import pandas as pd
+import numpy as np
+import types
+
+from ...actionable import Actionable
+from ...dataset import Dataset
+from ...candidate import Candidate
+from ...decorators.all import is_step
+from ...data_type import DataType
+
+from ...logger import Logger
+
+# miceforest
+try:
+    import miceforest as mf
+except ImportError as e:
+    raise ImportError(
+        "miceforest is required for ActMICEForestImputer. Install with: pip install miceforest lightgbm"
+    ) from e
+
+try:
+    from lightgbm.basic import LightGBMError  # type: ignore
+    _LGBM_ERRORS: tuple[type[Exception], ...] = (LightGBMError,)
+except Exception:
+    _LGBM_ERRORS = tuple()
+
+
+@is_step('cleaning')
+class ActMICEForestImputer(Actionable):
+    """[STEP] Impute missing values with MICE (miceforest/LightGBM).
+
+    Copies and serialized steps retain fitted state without rebuilding models.
+    Accessing ``kernel`` or transforming data restores a private kernel; refitting
+    replaces that state directly.
+    """
+
+    name: str = 'Impute missing values (MICE - miceforest)'
+    _description: str = textwrap.dedent('''\
+        Impute missing values using MICE (chained equations) powered by LightGBM,
+        leveraging multivariate relations between features (numeric only by default).''')
+    _description_long: str = textwrap.dedent('''\
+        Uses miceforest.ImputationKernel to iteratively impute missing values.
+        By default works on numeric columns. Optionally auto-categorizes low-cardinality
+        object columns to allow categorical imputation by LightGBM.''')
+    _usage: str = 'Use when multivariate imputation is needed for missing numeric data instead of ActDropNumericalColumn. Applicable to datasets with correlated numeric features (and low-cardinality categoricals if auto_categorize). Avoid when missingness is tiny or ActCategoricalImputer is a better fit.'
+    can_be_disabled: bool = False
+
+    def __init__(self):
+        self.columns: list[str] = None
+        self._kernel: mf.ImputationKernel | None = None
+        self._kernel_snapshot: bytes | None = None
+        self._nan_stats: dict[str, tuple[int, int, float]] = {}
+        self._all_nan_cols: list[str] = []
+        self._prefill_values: dict[str, object] = {}
+
+        self.configuration: dict = {
+            'max_iter': {
+                'description': 'Number of MICE iterations to run.',
+                'default': 5
+            },
+            'random_state': {
+                'description': 'Random seed for reproducibility (None for stochastic).',
+                'default': 0
+            },
+            'auto_categorize': {
+                'description': 'If True, cast low-cardinality object columns to category.',
+                'default': False
+            },
+            'auto_categorize_max_cardinality': {
+                'description': 'Max unique values to auto-cast object->category when auto_categorize=True.',
+                'default': 30
+            }
+        }
+        self._n_jobs = self._detect_parallel_jobs()
+
+    @property
+    def kernel(self) -> mf.ImputationKernel | None:
+        """Restore a private kernel only when this copy needs its fitted state."""
+        snapshot = self._kernel_snapshot
+        if snapshot is not None:
+            self._kernel = pickle.loads(snapshot)
+            # A live kernel can mutate, so its previous snapshot must not be reused.
+            self._kernel_snapshot = None
+        return self._kernel
+
+    @kernel.setter
+    def kernel(self, value: mf.ImputationKernel | None) -> None:
+        self._kernel = value
+        self._kernel_snapshot = None
+
+    def __getstate__(self) -> dict:
+        """Transport fitted state without rebuilding Parquet tables or LightGBM models."""
+        state = self.__dict__.copy()
+        kernel = state.pop('_kernel')
+        if kernel is not None:
+            state['_kernel_snapshot'] = pickle.dumps(kernel, protocol=pickle.HIGHEST_PROTOCOL)
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        state = state.copy()
+        # Previously saved steps stored the live kernel directly as a public attribute.
+        kernel = state.pop('kernel', None)
+        self.__dict__.update(state)
+        self._kernel = kernel
+        self._kernel_snapshot = state.get('_kernel_snapshot')
+
+    def __deepcopy__(self, memo: dict) -> 'ActMICEForestImputer':
+        copied = type(self).__new__(type(self))
+        memo[id(self)] = copied
+        state = {}
+        for key, value in self.__getstate__().items():
+            # Preserve Step's treatment of runtime references and caches.
+            if key == 'candidate':
+                state[key] = None
+            elif key == 'caches':
+                state[key] = []
+            else:
+                state[key] = deepcopy(value, memo)
+        copied.__setstate__(state)
+        return copied
+
+    # --- helpers -----------------------------------------------------------------
+    def _select_columns(self, df: pd.DataFrame) -> list[str]:
+        # Base : colonnes numériques
+        cols = list(df.columns.intersection(df.select_dtypes(include=[np.number]).columns))
+
+        if self.configuration['auto_categorize']['default']:
+            max_card = int(self.configuration['auto_categorize_max_cardinality']['default'])
+            obj_cols = df.select_dtypes(include=['object']).columns
+            for c in obj_cols:
+                nuniq = df[c].nunique(dropna=True)
+                if 1 < nuniq <= max_card:
+                    df[c] = df[c].astype('category')
+                    cols.append(c)
+            cat_cols = df.select_dtypes(include=['category']).columns
+            for c in cat_cols:
+                if c not in cols:
+                    cols.append(c)
+
+        # Préserver l'ordre d’origine
+        cols_ordered = [c for c in df.columns if c in set(cols)]
+        return cols_ordered
+
+    # --- core API ----------------------------------------------------------------
+    def fit(self, dataset: Dataset) -> Actionable:
+        # Refitting (including skipped fits) replaces old state without restoring it.
+        self.kernel = None
+        X = dataset.X.copy()
+        self.columns = self._select_columns(X)
+        if not self.columns:
+            self.explanations = []
+            self.kernel = None
+            return self
+        
+        Logger().info("MICE FIT")
+        
+
+        X_fit = X[self.columns].copy()
+
+        # Exclure colonnes entièrement NaN (miceforest ne peut pas les initialiser)
+        nonnull_counts = X_fit.notna().sum(axis=0)
+        valid_cols = [c for c in self.columns if nonnull_counts[c] > 0]
+        self._all_nan_cols = [c for c in self.columns if nonnull_counts[c] == 0]
+
+        # Pré-remplissages par défaut pour ces colonnes (appliqués en transform)
+        self._prefill_values = {}
+        for c in self._all_nan_cols:
+            if pd.api.types.is_numeric_dtype(X_fit[c]):
+                self._prefill_values[c] = 0
+            elif pd.api.types.is_categorical_dtype(X_fit[c]):
+                if 'missing' not in X_fit[c].cat.categories:
+                    X_fit[c] = X_fit[c].cat.add_categories(['missing'])
+                self._prefill_values[c] = 'missing'
+            else:
+                self._prefill_values[c] = 'missing'
+
+        if not valid_cols:
+            self.explanations = [
+                "Skipped MICE: all selected columns had 0 observed values."
+            ]
+            self.kernel = None
+            return self
+
+        X_fit_valid = X_fit[valid_cols].copy().reset_index(drop=True)
+        if X_fit_valid.empty:
+            self.explanations = [
+                "Skipped MICE: dataset had 0 lignes après prétraitements (nothing to impute)."
+            ]
+            self.kernel = None
+            return self
+        if len(X_fit_valid) < 5:
+            self.explanations = [
+                f"Skipped MICE: dataset trop petit ({len(X_fit_valid)} lignes) pour miceforest."
+            ]
+            self.kernel = None
+            return self
+        
+        self._nan_stats = {}
+        for c in valid_cols:
+            n_missing = int(X_fit_valid[c].isna().sum())
+            n_total = int(len(X_fit_valid[c]))
+            pct = (n_missing / n_total * 100.0) if n_total > 0 else 0.0
+            self._nan_stats[c] = (n_missing, n_total, pct)
+        rs = self.configuration['random_state']['default']
+
+        default_mmc = 5
+        mean_match_candidates = {
+            c: max(0, min(default_mmc, int(nonnull_counts[c]) - 1))
+            for c in valid_cols
+        }
+
+        kernel_kwargs = dict(
+            data=X_fit_valid,
+            random_state=rs,
+            num_datasets=1,
+            save_all_iterations_data=True,
+            mean_match_candidates=mean_match_candidates,
+        )
+        self.kernel = mf.ImputationKernel(**kernel_kwargs)
+
+        def _run_kernel() -> None:
+            self.kernel.mice(
+                int(self.configuration['max_iter']['default']),
+                n_jobs=self._n_jobs,
+                verbose=False,
+                seed=rs,
+                random_state=rs
+            )
+
+        fallback_errors: tuple[type[Exception], ...] = (IndexError,) + _LGBM_ERRORS
+
+        try:
+            _run_kernel()
+        except ValueError as exc:
+            Logger().warning(
+                "MICE fitting failed (%s). Step skipped; columns left untouched.", exc
+            )
+            raise RuntimeError(f"MICE fitting failed: {exc}") from exc
+        except fallback_errors as exc:  # type: ignore[misc]
+            Logger().warning(
+                "MICE mean-matching failed (%s). Retrying without predictive mean matching.",
+                exc,
+            )
+            fallback_kernel_kwargs = dict(kernel_kwargs, mean_match_candidates=0)
+            self.kernel = mf.ImputationKernel(**fallback_kernel_kwargs)
+            try:
+                _run_kernel()
+            except Exception as exc2:  # noqa: BLE001
+                Logger().warning(
+                    "MICE fallback without predictive mean matching failed (%s). Step skipped; columns left untouched.",
+                    exc2,
+                )
+                raise RuntimeError(
+                    f"MICE fallback without predictive mean matching failed: {exc2}"
+                ) from exc2
+        except Exception as exc:  # noqa: BLE001
+            Logger().warning(
+                "MICE fitting failed (%s). Step skipped; columns left untouched.", exc
+            )
+            raise RuntimeError(f"MICE fitting failed: {exc}") from exc
+        
+        self._ensure_seed_on_kernel_models(rs)
+        self._ensure_parallelism_on_kernel_models(self._n_jobs)
+
+        # Explications
+        expl = [
+            f"Imputed missing values of column **`{c}`** using **MICE (miceforest)** "
+            f"(**{n}** / **{t}**; **{pct:.2f}%** missing in train data)."
+            for c, (n, t, pct) in self._nan_stats.items() if n > 0
+        ]
+        if self._all_nan_cols:
+            expl.append(
+                "Skipped MICE for all-NaN columns: " +
+                ", ".join(f"`{c}`" for c in self._all_nan_cols) +
+                " (cannot initialize with miceforest)."
+            )
+        self.explanations = expl
+
+        # Conserver toutes les colonnes (ordre : valides puis all-NaN)
+        self.columns = valid_cols + self._all_nan_cols
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Apply trained MICEForest kernel to new data."""
+        if not self.columns:
+            return X
+
+        Logger().info("MICE TRANSFORM")
+
+        X_out = X.copy()
+
+        # Harmoniser les types si auto_categorize activé
+        if self.configuration['auto_categorize']['default']:
+            max_card = int(self.configuration['auto_categorize_max_cardinality']['default'])
+            for c in X_out.columns:
+                if c in self.columns and X_out[c].dtype == 'object':
+                    nuniq = X_out[c].nunique(dropna=True)
+                    if 1 < nuniq <= max_card:
+                        X_out[c] = X_out[c].astype('category')
+
+        # 1) Imputer les colonnes "valides" via MICE (celles non all-NaN au fit)
+        valid_cols = [c for c in self.columns if c not in self._all_nan_cols]
+        if self.kernel is not None and valid_cols:
+            X_sub = X_out[valid_cols].copy()
+
+            # miceforest attend un RangeIndex
+            X_sub_reset = X_sub.reset_index(drop=True)
+
+            # Sécuriser les modèles du kernel : s'assurer que params['seed'] existe
+            _ = self._ensure_seed_on_kernel_models(self.configuration['random_state']['default'])
+            self._ensure_parallelism_on_kernel_models(self._n_jobs)
+
+            # Appel principal à impute_new_data ; en cas de KeyError 'seed', on coupe le PMM
+            try:
+                imputed_data = self.kernel.impute_new_data(
+                    new_data=X_sub_reset,
+                    datasets=[0],
+                    iterations=int(self.configuration['max_iter']['default'])
+                )
+            except KeyError as e:
+                if str(e) == "'seed'":
+                    # Fallback : désactiver le PMM pour l'imputation "new data"
+                    imputed_data = self.kernel.impute_new_data(
+                        new_data=X_sub_reset,
+                        datasets=[0],
+                        iterations=int(self.configuration['max_iter']['default']),
+                        mean_match_candidates=0  # imputation par prédiction directe
+                        # exact=True  # <- alternative possible selon versions de miceforest
+                    )
+                else:
+                    raise
+
+            imputed = imputed_data.complete_data(dataset=0)
+
+            # Réinjection en respectant l'index d'origine de X_out
+            X_out.loc[:, valid_cols] = imputed[valid_cols].values
+
+        # 2) Pré-remplir les colonnes all-NaN (impossibles à traiter par miceforest)
+        for c in self._all_nan_cols:
+            if c in X_out.columns:
+                fill_val = self._prefill_values.get(c, np.nan)
+                if pd.api.types.is_categorical_dtype(X_out[c]) and str(fill_val) not in X_out[c].cat.categories:
+                    X_out[c] = X_out[c].cat.add_categories([fill_val])
+                X_out[c] = X_out[c].fillna(fill_val)
+
+        # 3) Nettoyer les types numériques
+        for col in X_out.columns:
+            if pd.api.types.is_numeric_dtype(X_out[col]):
+                X_out[col] = pd.to_numeric(X_out[col], errors='coerce').infer_objects(copy=False)
+
+        return X_out
+
+
+    def suitable(self, dataset: Dataset) -> bool:
+        if dataset.X.empty:
+            return False
+
+        X = dataset.X.copy()
+        columns = self._select_columns(X)
+        if not columns:
+            return False
+
+        X_fit = X[columns]
+        if X_fit.empty:
+            return False
+
+        if not X_fit.isna().any().any():
+            return False
+
+        nonnull_counts = X_fit.notna().sum(axis=0)
+        valid_cols = [c for c in columns if nonnull_counts[c] > 0]
+        if not valid_cols:
+            return False
+
+        X_fit_valid = X_fit[valid_cols]
+        if X_fit_valid.empty or len(X_fit_valid) < 5:
+            return False
+
+        return True
+
+    def priorize(self, candidate: Candidate = None) -> float:
+        alpha = 0.01
+        return 1 - (candidate.dataset.X.isnull().sum().min() / len(candidate.dataset.X)) + alpha
+    
+    def _yield_kernel_models(self):
+        """Itère de manière sécurisée sur les modèles LGBM stockés dans le kernel miceforest,
+        sans introspection profonde qui casse sur pandas."""
+        if self.kernel is None:
+            return
+        containers = []
+        for attr in ("imputation_models", "models", "model_dict", "model_dicts"):
+            if hasattr(self.kernel, attr):
+                containers.append(getattr(self.kernel, attr))
+
+        def walk(obj):
+            if obj is None:
+                return
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    yield from walk(v)
+            elif isinstance(obj, (list, tuple)):
+                for v in obj:
+                    yield from walk(v)
+            else:
+                # Cible : objets LightGBM-like avec un dict .params
+                p = getattr(obj, "params", None)
+                if isinstance(p, dict):
+                    yield obj
+                    
+        for c in containers:
+            yield from walk(c)
+
+    def _ensure_seed_on_kernel_models(self, seed: int) -> int:
+        """Ajoute params['seed'] aux modèles si absent. Retourne le nombre patché."""
+        patched = 0
+        for m in self._yield_kernel_models():
+            p = getattr(m, "params", None)
+            if isinstance(p, dict) and "seed" not in p:
+                p["seed"] = p.get("random_state", int(seed) if seed is not None else 0)
+                patched += 1
+        return patched
+
+    def _ensure_parallelism_on_kernel_models(self, threads: int) -> int:
+        if threads is None or threads < 1:
+            return 0
+        patched = 0
+        for m in self._yield_kernel_models():
+            params = getattr(m, "params", None)
+            if isinstance(params, dict):
+                updated = False
+                for key in ("num_threads", "n_jobs", "nthread"):
+                    if params.get(key) != threads:
+                        params[key] = threads
+                        updated = True
+                if updated:
+                    patched += 1
+        return patched
+
+    def _detect_parallel_jobs(self) -> int:
+        manual = os.environ.get("IAML_MICE_JOBS")
+        if manual:
+            try:
+                jobs = int(manual)
+                if jobs >= 1:
+                    return jobs
+            except ValueError:
+                pass
+        cpu_count = os.cpu_count() or 1
+        if cpu_count <= 2:
+            return 1
+        if cpu_count <= 4:
+            return 2
+        if cpu_count <= 8:
+            return 4
+        if cpu_count <= 16:
+            return 6
+        if cpu_count <= 32:
+            return 8
+        return min(16, max(8, cpu_count // 2))

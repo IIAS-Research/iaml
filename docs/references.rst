@@ -23,8 +23,5 @@ IAML leverages several Python libraries and frameworks to deliver robust and eff
 - **cuDF (RAPIDS AI):**
     cuDF: GPU DataFrame Library for Data Manipulation. Available at: https://rapids.ai/.
 
-- **Seaborn:**
-    Seaborn: Statistical Data Visualization for Python. Available at: https://seaborn.pydata.org/.
-
 - **NLTK:**
     NLTK (Natural Language Toolkit): Tools for Working with Human Language Data. Available at: https://www.nltk.org/.

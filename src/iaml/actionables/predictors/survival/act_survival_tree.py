@@ -27,6 +27,7 @@ class ActSurvivalTree(Predictor):
         both cumulative hazard and survival functions at each terminal node, making it useful for
         clinical risk prediction and other applications where time-to-event outcomes are crucial.
         ''')
+    _usage: str = "Use when you need an interpretable survival baseline; compare ActCox or ActExtraSurvivalTrees for linear or ensemble options. Applicable to tabular time-to-event data with right censoring. Avoid when higher accuracy is required or proportional-hazards structure is assumed."
     refs: list[dict[str, Any]] = [
         {
             'year': 1993,
@@ -47,26 +48,26 @@ class ActSurvivalTree(Predictor):
                     The strategy used to split at each node. Supported: "best",
                     "random".'''),
                 'default': 'best',
-                'options': ['best', 'random'],
-                'passthrough': False
+                'categorical': ['best', 'random'],
+                'passthrough': True
             },
             'max_depth': {
                 'description': 'The maximum depth of the tree.',
                 'default': None,
                 'range': [1, None],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node.',
                 'default': 6,
                 'range': [2, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'min_samples_leaf': {
                 'description': 'The minimum number of samples required to be at a leaf node.',
                 'default': 3,
                 'range': [1, 20],
-                'passthrough': False
+                'passthrough': True
             },
             'min_weight_fraction_leaf': {
                 'description': textwrap.dedent('''\
@@ -74,33 +75,32 @@ class ActSurvivalTree(Predictor):
                     to be at a leaf node.'''),
                 'default': 0.0,
                 'range': [0.0, 0.5],
-                'passthrough': False
+                'passthrough': True
             },
             'max_features': {
                 'description': textwrap.dedent('''\
                     The number of features to consider when looking for the
                     best split.'''),
                 'default': None,
-                'options': [None, 'auto', 'sqrt', 'log2'],
-                'passthrough': False
+                'categorical': [None, 'sqrt', 'log2'],
+                'passthrough': True
             },
             'random_state': {
-                'description': 'Controls the randomness of the estimator.',
+                'description': 'Random seed (integer or None) for the estimator.',
                 'default': None,
-                'options': [None, 'int'],
-                'passthrough': False
+                'passthrough': True
             },
             'max_leaf_nodes': {
                 'description': 'Grow a tree with a maximum number of leaf nodes.',
                 'default': None,
                 'range': [None, 1000],
-                'passthrough': False
+                'passthrough': True
             },
             'low_memory': {
                 'description': 'Reduce memory usage but disable some prediction functions.',
                 'default': False,
-                'options': [True, False],
-                'passthrough': False
+                'categorical': [True, False],
+                'passthrough': True
             }
         }
         self.model: SurvivalTree = None

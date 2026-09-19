@@ -7,6 +7,16 @@ from ...dataset import Dataset
 from ...candidate import Candidate
 from ...decorators.all import is_step
 
+
+def _is_numeric_matrix(values: pd.DataFrame) -> bool:
+    if values.empty:
+        return False
+    for column in values.columns:
+        if not pd.api.types.is_numeric_dtype(values[column]):
+            return False
+    return not values.isna().any().any()
+
+
 @is_step('features_preprocessing')
 class ActKernelPCA(Actionable):
     """[STEP] Apply KernelPCA for dimensionality reduction"""
@@ -18,6 +28,7 @@ class ActKernelPCA(Actionable):
         enabling it to capture complex, non-linear structures in the data. KernelPCA is useful for reducing
         dimensionality while preserving intricate patterns and relationships within the data.
     ''')
+    _usage = "Use when non-linear structure matters and linear reductions are insufficient; consider ActFastICA if you want independent components. Applicable to dense numeric, scaled features. Avoid when data is very large, sparse, or interpretability is required."
 
     refs = [
         {
@@ -101,6 +112,9 @@ class ActKernelPCA(Actionable):
 
 
     def fit(self, dataset: Dataset) -> Actionable:
+        self.preprocessor = None
+        if not _is_numeric_matrix(dataset.X):
+            return self
         try:
             self.preprocessor = KernelPCA(**self.passthrough_parameters())
             self.preprocessor.fit(dataset.X)
@@ -118,7 +132,12 @@ class ActKernelPCA(Actionable):
         :return: Transformed dataset
         """
 
+        if self.preprocessor is None:
+            return X
         return pd.DataFrame(self.preprocessor.transform(X))
+
+    def suitable(self, dataset: Dataset) -> bool:
+        return _is_numeric_matrix(dataset.X)
 
     def priorize(self, candidate: Candidate = None) -> float:
         return 0.5

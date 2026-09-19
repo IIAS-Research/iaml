@@ -1,19 +1,21 @@
 """[STEP]  CatBoost"""
 import textwrap
 from typing import Any
-from catboost import CatBoostClassifier
+from catboost import CatBoostClassifier, CatBoostError
 from sklearn.preprocessing import LabelEncoder
 from ....predictor import Predictor
 from ....dataset import Dataset
 from ....candidate import Candidate
 from ....decorators.all import is_step
+from ....logger import Logger
 
 
-@is_step('predictor', 'tabular', 'classifier')
+@is_step('predictor', 'tabular', 'classifier', 'minimal_predictor')
 class ActCatBoost(Predictor):
     """[STEP]  CatBoost Classifier"""
 
     name: str = "CatBoost Classifier"
+    _usage: str = "Use when you want high-accuracy tabular classification with categorical features, often stronger than ActDecisionTreeClassifier or ActExtraTreesClassifier. Applicable to binary or multiclass tabular data. Avoid when data is tiny, compute is tight, or you prefer ActGaussianNb."
     _description: str = textwrap.dedent('''\
         CatBoostClassifier is a powerful tool that helps computers make accurate
         predictions by learning from both positive and negative examples simultaneously.''')
@@ -101,8 +103,29 @@ class ActCatBoost(Predictor):
 
         self.model = CatBoostClassifier(verbose=0, **self.passthrough_parameters())
         self.label_encoder.fit(dataset.y)
-        self.model.fit(dataset.X, self.label_encoder.transform(dataset.y))
+        encoded_target = self.label_encoder.transform(dataset.y)
+        try:
+            self.model.fit(dataset.X, encoded_target)
+        except CatBoostError as exc:
+            self._log_failure(dataset, exc)
+            raise ValueError(f"CatBoostClassifier training failed: {exc}") from exc
+        except Exception as exc:  # pragma: no cover - defensive
+            self._log_failure(dataset, exc)
+            raise
         return self
+
+    def _log_failure(self, dataset: Dataset, exc: Exception) -> None:
+        """Log enriched debug info when CatBoost crashes."""
+        shape = getattr(dataset.X, "shape", None)
+        message = (
+            "[CatBoostClassifier] crash detected "
+            f"(shape={shape}, target_len={len(dataset.y)}, "
+            f"params={self.passthrough_parameters()}): {exc}"
+        )
+        logger = Logger()
+        if logger.verbose <= 3 and logger.verbose != -1:
+            logger.console.log(message)
+        logger.error(message)
 
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target in \

@@ -22,6 +22,7 @@ class ActBernoulliNb(Predictor):
         BernoulliNB is a type of Naive Bayes classifier specifically
         designed for binary features. While it's primarily meant for binary inputs,
         scikit-learn implements it in a way that can handle non-binary data.''')
+    _usage = "Use when you have mostly binary or presence/absence features and want a fast baseline vs ActComplementNB. Applicable to sparse tabular or text-like data with binary indicators. Avoid when features are continuous or you need nonlinear interactions; try ActGaussianNb or ActCatBoost."
     refs = [
         {
             'year': 1998,

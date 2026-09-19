@@ -1,11 +1,9 @@
-"""[STEP] Encode string categorical target column to numeric"""
-# Disabled for now
-# TODO -> Rework.
-# - We can't use 'y' in transform
-# - Probably must not be a step
-# - Have a robust mapping
-# - IAMLPipeline must be able to reverse the mapping after prediction
-#       (otherwise, outputs have no sense)
+"""Experimental target encoder, available only through an explicit module import.
+
+This prototype transforms y rather than X, recomputes the mapping on each call,
+and cannot reverse predictions. It is incompatible with the pipeline transformer
+contract and must remain outside automatic cleaning. See docs/component_status.rst.
+"""
 
 import textwrap
 import numpy as np
@@ -15,13 +13,13 @@ from ...candidate import Candidate
 from ...decorators.all import is_step
 
 
-# @is_step('cleaning')
-@is_step('disabled')
+@is_step('experimental')
 class ActCategoryStringToNumeric(Actionable):
     """Encode categorical target column to numeric"""
 
     name: str = 'Textual Category To Numeric Value'
     _description: str ='Encode categorical text data column to numeric value'
+    _usage: str = 'Use when target labels are categorical strings and models require numeric y; prefer ActDropCategoricalColumn only if target is unusable. Applicable to single target columns of low-to-moderate cardinality. Avoid when target is already numeric or when ActDropHighCardinalityCategorical is more appropriate.'
     _description_long: str = textwrap.dedent('''\
         Retrieve all unique values from a column, then transform those values to a numeric type.
         Exemple: If a column contain 3 uniques values like "coffee", "tea" and "water",

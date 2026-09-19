@@ -6,6 +6,7 @@ from typing import Any
 from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
+from ..void_step import VoidStep
 
 
 class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attributes
@@ -79,6 +80,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
             self.first_candidate_pool = candidates[0:6]
 
         nb_to_keep: int = round(self.number_of_candidate / 4)
+        # nb_to_keep: int = max(min(4, round(self.number_of_candidate / 4)), 1)
         mutate_ratio = self.__mutate_ratio
         self.generation_count += 1
 
@@ -112,8 +114,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
 
             # If interchangeable -> 1/2 to change the step
             if current_step.is_interchangeable and bool(random.getrandbits(1)):
-                new_step: Step = random.choice(current_step.step_with_same_tags())()
-                new_step.is_interchangeable = True
+                new_step = self.__interchange(current_step)
                 new_candidate.pipeline.replace_step(current_step, new_step)
                 current_step = new_step
             if not self.__config_keys(current_step):
@@ -174,7 +175,10 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         :return: Newly created Candidate.
         """
         new_candidate: Candidate = deepcopy(candidate)
-        step_to_mutate: Step = random.choice(new_candidate.pipeline.optimizable_step)
+        steps = new_candidate.pipeline.optimizable_step
+        if not steps:
+            return None
+        step_to_mutate: Step = random.choice(steps)
 
         mutable_keys = self.__config_keys(step_to_mutate)
         if step_to_mutate.is_interchangeable:
@@ -187,10 +191,9 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         random_key: str = random.choice(mutable_keys)
 
         if random_key == "interchange": # Mutate by interchanging the step with sibling
-            new_step: Step = random.choice(step_to_mutate.step_with_same_tags())()
-            new_step.is_interchangeable = True
+            new_step = self.__interchange(step_to_mutate)
             new_candidate.pipeline.replace_step(step_to_mutate, new_step)
-            return candidate
+            return new_candidate
 
 
         random_item: dict = step_to_mutate.configuration[random_key] # Get value of the random key
@@ -225,12 +228,33 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
 
         return new_candidate
 
+    @staticmethod
+    def __interchange(step: Step) -> Step:
+        """Choose another implementation, allowing optional preprocessing to be removed."""
+        choices = [sibling for sibling in step.step_with_same_tags()
+                   if sibling is not type(step)]
+        if (not isinstance(step, VoidStep) and step.can_be_disabled
+                and not hasattr(step, 'predict')
+                and (hasattr(step, 'transform') or hasattr(step, 'resample'))):
+            choices.append(VoidStep)
+        if not choices:
+            return step
+        step_class = random.choice(choices)
+        if step_class is VoidStep:
+            replacement = VoidStep(step_to_mimic=type(step)())
+        else:
+            replacement = step_class()
+        replacement.is_interchangeable = True
+        return replacement
+
     def __config_keys(self, step: Step) -> list[str]:
         """Get a list of config keys used for a Step
         
         :param Step step: The step we want the config
         :return: List of config keys for this step
         """
+        if not step.optimizable:
+            return []
         return list(set(step.configuration.keys()) - self.ignored_configs)
 
     def __valide_config(self, config: dict, value: Any) -> bool:
