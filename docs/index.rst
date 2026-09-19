@@ -1,11 +1,10 @@
-.. iaml documentation master file, created by
-   sphinx-quickstart on Thu Nov 28 10:20:08 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+==================
+IAML documentation
+==================
 
-=================
-Table of contents
-=================
+**Integrated AutoML for Medical Labs** supports building, evaluating and
+explaining prediction pipelines for clinical research with tabular data.
+Start with the :doc:`overview <home>` or the :doc:`quick_start` guide.
 
 .. toctree::
    :maxdepth: 3

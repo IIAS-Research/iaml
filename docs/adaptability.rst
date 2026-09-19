@@ -2,7 +2,10 @@
 Adaptability
 ============
 
-IAML is designed to be highly adaptable and extensible, allowing users to seamlessly integrate custom functionality into their machine learning pipelines. Its modular architecture makes it easy to create new Steps and add them to pipelines, ensuring that IAML can be tailored to suit diverse domains and unique project requirements.
+Clinical research studies differ in their data, outcomes and evaluation needs.
+IAML exposes preprocessing steps, predictors, metrics and plots as components
+that research teams can configure or extend. This page describes how to add
+study-specific methods while retaining the same pipeline interfaces.
 
 Steps
 =====
@@ -334,8 +337,7 @@ This example creates a metric plot which generates the ROC curve.
         def suitable(cls, type_of_target: str) -> bool:
             return type_of_target == 'binary'
 
-Conclusion
-==========
-IAML’s adaptability makes it a powerful tool for diverse machine learning tasks. With minimal effort, you can create and integrate custom Steps, ensuring that IAML evolves alongside your project requirements.
-
-Explore more about IAML’s architecture in the :doc:`architecture documentation <architecture>`.
+Related documentation
+=====================
+See :doc:`architecture` for how components form a pipeline and :doc:`scientific`
+for how to describe the methods used in a study.

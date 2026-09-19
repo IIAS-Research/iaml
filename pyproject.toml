@@ -7,7 +7,7 @@ authors = [
     { name="Robin BOURACHOT", email="rbourachot@chu-reims.fr" },
     { name="Youssouf DAHLOUK", email="ydahlouk@chu-reims.fr" },
 ]
-description = "Incremental AutoML package"
+description = "Integrated AutoML for Medical Labs: explainable pipelines for clinical research"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [

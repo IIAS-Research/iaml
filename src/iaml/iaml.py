@@ -1,12 +1,8 @@
-"""
-    IAML (Incremental AutoML), a high-performance and modular,
-    open-source Python framework. Designed to mimics the behavior
-    of a data scientist in creating pipelines and leverages an 
-    optimization process inspired by genetic algorithm for
-    efficient pipeline construction and hyperparameter tuning.
-    
-    The framework incorporates explainability features, such as 
-    SHAP-based insights, to enhance model transparency and trustworthiness.
+"""Integrated AutoML for Medical Labs (IAML).
+
+Search and evaluate modular prediction pipelines for clinical research with
+tabular data. Trained candidates expose their pipeline steps, evaluation metrics
+and explanation methods for inspection and study reporting.
 """
 from copy import deepcopy
 import time
@@ -57,8 +53,10 @@ if TYPE_CHECKING:
 
 
 class IAML:  # pylint: disable=too-many-instance-attributes
-    """ Main class of the module.
-    IAML will load, configure and fit machine learning pipelines
+    """Configure and search prediction pipelines for a clinical research dataset.
+
+    :meth:`fit` returns trained candidates for evaluation, pipeline inspection
+    and explanation of predictions.
 
     :param int, optional max_workers: Maximum parallel workers. Default to cpu count.
     :param int, optional max_stage_duration: Maximum duration of a stage. Default to None.

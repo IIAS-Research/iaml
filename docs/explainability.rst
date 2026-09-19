@@ -2,6 +2,10 @@
 Explainability
 ==============
 
+IAML provides pipeline descriptions, feature explanations and performance plots
+to help clinical research teams review a trained model. These outputs connect
+the methods used in the analysis with the predictions being evaluated.
+
 The explanations below apply to a trained
 :py:class:`~iaml.candidate.Candidate`. Start with :doc:`quick_start`, then keep
 the first candidate returned by ``fit``:
@@ -16,7 +20,8 @@ the first candidate returned by ``fit``:
 Feature importance
 ==================
 
-Compute SHAP explanations using held-out features. The result is an
+Compute SHAP explanations using held-out features to examine their contributions
+to model outputs. The result is an
 :py:class:`~iaml.explanation.Explanation` object, from which you can extract
 importance values, Markdown tables and plots:
 
@@ -33,8 +38,8 @@ when exploring a large dataset.
 Model performance
 =================
 
-Evaluate on held-out features and targets, and request the plots suitable for
-the task:
+Evaluate on held-out features and targets, and request plots suitable for the
+study's prediction task:
 
 .. code-block:: python
 
@@ -50,3 +55,6 @@ with ``IPython.display.Image``:
 
     for plot in performance_plots:
         display(Image(plot.image))
+
+See :doc:`scientific` for using these outputs in study reports and recording
+experiment settings.

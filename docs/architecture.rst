@@ -2,7 +2,10 @@
 How it works
 ============
 
-The architecture of IAML is designed to be modular, adaptable, and optimized for a wide range of machine learning tasks. It enables seamless integration of new methods, customization of pipelines, and efficient performance through evolutionary optimization strategies.
+IAML combines data preparation, model search and evaluation in a modular
+workflow for tabular clinical research. Each pipeline is assembled from
+inspectable steps, allowing research teams to review the methods used and adapt
+components to their study.
 
 Learning Architecture
 =====================
@@ -10,7 +13,7 @@ The IAML framework operates in three main stages:
 
 1. **Candidate Generation:** Initial pipelines are created based on available modules.
 2. **Candidate Evaluation:** Pipelines are evaluated for performance using cross-validation.
-3. **Candidate Optimization:** Pipelines are refined using evolutionary strategies inspired by genetic algorithms.
+3. **Candidate Optimization:** The configured optimizer refines the candidates; genetic search is the default.
 
 Each stage is modular, allowing users to customize, extend, or replace components for specific tasks or datasets.
 
@@ -35,10 +38,9 @@ The first stage of IAML’s workflow involves generating initial pipeline candid
 
 Candidate Evaluation
 ---------------------
-In the second stage, the performance of each candidate is assessed using **5-fold cross-validation**. This process ensures:
-
-- **Robust Generalization:** By evaluating on multiple validation sets, overfitting is minimized.
-- **Reliable Metrics:** Performance metrics are averaged across folds for a robust estimate.
+In the second stage, each candidate is assessed using **5-fold cross-validation**
+by default. Performance metrics are averaged across folds to compare candidates
+under the same validation strategy.
 
 The candidates are ranked based on a key metric defined by the user (e.g., accuracy for classification or R² for regression). This ranking determines which candidates move on to the optimization stage.
 
@@ -72,7 +74,11 @@ IAML’s default optimization process is inspired by **genetic algorithms**. Thi
 - **Mutation:** Slightly altering the parameters of existing candidates to explore variations.
 - **Random Generation:** Introducing new random candidates to encourage exploration.
 
-The optimizer balances exploration and refinement, prioritizing exploration during early iterations and refinement as the process progresses. This loop over evaluation and optimization continues until a stopping condition is met, such as a timeout or performance plateau.
+The default optimizer explores changes to pipeline structure and parameters.
+Evaluation and optimization continue until a stopping condition is met, such as
+the search time limit or a configured patience limit. Alternative optimizers
+include Bayesian hyperparameter tuning; see :doc:`adaptability` for the
+optimizer interface.
 
 Learning Overview
 =================
@@ -80,7 +86,7 @@ IAML’s training process begins with candidate generation: IAML creates multipl
 pipelines based on available modules, forming the initial pool of candidates. Next,
 it enters a loop of evaluation and optimization. Each candidate in the pool is evaluated
 using 5-fold cross-validation. Based on these evaluations, a new generation of candidates
-is produced using a genetic algorithm strategy. This loop continues until a stopping condition
+is produced using the configured optimizer. This loop continues until a stopping condition
 is met, such as reaching a set patience limit or a timeout.
 
 .. figure:: architecture_flow_diagram.png
@@ -92,22 +98,24 @@ is met, such as reaching a set patience limit or a timeout.
 
 Explainability and Transparency
 ===============================
-IAML emphasizes transparency at every stage. It integrates explainability features such as:
+Clinical researchers and data scientists can inspect the selected pipeline and
+request outputs to support interpretation and study reporting:
 
 - **Descriptive statistics and visualizations:** Automatically generated statistics and visualizations to help users understand the input data.
 - **Pipeline summaries:** Detailed descriptions of all transformations and models used in a pipeline.
 - **Performance metrics:** Comprehensive evaluation metrics for each candidate pipeline.
-- **Model performance visualization:** Automatically generated visualizations to help users understand model performance and identify weaknesses.
+- **Model performance visualization:** Task-specific plots of predictions and errors on an evaluation dataset.
 - **Feature importance:** Feature importance explanations using SHAP (SHapley Additive exPlanations).
 
 Learn how to use all these functionalities in the :doc:`explainability documentation <explainability>`.
 
 Adaptability
 ============
-The modular design of IAML ensures adaptability to various domains and tasks. Users can:
+Research teams can adapt IAML to their data and study design. Users can:
 
 - Modify preprocessing Steps, evaluation metrics, and optimization strategies with minimal effort.
 - Integrate new methods or algorithms by implementing custom Steps.
 - Leverage GPU acceleration through libraries like cuDF for faster processing.
 
-Learn how to adapt IAML to your domains and usage in the :doc:`adaptability documentation <adaptability>`.
+See the :doc:`adaptability documentation <adaptability>` for component and
+extension APIs.

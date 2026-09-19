@@ -1,7 +1,28 @@
-# IAML
+# IAML — Integrated AutoML for Medical Labs
 
-IAML (Incremental AutoML) is a Python framework developed by IIAS for building,
-optimizing and explaining machine learning pipelines for tabular data.
+IAML (Integrated AutoML for Medical Labs) is a Python framework developed by IIAS
+to make machine learning more accessible to clinical research teams. It brings
+preprocessing, model search and evaluation into one workflow for classification,
+regression and survival analysis on tabular data.
+
+Researchers can inspect the steps of a selected pipeline, evaluate its predictions
+and generate explanations to discuss with clinicians and data scientists. Modular
+components let teams adapt the workflow to their study while keeping the methods
+available for review.
+
+## Clinical research workflow
+
+- **Build prediction pipelines:** search preprocessing steps, models and their
+  parameters through a Python API.
+- **Evaluate a study outcome:** choose the metric and validation strategy, then
+  assess the selected candidate on held-out data.
+- **Inspect and explain:** describe pipeline steps, compute SHAP explanations and
+  generate task-specific performance plots.
+- **Document an experiment:** collect method references and optionally retain
+  cross-validation records with `keep_training_history=True`.
+
+The [research guide](docs/scientific.rst) shows how to use these outputs when
+reporting a study and recording the settings needed to repeat an experiment.
 
 ## Installation
 

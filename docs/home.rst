@@ -1,31 +1,38 @@
-.. iaml documentation master file, created by
-   sphinx-quickstart on Thu Nov 28 10:20:08 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+=======================================
+Integrated AutoML for Medical Labs
+=======================================
 
-========================================
-IAML: A Modular and Explainable AutoML
-========================================
+**IAML (Integrated AutoML for Medical Labs)** is a Python framework for clinical
+research with tabular data. It brings preprocessing, model search and evaluation
+into one workflow, with tools to inspect the resulting pipelines and explain
+their predictions.
 
-Welcome to the documentation of **IAML** (Incremental AutoML), a high-performance, modular, and explainable AutoML framework designed to address the limitations of existing solutions for tabular data.
+Clinical research workflow
+==========================
 
-Introduction
-=============
-IAML (Incremental AutoML) is a modular and adaptable framework designed to simplify the creation of optimized and explainable machine learning pipelines. Its architecture allows seamless customization, enabling users to tailor preprocessing steps, model selection, and evaluation metrics to suit diverse datasets and domains.
+IAML helps researchers build prediction models for classification, regression
+and survival analysis through a Python API. Clinical researchers and data
+scientists can review the selected methods, evaluate predictions on held-out
+data and use explanations to discuss model behavior.
 
-IAML employs a genetic algorithm-inspired optimization process, iteratively refining pipelines through strategies like mutation and selection. This approach ensures efficient exploration and improvement of model configurations. With built-in tools for transparency, such as SHAP and Yellowbrick visualizations, IAML balances performance, adaptability, and explainability, making it an effective solution for automated machine learning.
+Each pipeline is assembled from modular steps for data preparation and modeling.
+IAML uses genetic search by default; alternative optimizers include Bayesian
+hyperparameter tuning. Researchers can choose evaluation metrics and validation
+settings appropriate to their study, then inspect the trained candidates.
 
 Key Features
 ============
-- **Simplicity:** Develop a complete machine learning solution effortlessly with minimal code.
-- **Ease of Use:** A Python API inspired by Scikit-learn for effortless integration.
-- **Explainability:** Provides a suite of tools, including SHAP-based insights and Yellowbrick visualizations, to enhance model transparency and understanding.
-- **Modularity:** Flexible architecture that can be adapted to domain-specific needs.
-- **Efficiency:** Inspired by genetic algorithms, its optimization approach ensures performante pipeline tuning.
+
+- **Accessible workflow:** Build and compare pipelines through a common Python API.
+- **Inspectable methods:** Review pipeline steps, their parameters and evaluation metrics.
+- **Explanations:** Request SHAP feature explanations and task-specific performance plots.
+- **Study reporting:** Collect method references and optionally retain cross-validation records.
+- **Modularity:** Configure or extend components to suit the data and research question.
 
 Basic example
 =============
-Here is an example to get started with IAML:
+Given training data and held-out features, search for a pipeline and use the
+selected candidate to make predictions:
 
 .. code-block:: python
 
@@ -39,34 +46,28 @@ Here is an example to get started with IAML:
 See :doc:`quick_start` for a complete example with pandas DataFrames.
 For more advanced usage, such as custom metrics or explainability features, refer to the :doc:`usage` section.
 
-Documentation Structure
-========================
-- **Introduction:** Overview of IAML's motivation and features.
-- **Quick Start:** Step-by-step guide to start your IAML journey.
-- **Architecture:** Explanation of the modular design and optimization strategy.
-- **IAML for science:** Learn how IAML can help you :doc:`create scientific knowledge<scientific>`.
-- **Explainability:** Fully understand your IAML pipeline in the :doc:`explainability` documentation.
-- **Adaptability:** Refer to :doc:`adaptability` to dive deeper into IAML's architecture and learn how to add your own code.
-- **References:** Detailed citations and additional resources.
+Documentation guides
+====================
 
-How to Cite IAML
-=================
+- :doc:`quick_start`: install IAML and run a complete example.
+- :doc:`architecture`: understand pipeline construction and optimization.
+- :doc:`scientific`: inspect and report methods and record experiment settings.
+- :doc:`explainability`: review predictions and feature explanations.
+- :doc:`adaptability`: configure components and add study-specific methods.
+- :doc:`references`: find references for the underlying libraries.
 
-If you use IAML in your work, please consider citing it. Below is the recommended citation format:
+How to cite IAML
+================
 
-.. code-block::
-   
-   Merieux, R., Ruellet, H., Bourachot, R., Dahlouk, Y. A., Blanchard, F., Vuiblet, V. 
-   "IAML: A Modular and Explainable AutoML Framework for High-Performance on Tabular Data."
-   Preprint submitted to Knowledge-Based Systems, 2024.
+When reporting a study, cite the software and identify the version or commit
+used. See :ref:`citing-iaml` for the suggested citation.
 
 
 Contribute to IAML
-===================
-IAML is an open-source project hosted on GitHub: `IAML GitHub Repository <https://github.com/iias-research/iaml>`_.
+==================
 
-We welcome contributions, bug reports, and feature requests from the community.
+IAML is developed by IIAS. Source code and issue tracking are hosted in the
+`IAML GitHub repository <https://github.com/IIAS-Research/iaml>`_.
 
----
-
-Start exploring IAML today and take your machine learning projects to the next level!
+We welcome contributions, bug reports and examples of research workflows from
+clinical researchers and the wider machine learning community.

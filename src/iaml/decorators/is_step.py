@@ -10,7 +10,7 @@ def is_step(*tags) -> callable:
     :return: Step decorator
     """
     def step_wrapper(cls) -> Step:
-        """Declare the new step to Automed
+        """Register the step with IAML.
         Add call to Step.__init__() so the Sub Step developer have one to care about this
         
         :return: Edited step class
