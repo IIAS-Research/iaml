@@ -64,7 +64,9 @@ class TestRefitSampling(unittest.TestCase):
 
         def evaluate(candidates, dataset, **kwargs):
             evaluation_datasets.append(dataset)
-            if force_downsize and len(evaluation_datasets) == 1:
+            # The first bounded evaluation is now warmup. Fail the subsequent
+            # initial search stage to exercise its automatic downsizing path.
+            if force_downsize and len(evaluation_datasets) == 2:
                 return []
             for candidate in candidates:
                 scores = candidate.training_evaluate(
@@ -188,7 +190,7 @@ class TestRefitSampling(unittest.TestCase):
             X, y, train_on_n_samples=500, refit_on_sample=True, force_downsize=True,
         )
 
-        self.assertEqual([len(dataset.X) for dataset in evaluations], [500, 50])
+        self.assertEqual([len(dataset.X) for dataset in evaluations], [500, 500, 50])
         self.assertEqual(len(fitted_X), 500)
         self.assert_fitted_dataset(fitted_X, fitted_y, evaluations[0])
         np.testing.assert_array_equal(fitted_y, y[fitted_X["row_number"].to_numpy(dtype=int)])

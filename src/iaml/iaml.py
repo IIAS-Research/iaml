@@ -36,6 +36,7 @@ from .logger import Logger
 from .plot import StatisticPlot
 from .actionables.cleaning.act_simple_imputer import ActSimpleImputer
 from .actionables.normalize.act_standard_scaler import ActStandardScaler
+from .sklearn_preprocessor import SklearnPreprocessor
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps
 from .actionables import * # pylint: disable=unused-wildcard-import,wildcard-import
@@ -76,6 +77,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param bool, optional refit_on_sample: Reuse the initial train_on_n_samples sample for
         final fitting. If False, refit on all input rows. Default to True; has no effect
         without a positive train_on_n_samples limit.
+    :param initial_preprocessor: Optional clonable sklearn transformer. It must return
+        a numeric DataFrame with unchanged rows and index. Every generated pipeline,
+        including minimalist candidates, starts with this mandatory transformer.
+        It is fitted afresh within each CV training fold and during final fitting.
     """
     def __init__( # pylint: disable=too-many-arguments
         self,
@@ -89,7 +94,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         optimizer: Optimizer = GeneticOptimizer,
         train_on_n_samples: int = None,
         keep_training_history: bool = False,
-        refit_on_sample: bool = True) -> None:
+        refit_on_sample: bool = True,
+        initial_preprocessor: Any = None) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -104,6 +110,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         self.refit_on_sample: bool = refit_on_sample
         """Apply the explicit search sample limit to final fitting as well."""
+
+        self.initial_preprocessor = initial_preprocessor
+        """Unfitted transformer template, prepended to all candidate pipelines."""
 
         self.keep_training_history: bool = keep_training_history
         """Whether to store detailed cross-validation audit records."""
@@ -421,6 +430,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 dataset.sample(generation_sample_size),
                 main_metric=self.main_metric)
 
+            if self.initial_preprocessor is not None:
+                # Encode the generation sample so both branches can discover
+                # suitable predictors. Keep the raw search/refit datasets: the
+                # Step is cloned/refitted inside every pipeline's CV fit.
+                initial_step = SklearnPreprocessor(self.initial_preprocessor)
+                initial_step.fit(self.init_candidate.dataset)
+                self.init_candidate = self.init_candidate.add_to_pipeline(initial_step)
+
             # Select metrics used to evaluate performances
             for metric \
                 in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
@@ -444,15 +461,20 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             Logger().info(f"{len(candidates)} generated pipelines")
 
 
-            Logger().info(f"Warming up...")
-            warmup_candidate = pipeline_candidates[0] if pipeline_candidates else candidates[0]
-            warmup_candidate.training_evaluate(
-                dataset,
-                splitter=self.splitter,
-                cache_split=False,
-                store_audit=self.keep_training_history)
-            self.__collect_training_history([warmup_candidate])
-            Logger().info(f"Warmed up !")
+            # Warmup is real CV, so it must use the same interruptible executor
+            # and shared search/stage budgets as every subsequent evaluation.
+            # Minimal candidates already lead the pool and provide a quick,
+            # honestly evaluated starting point without removing full pipelines.
+            warmup_candidate = None
+            if candidates and remain_time() >= 1:
+                Logger().info("Warming up (bounded evaluation)...")
+                warmup_candidates = self.__run_evaluations(
+                    candidates[:1], dataset, timeout=remain_time(), callback=callback)
+                if warmup_candidates:
+                    warmup_candidate = warmup_candidates[0]
+                    Logger().info("Warmed up !")
+                else:
+                    Logger().info("No warmup result within the stage budget.")
 
             ### INITIAL EVALUATION
             # Evaluate candidates

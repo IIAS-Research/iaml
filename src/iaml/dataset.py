@@ -90,6 +90,9 @@ class Dataset:
                 columns=['groups']
                 )
 
+        if self.groups is not None and len(self.groups) != len(self.__X):
+            raise ValueError("Groups must have one row per feature row")
+
         self.columns_types: dict = self._normalize_columns_types(columns_types, self.__X)
         """Columns types to be applied to our dataframe columns"""
 
@@ -226,7 +229,8 @@ class Dataset:
                     ShuffleSplit(n_splits=1, test_size=n, random_state=42
                     ).split(self.X, self.y))
 
-        return self.decline(self.X.iloc[test_idx], self.y[test_idx])
+        groups = self.groups.iloc[test_idx].copy() if self.has_groups else None
+        return self.decline(self.X.iloc[test_idx], self.y[test_idx], groups=groups)
 
     def transform(self, method: callable) -> None:
         """Apply transform method to X or y data based on the method signature
@@ -290,8 +294,10 @@ class Dataset:
 
             if self.has_groups:
                 groups = self.groups.iloc[i_train].copy()
+                test_groups = self.groups.iloc[i_test].copy()
             else:
                 groups = None
+                test_groups = None
 
             if y is not None:
                 y_train = self.__y[i_train].copy()
@@ -301,7 +307,7 @@ class Dataset:
                 y_test = None
 
             yield (self.decline(X_train, y_train, groups=groups),
-                   self.decline(X_test, y_test))
+                   self.decline(X_test, y_test, groups=test_groups))
 
     def x_with_groups(self) -> pd.DataFrame:
         """Return X dataframe with groups columns if not None. Return X otherwise.
