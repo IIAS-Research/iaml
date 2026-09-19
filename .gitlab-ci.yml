@@ -13,7 +13,13 @@ variables:
   UV_NO_GROUP: "gpu"
   MPLBACKEND: Agg
 
+.python-job:
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends libgomp1
+
 job:build:pythonEnv:
+  extends: .python-job
   stage: build
   tags:
     - unix
@@ -23,6 +29,7 @@ job:build:pythonEnv:
     - 'uv sync --locked'
 
 job:linting:PyLint:
+  extends: .python-job
   stage: linting
   tags:
     - unix
@@ -33,6 +40,7 @@ job:linting:PyLint:
     - 'uv run --locked pylint --rcfile=.pylintrc src/iaml'
 
 job:test:unit:
+  extends: .python-job
   stage: test
   tags:
     - unix
@@ -42,6 +50,7 @@ job:test:unit:
     - 'uv run --locked python -m tests unit'
 
 job:test:components:
+  extends: .python-job
   stage: test
   tags:
     - unix
@@ -54,6 +63,7 @@ job:test:components:
     - 'uv run --locked python -m tests "$TEST_SUITE"'
 
 job:test:full:
+  extends: .python-job
   stage: test
   only:
     - main
@@ -69,6 +79,7 @@ job:test:full:
 ###################
 
 job:docs:create:
+  extends: .python-job
   stage: docs
   tags:
     - unix
