@@ -42,7 +42,7 @@ dependencies = [
 
 [dependency-groups]
 gpu = [
-    "cudf-cu11>=24.8.1",
+    "cudf-cu11>=24.8.1; sys_platform == 'linux' and (platform_machine == 'x86_64' or platform_machine == 'aarch64')",
 ]
 
 [project.urls]
@@ -66,3 +66,11 @@ dev-dependencies = [
     "sphinx-autoapi>=3.3.3",
     "sphinx-rtd-theme>=3.0.2",
 ]
+
+[tool.uv.dependency-groups]
+gpu = { requires-python = ">=3.10,<3.14" }
+
+# Use RAPIDS wheels directly, including cuDF's transitive dependencies.
+[[tool.uv.index]]
+name = "nvidia"
+url = "https://pypi.nvidia.com"

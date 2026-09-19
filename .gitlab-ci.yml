@@ -10,6 +10,7 @@ stages:
 
 variables:
   UV_PROJECT_ENVIRONMENT: "$CI_PROJECT_DIR/.venv"
+  UV_NO_GROUP: "gpu"
   MPLBACKEND: Agg
 
 job:build:pythonEnv:
