@@ -21,25 +21,22 @@ available for review.
 - **Document an experiment:** collect method references and optionally retain
   cross-validation records with `keep_training_history=True`.
 
-The [research guide](docs/scientific.rst) shows how to use these outputs when
+The [research guide](https://iias-research.github.io/iaml/scientific.html) shows how to use these outputs when
 reporting a study and recording the settings needed to repeat an experiment.
 
 ## Installation
 
-Use Python 3.10 or later. From a local checkout of this repository, install the
-project and its development tools with [uv](https://docs.astral.sh/uv/):
+Use Python 3.10 or later and Git. Install IAML from GitHub:
 
 ```bash
-uv sync --locked
+python -m pip install "git+https://github.com/IIAS-Research/iaml.git"
 ```
 
-For runtime dependencies only, use `uv sync --locked --no-dev`.
-To install the library from a local checkout with pip, use `python -m pip install .`.
 The distribution is named `PyIAML`; the Python import is `iaml`.
 
 ## How to run
 
-Save this example as `example.py` and run it with `uv run --locked python example.py`.
+Save this example as `example.py` and run it with `python example.py`.
 It uses a dataset bundled with scikit-learn, so no dataset download is needed.
 
 ```python
@@ -74,53 +71,16 @@ Prediction and evaluation are methods of a candidate. Keep the `__main__` guard
 when running scripts because training uses multiprocessing. `max_duration` sets
 the search time budget; initialization and final fitting can take additional time.
 
-## Development checks
-
-Install development dependencies with `uv sync --locked`, then run all tests:
-
-```bash
-uv run --locked python -m tests
-```
-
-Or run an individual suite:
-
-```bash
-uv run --locked python -m tests unit
-uv run --locked python -m tests steps
-uv run --locked python -m tests statistics
-uv run --locked python -m tests integration
-```
-
-Run the linter:
-
-```bash
-uv run --locked pylint --rcfile=.pylintrc src/iaml
-```
-
-CI runs `unit`, `steps` and `statistics` on every branch, plus `integration` on
-`main`. Pylint currently reports existing issues without blocking the pipeline.
-
 ## Documentation
 
-The guides in [`docs/`](docs/index.rst) and the API reference are built with Sphinx
-and AutoAPI:
+The [user guides](https://iias-research.github.io/iaml/) cover data preparation, model search, evaluation
+and interpretation:
 
-```bash
-uv run --locked sphinx-build -W --keep-going -b html docs public
-```
-
-Open `public/index.html` in a browser. CI builds the documentation on every branch
-and keeps the HTML as an artifact; deployment runs only on `main`.
-
-The [component status guide](docs/component_status.rst) lists available and
-experimental components.
-
-## Repository structure
-
-- `src/iaml/`: library, pipeline components, metrics, statistics and plots.
-- `tests/`: unit, component (`steps`), statistics and integration tests.
-- `docs/`: Sphinx configuration and reStructuredText documentation.
-- `local/`: ignored local experiments and data.
+- [Getting started](https://iias-research.github.io/iaml/quick_start.html): prepare data and run an example.
+- [Usage](https://iias-research.github.io/iaml/usage.html): configure a search and evaluate predictions.
+- [Explainability](https://iias-research.github.io/iaml/explainability.html): interpret model predictions.
+- [Research guide](https://iias-research.github.io/iaml/scientific.html): report methods and record experiment settings.
+- [Component status](https://iias-research.github.io/iaml/component_status.html): find available and experimental components.
 
 ## Credits
 

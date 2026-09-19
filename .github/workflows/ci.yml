@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || '' }}
+  cancel-in-progress: true
+
+env:
+  UV_NO_GROUP: gpu
+  MPLBACKEND: Agg
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.suite }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [root, unit, steps, statistics, integration]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install OpenMP runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgomp1
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.17"
+          python-version: "3.10"
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Run tests
+        env:
+          TEST_SUITE: ${{ matrix.suite }}
+        run: uv run --locked python -m tests "$TEST_SUITE"
+
+  lint:
+    name: Pylint (advisory)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install OpenMP runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgomp1
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.17"
+          python-version: "3.10"
+          enable-cache: true
+      - run: uv run --locked pylint --rcfile=.pylintrc src/iaml
+
+  package:
+    name: Build and install distributions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install OpenMP runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgomp1
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.17"
+          python-version: "3.12"
+          enable-cache: true
+      - name: Check versions and lockfile
+        run: |
+          uv run --no-project python .github/scripts/check_version.py
+          uv lock --check
+      - name: Build wheel and source distribution
+        run: uv build --no-sources
+      - name: Validate package metadata
+        run: uvx --from twine==7.0.0 twine check --strict dist/*
+      - name: Install each distribution in a clean environment
+        run: |
+          uv export --locked --no-dev --no-emit-project --output-file "$RUNNER_TEMP/iaml-runtime.txt"
+          version=$(uv run --no-project python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          for distribution in "$GITHUB_WORKSPACE"/dist/*; do
+            environment="$RUNNER_TEMP/install-$(basename "$distribution")"
+            uv venv "$environment"
+            uv pip sync --python "$environment/bin/python" "$RUNNER_TEMP/iaml-runtime.txt"
+            uv pip install --python "$environment/bin/python" --no-deps "$distribution"
+            uv pip check --python "$environment/bin/python"
+            (cd "$RUNNER_TEMP" && "$environment/bin/python" -I "$GITHUB_WORKSPACE/.github/scripts/check_install.py" "$version")
+          done
+      - name: Save tested distributions
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30

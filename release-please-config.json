@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "0ead63a2fa4c0323a744e644919b7a69d6190d05",
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "PyIAML",
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "uv.lock",
+          "jsonpath": "$.package[?(@.name.value=='pyiaml')].version"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,100 @@
+name: Documentation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: true
+
+env:
+  UV_NO_GROUP: gpu
+  MPLBACKEND: Agg
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      pages: read
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      deploy: ${{ steps.current.outputs.deploy }}
+    steps:
+      - name: Check that the validated commit is still main
+        id: current
+        if: github.event_name == 'workflow_run'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { data } = await github.rest.repos.getCommit({
+              ...context.repo, ref: 'main'
+            });
+            core.setOutput('deploy', data.sha === context.payload.workflow_run.head_sha);
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request' || steps.current.outputs.deploy == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          persist-credentials: false
+      - name: Install OpenMP runtime
+        if: github.event_name == 'pull_request' || steps.current.outputs.deploy == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgomp1
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        if: github.event_name == 'pull_request' || steps.current.outputs.deploy == 'true'
+        with:
+          version: "0.12.17"
+          python-version: "3.10"
+          enable-cache: false
+      - name: Build documentation (warnings are errors)
+        if: github.event_name == 'pull_request' || steps.current.outputs.deploy == 'true'
+        run: uv run --locked sphinx-build -W --keep-going -b html docs public
+      - name: Save documentation preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: documentation-preview
+          path: public/
+          if-no-files-found: error
+      - name: Configure Pages
+        if: steps.current.outputs.deploy == 'true'
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Upload Pages site
+        if: steps.current.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: public/
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.deploy == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy documentation
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -50,7 +50,7 @@ gpu = [
 "Issues" = "https://github.com/IIAS-Research/iaml/issues"
 
 [build-system]
-requires = ["setuptools>=59.6"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
