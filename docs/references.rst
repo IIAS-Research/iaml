@@ -25,3 +25,9 @@ IAML leverages several Python libraries and frameworks to deliver robust and eff
 
 - **NLTK:**
     NLTK (Natural Language Toolkit): Tools for Working with Human Language Data. Available at: https://www.nltk.org/.
+
+Typography
+==========
+
+The IAML wordmark uses `Bebas Neue <https://github.com/dharmatype/Bebas-Neue>`_,
+designed by Ryoichi Tsunekawa, under the SIL Open Font License 1.1.
