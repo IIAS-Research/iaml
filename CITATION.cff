@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use IAML in your research, please cite this software."
+type: software
+title: "IAML: Integrated AutoML for Medical Labs"
+version: "1.0.0"
+authors:
+  - family-names: Merieux
+    given-names: Rudy
+    orcid: "https://orcid.org/0009-0004-6643-8555"
+    affiliation: >-
+      IIAS - Institute of Artificial Intelligence in Health, CHU de Reims,
+      Université de Reims Champagne-Ardenne, Reims, France
+  - family-names: Ruellet
+    given-names: Hugo
+    affiliation: >-
+      IIAS - Institute of Artificial Intelligence in Health, CHU de Reims,
+      Université de Reims Champagne-Ardenne, Reims, France
+  - family-names: Bourachot
+    given-names: Robin
+    orcid: "https://orcid.org/0009-0006-3301-7679"
+    affiliation: >-
+      IIAS - Institute of Artificial Intelligence in Health, CHU de Reims,
+      Université de Reims Champagne-Ardenne, Reims, France
+  - family-names: Dahlouk
+    given-names: Youssouf
+    orcid: "https://orcid.org/0009-0008-9683-6860"
+    affiliation: >-
+      IIAS - Institute of Artificial Intelligence in Health, CHU de Reims,
+      Université de Reims Champagne-Ardenne, Reims, France
+  - family-names: Blanchard
+    given-names: Frédéric
+    orcid: "https://orcid.org/0000-0002-5702-2513"
+    affiliation: "Université de Reims Champagne-Ardenne"
+  - family-names: Vuiblet
+    given-names: Vincent
+    orcid: "https://orcid.org/0000-0002-1959-326X"
+    affiliation: >-
+      IIAS - Institute of Artificial Intelligence in Health, CHU de Reims,
+      Université de Reims Champagne-Ardenne, Reims, France
+abstract: >-
+  IAML is an open-source Python framework for automated machine learning in
+  clinical research. It combines preprocessing, model selection, and evaluation
+  for classification, regression, and survival analysis on tabular data. Its
+  modular architecture supports custom components, while pipeline inspection
+  and SHAP explanations help researchers interpret results.
+license: GPL-3.0-only
+repository-code: "https://github.com/IIAS-Research/iaml"
+url: "https://iias-research.github.io/iaml/"
+keywords:
+  - AutoML
+  - clinical research
+  - machine learning
+  - survival analysis
+  - explainable AI
+  - tabular data
+  - Python

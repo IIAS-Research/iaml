@@ -1,0 +1,90 @@
+{
+  "title": "IAML: Integrated AutoML for Medical Labs",
+  "version": "1.0.0",
+  "upload_type": "software",
+  "description": "IAML is an open-source Python framework for automated machine learning in clinical research. It combines preprocessing, model selection, and evaluation for classification, regression, and survival analysis on tabular data. Its modular architecture supports custom components, while pipeline inspection and SHAP explanations help researchers interpret results.",
+  "access_right": "open",
+  "license": "GPL-3.0-only",
+  "creators": [
+    {
+      "name": "Merieux, Rudy",
+      "orcid": "0009-0004-6643-8555",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France"
+    },
+    {
+      "name": "Ruellet, Hugo",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France"
+    },
+    {
+      "name": "Bourachot, Robin",
+      "orcid": "0009-0006-3301-7679",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France"
+    },
+    {
+      "name": "Dahlouk, Youssouf",
+      "orcid": "0009-0008-9683-6860",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France"
+    },
+    {
+      "name": "Blanchard, Frédéric",
+      "orcid": "0000-0002-5702-2513",
+      "affiliation": "Université de Reims Champagne-Ardenne"
+    },
+    {
+      "name": "Vuiblet, Vincent",
+      "orcid": "0000-0002-1959-326X",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France"
+    }
+  ],
+  "contributors": [
+    {
+      "name": "Merieux, Rudy",
+      "orcid": "0009-0004-6643-8555",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France",
+      "type": "Researcher"
+    },
+    {
+      "name": "Ruellet, Hugo",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France",
+      "type": "Researcher"
+    },
+    {
+      "name": "Bourachot, Robin",
+      "orcid": "0009-0006-3301-7679",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France",
+      "type": "Researcher"
+    },
+    {
+      "name": "Blanchard, Frédéric",
+      "orcid": "0000-0002-5702-2513",
+      "affiliation": "Université de Reims Champagne-Ardenne",
+      "type": "Supervisor"
+    },
+    {
+      "name": "Vuiblet, Vincent",
+      "orcid": "0000-0002-1959-326X",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France",
+      "type": "Supervisor"
+    }
+  ],
+  "keywords": [
+    "AutoML",
+    "clinical research",
+    "machine learning",
+    "survival analysis",
+    "explainable AI",
+    "tabular data",
+    "Python"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/IIAS-Research/iaml",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://iias-research.github.io/iaml/",
+      "relation": "isDocumentedBy"
+    }
+  ]
+}
