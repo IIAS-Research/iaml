@@ -32,7 +32,7 @@ def hash_dataset(
 
     Targets are positional, as in Dataset, so their pandas index is not used.
     Serialization preserves their shape and dtype, including structured survival
-    targets. This only serializes local inputs; no pickle is loaded here.
+    targets. This only serializes local inputs. No pickle is loaded here.
     """
     payload = (
         "iaml-dataset-v2",

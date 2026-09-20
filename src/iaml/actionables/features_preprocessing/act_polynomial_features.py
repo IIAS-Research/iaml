@@ -1,7 +1,7 @@
 """Experimental polynomial expansion, available only through an explicit import.
 
 Unbounded output dimensionality can exhaust memory during automatic exploration.
-Kept outside the default preprocessing stage; see docs/component_status.rst.
+Kept outside the default preprocessing stage.
 """
 import textwrap
 import pandas as pd

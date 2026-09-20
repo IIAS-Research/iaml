@@ -2,7 +2,7 @@
 
 This prototype transforms y rather than X, recomputes the mapping on each call,
 and cannot reverse predictions. It is incompatible with the pipeline transformer
-contract and must remain outside automatic cleaning. See docs/component_status.rst.
+contract and must remain outside automatic cleaning.
 """
 
 import textwrap

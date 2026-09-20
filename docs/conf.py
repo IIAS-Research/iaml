@@ -21,7 +21,7 @@ extensions = [
 autoclass_content = 'both'
 
 autoapi_dirs = ['../src/iaml']
-# Document each object in its defining module; package re-exports create
+# Document each object in its defining module. Package re-exports create
 # duplicate entries and ambiguous links for classes such as Dataset.
 autoapi_options = [
     'members',

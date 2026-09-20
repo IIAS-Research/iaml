@@ -61,7 +61,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param int, optional max_workers: Maximum parallel workers. Default to cpu count.
     :param int, optional max_stage_duration: Maximum duration of a stage. Default to None.
     :param callable, optional splitter: Split function to use. Default to kfold_splitter.
-    :param int, optional max_duration: Search time budget; -1 means no global limit.
+    :param int, optional max_duration: Search time budget. -1 means no global limit.
     :param int | str, optional time_before_sample_use: Time before we use sampled data. 
         Default to None.
     :param bool, optional preprocessor: Use preprocessor. Default to False.
@@ -73,7 +73,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param bool, optional keep_training_history: If True, store detailed CV audit records for
         every evaluated pipeline. Default to False.
     :param bool, optional refit_on_sample: Reuse the initial train_on_n_samples sample for
-        final fitting. If False, refit on all input rows. Default to True; has no effect
+        final fitting. If False, refit on all input rows. Defaults to True. Has no effect
         without a positive train_on_n_samples limit.
     :param initial_preprocessor: Optional clonable sklearn transformer. It must return
         a numeric DataFrame with unchanged rows and index. Every generated pipeline,
