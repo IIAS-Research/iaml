@@ -437,7 +437,7 @@ class TimedPoolExecutor:  # pylint: disable=too-many-instance-attributes
         """Wait until all the task are finished or timeout is reach
         If timeout is reach -> Remaining tasks will be kill without sending results
 
-        :param float timeout: Maximum seconds to wait; None waits without a timeout.
+        :param float timeout: Maximum seconds to wait. None waits without a timeout.
         :param bool, optional reset: Reset the instance after join(). Defaults to True.
 
         :return: All finished task results

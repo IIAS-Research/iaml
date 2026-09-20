@@ -1,0 +1,13 @@
+{% extends "!sidebar/brand.html" %}
+
+{% block brand_content %}
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="{{ logo_url }}" alt="IIAS">
+    <div class="iaml-partner-logos">
+      <img src="{{ pathto('_static/urca-logo.png', 1) }}" alt="Université de Reims Champagne-Ardenne" width="900" height="500">
+      <img src="{{ pathto('_static/chu-reims-logo.png', 1) }}" alt="CHU de Reims" width="447" height="447">
+    </div>
+  </div>
+  <span class="sidebar-brand-text">{{ docstitle if docstitle else project }}</span>
+  <span class="iaml-brand-name"><span>I</span>ntegrated<br><span>A</span>utoML for<br><span>M</span>edical <span>L</span>abs</span>
+{% endblock %}

@@ -20,7 +20,7 @@ class SklearnPreprocessor(Step):
     on each supplied Dataset.X, without target values or patient-group columns.
     ``transformer_`` is the fitted clone, retained for prediction/provenance and
     serialization. The template and its hyperparameters participate in cache
-    keys; the learned vocabulary does not alter the pipeline configuration.
+    keys. The learned vocabulary does not alter the pipeline configuration.
 
     A DataFrame output is required so column names and row alignment remain
     explicit. This step is deliberately not registered under a search tag: it

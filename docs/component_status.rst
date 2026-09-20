@@ -1,135 +1,99 @@
+======================
 Component availability
 ======================
 
-``import iaml`` loads the components supported by the default search space.
-``ActStandardScaler`` is registered under ``normalize``, and
-``ActHistGradientBoostingRegressor`` under ``predictor``, ``tabular`` and
-``regressor``. Their integration and real model fitting are covered by tests.
-For the histogram regressor, the quantile search interval stays strictly inside
-``(0, 1)``. As required by its estimator, ``loss='poisson'`` requires nonnegative
-targets with a positive sum; an incompatible configuration raises an error.
+Browse IAML's main component families below. Each link opens the corresponding
+API category, with its implementations and configuration parameters.
+The components used in a search depend on the data, task and search settings.
 
-The following modules are retained for explicit use or further development.
-They are not re-exported by ``iaml`` or their component packages. Their steps
-carry only the ``experimental`` tag, so importing one explicitly does not add
-it to an automatic preprocessing, cleaning or prediction stage.
+Prepare data
+============
 
-.. list-table:: Components excluded from automatic selection
+.. list-table::
    :header-rows: 1
-   :widths: 28 20 52
+   :widths: 30 70
 
-   * - Component
-     - Status
-     - Reason
-   * - ``ActCategoryStringToNumeric``
-     - Incompatible prototype
-     - Transforms the target rather than features, rebuilds its mapping on
-       every call, and has no inverse transformation for predictions. Target
-       encoding belongs with the predictor that requires it; ``ActCatBoost``
-       already learns its own encoder and ``Predictor.predict`` reverses it.
-   * - ``ActAalenAdditiveFitter``
-     - Incomplete adapter
-     - Requires ``lifelines``, which is absent from the standard dependencies.
-       Its regularization parameter is not forwarded and predictions return
-       a matrix of hazards instead of the risk scores expected by IAML.
-       Existing stub-based tests do not validate a real lifelines fit.
-   * - ``CumulativeDynamicAUCMetric``
-     - Unvalidated metric
-     - Passes survival probabilities where risk scores are required. The time
-       grid and arithmetic averaging also need review. ``suitable`` returns
-       ``False`` even after explicit import, preventing automatic selection.
-       Its implementation is available for manual investigation only.
-   * - ``ActDropBadQualityRows``
-     - Experimental resampler
-     - Missingness thresholds, the minimum sample policy and alignment of
-       targets and groups need integration tests before automatic use.
-       Explicit construction now initializes the standard step state.
-   * - ``ActPolynomialFeatures``
-     - Manual use
-     - Polynomial expansion can create a very large feature matrix. Automatic
-       exploration requires a bound on output size; the current implementation
-       has none. Existing tests cover small, explicitly chosen inputs.
-   * - ``ActCyclicalDateEncoding``
-     - Manual use
-     - Needs an explicit position while datetime columns are still present.
-       The default pipeline runs date cleaning before feature preprocessing.
-       Existing tests cover its direct transformations, not that integration.
+   * - API category
+     - What it provides
+   * - :doc:`Initial data preparation <autoapi/iaml/actionables/features_precleaning/index>`
+     - Standardize formats before modeling, such as trimming whitespace,
+       parsing dates, converting numeric strings and recognizing missing-value
+       codes.
+   * - :doc:`Cleaning and encoding <autoapi/iaml/actionables/cleaning/index>`
+     - Handle missing values and convert categorical, textual or date columns
+       into model inputs. Includes imputation, category encoders and text
+       representations.
+   * - :doc:`Feature selection <autoapi/iaml/actionables/features_selection/index>`
+     - Retain informative variables and reduce redundant features, using
+       variance, correlation, statistical tests or model-based selection.
+   * - :doc:`Scaling and normalization <autoapi/iaml/actionables/normalize/index>`
+     - Adjust numerical feature scales for models sensitive to units or
+       magnitudes. Includes standard, robust and min-max scaling.
+   * - :doc:`Class balancing <autoapi/iaml/actionables/imbalance/index>`
+     - Change the balance of classes in training data through over- or
+       undersampling, including SMOTE. Resampling is skipped during prediction.
+   * - :doc:`Feature transformations <autoapi/iaml/actionables/features_preprocessing/index>`
+     - Explore alternative representations through dimensionality reduction,
+       projections, feature aggregation and distribution transformations.
+       Includes PCA and quantile transformations.
 
-Manual imports use the module path, for example::
+Predict outcomes
+================
 
-   from iaml.actionables.features_preprocessing.act_polynomial_features import (
-       ActPolynomialFeatures,
-   )
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
 
-An explicit import makes a component available to the caller; it does not
-resolve the limitations listed above. ``ActDropBadQualityRows`` was formerly
-re-exported despite missing standard step initialization; callers must now
-import it from ``iaml.actionables.features_precleaning.act_drop_bad_quality_rows``.
+   * - API category
+     - What it provides
+   * - :doc:`Classification <autoapi/iaml/actionables/predictors/classifier/index>`
+     - Predict categorical outcomes, such as disease status or a clinical
+       event. Individual estimators determine which target types and
+       probability outputs they support.
+   * - :doc:`Regression <autoapi/iaml/actionables/predictors/regressor/index>`
+     - Predict numerical outcomes, such as a measurement or length of stay,
+       using linear models, trees, boosting and other estimator families.
+   * - :doc:`Survival analysis <autoapi/iaml/actionables/predictors/survival/index>`
+     - Model time-to-event outcomes with censoring. Predictors include Cox
+       models, survival forests and survival boosting.
 
-Genetic search wrapper
-----------------------
+Evaluate and optimize
+=====================
 
-``WrapGeneticGridSearch`` uses ``Step.configuration``. It tracks outputs through
-the current runner API and compares complete configurations when removing
-duplicates. It no longer relies on ``learning_configuration`` or the legacy
-``stacked_path`` history.
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
 
-Predictors are not trained during candidate generation. To select subsequent
-generations, pass an evaluator that returns a dictionary containing the
-candidate's main metric. Use the original dataset, before pipeline transforms,
-and the intended validation splitter::
+   * - API category
+     - What it provides
+   * - :doc:`Metrics <autoapi/iaml/metrics/index>`
+     - Score predictions for classification, regression or survival. The
+       main metric defines the objective used to rank candidate pipelines.
+   * - :doc:`Validation splitters <autoapi/iaml/splitters/index>`
+     - Define training and validation partitions for candidate evaluation,
+       using cross-validation or holdout splits. Group information supports
+       separation of patients or sites where required by the study.
+   * - :doc:`Search optimizers <autoapi/iaml/optimizers/index>`
+     - Propose further candidates from previous evaluations. Genetic search
+       can change steps and their parameters, while Bayesian and random
+       optimizers tune parameters within existing pipeline structures.
 
-   from iaml import Candidate, WrapGeneticGridSearch
-   from iaml.actionables.predictors.regressor import ActDecisionTreeRegressor
-   from iaml.metrics import R2ScoreMetric
-   from iaml.splitters import kfold_splitter
+Inspect data and results
+========================
 
-   candidate = Candidate(dataset, metrics=[R2ScoreMetric()])
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
 
-   def evaluate(candidate):
-       return candidate.training_evaluate(dataset, splitter=kfold_splitter)
+   * - API category
+     - What it provides
+   * - :doc:`Descriptive statistics <autoapi/iaml/statistics/index>`
+     - Summarize the dataset through missingness, distributions, variability
+       and associations. These summaries describe the data rather than
+       prediction performance.
+   * - :doc:`Plots and explanations <autoapi/iaml/plots/index>`
+     - Visualize data, model performance and SHAP contributions. Individual
+       plot classes specify the task, inputs and prediction outputs they need.
 
-   search = WrapGeneticGridSearch(ActDecisionTreeRegressor(), evaluator=evaluate)
-   search.configure({'nb_generations': 3, 'nb_estimators': 8})
-   candidates = search.run(candidate)
-
-Without an evaluator, several generations are supported only if the wrapped
-step already supplies the main metric. A single generation can still produce
-unevaluated candidates. The callback is a runtime dependency: when loading a
-saved wrapper, supply it again with
-``WrapGeneticGridSearch.from_pipeline(saved, evaluator=evaluate)``.
-The normal IAML optimisation workflow can instead use ``GeneticOptimizer``,
-which receives candidates scored by IAML.
-
-XGBoost
--------
-
-``ActXGBoost`` and ``ActXGBoostRegressor`` use the real XGBoost estimators,
-``XGBClassifier`` and ``XGBRegressor``. XGBoost is a required dependency.
-``ActGBoostRegressor`` remains available as the separate scikit-learn
-gradient boosting implementation.
-
-Both XGBoost components expose ``n_estimators``, ``max_depth``, ``learning_rate``,
-``subsample``, ``colsample_bytree``, ``min_child_weight`` and ``random_state``.
-They use histogram-based trees and one thread per estimator, since IAML
-already evaluates candidates in parallel. Regression uses squared-error loss;
-classification selects the binary or multiclass objective from the target.
-The classifier preserves the original labels in predictions and ``classes_``;
-probability columns follow that same order. Multilabel targets are not supported
-by this adapter.
-
-Configurations saved with the previous scikit-learn implementation must be
-updated: ``loss``, ``criterion``, ``min_samples_leaf``, ``min_samples_split``
-and ``max_features`` are no longer XGBoost configuration keys. See the
-`XGBoost parameter reference <https://xgboost.readthedocs.io/en/release_3.0.0/parameter.html>`_
-for the meaning of the new parameters.
-
-Survival gradient boosting
---------------------------
-
-``ActGradientBoostingSurvivalAnalysis`` has one implementation, in
-``act_gradient_boosting_survival_analysis``, registered for both the normal
-survival search and ``minimal_predictor`` selection. The former
-``act_survival_xgboost`` module re-exports this same class for compatibility
-with existing imports and pickled models; importing it does not register
-another predictor. Both paths use scikit-survival's gradient boosting backend.
+See :doc:`architecture` for how these components work together and
+:doc:`adaptability` to add methods that reflect your team's research practices.

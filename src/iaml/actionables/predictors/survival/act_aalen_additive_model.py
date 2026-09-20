@@ -2,7 +2,7 @@
 
 Requires the optional, undeclared lifelines dependency. Parameter forwarding and
 the time-by-sample hazard output do not implement IAML's predictor contract yet.
-Excluded from automatic model selection; see docs/component_status.rst.
+Excluded from automatic model selection.
 """
 import textwrap
 from typing import Any

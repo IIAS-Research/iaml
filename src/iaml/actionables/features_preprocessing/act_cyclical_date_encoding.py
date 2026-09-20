@@ -2,7 +2,6 @@
 
 Date conversion and cleaning precede automatic feature preprocessing, so this
 component needs an explicit position while datetime columns are still available.
-See docs/component_status.rst.
 """
 import textwrap
 import numpy as np

@@ -1,7 +1,7 @@
 """Experimental row filter, available only through an explicit module import.
 
 Its missingness threshold, minimum sample policy and alignment of resampled data
-need integration tests before automatic use. See docs/component_status.rst.
+need integration tests before automatic use.
 """
 from typing import Any
 import textwrap

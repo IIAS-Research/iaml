@@ -237,7 +237,7 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
 
         :param bool default: Default behavior when trying to passthrough configurations from
             one step which have no "passthrough" key. When "passthrough" is undefined and "default" 
-            is set to False, the configuration will not be returned; otherwise, the default value 
+            is set to False, the configuration will not be returned. Otherwise, the default value
             for that configuration will be returned.
         :return: A dictionary view of the configuration with parameters' names and values.
         """

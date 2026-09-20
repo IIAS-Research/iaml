@@ -1,343 +1,579 @@
+==============
+Extending IAML
+==============
+
+IAML is modular throughout. Data preparation, models, validation, search and
+reporting are separate building blocks. You can add a block or replace an
+existing one to incorporate your team's methods, provided it follows the
+corresponding interface. Extensions can live in your study project and be
+reused across studies without changing IAML itself.
+
+The main building blocks
+========================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Block
+     - Role
+   * - :ref:`Transformations <extend-transformations>`
+     - Prepare or derive features while preserving observations.
+   * - :ref:`Resamplers <extend-resamplers>`
+     - Change the rows used for training, for example to balance classes.
+   * - :ref:`Predictors <extend-predictors>`
+     - Learn from the prepared data and predict outcomes.
+   * - :ref:`Pipeline organization <extend-composition>`
+     - Define the order of steps and which alternatives to explore.
+   * - :ref:`Metrics <extend-metrics>`
+     - Measure prediction performance and define the search objective.
+   * - :ref:`Validation splitters <extend-splitters>`
+     - Separate training and validation observations according to the study.
+   * - :ref:`Optimizers <extend-optimizers>`
+     - Propose new pipeline configurations from evaluated candidates.
+   * - :ref:`Descriptive statistics <extend-statistics>`
+     - Summarize the dataset independently of model performance.
+   * - :ref:`Plots <extend-plots>`
+     - Present data, performance or explanations as figures.
+
+See :doc:`component_status` for existing implementations and :doc:`architecture`
+for the relationships between the core classes.
+
+How to use these examples
+=========================
+
+Save the definitions below in an importable module named ``study_components.py``.
+Keep classes and functions at module level so worker processes can import them.
+Import the module before constructing ``IAML``. Each example explains how it
+joins the workflow, and the final script connects the regression components.
+
+For steps, ``@is_step(...)`` registers the class under tags used by the search.
+Define an explicit constructor with no required arguments. The decorator
+initializes the base classes, so the constructor only sets the component's
+own configuration and state. Keep constructors lightweight and learn from data
+in ``fit``, which must reset learned state on each call.
+
+Use descriptive names and unique metric or statistic identifiers. Keep
+configurable choices in ``configuration``, give defaults within the allowed
+ranges, and change values through ``configure``. Add descriptions and method
+references through ``_description`` and ``refs`` when sharing a component.
+
+.. _extend-transformations:
+
+Add a transformation
+====================
+
+An :py:class:`~iaml.actionable.Actionable` can transform features. This example
+adds body mass index from height in centimetres and weight in kilograms.
+Missing or nonpositive measurements produce a missing BMI.
+
+.. code-block:: python
+   :name: extension-step
+
+   import pandas as pd
+   from iaml import Actionable
+   from iaml.decorators.is_step import is_step
+
+
+   @is_step("features_precleaning")
+   class StudyBMI(Actionable):
+       name = "Study BMI"
+       _description = "Add BMI from height in cm and weight in kg."
+
+       def __init__(self):
+           self.optimizable = False
+
+       def suitable(self, dataset):
+           return "bmi" not in dataset.X and all(
+               column in dataset.X
+               and pd.api.types.is_numeric_dtype(dataset.X[column])
+               for column in ["height_cm", "weight_kg"]
+           )
+
+       def fit(self, dataset):
+           return self
+
+       def transform(self, X):
+           result = X.copy()
+           height = result["height_cm"]
+           weight = result["weight_kg"]
+           metres = height.where(height > 0) / 100
+           result["bmi"] = weight.where(weight > 0) / metres**2
+           return result
+
+**Connect it.** Importing the module registers this transformation with the
+regular ``features_precleaning`` stage. It can also be placed explicitly in a
+workflow, as shown below.
+
+**Design constraints.**
+
+* ``suitable(dataset)`` checks the required columns and types without changing
+  the data.
+* ``fit(dataset)`` returns ``self``. Learned transformations estimate their
+  state from the supplied training data and reuse it in ``transform``.
+* ``transform(X)`` returns a DataFrame with the same rows and index. Copy the
+  input before changing it and keep the output columns consistent at prediction.
+
+.. _extend-resamplers:
+
+Add a resampler
+===============
+
+A resampler is also an ``Actionable``, but implements ``resample(X, y)`` to
+change training rows. This example duplicates minority-class observations
+using the existing imbalanced-learn dependency.
+
+.. code-block:: python
+   :name: extension-resampler
+
+   from imblearn.over_sampling import RandomOverSampler
+   from iaml import Actionable
+   from iaml.decorators.is_step import is_step
+
+
+   @is_step("imbalance")
+   class StudyOversampling(Actionable):
+       name = "Study oversampling"
+
+       def __init__(self):
+           self.sampler = None
+
+       def suitable(self, dataset):
+           return dataset.type_of_target in ("binary", "multiclass")
+
+       def fit(self, dataset):
+           self.sampler = RandomOverSampler(
+               sampling_strategy="minority", random_state=42
+           )
+           return self
+
+       def resample(self, X, y):
+           return self.sampler.fit_resample(X, y)
+
+**Connect it.** The ``imbalance`` tag makes it available to the corresponding
+search stage. With the default genetic optimizer, resampling alternatives can
+be introduced by mutation. In an explicit classification workflow, place
+``StudyOversampling()`` after preprocessing and before the predictor.
+
+**Design constraints.**
+
+* Return aligned features and targets, keeping features as a DataFrame.
+* Preserve every supplied column. IAML temporarily includes group identifiers
+  during resampling and extracts them afterwards. This duplication-based
+  example carries those identifiers with their observations.
+* Resampling belongs inside each training fold. Validation and prediction
+  observations retain their original rows.
+
+.. _extend-predictors:
+
+Add a predictor
+===============
+
+Inherit from :py:class:`~iaml.predictor.Predictor` to adapt a learning model.
+This small Ridge wrapper exposes one regularization parameter. IAML already
+provides Ridge regression, so the example demonstrates the adapter contract.
+
+.. code-block:: python
+   :name: extension-predictor
+
+   import numpy as np
+   import pandas as pd
+   from sklearn.linear_model import Ridge
+   from iaml.predictor import Predictor
+   from iaml.decorators.is_step import is_step
+
+
+   @is_step("predictor", "study_regression")
+   class StudyRidge(Predictor):
+       name = "Study ridge"
+
+       def __init__(self):
+           self.configuration = {
+               "alpha": {
+                   "description": "L2 regularization strength.",
+                   "default": 1.0,
+                   "range": [0.1, 10.0],
+               }
+           }
+
+       def suitable(self, dataset):
+           return (
+               dataset.type_of_target == "continuous"
+               and not dataset.X.empty
+               and all(pd.api.types.is_numeric_dtype(dtype)
+                       for dtype in dataset.X.dtypes)
+               and not dataset.X.isna().any().any()
+               and np.isfinite(dataset.X.to_numpy(dtype=float)).all()
+           )
+
+       def fit(self, dataset):
+           self.model = Ridge(**self.passthrough_parameters())
+           self.model.fit(dataset.X, dataset.y)
+           return self
+
+**Connect it.** Importing the class makes it available through the ``predictor``
+tag. Create an instance and call ``configure({"alpha": 0.1})`` to set a value
+in an explicit workflow. The additional ``study_regression`` tag separates
+this family from built-in predictors when genetic mutations replace steps.
+
+**Design constraints.**
+
+* ``suitable`` declares the supported task and inputs. This wrapper requires
+  finite numerical features and a continuous target.
+* Each ``fit`` creates a fresh estimator in ``self.model`` and returns ``self``.
+  Use only the supplied training data and preserve feature order.
+* Forward exposed parameters with ``passthrough_parameters()``. Mark any
+  wrapper-only parameter with ``passthrough=False``.
+* The base class delegates prediction to the estimator. Probability or survival
+  outputs are available only when that estimator supports them.
+
+.. _extend-composition:
+
+Organize or replace pipeline stages
+===================================
+
+Meta steps compose other steps. This reusable workflow derives BMI, imputes
+missing values, scales features and explores two Ridge configurations.
+
+.. code-block:: python
+   :name: extension-composition
+
+   from iaml import (
+       ActSimpleImputer, ActStandardScaler, MetaExplorerStep, MetaOrderedStep,
+   )
+   from iaml.decorators.is_step import is_step
+
+
+   @is_step("study_workflow")
+   class StudyWorkflow(MetaOrderedStep):
+       def __init__(self):
+           predictors = MetaExplorerStep()
+           for alpha in (0.1, 10.0):
+               predictor = StudyRidge()
+               predictor.configure({"alpha": alpha})
+               predictors.add_step(predictor)
+           self.add_steps([
+               StudyBMI(), ActSimpleImputer(), ActStandardScaler(), predictors,
+           ])
+
+**Connect it.** After constructing ``search``, assign
+``search.first_step = StudyWorkflow()``. To use only this workflow, also set
+``search.minimal_predictor_step = None``. Otherwise IAML retains a separate
+branch of minimally preprocessed predictors. The final script applies both
+settings.
+
+**Design constraints.**
+
+* ``MetaOrderedStep`` preserves the supplied order. ``MetaStep`` instead
+  chooses child steps by priority for the current candidate.
+* ``MetaExplorerStep`` creates alternative candidates from the same input.
+  Every completed branch must end with a suitable predictor.
+* ``MetaPartialExplorerStep`` starts with one choice or no transformation,
+  leaving alternatives to later mutations. Use it to limit initial branching.
+* Tags identify eligible components, not execution order. Adding a new tag
+  requires a stage that uses it. Registration alone does not make a step
+  mandatory in every candidate.
+
+Ordinary transformations and predictors reuse the inherited ``run`` method.
+If a new orchestration strategy needs its own ``run(candidate)``, decorate it
+with ``@runner`` from ``iaml.decorators.runner`` and return a ``Candidate`` or
+list of candidates. This preserves IAML's suitability checks and step cache.
+For a mandatory transformation across the default search branches,
+``IAML(initial_preprocessor=...)`` accepts a clonable scikit-learn transformer
+that returns a numerical DataFrame with unchanged rows and index.
+
+.. _extend-metrics:
+
+Add a metric
 ============
-Adaptability
-============
 
-Clinical research studies differ in their data, outcomes and evaluation needs.
-IAML exposes preprocessing steps, predictors, metrics and plots as components
-that research teams can configure or extend. This page describes how to add
-study-specific methods while retaining the same pipeline interfaces.
-
-Steps
-=====
-
-What is a Step?
----------------
-
-In IAML, a **Step** is the smallest unit of a pipeline. Each Step performs a specific task, such as preprocessing data, training a model, or evaluating metrics. Steps are categorized into several types:
-
-- **Actionable Step**: Performs a specific action, such as modifying the dataset, training a model, or computing a metric.
-- :py:class:`~iaml.metastep.MetaStep`: Contains other Steps (of any type) and manages their execution:
-
-  - :py:class:`~iaml.meta_ordered_step.MetaOrderedStep`: Executes contained Steps in a specific order.
-  - :py:class:`~iaml.meta_explorer_step.MetaExplorerStep`: Executes all contained Steps independently, creating separate pipeline forks for each Step.
-
-Creating a Custom Step
-----------------------
-Adding custom Steps to IAML pipelines is straightforward. Follow these steps to create a custom Step:
-
-1. **Inherit from the appropriate Step type:** Choose the appropriate base class, such as `Step`, `Actionable`, `MetaStep`, or `Predictor`.
-2. **Add required `@is_step(tags)` decorator:** Registers the Step in IAML and associates it with specific pipeline tags. This enables automatic inclusion of the Step in pipelines based on context.
-3. **Define a constructor (`__init__`):** Configure your Step by defining its name and parameters. Constructor must define ``configuration`` dictionary.
-4. **Implement the `fit(self, dataset)` method:** This method handles the fitting of steps parameters according to the current dataset. Must return self.
-5. **Implement one of the following methods:**
-    - :py:meth:`~iaml.step.Step.transform`: Receives a list of samples (X) and returns a transformed version of it (with the same number of samples).
-    - :py:meth:`~iaml.step.Step.resample`: Receives a list of samples (X) and labels (y), then return resampled X and y. Warning: this kind of step is mandatory for processings such as RandomUnderSampling because they need to transform both X and y. However, beware of biases when transforming the labels. 
-    - :py:meth:`~iaml.step.Step.predict`: Optional if your predictor follows scikit-learn's API. This method receives a list of samples (X) and returns predicted values (y). 
-
-Example: Custom Cleaning Step
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Here’s an example of an Actionable Step that fills missing values in numeric columns with the mean:
+A :py:class:`~iaml.metric.Metric` defines the score and its direction. This
+example implements mean absolute error to show the contract for a custom loss.
 
 .. code-block:: python
-    
-    @is_step('cleaning', 'baseline_cleaning')
-    class ActMeanColumn(Actionable):
-        """[STEP] Fill missing values with the mean."""
+   :name: extension-metric
 
-        name = 'Fill missing values'
-        _description = textwrap.dedent('''\
-            Fill missing values with the mean of non-missing values
-            when the proportion of empty rows is lower than {empty_threshold:.0%}.''')
-        _description_long = textwrap.dedent('''\
-            Fill a column missings values with the mean of the columns
-            when the proportion of empty rows is lower than {empty_threshold}.
-            Work only for numerical columns.''')
-        can_be_disabled = False
-
-        def __init__(self):
-            self.columns = None
-            self.configuration = {
-                'empty_threshold': {
-                    'description': textwrap.dedent('''\
-                        Column with less or equal proportion of empty row will be
-                        fill with mean value. 1 will always fill void values'''),
-                    'default': 1
-                }
-            }
-
-        def fit(self, dataset: Dataset) -> Actionable:
-            self.columns = []
-            explain = []
-
-            for column in dataset.get_columns_names_by_type(DataType.NUMERIC):
-                values = dataset.X[column]
-                nan_values_count = values.isnull().sum()
-
-                mean = values.mean()
-                if np.isnan(mean):
-                    mean = 0
-
-                self.columns.append((column, mean))
-                explain.append((
-                    nan_values_count,
-                    len(values),
-                    nan_values_count / len(values) * 100,
-                ))
-
-            self.explanations = [
-                f"""Filled missing values of column **`{c}`** with **{mean:.2f}**
-                    (**{v[0]}** out of **{v[1]}** values (**{v[2]:.2f}**%)
-                    were missing in train data)."""
-                for (c, mean), v in zip(self.columns, explain)
-                if v[0] > 0 # hide processings that affected no values
-            ]
-
-            return self
-
-        def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-            """Fill NA values with the mean.
-
-            :param pd.DataFrame x: DataFrame to transform.
-            :return: Transformed dataset.
-            """
-            for name, mean in self.columns:
-                X[name] = X[name].fillna(mean)
-
-            return X
+   from sklearn.metrics import mean_absolute_error
+   from iaml import Metric
 
 
-Example: Custom Model Step
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-Here’s another example of an Actionable Step that trains a Random Forest classifier:
+   class StudyAbsoluteError(Metric):
+       greater_is_better = False
+
+       def __str__(self):
+           return "study_absolute_error"
+
+       def suitable(self, X, y, type_of_target):
+           return type_of_target == "continuous"
+
+       def compute(self, y, y_pred, **kwargs):
+           return float(mean_absolute_error(y, y_pred))
+
+**Connect it.** Pass the instance ``main_metric=StudyAbsoluteError()`` to
+``IAML``. Imported metric subclasses are also considered for secondary scores
+when suitable.
+
+**Design constraints.** Use a unique string identifier and a constructor with
+no required arguments. Return a finite scalar and declare the correct
+``greater_is_better`` direction. Error values remain positive in reports.
+Metrics use ``predict`` by default. Override ``needed_prediction`` when another
+prediction method is required and ensure the selected estimators support it.
+
+.. _extend-splitters:
+
+Add a validation splitter
+=========================
+
+A splitter is a callable receiving a :py:class:`~iaml.dataset.Dataset`.
+This example uses three folds with separate patient or site groups.
 
 .. code-block:: python
+   :name: extension-splitter
 
-    @is_step('predictor', 'tabular', 'fast_predictor', 'regressor', 'baseline_predictor')
-    class ActLinearRegression(Predictor):
-        """[STEP] Linear Regression"""
+   from sklearn.model_selection import GroupKFold
 
-        name = "Linear Regression"
-        _description = textwrap.dedent('''\
-            LinearRegression is a machine learning algorithm that models the
-            relationship between input features and a continuous output variable using
-            a linear function.''')
-        _description_long = textwrap.dedent('''\
-            LinearRegression is a type of regression algorithm that models
-            the relationship between input features and a continuous output variable using
-            a linear function. It works by finding the best-fitting line or hyperplane
-            that minimizes the sum of the squared differences between the predicted
-            and actual output variables.''')
-        refs = []
 
-        def __init__(self):
-            self.model: LinearRegression = None
+   def study_splitter(dataset):
+       if not dataset.has_groups:
+           raise ValueError("This study requires patient or site groups.")
+       folds = GroupKFold(n_splits=3)
+       yield from dataset.split(
+           folds.split, groups=dataset.groups.iloc[:, 0]
+       )
 
-        def fit(self, dataset: Dataset):
-            self.model = LinearRegression()
-            self.model.fit(dataset.X, dataset.y)
+**Connect it.** Pass ``splitter=study_splitter`` and provide ``groups`` to
+``fit``. The example requires at least three distinct groups.
 
-            return self
+**Design constraints.** Yield pairs of training and validation **Dataset
+objects**. ``Dataset.split`` adapts index-based splitters and preserves data
+and group metadata. Use groups explicitly when separation is required and
+check that training and validation groups are disjoint. Define reproducible
+seeds for randomized strategies. See :ref:`build-validation` for study-level
+validation choices.
 
-        def suitable(self, dataset: Dataset) -> bool:
-            return dataset.type_of_target == 'continuous'
+.. _extend-optimizers:
 
-Configuring Survival Models
----------------------------
-Configure a survival step before fitting it. The fitted estimator must receive
-the configured values, not silently fall back to its own defaults:
+Add an optimizer
+================
+
+An :py:class:`~iaml.optimizers.optimizer.Optimizer` receives evaluated candidates
+and proposes new ones. This example keeps the best candidate and explores a
+small grid around the best ``StudyRidge`` pipeline in one optimization round.
 
 .. code-block:: python
+   :name: extension-optimizer
 
-    from iaml import ActRandomSurvivalForest, Dataset
+   from time import monotonic
+   from iaml import Optimizer
 
-    step = ActRandomSurvivalForest()
-    step.configure({"n_estimators": 7, "max_depth": 3})
-    step.fit(Dataset(X, y))  # y contains (event, time) pairs
-    assert len(step.model.estimators_) == 7
-    assert step.model.get_params()["max_depth"] == 3
 
-In a step's configuration, ``passthrough=True`` forwards a parameter to the
-estimator constructor through ``passthrough_parameters()``. ``passthrough=False``
-is reserved for parameters handled explicitly by the step. Discrete search choices
-use ``categorical``, rather than ``options``.
+   class StudyOptimizer(Optimizer):
+       def __init__(self, duration=None):
+           super().__init__()
+           self.deadline = float("inf") if duration is None else monotonic() + duration
+           self.done = False
 
-Cox, survival forests, survival trees and both gradient boosting implementations
-now apply their declared settings. This also applies to IAML's declared defaults,
-which can differ from the estimator library's defaults. Historical results may
-therefore change after refitting.
+       @property
+       def finished(self):
+           return self.done or monotonic() >= self.deadline
 
-Componentwise gradient boosting uses linear components, not trees. Existing
-configurations must remove ``max_depth``, ``min_samples_split`` and
-``min_samples_leaf`` for this step: those unsupported settings were previously
-ignored. ``n_estimators`` and ``learning_rate`` remain configurable.
+       def run(self, candidates):
+           self.done = True
+           if not candidates:
+               return []
+           proposals = [max(candidates)]
+           ridge_candidates = [
+               candidate for candidate in candidates
+               if candidate.pipeline.predictor is not None
+               and isinstance(candidate.pipeline.predictor[1], StudyRidge)
+           ]
+           if not ridge_candidates:
+               return proposals
+           seed = max(ridge_candidates)
+           for alpha in (0.1, 1.0, 10.0):
+               if monotonic() >= self.deadline:
+                   break
+               if alpha == seed.pipeline.predictor[1].get_config("alpha"):
+                   continue
+               proposal = seed.to_output()
+               proposal.pipeline.predictor[1].configure({"alpha": alpha})
+               proposals.append(proposal)
+           return proposals
 
-How Tags Enable Automation
---------------------------
-Tags allow IAML to automatically add Steps to appropriate pipelines. When you decorate a Step with `@is_step(tags)`, it is registered in IAML with the specified tags. Pipelines can then include the Step dynamically based on context, ensuring that custom Steps integrate seamlessly.
+**Connect it.** Pass the **class**, ``optimizer=StudyOptimizer``. IAML constructs
+it with the remaining search ``duration``, or ``None`` for an unlimited search.
 
-For example:
+**Design constraints.**
 
-- A cleaning Step tagged with `'cleaning'` will automatically be included in pipelines where cleaning is required.
-- A learning Step tagged with `'learning'` and `'tabular'` will be added to pipelines handling tabular datasets.
+* Expose ``finished`` and implement ``run(candidates)``. Return proposals for
+  IAML to evaluate, keeping model fitting outside the optimizer.
+* Compare candidates directly or use ``get_main_metric_score()`` to respect
+  both maximization and minimization objectives. Retain a strong candidate
+  while exploring alternatives.
+* Copy candidates with ``to_output()`` before editing them. Use ``configure``
+  so parameter changes update the cache fingerprints.
+* Bound proposal generation and check the remaining duration. Custom ``run``
+  code is not interrupted at its deadline. Its stopping condition does not
+  limit initial candidate generation or final fitting.
 
-Optimizer
-=========
+.. _extend-statistics:
 
-The **optimizer** is responsible for selecting and optimizing the best-performing candidates in a pipeline. IAML uses a genetic algorithm by default. An :py:class:`~iaml.optimizers.optimizer.Optimizer` implements the following:
+Add a descriptive statistic
+===========================
 
-1. :py:attr:`~iaml.optimizers.optimizer.Optimizer.finished`: Whether the optimizer is done running.
-2. :py:meth:`~iaml.optimizers.optimizer.Optimizer.run`: Receives a list of candidates, optimizes these candidates and returns a new list of candidates.
-
-Metrics
-=======
-
-**Metrics** are crucial to evaluate the performance of a model on the task that it has been given. IAML implements several metrics which allow you to quickly understand the performance of your pipeline. If you have a specific use case that IAML does not currently support, you can implement your own metric(s). Each :py:class:`~iaml.metric.Metric` implements the following two methods:
-
-1. :py:meth:`~iaml.metric.Metric.compute`: Receives the actual labels and the predicted values from the model, and returns the computed score corresponding to the metric.
-2. :py:meth:`~iaml.metric.Metric.suitable`: Receives the training dataset (both the features and the labels) and the type of target to predict (e.g.: `continuous`, `binary`), and tells whether it is relevant to compute the metric.
-
-Example: Custom Metric
-----------------------
-Metrics maximize their value by default (``greater_is_better = True``).
-Set ``greater_is_better = False`` on an error metric to minimize it when selected
-as ``main_metric``. Return the original, positive error from ``compute``;
-IAML handles the direction for ranking and optimization while keeping raw values
-in reports.
-
-This example creates a balanced accuracy metric based on the one of scikit-learn.
-
-.. code-block:: python
-
-    class BalancedAccuracyMetric(Metric):
-        """[METRIC] Balanced Accuracy"""
-
-        name = 'Balanced Accuracy'
-        _description = textwrap.dedent('''\
-            Balanced Accuracy Score is a metric that evaluates a model's 
-            performance by considering both positive and negative classes equally. 
-            It calculates the average accuracy for each class, making it useful for imbalanced dataset.
-            ''')
-        _description_long = textwrap.dedent('''\
-            Balanced Accuracy Score evaluates how well a predictive 
-            model performs, giving equal importance to both positive and negative classes. 
-            This is important in healthcare when data is imbalanced.
-            To calculate it, you find the accuracy for each class and then average those values. 
-            For example, if a model has 70% accuracy for positive cases and 90% for negative cases, 
-            the balanced accuracy is (70% + 90%) / 2 = 80%. This metric ensures that the model is effective 
-            for all classes, making it valuable for medical decision-making.
-            ''')
-        refs = [
-            {
-                'year': 2010,
-                'name': 'The Balanced Accuracy and Its Posterior Distribution',
-                'authors': [
-                    'Kay Henning Brodersen',
-                    'Cheng Soon Ong',
-                    'Klaas Enno Stephan',
-                    'Joachim M. Buhmann'
-                ],
-                'doi': 'https://doi.org/10.1109/ICPR.2010.764',
-                'publisher': textwrap.dedent("""\
-                    Proceedings of the 20th International Conference on Pattern Recognition, 3121-24.
-                    """)
-            },
-            {
-                'year': 2015,
-                'name': textwrap.dedent("""\
-                    Fundamentals of Machine Learning for Predictive Data Analytics: Algorithms, 
-                    Worked Examples, and Case Studies.
-                    """),
-                'authors': [
-                    'John D. Kelleher',
-                    'Brian Mac Namee',
-                    'Aoife D\'Arcy'
-                ],
-                'doi': None,
-                'publisher': textwrap.dedent("""\
-                    Fundamentals of Machine Learning for Predictive Data Analytics: Algorithms, Worked Examples, and Case Studies
-                    """)
-            }
-        ]
-
-        def __str__(self):
-            return 'balanced_accuracy'
-
-        def suitable(self, X: pd.DataFrame, y: pd.DataFrame, type_of_target: str) -> bool:
-            return type_of_target in ['binary', 'multiclass']
-
-        def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:
-            return balanced_accuracy_score(y, y_pred)
-
-Plots
-=====
-
-**Plots** are a great way to vizualise your metrics and the performance of your model. IAML already implements a large variety of plots; they offer a simple API to use and to build on so that you can focus on improving your pipeline. Their API is actually very similar to those of metrics, making it easy for you to implement your own plots. Each :py:class:`~iaml.plot.Plot` (or :py:class:`~iaml.metric_plot.MetricPlot`) implements the following two methods:
-
-1. :py:meth:`~iaml.plot.Plot.compute`: Receives the estimator and the training dataset (both the features and the labels), computes values to vizualise and generates the plot.
-2. :py:meth:`~iaml.plot.Plot.suitable`: Receives the type of target to predict (e.g.: `continuous`, `binary`), and tells whether it is relevant to generate the plot.
-
-Example: Custom Metric Plot
----------------------------
-This example creates a metric plot which generates the ROC curve.
+A :py:class:`~iaml.statistic.Statistic` summarizes the data. This example measures
+the width between the 10th and 90th percentiles of each numerical feature in
+a regression dataset.
 
 .. code-block:: python
+   :name: extension-statistic
 
-    class ROCAUCPlot(MetricPlot):
-        """[PLOT] ROC-AUC Plot"""
+   import pandas as pd
+   from iaml import Statistic
 
-        title = "Receiver Operating Characteristic - Area Under the Curve"
-        description = textwrap.dedent("""
-            The ROC-AUC (Receiver Operating Characteristic - Area Under the Curve) plot is a widely used 
-            tool to assess the performance of a classification model, especially in the healthcare domain. 
-            It provides a graphical representation of the model's ability to distinguish between classes, 
-            such as diagnosing the presence or absence of a medical condition.
-            """)
 
-        @capture
-        def compute(
-            self,
-            estimator: IAMLPipeline,
-            X: pd.DataFrame,
-            y: pd.Series,
-            X_train: pd.DataFrame = None,
-            y_train: pd.Series = None,
-            **kwargs) -> MetricPlot:
-            self._binary_image = io.BytesIO()
+   class StudyCentralWidth(Statistic):
+       _description = "Width between the 10th and 90th percentiles."
 
-            pos_label = None
-            if y.dtype not in ['int', 'bool']:
-                pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0]
+       def __str__(self):
+           return "study_central_width"
 
-            # Predict probabilities
-            y_prob = estimator.predict_proba(X)[:, 1]
+       def suitable(self, dataset):
+           return (
+               dataset.type_of_target == "continuous"
+               and not dataset.X.select_dtypes(include="number").empty
+           )
 
-            # Compute ROC curve and AUC
-            fpr, tpr, _ = roc_curve(y, y_prob, pos_label=pos_label)
-            roc_auc = auc(fpr, tpr)
+       def compute(self, dataset, **kwargs):
+           values = dataset.X.select_dtypes(include="number")
+           width = values.quantile(0.9) - values.quantile(0.1)
+           return pd.DataFrame([width], index=[str(self)])
 
-            # Create the ROC plot
-            plt.figure()
-            plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
-            plt.plot([0, 1], [0, 1], color='grey', lw=2, linestyle='--', label='Random guess')
-            plt.xlim([0.0, 1.0])
-            plt.ylim([0.0, 1.05])
-            plt.xlabel('False Positive Rate')
-            plt.ylabel('True Positive Rate')
-            plt.title('Receiver Operating Characteristic')
-            plt.legend(loc='lower right')
-            plt.grid(True)
+**Connect it.** Import the class before calling
+``search.get_descriptive_statistics()``. IAML discovers suitable subclasses
+and includes their rows in the returned table. Results are computed on demand
+and cached for that fit.
 
-            # Save plot to binary image
-            plt.savefig(self._binary_image, format='png')
+**Design constraints.** Provide a constructor with no required arguments and
+implement ``suitable(dataset)``. Return a DataFrame with unique statistic
+identifiers as rows and feature names as columns, without changing the dataset.
+For statistics grouped by classification label, follow the existing naming
+convention ``<feature>_all`` and ``<feature>_<class>`` so descriptive plots can
+group the columns.
 
-            return self
+.. _extend-plots:
 
-        @classmethod
-        def suitable(cls, type_of_target: str) -> bool:
-            return type_of_target == 'binary'
+Add a plot
+==========
 
-Related documentation
-=====================
-See :doc:`architecture` for how components form a pipeline and :doc:`scientific`
-for how to describe the methods used in a study.
+Inherit directly from :py:class:`~iaml.metric_plot.MetricPlot` to add a model
+performance figure. This example compares observed and predicted values for
+single-output regression.
+
+.. code-block:: python
+   :name: extension-plot
+
+   import io
+   import numpy as np
+   import matplotlib.pyplot as plt
+   from iaml import MetricPlot
+
+
+   class StudyObservedPredicted(MetricPlot):
+       title = "Observed and predicted outcomes"
+       description = "Compare predictions with the observed outcomes."
+
+       @classmethod
+       def suitable(cls, type_of_target):
+           return type_of_target == "continuous"
+
+       def compute(self, estimator, X, y, X_train=None, y_train=None, **kwargs):
+           observed = np.asarray(y).ravel()
+           predicted = np.asarray(estimator.predict(X)).ravel()
+           limits = [min(observed.min(), predicted.min()),
+                     max(observed.max(), predicted.max())]
+           figure, axes = plt.subplots()
+           axes.scatter(observed, predicted)
+           axes.plot(limits, limits, "--", color="gray")
+           axes.set(xlabel="Observed", ylabel="Predicted", title=self.title)
+           self._binary_image = io.BytesIO()
+           figure.savefig(self._binary_image, format="png", bbox_inches="tight")
+           plt.close(figure)
+           return self
+
+**Connect it.** After import, the figure is included in
+``chosen_model.explain_model_performance(X_test, y_test)`` for regression.
+To generate only this figure, call its ``compute`` method directly as in the
+final example.
+
+**Design constraints.** Inherit directly from ``MetricPlot`` for automatic
+discovery and provide a constructor with no required arguments. Declare the
+supported target type and accept the training-data keywords shown above.
+Use the fitted pipeline for prediction, without fitting on evaluation data.
+Return ``self`` after storing PNG bytes in ``self._binary_image`` as a
+``BytesIO``, and close the Matplotlib figure. The example expects nonempty,
+finite observed and predicted values.
+
+For descriptive figures, inherit directly from
+:py:class:`~iaml.plot.StatisticPlot` instead. Its ``compute(dataframe, **kwargs)``
+receives the statistics table. Check the rows it needs and return an exported
+figure using the same image contract.
+
+Connect and check the components
+================================
+
+Save this separate script beside ``study_components.py``. It uses 48 synthetic
+observations, three grouped validation folds and one worker. The explicit
+workflow limits the search to the small Ridge family. The classification
+resampler is not used in this regression example.
+
+.. code-block:: python
+   :name: extension-search
+
+   from pathlib import Path
+   import numpy as np
+   import pandas as pd
+   from iaml import IAML
+   from study_components import (
+       StudyAbsoluteError, StudyOptimizer, StudyWorkflow,
+       StudyObservedPredicted, study_splitter,
+   )
+
+
+   def main():
+       rng = np.random.default_rng(42)
+       X = pd.DataFrame({
+           "height_cm": rng.uniform(150, 190, 48),
+           "weight_kg": rng.uniform(50, 100, 48),
+       })
+       y = pd.Series(0.3 * X["weight_kg"] + rng.normal(0, 1, 48))
+       groups = pd.DataFrame({"patient": np.repeat(np.arange(12), 4)})
+       X_train, X_test = X.iloc[:36], X.iloc[36:]
+       y_train, y_test = y.iloc[:36], y.iloc[36:]
+       search = IAML(
+           main_metric=StudyAbsoluteError(),
+           splitter=study_splitter,
+           optimizer=StudyOptimizer,
+           max_duration=30,
+           max_workers=1,
+       )
+       search.first_step = StudyWorkflow()
+       search.minimal_predictor_step = None
+       search.fit(X_train, y_train, groups=groups.iloc[:36])
+       chosen_model = search.chosen_candidate
+       print(chosen_model.evaluate(X_test, y_test))
+       statistics = search.get_descriptive_statistics()
+       print(statistics.loc["study_central_width"].dropna())
+       plot = StudyObservedPredicted().compute(chosen_model.pipeline, X_test, y_test)
+       Path("observed-predicted.png").write_bytes(plot.image)
+
+
+   if __name__ == "__main__":
+       main()
+
+Before reusing an extension, check it on a few observations: expected outputs,
+row and group alignment, refitting on different data, and a clear rejection of
+unsupported inputs. Verify configured values reach the underlying estimator
+and that plotting produces a readable image without changing the fitted model.
+Continue with :doc:`evaluation` for held-out assessment and :doc:`scientific`
+for reporting the methods and settings used in a study.
