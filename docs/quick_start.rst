@@ -2,138 +2,58 @@
 Quick Start
 ===========
 
-Installing IAML
-===============
+IAML handles preprocessing and model search for you. Start with its defaults
+and a small dataset.
 
-Use Python 3.10 or newer. From the repository root, install IAML in your
-Python environment:
+Install IAML
+============
 
-.. code-block:: bash
-
-    python -m pip install .
-
-For development, ``uv sync --locked`` installs the locked dependencies,
-including the testing and documentation tools.
-
-Word2Vec text support
----------------------
-
-Importing IAML and creating a search require no NLTK corpus. To use
-``ActWord2Vec`` on text columns, install the English stopwords corpus explicitly:
+Use Python 3.10 or newer:
 
 .. code-block:: bash
 
-    python -m nltk.downloader stopwords
+    python -m pip install PyIAML
 
-For offline use, install the corpus beforehand and set ``NLTK_DATA`` to its
-data directory. IAML never downloads corpora automatically. Word2Vec loads
-stopwords only when fitting text and uses word tokenization without the
-``punkt`` or ``punkt_tab`` resources.
+Your first pipeline
+===================
 
-Train and evaluate a candidate
-==============================
-
-``IAML.fit`` searches for pipelines and returns trained
-:py:class:`~iaml.candidate.Candidate` objects, ordered by score. Use the first
-candidate to predict and evaluate on data that was held out from the search.
-Pass pandas DataFrames for both features and targets.
-
-Save this example as ``example.py`` and run ``python example.py`` (or
-``uv run --locked python example.py`` in the development environment):
+Save this as ``example.py`` and run ``python example.py``. The dataset is bundled
+with scikit-learn, so no data download is needed.
 
 .. code-block:: python
 
     from sklearn.datasets import load_breast_cancer
     from sklearn.model_selection import train_test_split
-
     from iaml import IAML
 
-
-    def main():
-        data = load_breast_cancer(as_frame=True)
-        X_train, X_test, y_train, y_test = train_test_split(
-            data.data,
-            data.target.to_frame(),
-            test_size=0.2,
-            random_state=42,
-            stratify=data.target,
-        )
-
-        search = IAML(max_duration=30, max_workers=1)
-        candidates = search.fit(X_train, y_train)
-        best_candidate = candidates[0]
-
-        predictions = best_candidate.predict(X_test)
-        print(predictions[:5])
-        print(best_candidate.evaluate(X_test, y_test))
-
-
     if __name__ == "__main__":
-        main()
+        X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, stratify=y, random_state=42
+        )
+        search = IAML(max_duration=30, max_workers=1)
+        search.fit(X_train, y_train)
+        chosen_model = search.chosen_candidate
+        print(chosen_model.evaluate(X_test, y_test))
 
-The main guard is needed when worker processes start a new Python interpreter.
-``max_duration`` sets the search budget in seconds; initialization and fitting
-already running candidates can extend the total runtime.
+``chosen_model`` is the best model found, including its preprocessing.
+``evaluate`` prints its scores on the held-out test set. In this dataset, labels
+are ``0`` for malignant and ``1`` for benign.
 
-Basic customization
-===================
+The example uses one worker and a 30 second search budget. Final fitting can
+add time. Keep the ``__main__`` guard when running a script, because training
+starts worker processes.
 
-The default metric depends on the target: balanced accuracy for classification,
-R² for regression, and IPCW concordance for survival. To choose a metric
-explicitly, pass a metric instance:
-
-.. code-block:: python
-
-    from iaml import IAML, RocAucMetric
-
-    search = IAML(
-        main_metric=RocAucMetric(),
-        max_workers=4,
-        max_duration=300,
-    )
-
-Call ``search.fit`` in the same way as in the complete example. ROC AUC is
-intended for binary classification. See :doc:`usage` and the API reference for
-the other settings.
-
-To limit the number of training rows, use ``train_on_n_samples``. By default,
-``refit_on_sample=True`` reuses that same initial sample for the final fit:
-
-.. code-block:: python
-
-    search = IAML(train_on_n_samples=10000, max_workers=1)
-
-Set ``refit_on_sample=False`` to search on that sample but refit the selected
-pipeline on all input rows. Without a positive sample limit, final fitting uses
-all input rows. Any further automatic downsizing during the search does not
-reduce the initial sample retained for the final fit. This is a row limit, not
-a timeout for final fitting.
-
-Explain a trained candidate
-===========================
-
-After training, use ``best_candidate`` from the example above:
-
-.. code-block:: python
-
-    print(best_candidate.describe_steps())
-    print(best_candidate.describe_metrics())
-
-    explanation = best_candidate.explain_feature_importance(X_test)
-    print(explanation.to_markdown_shap())
-    print(explanation.to_markdown_plots())
-
-    plots = best_candidate.explain_model_performance(X_test, y_test)
-    print(best_candidate.bibliography())
-
-SHAP explanations and performance plots are computed on demand and require
-additional time.
-
-Next steps
+Go further
 ==========
 
-- :doc:`usage`: training parameters, metrics and predictions.
-- :doc:`architecture`: how IAML constructs and evaluates pipelines.
-- :doc:`explainability`: inspect a trained pipeline and its predictions.
-- :doc:`adaptability`: add components or customize the search.
-- :doc:`scientific`: reporting models and their references.
+See :doc:`worked_example` for a complete analysis with performance figures,
+SHAP explanations and an exportable record of the selected pipeline.
+
+To understand the choices behind your results and adapt the workflow to your
+study, continue with :doc:`usage`, followed by :doc:`evaluation` and
+:doc:`explainability`.
+
+The built-in components support the workflow shown here. For study-specific
+methods, :doc:`adaptability` explains how to add steps, metrics, validation
+splitters and optimizers that reflect your team's research practices.

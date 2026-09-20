@@ -6,9 +6,12 @@ preprocessing, model search and evaluation into one workflow for classification,
 regression and survival analysis on tabular data.
 
 Researchers can inspect the steps of a selected pipeline, evaluate its predictions
-and generate explanations to discuss with clinicians and data scientists. Modular
-components let teams adapt the workflow to their study while keeping the methods
-available for review.
+and generate explanations to discuss with clinicians and data scientists.
+IAML includes a broad set of built-in methods. **Go further with customization.**
+Add your team's preprocessing steps, models, metrics, validation splitters
+and search optimizers to adapt the workflow to your research domain.
+These contributions can be shared and reused across studies.
+The [extension guide](https://iias-research.github.io/iaml/adaptability.html) shows how to get started.
 
 ## Clinical research workflow
 
@@ -26,13 +29,13 @@ reporting a study and recording the settings needed to repeat an experiment.
 
 ## Installation
 
-Use Python 3.10 or later and Git. Install IAML from GitHub:
+Use Python 3.10 or later:
 
 ```bash
-python -m pip install "git+https://github.com/IIAS-Research/iaml.git"
+python -m pip install PyIAML
 ```
 
-The distribution is named `PyIAML`; the Python import is `iaml`.
+The distribution is named `PyIAML`. The Python import is `iaml`.
 
 ## How to run
 
@@ -42,45 +45,37 @@ It uses a dataset bundled with scikit-learn, so no dataset download is needed.
 ```python
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-
 from iaml import IAML
 
-
-def main():
+if __name__ == "__main__":
     X, y = load_breast_cancer(return_X_y=True, as_frame=True)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42
+        X, y, stratify=y, random_state=42
     )
-
-    automl = IAML(max_duration=30, max_workers=1)
-    candidates = automl.fit(X_train, y_train, verbose=0)
-    best_candidate = candidates[0]
-
-    predictions = best_candidate.predict(X_test)
-    scores = best_candidate.evaluate(X_test, y_test)
-    print("Predictions:", predictions[:5])
-    print("Test metrics:", scores)
-
-
-if __name__ == "__main__":
-    main()
+    search = IAML(max_duration=30, max_workers=1)
+    search.fit(X_train, y_train)
+    chosen_model = search.chosen_candidate
+    print(chosen_model.evaluate(X_test, y_test))
 ```
 
-`fit` returns a list of fitted `Candidate` objects ordered by performance.
-Prediction and evaluation are methods of a candidate. Keep the `__main__` guard
-when running scripts because training uses multiprocessing. `max_duration` sets
-the search time budget; initialization and final fitting can take additional time.
+`chosen_model` is the selected model, including its preprocessing.
+`evaluate` scores it on the held-out test set. The dataset labels are `0` for
+malignant and `1` for benign. Keep the `__main__` guard because training uses
+multiprocessing. The example uses one worker and a 30-second search budget.
+Final fitting can take additional time.
 
 ## Documentation
 
 The [user guides](https://iias-research.github.io/iaml/) cover data preparation, model search, evaluation
 and interpretation:
 
-- [Getting started](https://iias-research.github.io/iaml/quick_start.html): prepare data and run an example.
-- [Usage](https://iias-research.github.io/iaml/usage.html): configure a search and evaluate predictions.
-- [Explainability](https://iias-research.github.io/iaml/explainability.html): interpret model predictions.
-- [Research guide](https://iias-research.github.io/iaml/scientific.html): report methods and record experiment settings.
-- [Component status](https://iias-research.github.io/iaml/component_status.html): find available and experimental components.
+- [Quick Start](https://iias-research.github.io/iaml/quick_start.html): install IAML and run an example.
+- [01 / Build](https://iias-research.github.io/iaml/usage.html): prepare data and configure a search.
+- [02 / Evaluate](https://iias-research.github.io/iaml/evaluation.html): assess predictions on held-out data.
+- [03 / Explain](https://iias-research.github.io/iaml/explainability.html): inspect methods and interpret feature contributions.
+- [Study reporting](https://iias-research.github.io/iaml/scientific.html): save outputs and record experiment settings.
+- [Extending IAML](https://iias-research.github.io/iaml/adaptability.html): add reusable methods for your team's research.
+- [Component availability](https://iias-research.github.io/iaml/component_status.html): explore the main component families and their API documentation.
 
 ## Credits
 

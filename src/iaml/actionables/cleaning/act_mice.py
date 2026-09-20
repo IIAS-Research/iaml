@@ -35,7 +35,7 @@ class ActMICEForestImputer(Actionable):
     """[STEP] Impute missing values with MICE (miceforest/LightGBM).
 
     Copies and serialized steps retain fitted state without rebuilding models.
-    Accessing ``kernel`` or transforming data restores a private kernel; refitting
+    Accessing ``kernel`` or transforming data restores a private kernel. Refitting
     replaces that state directly.
     """
 

@@ -1,0 +1,8 @@
+GSAP 3.15.0 and ScrollTrigger 3.15.0
+Copyright 2026, GreenSock. All rights reserved.
+
+Licensed under the GSAP Standard (No Charge) License:
+https://gsap.com/standard-license/
+
+The upstream copyright and license notices are retained unchanged in both scripts.
+These files are separate third-party dependencies, not covered by IAML's license.

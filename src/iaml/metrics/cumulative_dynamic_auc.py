@@ -2,7 +2,7 @@
 
 The current implementation passes survival probabilities where risk scores are
 required, and its time grid and aggregation need validation. Importing this module
-must not activate the metric in AutoML. See docs/component_status.rst.
+must not activate the metric in AutoML.
 """
 from typing import Any
 import textwrap

@@ -1,0 +1,287 @@
+/* Bebas Neue by Ryoichi Tsunekawa, SIL OFL 1.1 (fonts/BebasNeue-OFL.txt). */
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("fonts/BebasNeue-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+.sidebar-brand-text, .mobile-header .brand {
+  color: var(--color-brand-primary);
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  letter-spacing: .035em;
+}
+
+.sidebar-brand {
+  display: grid;
+  isolation: isolate;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.25rem .2rem;
+  padding-top: 1.5rem;
+  /* padding-bottom: 1.5rem; */
+}
+
+.sidebar-brand::before {
+  content: "";
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: stretch;
+  margin: 0 -2rem 0 -1rem;
+  background: var(--iaml-green);
+  border-radius: 0 5px 5px 0;
+  box-shadow: 0 3px 8px rgb(0 0 0 / .12);
+  z-index: -1;
+  pointer-events: none;
+  position: relative;
+  top: -.15rem;
+}
+
+.sidebar-logo-container {
+  display: grid;
+  grid-template-columns: 5.25rem 3.1875rem;
+  justify-content: center;
+  align-items: center;
+  gap: .25rem;
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  margin: 0;
+}
+
+.sidebar-logo {
+  width: 100%;
+}
+
+.iaml-partner-logos {
+  display: grid;
+  justify-items: center;
+  gap: .625rem;
+}
+
+.iaml-partner-logos img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.iaml-partner-logos img:last-child {
+  max-width: 2.625rem;
+}
+
+.mobile-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.5rem;
+}
+
+.mobile-header .brand::before {
+  content: "";
+  width: 1.3125rem;
+  height: 1.3125rem;
+  background: url("iias-logo.svg") center / contain no-repeat;
+}
+
+@media (max-width: 63em) {
+  #__navigation:not(:checked) ~ .page .sidebar-brand::before,
+  #__navigation:not(:checked) ~ .page .sidebar-logo-container,
+  #__navigation:checked ~ .page .mobile-header .brand::before {
+    display: none;
+  }
+}
+
+.sidebar-brand-text, .iaml-brand-name {
+  grid-row: 2;
+  color: #fff;
+}
+
+.sidebar-brand-text {
+  grid-column: 1;
+  margin: 0 0 0 14px;
+  font-size: 4rem;
+}
+
+.iaml-brand-name {
+  grid-column: 2;
+  font-size: .8125rem;
+  line-height: 1.13rem;
+  margin-top: -10px;
+}
+
+.iaml-brand-name span {
+  font-weight: bold;
+}
+
+h1, h2, h3 {
+  letter-spacing: -.035em;
+}
+
+.content h1, .content h2 {
+  color: var(--color-brand-primary);
+}
+
+h2 {
+  margin-top: 2.5rem;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-brand-content);
+  outline-offset: 4px;
+}
+
+.content :is(code.literal, .sig, .pre) {
+  overflow-wrap: anywhere;
+}
+
+.content .highlight {
+  border: 1px solid var(--color-background-border);
+  border-radius: 8px;
+}
+
+.content .highlight pre {
+  padding: 1rem;
+  line-height: 1.65;
+}
+
+section:has(> .iaml-intro) > h1 {
+  max-width: 14ch;
+  margin: 1.5rem 0;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -.055em;
+}
+
+.iaml-intro > p {
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+body {
+  --iaml-green: #176b63;
+  --iaml-accent: #f2b184;
+  --color-link--visited: var(--color-brand-content);
+  --color-link--visited--hover: var(--color-brand-content);
+  --color-link-underline: currentColor;
+  --color-link-underline--hover: currentColor;
+  --color-link-underline--visited: currentColor;
+  --color-link-underline--visited--hover: currentColor;
+  --color-sidebar-item-background--hover: color-mix(in srgb, var(--iaml-accent) 12%, transparent);
+  --color-sidebar-item-expander-background--hover: var(--color-sidebar-item-background--hover);
+}
+
+.sidebar-tree .current-page > .reference {
+  color: var(--color-brand-content);
+  background: var(--color-sidebar-item-background--hover);
+  box-shadow: inset 3px 0 var(--iaml-accent);
+}
+
+.sidebar-tree > ul:first-of-type > li:first-child > .reference {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  margin: .15rem 0 .5rem;
+  padding: .6rem 1rem;
+  font-weight: 650;
+}
+
+.sidebar-tree > ul:first-of-type > li:first-child > .reference::before {
+  content: "";
+  flex: 0 0 1.2rem;
+  height: 1.2rem;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9.25' fill='none' stroke='black' stroke-width='1.5'/%3E%3Cpath d='M10 8l6 4-6 4z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  @supports (background-clip: text) {
+    .sidebar-tree > ul:first-of-type > li:first-child > .reference {
+      background-image:
+        linear-gradient(90deg,
+        var(--color-brand-primary) 30%,
+        color-mix(in srgb, var(--color-brand-primary) 20%, var(--color-brand-content)) 40% 60%,
+        var(--color-brand-primary) 70%),
+        linear-gradient(transparent, transparent);
+      background-size: 6rem 100%, 100% 100%;
+      background-repeat: repeat-x, no-repeat;
+      background-clip: text, padding-box;
+      -webkit-text-fill-color: transparent;
+      animation: iaml-discover-shimmer 2s linear infinite;
+    }
+  }
+}
+
+@keyframes iaml-discover-shimmer {
+  0% {
+    background-position: -6rem 0, 0 0;
+  }
+  100% {
+    background-position: 0 0, 0 0;
+  }
+}
+
+.iaml-intro .iaml-eyebrow {
+  color: var(--color-brand-content);
+  font-size: .75rem;
+  font-weight: 650;
+  letter-spacing: .065em;
+  text-transform: uppercase;
+}
+
+.iaml-intro .iaml-tasks {
+  color: var(--color-foreground-secondary);
+  font-size: .85rem;
+}
+
+.iaml-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.75rem 0;
+}
+
+.iaml-actions a:first-child {
+  padding: .65rem 1.15rem;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--iaml-green);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.iaml-actions a:first-child:hover {
+  text-decoration: underline;
+}
+
+.iaml-install {
+  max-width: 32rem;
+}
+
+.iaml-guides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0 2.5rem;
+}
+
+.iaml-guide {
+  border-top: 2px solid var(--iaml-accent);
+  padding-top: .25rem;
+}
+
+.iaml-guide .rubric {
+  font-size: 1rem;
+}
+
+.iaml-guide p {
+  font-size: .9375rem;
+  line-height: 1.65;
+}
+
+@media print {
+  .iaml-guide {
+    break-inside: avoid;
+  }
+}

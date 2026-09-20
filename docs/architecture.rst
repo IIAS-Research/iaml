@@ -2,120 +2,141 @@
 How it works
 ============
 
-IAML combines data preparation, model search and evaluation in a modular
-workflow for tabular clinical research. Each pipeline is assembled from
-inspectable steps, allowing research teams to review the methods used and adapt
-components to their study.
+IAML (Integrated AutoML for Medical Labs) builds and compares pipelines for
+tabular classification, regression and survival analysis. A pipeline combines
+data preparation steps with a predictor. A candidate holds that pipeline, its
+evaluation metrics and the data needed during the search.
 
-Learning Architecture
-=====================
-The IAML framework operates in three main stages:
+From data to a fitted pipeline
+==============================
 
-1. **Candidate Generation:** Initial pipelines are created based on available modules.
-2. **Candidate Evaluation:** Pipelines are evaluated for performance using cross-validation.
-3. **Candidate Optimization:** The configured optimizer refines the candidates; genetic search is the default.
+1. **Generate candidates.** IAML selects components whose tags and suitability
+   checks match the data. It explores combinations of cleaning, feature
+   selection, normalization, resampling and prediction steps. The default
+   genetic search starts with a limited set of preprocessing choices and
+   explores alternatives during optimization.
+2. **Evaluate candidates.** Each pipeline is fitted and evaluated with
+   cross-validation. The default splitter uses five folds, with stratification
+   for classification and group separation when groups are supplied. Metrics
+   are averaged across folds. The main metric determines candidate ranking.
+3. **Optimize candidates.** The default genetic optimizer changes pipeline
+   components and parameters, retaining promising candidates for further
+   evaluation. Search continues until the time budget, patience limit or
+   optimizer stopping condition is reached. Bayesian parameter optimization
+   is also available.
+4. **Refit the selected pipelines.** IAML fits the best candidates on the
+   training data and returns them in ranked order. If ``train_on_n_samples``
+   is set, final fitting uses that sample by default. Set
+   ``refit_on_sample=False`` to refit on all input rows. The first returned
+   candidate is also available as ``chosen_candidate``.
 
-Each stage is modular, allowing users to customize, extend, or replace components for specific tasks or datasets.
-
-Modular Components
--------------------
-IAML uses a set of modular units called "Steps". Each Step represents a specific data processing action, such as data cleaning, feature engineering, or model training. These Steps are assembled into pipelines that are optimized for performance.
-
-Key Features of a Step:
-
-- **Capability Evaluation:** Determines its suitability for the dataset.
-- **Parameter Adaptation:** Adjusts its internal parameters for the dataset.
-- **Data Action:** Performs an action, such as transformation, prediction, or resampling.
-- **Explainability:** Provides a description of operations performed on the data.
-
-Candidate Generation
----------------------
-The first stage of IAML’s workflow involves generating initial pipeline candidates. Each candidate is an ordered sequence of Steps, where the output of one Step is used as the input for the next. The pipeline creation process includes:
-
-- Querying all available Steps for suitability.
-- Sequentially adding Steps to the pipeline (e.g., imputing missing values, encoding categorical data).
-- Generating multiple candidate pipelines tailored to the problem type and dataset.
-
-Candidate Evaluation
----------------------
-In the second stage, each candidate is assessed using **5-fold cross-validation**
-by default. Performance metrics are averaged across folds to compare candidates
-under the same validation strategy.
-
-The candidates are ranked based on a key metric defined by the user (e.g., accuracy for classification or R² for regression). This ranking determines which candidates move on to the optimization stage.
-
-.. note::
-
-    The number of folds in the cross-validation is fixed to **5** by default but, as with everything in IAML, it can be changed.
-    If you plan to optimize pipelines for longer durations (e.g., more than 30 minutes), consider increasing this value using IAML’s parameters. 
-
-Shared Evaluation Cache
------------------------
-Training and evaluation caches identify a dataset by its features, targets,
-groups, column types and target type. The fingerprint is recomputed from the
-current contents, so changing labels or groups cannot reuse results from the
-previous dataset. Keys are captured before preprocessing can mutate the data.
-
-Cached preprocessing restores both the fitted step and its training dataset,
-preserving shared references needed by transformations such as target encoding.
-The shared cache returns copies so later transformations cannot modify its entries.
-
-Validation partitions also depend on the splitter and its parameters. Cached
-evaluation scores additionally depend on the metrics and their configuration.
-Custom splitters must be deterministic for the same inputs and settings. When
-their configuration cannot be serialized (for example, a local lambda), partition
-and score caching is bypassed; evaluation still runs normally.
-
-Candidate Optimization
-----------------------
-IAML’s default optimization process is inspired by **genetic algorithms**. This stage iteratively refines the pipelines by:
-
-- **Selection:** Retaining top-performing candidates from the evaluation stage.
-- **Mutation:** Slightly altering the parameters of existing candidates to explore variations.
-- **Random Generation:** Introducing new random candidates to encourage exploration.
-
-The default optimizer explores changes to pipeline structure and parameters.
-Evaluation and optimization continue until a stopping condition is met, such as
-the search time limit or a configured patience limit. Alternative optimizers
-include Bayesian hyperparameter tuning; see :doc:`adaptability` for the
-optimizer interface.
-
-Learning Overview
-=================
-IAML’s training process begins with candidate generation: IAML creates multiple
-pipelines based on available modules, forming the initial pool of candidates. Next,
-it enters a loop of evaluation and optimization. Each candidate in the pool is evaluated
-using 5-fold cross-validation. Based on these evaluations, a new generation of candidates
-is produced using the configured optimizer. This loop continues until a stopping condition
-is met, such as reaching a set patience limit or a timeout.
+The search time budget does not include every initialization or final fitting
+operation, so total wall time can exceed ``max_duration``.
 
 .. figure:: architecture_flow_diagram.png
-    :alt: Architecture flow diagram of IAML
-    :align: center
-    :width: 80%
+   :alt: IAML training loop showing candidate generation, optimization, cross-validation and stopping conditions
+   :align: center
+   :width: 100%
 
+   Training loop illustrated with Bayesian optimization. The default search
+   uses genetic mutations. Click to enlarge.
 
+Choose the validation strategy and main metric for the study before starting
+the search. Cross-validation scores guide model selection. Use a separate
+evaluation dataset to assess the selected pipeline. See :doc:`usage` for
+configuration and :doc:`evaluation` for evaluation methods.
 
-Explainability and Transparency
-===============================
-Clinical researchers and data scientists can inspect the selected pipeline and
-request outputs to support interpretation and study reporting:
+Components and extensions
+=========================
 
-- **Descriptive statistics and visualizations:** Automatically generated statistics and visualizations to help users understand the input data.
-- **Pipeline summaries:** Detailed descriptions of all transformations and models used in a pipeline.
-- **Performance metrics:** Comprehensive evaluation metrics for each candidate pipeline.
-- **Model performance visualization:** Task-specific plots of predictions and errors on an evaluation dataset.
-- **Feature importance:** Feature importance explanations using SHAP (SHapley Additive exPlanations).
+Most studies interact with ``IAML`` and the selected ``Candidate``. The classes
+below explain how data, pipeline construction and evaluation fit together.
+Follow a class name for its API reference.
 
-Learn how to use all these functionalities in the :doc:`explainability documentation <explainability>`.
+The search and its results
+--------------------------
 
-Adaptability
-============
-Research teams can adapt IAML to their data and study design. Users can:
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
 
-- Modify preprocessing Steps, evaluation metrics, and optimization strategies with minimal effort.
-- Integrate new methods or algorithms by implementing custom Steps.
-- Leverage GPU acceleration through libraries like cuDF for faster processing.
+   * - Class
+     - Role
+   * - :py:class:`~iaml.iaml.IAML`
+     - Coordinates candidate generation, validation, optimization and final
+       fitting. Holds the search settings and exposes the selected candidate
+       through ``chosen_candidate``.
+   * - :py:class:`~iaml.dataset.Dataset`
+     - Carries features, targets, optional groups and detected data types.
+       Steps use this information to check applicability. Splitting and
+       sampling keep features, targets and groups together.
+   * - :py:class:`~iaml.candidate.Candidate`
+     - Combines a pipeline with its dataset, metrics and validation results.
+       Provides prediction, held-out evaluation, pipeline descriptions,
+       explanations and method references.
+   * - :py:class:`~iaml.iaml_pipeline.IAMLPipeline`
+     - Holds the ordered transformations, training-only resamplers and final
+       predictor. Reuses fitted transformations when predicting new
+       observations, without resampling them.
 
-See the :doc:`adaptability documentation <adaptability>` for component and
-extension APIs.
+After fitting, ``search.chosen_candidate`` gives access to the results and
+reporting methods. Its ``pipeline`` attribute contains the fitted
+``IAMLPipeline``, also exposed as ``search.chosen_model``.
+
+Steps and their organization
+----------------------------
+
+:py:class:`~iaml.step.Step` defines the shared contract for suitability,
+configuration, tags and method references.
+:py:class:`~iaml.actionable.Actionable` is the base for concrete transformations,
+resampling operations and predictors.
+:py:class:`~iaml.predictor.Predictor` specializes it to wrap a learning model
+and expose its prediction methods. Probability and survival outputs depend
+on the wrapped estimator's capabilities.
+
+Meta steps organize the construction of candidates:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Class
+     - Role
+   * - :py:class:`~iaml.metastep.MetaStep`
+     - Chooses the next child step according to its priority for the current
+       candidate.
+   * - :py:class:`~iaml.meta_ordered_step.MetaOrderedStep`
+     - Runs child steps in the supplied order, such as imputation before
+       normalization.
+   * - :py:class:`~iaml.meta_explorer_step.MetaExplorerStep`
+     - Explores alternatives from the same input candidate, producing
+       separate candidates for evaluation.
+   * - :py:class:`~iaml.meta_partial_explorer_step.MetaPartialExplorerStep`
+     - Starts with one choice or no transformation. Compatible alternatives
+       remain available for later mutations, limiting initial branching.
+
+Tags associate registered steps with search stages. The meta steps determine
+how those stages are traversed.
+
+Evaluation, optimization and reporting
+--------------------------------------
+
+* :py:class:`~iaml.metric.Metric` defines how predictions are scored, which
+  prediction method is needed and whether larger or smaller values are
+  preferable. The main metric controls candidate ranking.
+* :py:class:`~iaml.optimizers.optimizer.Optimizer` proposes the next pool from
+  evaluated candidates. Genetic optimization can change steps and parameters.
+  Bayesian optimization tunes parameters within an existing pipeline structure.
+* :py:class:`~iaml.statistic.Statistic` computes descriptive summaries of the
+  dataset, such as missing-value counts or feature distributions.
+* :py:class:`~iaml.plot.Plot` provides the common interface for figures and their
+  export. Specialized classes cover descriptive plots, model performance and
+  SHAP views.
+
+Validation splitters are callables. They receive a ``Dataset`` and yield pairs
+of training and validation ``Dataset`` objects, allowing study-specific split
+strategies without a new base class.
+
+See :doc:`adaptability` for examples of implementing and connecting these
+extensions, :doc:`explainability` and :doc:`scientific` for using their outputs,
+and :doc:`component_status` to browse component families and their API.

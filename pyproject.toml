@@ -1,6 +1,6 @@
 [project]
 name = "PyIAML"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
     { name="Rudy MERIEUX", email="rmerieux@chu-reims.fr" },
     { name="Hugo RUELLET", email="hruellet@chu-reims.fr" },
@@ -65,7 +65,7 @@ dev-dependencies = [
     "ipywidgets>=8.1.5",
     "pre-commit>=3.8.0",
     "sphinx-autoapi>=3.3.3",
-    "sphinx-rtd-theme>=3.0.2",
+    "furo>=2025.12.19",
 ]
 
 [tool.uv.dependency-groups]
