@@ -1,0 +1,2080 @@
+{
+  "pipeline": {
+    "fingerprint": "c23152b86edb193bed7df76a8d6974b3",
+    "estimator_type": "classifier",
+    "steps": [
+      {
+        "role": "predictor",
+        "name": "CatBoost Classifier",
+        "class": "ActCatBoost",
+        "tags": [
+          "classifier",
+          "minimal_predictor",
+          "predictor",
+          "tabular"
+        ],
+        "configuration": {
+          "iterations": 1000,
+          "learning_rate": 0.03,
+          "depth": 6,
+          "l2_leaf_reg": 3,
+          "border_count": 254,
+          "loss_function": "Logloss",
+          "eval_metric": "AUC",
+          "bootstrap_type": "Bayesian",
+          "leaf_estimation_iterations": 10
+        }
+      }
+    ]
+  },
+  "test_scores": {
+    "accuracy": 0.9666666666666667,
+    "balanced_accuracy": 0.9545454545454546,
+    "classification_error": 0.045454545454545414,
+    "f1_score": 0.9523809523809523,
+    "precision": 1.0,
+    "recall": 0.9090909090909091,
+    "specificity": 1.0,
+    "ROC AUC": 0.9665071770334928
+  },
+  "training_history": [
+    {
+      "pipeline_fingerprint": "aa3663cabe5c159fe73b4ec88cbcf43b",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "success",
+      "error": null,
+      "metrics": {
+        "accuracy": 0.9555555555555555,
+        "balanced_accuracy": 0.9456709956709958,
+        "classification_error": 0.054329004329004296,
+        "f1_score": 0.9377156177156177,
+        "precision": 0.975,
+        "recall": 0.9095238095238095,
+        "specificity": 0.9818181818181818,
+        "ROC AUC": 0.9896103896103895
+      },
+      "fold_metrics": [
+        {
+          "fold": 1,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9166666666666667,
+            "classification_error": 0.08333333333333326,
+            "f1_score": 0.9090909090909091,
+            "precision": 1.0,
+            "recall": 0.8333333333333334,
+            "specificity": 1.0,
+            "ROC AUC": 1.0
+          }
+        },
+        {
+          "fold": 2,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9285714285714286,
+            "classification_error": 0.0714285714285714,
+            "f1_score": 0.9230769230769231,
+            "precision": 1.0,
+            "recall": 0.8571428571428571,
+            "specificity": 1.0,
+            "ROC AUC": 1.0
+          }
+        },
+        {
+          "fold": 3,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9285714285714286,
+            "classification_error": 0.0714285714285714,
+            "f1_score": 0.9230769230769231,
+            "precision": 1.0,
+            "recall": 0.8571428571428571,
+            "specificity": 1.0,
+            "ROC AUC": 0.987012987012987
+          }
+        },
+        {
+          "fold": 4,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9545454545454546,
+            "classification_error": 0.045454545454545414,
+            "f1_score": 0.9333333333333333,
+            "precision": 0.875,
+            "recall": 1.0,
+            "specificity": 0.9090909090909091,
+            "ROC AUC": 0.961038961038961
+          }
+        },
+        {
+          "fold": 5,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "classification_error": 0.0,
+            "f1_score": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "ROC AUC": 1.0
+          }
+        }
+      ],
+      "pipeline": {
+        "fingerprint": "aa3663cabe5c159fe73b4ec88cbcf43b",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "predictor",
+            "name": "XGBoost",
+            "class": "ActXGBoost",
+            "tags": [
+              "classifier",
+              "minimal_predictor",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "max_depth": 6,
+              "random_state": 42,
+              "learning_rate": 0.1,
+              "subsample": 1.0,
+              "n_estimators": 100,
+              "min_child_weight": 1.0,
+              "colsample_bytree": 1.0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "1b66e0c4bf4e3f780d38e952e391ac75",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "1b66e0c4bf4e3f780d38e952e391ac75",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "Logistic Regression Classifier",
+            "class": "ActLogisticRegression",
+            "tags": [
+              "baseline_predictor",
+              "classifier",
+              "fast_predictor",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "random_state": 42,
+              "penalty": "l2",
+              "tol": 0.0001,
+              "class_weight": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "bb8b71a99993de0c0a814944d0c8a41b",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "bb8b71a99993de0c0a814944d0c8a41b",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "KNN",
+            "class": "ActKNN",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "metric": "minkowski",
+              "n_neighbors": 5,
+              "weights": "uniform"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "71934502676a9d7a913fb54a41d1a6a0",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "71934502676a9d7a913fb54a41d1a6a0",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "CatBoost Classifier",
+            "class": "ActCatBoost",
+            "tags": [
+              "classifier",
+              "minimal_predictor",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "iterations": 1000,
+              "learning_rate": 0.03,
+              "depth": 6,
+              "l2_leaf_reg": 3,
+              "border_count": 254,
+              "loss_function": "Logloss",
+              "eval_metric": "AUC",
+              "bootstrap_type": "Bayesian",
+              "leaf_estimation_iterations": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "c0800ffa3c1d0ed2e29de4e7e531f650",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "c0800ffa3c1d0ed2e29de4e7e531f650",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "XGBoost",
+            "class": "ActXGBoost",
+            "tags": [
+              "classifier",
+              "minimal_predictor",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "max_depth": 6,
+              "random_state": 42,
+              "learning_rate": 0.1,
+              "subsample": 1.0,
+              "n_estimators": 100,
+              "min_child_weight": 1.0,
+              "colsample_bytree": 1.0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "ac69e6885dfd833c19b4a5491f12f7f8",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "ac69e6885dfd833c19b4a5491f12f7f8",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "MLP Classifier",
+            "class": "ActMLPClassifier",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "activation": "relu",
+              "alpha": 0.0001,
+              "hidden_layer_count": 1,
+              "node_per_layer": 32,
+              "learning_rate_init": 0.001
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "69dd041d14cb90c7e62b64e1ba872e47",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "69dd041d14cb90c7e62b64e1ba872e47",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "Multinomial NB",
+            "class": "ActMultinomialNB",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "alpha": 1.0,
+              "fit_prior": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "d90082036174027d3e136094d67593a9",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "d90082036174027d3e136094d67593a9",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "Quadratic Discriminant Analysis",
+            "class": "ActQuadraticDiscriminantAnalysis",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "reg_param": 0.0001
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "0e2701e6f3622d3a026f7ecf2442940e",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "0e2701e6f3622d3a026f7ecf2442940e",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "Bernoulli NB",
+            "class": "ActBernoulliNb",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "alpha": 1.0,
+              "fit_prior": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "d9205cb280079f88bf47497eb8d2cf7f",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "d9205cb280079f88bf47497eb8d2cf7f",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "SVM Classification",
+            "class": "ActSVMSVC",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "kernel": "rbf",
+              "random_state": 42,
+              "class_weight": null,
+              "tol": 0.001
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "8c7e84034e633ca34d89a4dc928e52f6",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "8c7e84034e633ca34d89a4dc928e52f6",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": "Linear Discriminant Analysis",
+            "class": "ActLinearDiscriminantAnalysis",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "tol": 0.0001
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "4addb0137ba5d3a519a5c2cf636458b1",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "failed",
+      "error": "training failure: ValueError('Length of values (0) does not match length of index (72)')",
+      "metrics": {},
+      "fold_metrics": [],
+      "pipeline": {
+        "fingerprint": "4addb0137ba5d3a519a5c2cf636458b1",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "transformer",
+            "name": "Normalize column names",
+            "class": "ActNormalizeColumnNames",
+            "tags": [
+              "features_precleaning"
+            ],
+            "configuration": {
+              "lowercase": true,
+              "strip": true,
+              "replace_spaces": true,
+              "replace_non_alnum": true,
+              "collapse_underscores": true,
+              "strip_underscores": true,
+              "deduplicate": true,
+              "dedupe_sep": "_",
+              "empty_fallback": "column"
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Fill missing values",
+            "class": "ActMeanColumn",
+            "tags": [
+              "baseline_cleaning",
+              "cleaning"
+            ],
+            "configuration": {
+              "empty_threshold": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "VIF Selector",
+            "class": "ActVIFSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "threshold": 10.0
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select From Model",
+            "class": "ActSelectFromModel",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "l1",
+              "threshold": "median",
+              "max_features": null,
+              "l1_alpha": 0.01,
+              "l1_C": 1.0,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Select K Best Features",
+            "class": "ActSelectKBest",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "score_func": "f_classif",
+              "k": 1,
+              "random_state": 42
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Permutation Importance Selector",
+            "class": "ActPermutationImportanceSelector",
+            "tags": [
+              "features_selection"
+            ],
+            "configuration": {
+              "estimator": "tree",
+              "threshold": "median",
+              "max_features": null,
+              "n_repeats": 5,
+              "scoring": "auto",
+              "random_state": 42,
+              "tree_n_estimators": 50,
+              "tree_max_depth": 10,
+              "tree_min_samples_leaf": 1
+            }
+          },
+          {
+            "role": "transformer",
+            "name": "Standard Scaler",
+            "class": "ActStandardScaler",
+            "tags": [
+              "normalize"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "resampler",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "imbalance"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "transformer",
+            "name": "VoidStep",
+            "class": "VoidStep",
+            "tags": [
+              "features_preprocessing"
+            ],
+            "configuration": {}
+          },
+          {
+            "role": "predictor",
+            "name": " Gaussian NB",
+            "class": "ActGaussianNb",
+            "tags": [
+              "classifier",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "var_smoothing": 1e-09
+            }
+          }
+        ]
+      }
+    },
+    {
+      "pipeline_fingerprint": "c23152b86edb193bed7df76a8d6974b3",
+      "dataset_fingerprint": "ced9340cbfaa410b08485e90db3c6cd52bfa27bca58fd230314a3082154d47fb",
+      "dataset_shape": {
+        "rows": 90,
+        "columns": 6
+      },
+      "main_metric": "ROC AUC",
+      "status": "success",
+      "error": null,
+      "metrics": {
+        "accuracy": 0.9444444444444444,
+        "balanced_accuracy": 0.9365800865800866,
+        "classification_error": 0.06341991341991338,
+        "f1_score": 0.9243822843822844,
+        "precision": 0.95,
+        "recall": 0.9095238095238095,
+        "specificity": 0.9636363636363636,
+        "ROC AUC": 0.9948051948051948
+      },
+      "fold_metrics": [
+        {
+          "fold": 1,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9166666666666667,
+            "classification_error": 0.08333333333333326,
+            "f1_score": 0.9090909090909091,
+            "precision": 1.0,
+            "recall": 0.8333333333333334,
+            "specificity": 1.0,
+            "ROC AUC": 1.0
+          }
+        },
+        {
+          "fold": 2,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9285714285714286,
+            "classification_error": 0.0714285714285714,
+            "f1_score": 0.9230769230769231,
+            "precision": 1.0,
+            "recall": 0.8571428571428571,
+            "specificity": 1.0,
+            "ROC AUC": 1.0
+          }
+        },
+        {
+          "fold": 3,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9285714285714286,
+            "classification_error": 0.0714285714285714,
+            "f1_score": 0.9230769230769231,
+            "precision": 1.0,
+            "recall": 0.8571428571428571,
+            "specificity": 1.0,
+            "ROC AUC": 0.987012987012987
+          }
+        },
+        {
+          "fold": 4,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9545454545454546,
+            "classification_error": 0.045454545454545414,
+            "f1_score": 0.9333333333333333,
+            "precision": 0.875,
+            "recall": 1.0,
+            "specificity": 0.9090909090909091,
+            "ROC AUC": 0.987012987012987
+          }
+        },
+        {
+          "fold": 5,
+          "train_shape": {
+            "rows": 72,
+            "columns": 6
+          },
+          "test_shape": {
+            "rows": 18,
+            "columns": 6
+          },
+          "metrics": {
+            "accuracy": 0.9444444444444444,
+            "balanced_accuracy": 0.9545454545454546,
+            "classification_error": 0.045454545454545414,
+            "f1_score": 0.9333333333333333,
+            "precision": 0.875,
+            "recall": 1.0,
+            "specificity": 0.9090909090909091,
+            "ROC AUC": 1.0
+          }
+        }
+      ],
+      "pipeline": {
+        "fingerprint": "c23152b86edb193bed7df76a8d6974b3",
+        "estimator_type": "classifier",
+        "steps": [
+          {
+            "role": "predictor",
+            "name": "CatBoost Classifier",
+            "class": "ActCatBoost",
+            "tags": [
+              "classifier",
+              "minimal_predictor",
+              "predictor",
+              "tabular"
+            ],
+            "configuration": {
+              "iterations": 1000,
+              "learning_rate": 0.03,
+              "depth": 6,
+              "l2_leaf_reg": 3,
+              "border_count": 254,
+              "loss_function": "Logloss",
+              "eval_metric": "AUC",
+              "bootstrap_type": "Bayesian",
+              "leaf_estimation_iterations": 10
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "example": {
+    "script_sha256": "61dbd92e5622cb123502c666468fabbed19accdc011c634a14f915c188b8ec07",
+    "dataset": "sklearn.datasets.load_breast_cancer",
+    "features": [
+      "mean radius",
+      "mean texture",
+      "mean perimeter",
+      "mean area",
+      "mean smoothness",
+      "mean compactness"
+    ],
+    "seed": 42,
+    "training_observations": 90,
+    "test_observations": 30,
+    "explained_observations": 5,
+    "shap_nsamples": 64,
+    "positive_class": "1 = malignant (recoded)",
+    "versions": {
+      "PyIAML": "1.0.0",
+      "scikit-learn": "1.7.2",
+      "catboost": "1.2.8",
+      "shap": "0.47.1"
+    }
+  }
+}

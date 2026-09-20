@@ -1,214 +1,318 @@
-======
-Usage
-======
+.. _build-model:
 
-This guide explains, with more details than :doc:`quick_start`, how to use IAML for training, predicting, and interpreting machine learning models. 
+==========
+01 / Build
+==========
 
-Setup
-=====
+This chapter and the following guides help you **understand and tailor your
+workflow**: prepare study data, choose validation settings, interpret results
+and document the methods used. For a first pipeline with minimal setup, start
+with the :doc:`quick_start`.
 
-From the repository root, install IAML in your Python environment:
+Here, choose an outcome, prepare your study table and search for a prediction
+pipeline. IAML compares candidates by cross-validation, then fits the selected
+pipeline on the training data.
+
+.. _build-data:
+
+Prepare features and an outcome
+===============================
+
+``X`` is a pandas DataFrame: one observation per row and one feature per column.
+Keep the outcome out of ``X``. ``y`` must contain one target per row in the same
+order. Matching index labels do not replace this positional alignment.
+
+- **Classification:** a Series or single-column DataFrame of class labels.
+- **Regression:** a Series or single-column DataFrame of numerical outcomes.
+- **Survival:** a Series of ``(event, time)`` tuples, where ``event=True`` means
+  that the event occurred and ``False`` means censored. Use positive follow-up
+  times in a consistent unit. A DataFrame with separate event and time columns
+  is not accepted directly by ``fit``.
+
+For your own CSV file, separate features and target before splitting the data:
+
+.. code-block:: python
+
+    import pandas as pd
+
+    study = pd.read_csv("study.csv")
+    X = study.drop(columns=["outcome", "patient_id"])
+    y = study["outcome"]
+
+For survival, construct the target explicitly:
+
+.. code-block:: python
+
+    X = study.drop(columns=["event", "follow_up_months", "patient_id"])
+    y = pd.Series(
+        list(zip(study["event"], study["follow_up_months"])),
+        index=study.index,
+        name="survival",
+    )
+
+Use boolean or ``0/1`` event values, not strings such as ``"yes"`` and ``"no"``.
+Keep patient identifiers for grouping rather than using them as predictors.
+See :ref:`build-validation`.
+
+.. _build-classification:
+
+Classification: a complete example
+==================================
+
+This small synthetic dataset is generated locally. Save the following as
+``build_example.py`` and run ``python build_example.py``. It uses one worker and
+80 observations, with 20 reserved for evaluation.
+
+.. code-block:: python
+    :name: build-classification-example
+
+    import pandas as pd
+    from sklearn.datasets import make_classification
+    from sklearn.model_selection import train_test_split
+
+    from iaml import IAML
+
+
+    def make_example_data():
+        features, target = make_classification(
+            n_samples=80, n_features=4, n_informative=3,
+            n_redundant=0, random_state=42,
+        )
+        X = pd.DataFrame(features, columns=["x1", "x2", "x3", "x4"])
+        y = pd.Series(target, name="outcome")
+        return train_test_split(
+            X, y, test_size=0.25, stratify=y, random_state=42,
+        )
+
+
+    def main():
+        X_train, X_test, y_train, y_test = make_example_data()
+        search = IAML(max_duration=30, max_workers=1)
+        search.fit(X_train, y_train)
+        model = search.chosen_candidate
+        print(model.describe_steps())
+        print(model.evaluate(X_test, y_test))
+
+
+    if __name__ == "__main__":
+        main()
+
+Keep the main guard: training starts worker processes. After fitting,
+``search.chosen_candidate`` gives the selected, fitted
+:py:class:`~iaml.candidate.Candidate`. ``fit`` also returns a list of fitted
+candidates, ordered by the selected metric. By default, it returns one
+candidate. Request more with
+``search.fit(X_train, y_train, n_candidates=3)``.
+
+The following guides reuse ``search``, ``model`` and the training/test variables
+from this script. Place their follow-up snippets inside ``main()``, after
+fitting. The labels here are synthetic ``0/1`` outcomes with no clinical meaning.
+
+.. _build-regression:
+
+Regression: a continuous outcome
+================================
+
+Replace only ``make_example_data`` in the complete script above with this
+function. Keep its imports, ``main`` and main guard. The target is continuous,
+so the default objective becomes R².
+
+.. code-block:: python
+    :name: build-regression-example
+
+    def make_example_data():
+        from sklearn.datasets import make_regression
+
+        features, target = make_regression(
+            n_samples=80, n_features=4, noise=10, random_state=42,
+        )
+        X = pd.DataFrame(features, columns=["x1", "x2", "x3", "x4"])
+        y = pd.Series(target, name="measurement")
+        return train_test_split(X, y, test_size=0.25, random_state=42)
+
+IAML infers the task from the target values. Check the inferred task when your
+outcome has only a few distinct numerical values, such as an ordinal score.
+
+.. _build-survival:
+
+Survival: an event and a follow-up time
+=======================================
+
+Alternatively, replace ``make_example_data`` with this function. The 80
+synthetic observations contain both events and censored follow-up times.
+The default objective becomes IPCW concordance.
+
+.. code-block:: python
+    :name: build-survival-example
+
+    def make_example_data():
+        import numpy as np
+
+        rng = np.random.default_rng(42)
+        X = pd.DataFrame({
+            "age": rng.integers(35, 85, size=80),
+            "marker": rng.normal(size=80),
+        })
+        event = rng.random(80) < 0.7
+        time = rng.uniform(1, 24, size=80)
+        y = pd.Series(list(zip(event, time)), name="survival")
+        return train_test_split(X, y, test_size=0.25, random_state=42)
+
+These examples demonstrate the input format and workflow. Their synthetic
+scores are not evidence of clinical performance.
+
+.. _build-validation:
+
+Separate test data and cross-validation
+=======================================
+
+Reserve a test set before the search. IAML's default internal validation uses
+five folds: stratified folds for classification, ordinary folds for regression
+and survival. Preprocessing is fitted within each training fold.
+
+For repeated observations from the same patient, split the external test set
+by patient as well. Passing groups to IAML only controls its internal folds.
+Use enough distinct groups, and enough observations per class, for the chosen
+number of folds.
+
+If ``X_train`` contains a grouping column, pass its name. IAML removes it from
+the predictors:
+
+.. code-block:: python
+
+    search.fit(X_train, y_train, groups_columns=["patient_id"])
+    model = search.chosen_candidate
+
+Alternatively, pass a separate grouping DataFrame whose columns are absent
+from the features:
+
+.. code-block:: python
+
+    patient_groups = X_train[["patient_id"]]
+    search.fit(
+        X_train.drop(columns="patient_id"), y_train, groups=patient_groups,
+    )
+    model = search.chosen_candidate
+
+Choose one of these approaches, and omit the identifier from ``X_test`` when
+predicting. The default splitter uses stratified group folds for classification
+and group folds for the other tasks.
+
+To change the number of internal folds:
+
+.. code-block:: python
+
+    from functools import partial
+    from iaml.splitters import kfold_splitter
+
+    search = IAML(
+        splitter=partial(kfold_splitter, nb_folds=3),
+        max_duration=30,
+        max_workers=1,
+    )
+
+.. _build-metrics:
+
+Choose the search objective
+===========================
+
+The defaults are balanced accuracy for classification, R² for regression and
+IPCW concordance for survival. Pass a metric instance to choose another
+objective. Its configuration is retained:
+
+.. code-block:: python
+
+    from iaml import PrecisionMetric
+
+    search = IAML(
+        main_metric=PrecisionMetric(pos_label=1),
+        max_duration=30,
+        max_workers=1,
+    )
+
+Use a metric appropriate to the task. For example, ``RocAucMetric()`` requires
+binary classification and probability predictions, while
+``MeanSquaredErrorMetric()`` is a regression objective. IAML handles the score
+direction: it maximizes accuracy-type scores and minimizes error metrics.
+See :ref:`evaluate-positive-class` before interpreting binary metrics.
+
+.. _build-probabilities:
+
+When you need class probabilities
+---------------------------------
+
+For the binary probability examples in :doc:`evaluation` and
+:doc:`explainability`, replace the construction of ``search`` in the
+classification script with the following, **before calling** ``fit``:
+
+.. code-block:: python
+
+    from iaml import RocAucMetric
+
+    search = IAML(main_metric=RocAucMetric(), max_duration=30, max_workers=1)
+
+ROC AUC requires probability predictions, so the selected candidate must
+support them. Use this setting for binary classification, not for the regression
+or survival examples above.
+
+.. _build-history:
+
+When you need a search record
+-----------------------------
+
+Add ``keep_training_history=True`` when constructing ``IAML``, before fitting,
+to retain cross-validation records in ``search.training_history``. This option
+can be combined with the metric settings above. See :doc:`scientific` to export
+the records. They are not saved to disk automatically.
+
+.. _build-budget:
+
+Control time and dataset size
+=============================
+
+- ``max_workers=1`` limits concurrent candidate evaluations. The default is the
+  number of available CPU cores.
+- ``max_duration`` is a search budget in seconds, not a deadline for the whole
+  script. Initialization and final fitting can add time. Plotting is separate.
+  The default, ``-1``, sets no global time limit.
+- ``max_stage_duration`` caps an evaluation stage. Its default is
+  ``max(max_duration / 5, 900)``. A remaining global budget can shorten a stage.
+- ``patience``, passed to ``fit``, stops optimization after that many generations
+  without improvement. Its default is unlimited when a time budget is set,
+  and 20 generations without improvement when ``max_duration=-1``.
+
+For larger studies, limit the initial number of training rows:
+
+.. code-block:: python
+
+    search = IAML(
+        train_on_n_samples=1000,
+        refit_on_sample=True,
+        max_duration=60,
+        max_workers=1,
+    )
+
+``refit_on_sample=True`` is the default: the selected pipeline is fitted on
+the same initial sample. Use ``False`` to search on the sample and then fit on
+all training rows. Without a positive sample limit, final fitting uses all
+training rows. Further automatic downsizing during the search does not change
+the initial sample retained for final fitting. A row limit is not a timeout.
+
+.. _build-text:
+
+Optional Word2Vec text support
+==============================
+
+Numerical datasets and importing IAML require no NLTK corpus. To use
+``ActWord2Vec`` on text, install the English stopwords corpus beforehand:
 
 .. code-block:: bash
 
-    python -m pip install .
+    python -m nltk.downloader stopwords
 
-How to Create and Train a Model
-===============================
+For offline use, set ``NLTK_DATA`` to the directory containing the installed
+corpus. IAML does not download corpora automatically. This component uses
+English stopwords and stemming. Its tokenization does not need ``punkt`` or
+``punkt_tab``.
 
-Creating and training a model with IAML is straightforward. Follow these steps:
-
-1. Import the IAML class.
-2. Create an instance of the IAML class.
-3. Train the model on your data using `fit`.
-
-Example:
-
-.. code-block:: python
-
-    from iaml import AccuracyMetric, IAML
-
-    # Create an IAML instance
-    search = IAML(max_duration=120, main_metric=AccuracyMetric(), max_workers=1)
-
-    # Train the model
-    candidates = search.fit(X_train, y_train)
-    model = candidates[0]
-
-    # Output: Trained pipeline ready for evaluation and prediction.
-
-The remaining examples use ``model`` for the trained
-:py:class:`~iaml.candidate.Candidate` returned by ``fit``. Features and targets
-are pandas DataFrames; convert a target Series with ``y.to_frame()``. In a
-Python script, place training inside an ``if __name__ == "__main__":`` guard
-as shown in :doc:`quick_start`.
-
-IAML Class Parameters
----------------------
-As shown in the example, when creating an instance of the `IAML` class, you can configure various parameters to control its behavior.
-Below is a detailed explanation of the most importants parameters. Please consider using the API reference to learn the other parameters.
-
-- **max_workers (int, optional):**  
-    Specifies the maximum number of parallel workers to use during training.  
-
-    - **Default:** Number of available CPU cores.
-    - **Use Case:** Set this to control resource usage in multi-core systems.
-
-- **max_stage_duration (int, optional):**  
-    Maximum time (in seconds) allocated to each stage of the training process. If not set, it defaults to `max_duration / 5` or 900 seconds, whichever is higher.  
-    
-    - **Default:** ``max(max_duration / 5, 900)``.
-    - **Use Case:** Fine-tune the allocation of time for different pipeline stages.
-
-- **max_duration (int, optional):**  
-    The search time budget in seconds, including candidate submission and evaluation.
-    Initialization and final fitting can take additional time.
-
-    - **Default:** ``-1`` (no limit).  
-    - The per-stage limit still applies. Optimization stops according to patience or the optimizer's own iteration limit.
-    - **Use Case:** Limit the overall training time for faster iterations or resource constraints.
-
-- **main_metric (Metric, optional):**  
-    The primary metric to optimize during training (e.g., accuracy, ROC AUC).
-
-    - **Default:** ``None`` (selected from the task type).
-    - **Use Case:** Pass a metric instance, such as ``AccuracyMetric()`` for classification or ``R2ScoreMetric()`` for regression. The defaults are balanced accuracy for classification, R² for regression, and IPCW concordance for survival.
-
-
-Fit Parameters
---------------
-The :py:meth:`~iaml.iaml.IAML.fit` method trains pipeline and model on your data. Below are the most useful parameters. Please consider using the API reference to learn the other parameters.
-
-- **X (pd.DataFrame):**  
-    The input features for training.  
-
-    - **Required.**
-    - **Type:** A pandas DataFrame containing the training data.
-
-- **y (pd.DataFrame):**  
-    The target labels for training.  
-
-    - **Required.**
-    - **Type:** A pandas DataFrame containing the labels corresponding to ``X``.
-
-- **groups (pd.DataFrame, optional):**  
-    Group labels for the samples, used for group-aware cross-validation. 
-
-    - **Default:** ``None``.  
-    - **Use Case:** Use when working with grouped datasets where samples should not be split across folds.
-
-- **groups_columns (list[str], optional):**  
-    The columns in the ``X`` dataset that define groups. If specified, ``groups`` is inferred from these columns.  
-
-    - **Default:** ``None``.
-
-- **patience (int, optional):**  
-    Number of generations without improvement before training stops.  
-
-    - **Default:** ``-1`` (no early stopping based on patience when a time budget is set).
-      With ``max_duration=-1``, this defaults to 20 generations without improvement.
-    - **Use Case:** Set to a positive integer to control convergence and prevent unnecessary iterations.
-
-- **verbose (int, optional):**  
-    Controls the level of logging output during training.  
-
-    - **Default:** ``1`` (minimal logs).  
-    - **Options:**  
-        - ``0``: Silent mode.  
-        - ``1``: Minimal logging.  
-        - ``2``: Detailed logging.  
-
-What to Do After Training a Pipeline
-=====================================
-Once a pipeline is trained, you can:
-
-- **Evaluate the Model:** Use the :py:meth:`~iaml.candidate.Candidate.evaluate` method to assess the model's performance.
-- **Make predictions:** Use the model to predict labels from samples
-- **Generate Explanations:** Use built-in explainability tools to interpret model behavior.
-
-Evaluate the Model
-------------------
-Once the model is trained, you can evaluate its performance on your own test dataset, if you have one. The :py:meth:`~iaml.candidate.Candidate.evaluate` method allows you to assess the model's performance based on several metrics implemented in IAML, on a dataset that IAML has not seen before.
-
-.. code-block:: python
-
-    # Evaluate the model
-    metrics = model.evaluate(X_test, y_test)
-
-    # Print the results
-    print('Performance metrics:')
-    for metric, value in metrics.items():
-        print(' ', metric, '=', value)
-
-    # Performance metrics:
-    #   accuracy = 0.8324022346368715
-    #   balanced_accuracy = 0.8174492914698528
-    #   classification_error = 0.1825507085301472
-    #   f1_score = 0.8717948717948718
-    #   precision = 0.8793103448275862
-    #   recall = 0.864406779661017
-    #   specificity = 0.864406779661017
-    #   ROC AUC = 0.883023061961656
-
-
-Positive Class for Binary Metrics
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``PrecisionMetric``, ``RecallMetric`` and ``F1ScoreMetric`` use a fixed convention
-for the positive class, independent of row order:
-
-- For labels ``0/1``, ``False/True`` or ``-1/1``, the positive class is ``1``.
-- For other binary labels, it is the last label in sorted order (numerical or
-  alphabetical).
-- Candidate evaluation uses the training labels as a reference, including when
-  the test set contains only one class.
-
-For a direct metric calculation, choose a different positive class explicitly:
-
-.. code-block:: python
-
-    from iaml import PrecisionMetric, RecallMetric, F1ScoreMetric
-
-    metrics = [
-        PrecisionMetric(pos_label="case"),
-        RecallMetric(pos_label="case"),
-        F1ScoreMetric(pos_label="case"),
-    ]
-    scores = {str(metric): metric.compute(y_test, y_pred) for metric in metrics}
-
-When only one nonstandard label is available, automatic selection is ambiguous:
-provide ``pos_label`` or pass ``y_train`` containing both classes to ``compute``.
-Undefined binary scores return zero. Multiclass targets use weighted averaging,
-including when a test subset is missing classes present in the training data.
-Multilabel targets use sample averaging. Historical binary scores may differ
-because older versions used the first observation's label as the positive class.
-
-
-Make Predictions
------------------------
-Once a model is trained, use the :py:meth:`~iaml.candidate.Candidate.predict` or :py:meth:`~iaml.candidate.Candidate.predict_proba` method to generate predictions on new data.
-
-Example:
-
-.. code-block:: python
-
-    # Generate predictions
-    predictions = model.predict(X_test)
-
-    # Output: Array of predicted values
-
-Generate Explanations
-============================
-IAML provides tools to explain model decisions and behavior. These include feature importance analysis, pipeline summaries, and performance plots. The :py:meth:`~iaml.candidate.Candidate.explain_feature_importance` returns an :py:class:`~iaml.explanation.Explanation` object which you can use to extract SHAP values and plots. You can learn more about :doc:`explainability` on its own page.
-
-Example:
-
-.. code-block:: python
-
-    # Perform detailed feature importance analysis
-    explanation = model.explain_feature_importance(X_test)
-
-    # Generate a Markdown table of the feature importances
-    explanation.to_markdown_shap()
-
-    # Generate SHAP plots
-    explanation.to_markdown_plots()
+Next, use :doc:`evaluation` to assess the selected candidate on held-out data.
