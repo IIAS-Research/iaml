@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/IIAS-Research/iaml/compare/v1.0.1...v1.0.2) (2026-09-20)
+
+
+### Documentation
+
+* add Zenodo citation metadata ([9ba4291](https://github.com/IIAS-Research/iaml/commit/9ba42916b5de0b805c006a824c740edf18ebb7dc))
+
 ## [1.0.1](https://github.com/IIAS-Research/iaml/compare/v1.0.0...v1.0.1) (2026-09-20)
 
 

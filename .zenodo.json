@@ -1,6 +1,6 @@
 {
   "title": "IAML: Integrated AutoML for Medical Labs",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "upload_type": "software",
   "description": "IAML is an open-source Python framework for automated machine learning in clinical research. It combines preprocessing, model selection, and evaluation for classification, regression, and survival analysis on tabular data. Its modular architecture supports custom components, while pipeline inspection and SHAP explanations help researchers interpret results.",
   "access_right": "open",
