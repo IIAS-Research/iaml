@@ -31,3 +31,10 @@ Typography
 
 The IAML wordmark uses `Bebas Neue <https://github.com/dharmatype/Bebas-Neue>`_,
 designed by Ryoichi Tsunekawa, under the SIL Open Font License 1.1.
+
+Documentation animation
+=======================
+
+The homepage uses `GSAP and ScrollTrigger <https://gsap.com/docs/v3/Plugins/ScrollTrigger/>`_
+under the `GSAP Standard License <https://gsap.com/standard-license/>`_. The
+library and its license notice are bundled with the documentation.

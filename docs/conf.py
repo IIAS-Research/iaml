@@ -60,4 +60,19 @@ html_theme_options = {
     },
 }
 html_static_path = ['_static']
-html_css_files = ['iaml.css']
+html_css_files = ['iaml.css', 'workflow-demo.css']
+
+
+def add_homepage_scripts(app, pagename, _templatename, _context, _doctree):
+    """Load the locally bundled animation library only on the homepage."""
+    if pagename == 'index':
+        for filename in (
+            'vendor/gsap/gsap.min.js',
+            'vendor/gsap/ScrollTrigger.min.js',
+            'workflow-demo.js',
+        ):
+            app.add_js_file(filename, defer='defer')
+
+
+def setup(app):
+    app.connect('html-page-context', add_homepage_scripts)

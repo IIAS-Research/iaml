@@ -1,10 +1,15 @@
-==================
-IAML documentation
-==================
+:hide-toc:
 
-**Integrated AutoML for Medical Labs** supports building, evaluating and
-explaining prediction pipelines for clinical research with tabular data.
-Start with the :doc:`overview <home>` or the :doc:`quick_start` guide.
+.. _iaml-documentation:
+
+============================
+AutoML for clinical research
+============================
+
+.. _iaml-demo:
+
+.. raw:: html
+   :file: _includes/workflow-demo.html
 
 .. toctree::
    :hidden:
