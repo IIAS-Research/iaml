@@ -129,8 +129,8 @@ class ActMICEForestImputer(Actionable):
         # Base : colonnes numériques
         cols = list(df.columns.intersection(df.select_dtypes(include=[np.number]).columns))
 
-        if self.configuration['auto_categorize']['default']:
-            max_card = int(self.configuration['auto_categorize_max_cardinality']['default'])
+        if self.get_config('auto_categorize'):
+            max_card = int(self.get_config('auto_categorize_max_cardinality'))
             obj_cols = df.select_dtypes(include=['object']).columns
             for c in obj_cols:
                 nuniq = df[c].nunique(dropna=True)
@@ -206,7 +206,7 @@ class ActMICEForestImputer(Actionable):
             n_total = int(len(X_fit_valid[c]))
             pct = (n_missing / n_total * 100.0) if n_total > 0 else 0.0
             self._nan_stats[c] = (n_missing, n_total, pct)
-        rs = self.configuration['random_state']['default']
+        rs = self.get_config('random_state')
 
         default_mmc = 5
         mean_match_candidates = {
@@ -225,7 +225,7 @@ class ActMICEForestImputer(Actionable):
 
         def _run_kernel() -> None:
             self.kernel.mice(
-                int(self.configuration['max_iter']['default']),
+                int(self.get_config('max_iter')),
                 n_jobs=self._n_jobs,
                 verbose=False,
                 seed=rs,
@@ -295,8 +295,8 @@ class ActMICEForestImputer(Actionable):
         X_out = X.copy()
 
         # Harmoniser les types si auto_categorize activé
-        if self.configuration['auto_categorize']['default']:
-            max_card = int(self.configuration['auto_categorize_max_cardinality']['default'])
+        if self.get_config('auto_categorize'):
+            max_card = int(self.get_config('auto_categorize_max_cardinality'))
             for c in X_out.columns:
                 if c in self.columns and X_out[c].dtype == 'object':
                     nuniq = X_out[c].nunique(dropna=True)
@@ -312,7 +312,7 @@ class ActMICEForestImputer(Actionable):
             X_sub_reset = X_sub.reset_index(drop=True)
 
             # Sécuriser les modèles du kernel : s'assurer que params['seed'] existe
-            _ = self._ensure_seed_on_kernel_models(self.configuration['random_state']['default'])
+            _ = self._ensure_seed_on_kernel_models(self.get_config('random_state'))
             self._ensure_parallelism_on_kernel_models(self._n_jobs)
 
             # Appel principal à impute_new_data ; en cas de KeyError 'seed', on coupe le PMM
@@ -320,7 +320,7 @@ class ActMICEForestImputer(Actionable):
                 imputed_data = self.kernel.impute_new_data(
                     new_data=X_sub_reset,
                     datasets=[0],
-                    iterations=int(self.configuration['max_iter']['default'])
+                    iterations=int(self.get_config('max_iter'))
                 )
             except KeyError as e:
                 if str(e) == "'seed'":
@@ -328,7 +328,7 @@ class ActMICEForestImputer(Actionable):
                     imputed_data = self.kernel.impute_new_data(
                         new_data=X_sub_reset,
                         datasets=[0],
-                        iterations=int(self.configuration['max_iter']['default']),
+                        iterations=int(self.get_config('max_iter')),
                         mean_match_candidates=0  # imputation par prédiction directe
                         # exact=True  # <- alternative possible selon versions de miceforest
                     )
