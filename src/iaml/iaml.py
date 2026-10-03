@@ -784,8 +784,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """Keep scores separate for each splitter and metric configuration."""
         if splitter_fingerprint is None:
             return None
+        signature = candidate.evaluation_context_signature()
+        if signature is None:
+            return None
         context = hash_evaluation_context(
-            candidate.pipeline.fingerprint(), candidate.metrics, candidate.main_metric,
+            candidate.pipeline.fingerprint(), signature,
             self.keep_training_history,
         )
         if context is None:
@@ -798,10 +801,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def __build_cached_candidate(self, candidate: Candidate) -> dict[str, Any] | dict[str, float]:
         """Build the payload stored in cache for evaluated candidates."""
-        if self.keep_training_history and candidate.training_audit is not None:
+        if (self.keep_training_history and candidate.training_audit is not None
+                or getattr(candidate, 'metric_coverage', None)):
             return {
                 "__computed_metrics__": deepcopy(candidate.computed_metrics),
-                "__training_audit__": deepcopy(candidate.training_audit),
+                "__training_audit__": (deepcopy(candidate.training_audit)
+                                       if self.keep_training_history else None),
+                "__metric_coverage__": deepcopy(candidate.metric_coverage),
+                "__fold_metrics__": deepcopy(candidate.fold_metrics),
+                "__metric_report__": deepcopy(candidate.metric_report),
             }
         return deepcopy(candidate.computed_metrics)
 
@@ -817,6 +825,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         if isinstance(payload, dict) and "__computed_metrics__" in payload:
             candidate.computed_metrics = deepcopy(payload["__computed_metrics__"])
+            candidate.metric_coverage = deepcopy(payload.get('__metric_coverage__', {}))
+            candidate.fold_metrics = deepcopy(payload.get('__fold_metrics__', []))
+            candidate.metric_report = deepcopy(payload.get('__metric_report__', []))
             audit = payload.get("__training_audit__")
             if audit is not None:
                 candidate.training_audit = deepcopy(audit)

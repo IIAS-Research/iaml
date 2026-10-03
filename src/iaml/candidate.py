@@ -1,7 +1,6 @@
 """Candidate is used to exchange data between Steps  """
 from __future__ import annotations
 
-import traceback
 import os
 import time
 from math import isfinite
@@ -20,6 +19,9 @@ from .iaml_pipeline import IAMLPipeline
 from .metric_plot import MetricPlot
 from .logger import Logger
 from .step_cache import StepCache
+from .study_analyses import (
+    CompiledAnalysis, analyses_signature,
+)
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -44,13 +46,26 @@ class Candidate:
         metrics: list[Metric] = None,
         iaml_pipeline: IAMLPipeline = None,
         stacked_path: list = None,
-        main_metric: Metric | str | None = None) -> None:
+        main_metric: Metric | str | None = None,
+        *,
+        metric_definitions: list[CompiledAnalysis] | None = None,
+        study_snapshot: Any = None) -> None:
 
         self.dataset: Dataset = dataset
         """Dataset used for this candidate"""
 
         self.metrics: list[Metric] = copy(metrics) if metrics is not None else []
         """List of metrics used to evaluate the model"""
+
+        self.metric_definitions = deepcopy(metric_definitions)
+        if self.metric_definitions is not None:
+            self.metrics = [definition.component for definition in self.metric_definitions]
+        self.study_snapshot = deepcopy(study_snapshot)
+        self.metric_report: list[dict[str, Any]] = []
+        self.evaluation_report: list[dict[str, Any]] = []
+        self.metric_coverage: dict[str, dict[str, Any]] = {}
+        self._legacy_metric_ids = tuple(id(metric) for metric in self.metrics)
+        self._legacy_metrics_signature = hash_evaluation_context(self.metrics)
 
         if iaml_pipeline is not None:
             self.pipeline = iaml_pipeline
@@ -102,10 +117,32 @@ class Candidate:
         """Return the metric definition, or its name when no definition is available."""
         if isinstance(self._main_metric, str):
             return next(
-                (metric for metric in self.metrics if str(metric) == self.main_metric),
+                (metric for key, metric in self._metric_items() if key == self.main_metric),
                 self._main_metric,
             )
         return self._main_metric
+
+    def _metric_items(self):
+        """Pair runtime metrics with their frozen public result keys."""
+        if self.metric_definitions is not None:
+            return [(definition.key, metric) for definition, metric in
+                    zip(self.metric_definitions, self.metrics)]
+        return [(str(metric), metric) for metric in self.metrics]
+
+    def metrics_signature(self) -> str | None:
+        """Identify metric configuration before stateful computations mutate it."""
+        if self.metric_definitions is not None:
+            return analyses_signature(self.metric_definitions)
+        identities = tuple(id(metric) for metric in self.metrics)
+        if identities != self._legacy_metric_ids:
+            self._legacy_metric_ids = identities
+            self._legacy_metrics_signature = hash_evaluation_context(self.metrics)
+        return self._legacy_metrics_signature
+
+    def evaluation_context_signature(self) -> str | None:
+        """Return the fixed metric and objective context used by score caches."""
+        signature = self.metrics_signature()
+        return hash_evaluation_context(signature, self.main_metric) if signature is not None else None
 
     def get_main_metric_value(self) -> float:
         """Get computed value of the main metric from saved metrics
@@ -245,12 +282,17 @@ class Candidate:
                 candidate_refs,
             )
 
-        return Candidate(
+        copied = Candidate(
             dataset,
-            metrics or copy(self.metrics),
+            copy(self.metrics) if metrics is None else metrics,
             iaml_pipeline=iaml_pipeline,
             stacked_path=self.stacked_path,
-            main_metric=self._main_metric)
+            main_metric=self._main_metric,
+            metric_definitions=self.metric_definitions if metrics is None else None,
+            study_snapshot=self.study_snapshot)
+        if metrics is None:
+            copied._legacy_metrics_signature = self.metrics_signature()
+        return copied
 
     def to_input(self,
                 dataset: Dataset = None,
@@ -295,7 +337,15 @@ class Candidate:
 
         :param Metric metric: metric to add
         """
-        self.metrics.append(metric)
+        if self.metric_definitions is not None:
+            from .study_analyses import _definition
+            definition = _definition(deepcopy(metric), kind="metrics")
+            if definition.key in {key for key, _ in self._metric_items()}:
+                raise ValueError(f"Metric result key '{definition.key}' already exists")
+            self.metric_definitions.append(definition)
+            self.metrics.append(definition.component)
+        else:
+            self.metrics.append(metric)
 
     def __str__(self) -> str:
         """String representation of the Candidate
@@ -335,7 +385,11 @@ class Candidate:
 
     def __valid_main_metric(self, scores: dict[str, Any]) -> bool:
         """A main metric must be a finite numeric scalar; zero remains valid."""
-        value = scores.get(self.main_metric)
+        return self.__finite_metric(scores.get(self.main_metric))
+
+    @staticmethod
+    def __finite_metric(value: Any) -> bool:
+        """Validate one scalar without coercing arrays or missing values."""
         try:
             return isinstance(value, Real) and isfinite(value)
         except (TypeError, ValueError, OverflowError):
@@ -344,19 +398,19 @@ class Candidate:
     def __aggregate_metrics(self, fold_results: list[dict[str, Any]]) -> dict[str, float]:
         """Aggregate fold-level metric dictionaries into global scores."""
         computed_metrics: dict[str, float] = {}
-        for metric in self.metrics:
-            name = str(metric)
+        self.metric_coverage = {}
+        for name, _ in self._metric_items():
             values = [
-                metric_values.get(name)
+                metric_values[name]
                 for metric_values in fold_results
-                if name in metric_values
+                if name in metric_values and self.__finite_metric(metric_values[name])
             ]
-            if values:
-                computed_metrics[name] = float(np.mean([
-                    value if value is not None else 0 for value in values
-                ]))
-            else:
-                computed_metrics[name] = 0
+            self.metric_coverage[name] = {
+                "available": len(values), "total": len(fold_results),
+                "values": deepcopy(values), "complete": len(values) == len(fold_results),
+            }
+            if values and len(values) == len(fold_results):
+                computed_metrics[name] = float(np.mean(values))
         return computed_metrics
 
     def pipeline_audit_summary(self) -> dict[str, Any]:
@@ -378,6 +432,20 @@ class Candidate:
                     "configuration": self.__serialize_audit_value(
                         step.resume_configuration()
                     ),
+                    "alias": getattr(step, "_flow_alias", None),
+                    "node_id": getattr(step, "_flow_node_id", None),
+                    "variant_id": getattr(step, "_flow_variant_id", None),
+                    "choice_id": getattr(step, "_flow_choice_id", None),
+                    "search_policy": self.__serialize_audit_value({
+                        "parameters": getattr(step, "_flow_parameters", {}),
+                        "optimizable": bool(getattr(step, "optimizable", False)),
+                        "interchangeable": bool(getattr(step, "is_interchangeable", False)),
+                        "alternatives": [{
+                            "alias": getattr(alternative, "_flow_alias", None),
+                            "variant_id": getattr(alternative, "_flow_variant_id", None),
+                            "component": f"{type(alternative).__module__}.{type(alternative).__qualname__}",
+                        } for alternative in getattr(step, "_flow_alternatives", ())],
+                    }) if getattr(step, "_flow_explicit", False) else None,
                 }
             )
 
@@ -408,6 +476,8 @@ class Candidate:
             "error": error,
             "metrics": self.__serialize_metric_values(aggregated_metrics),
             "fold_metrics": deepcopy(fold_metrics),
+            "metric_coverage": deepcopy(self.metric_coverage),
+            "metric_report": deepcopy(self.metric_report),
             "pipeline": self.pipeline_audit_summary(),
         }
 
@@ -428,6 +498,8 @@ class Candidate:
         self.computed_metrics = {}
         self.fold_metrics = []
         self.training_audit = None
+        self.metric_coverage = {}
+        self.metric_report = []
         if not self.pipeline.have_model:
             return None
         metrics: list[dict] = []
@@ -480,27 +552,27 @@ class Candidate:
                     pipeline=copied_pipe,
                     X_train=train_ds.X,
                     y_train=train_ds.y,
+                    fold_number=fold_index,
                     model_only=True)
                 if not self.__valid_main_metric(fold_result):
                     raise ValueError(
                         f"Main metric '{self.main_metric}' is missing or invalid on fold {fold_index}"
                     )
                 metrics.append(fold_result)
-                if store_audit:
-                    fold_metrics.append(
-                        {
-                            "fold": fold_index,
-                            "train_shape": {
-                                "rows": int(train_ds.X.shape[0]),
-                                "columns": int(train_ds.X.shape[1]),
-                            },
-                            "test_shape": {
-                                "rows": int(test_ds.X.shape[0]),
-                                "columns": int(test_ds.X.shape[1]),
-                            },
-                            "metrics": self.__serialize_metric_values(fold_result),
-                        }
-                    )
+                fold_metrics.append(
+                    {
+                        "fold": fold_index,
+                        "train_shape": {
+                            "rows": int(train_ds.X.shape[0]),
+                            "columns": int(train_ds.X.shape[1]),
+                        },
+                        "test_shape": {
+                            "rows": int(test_ds.X.shape[0]),
+                            "columns": int(test_ds.X.shape[1]),
+                        },
+                        "metrics": self.__serialize_metric_values(fold_result),
+                    }
+                )
                 if cache_key and not from_cache:
                     to_cache.append((train_ds, test_ds))
             except ValueError as exc:
@@ -529,8 +601,8 @@ class Candidate:
                 )
             return {}
         self.computed_metrics = computed_metrics
+        self.fold_metrics = deepcopy(fold_metrics)
         if store_audit:
-            self.fold_metrics = deepcopy(fold_metrics)
             self.training_audit = self.build_training_audit(
                 dataset=dataset,
                 fold_metrics=fold_metrics,
@@ -550,7 +622,13 @@ class Candidate:
         if not self.pipeline.have_model:
             return None
 
-        return self.__compute_metrics(X, np.array(y))
+        training_report = self.metric_report
+        self.metric_report = []
+        try:
+            return self.__compute_metrics(X, np.array(y))
+        finally:
+            self.evaluation_report = self.metric_report
+            self.metric_report = training_report
 
     def __compute_metrics(
         self,
@@ -559,6 +637,7 @@ class Candidate:
         pipeline : IAMLPipeline = None,
         X_train: pd.DataFrame = None,
         y_train: np.ndarray = None,
+        fold_number: int | None = None,
         **kwargs) -> dict:
         """Perform metrics computation
         
@@ -583,26 +662,36 @@ class Candidate:
             X_train=self.dataset.X
 
         computed = {}
-        needs = {metric.needed_prediction for metric in self.metrics}
+        metric_items = self._metric_items()
+        needs = {metric.needed_prediction for _, metric in metric_items}
+        context = {"fold": fold_number} if fold_number is not None else {}
 
         for need in needs:
             try:
                 method = getattr(pipeline, need)
                 y_pred = method(X_test, **kwargs)
-                for metric in self.metrics:
+                for key, metric in metric_items:
                     try:
                         if metric.needed_prediction == need:
-                            computed[str(metric)] = metric.compute(
+                            value = metric.compute(
                                 y_test,
                                 y_pred,
                                 y_train=y_train,
                                 X_train=X_train
                             )
-                    except Exception:  # pylint: disable=broad-exception-caught
-                        Logger().error(traceback.format_exc())
-            except AttributeError:
-                Logger().warning(
-                    f"Pipeline {self._pipeline_signature()} does not expose '{need}' needed by metrics."
+                            if not self.__finite_metric(value):
+                                raise ValueError("Metric output must be a finite numeric scalar")
+                            computed[key] = value
+                            self.metric_report.append({"key": key, "status": "success", **context})
+                    except Exception as exc:  # pylint: disable=broad-exception-caught
+                        Logger().warning(f"Metric '{key}' failed: {exc!r}")
+                        self.metric_report.append({"key": key, "status": "error", "reason": repr(exc), **context})
+            except Exception as exc:
+                status = "inapplicable" if isinstance(exc, AttributeError) else "error"
+                Logger().warning(f"Pipeline {self._pipeline_signature()} cannot produce '{need}': {exc!r}")
+                self.metric_report.extend(
+                    {"key": key, "status": status, "reason": repr(exc), **context}
+                    for key, metric in metric_items if metric.needed_prediction == need
                 )
         return computed
 
@@ -654,10 +743,12 @@ class Candidate:
 
         :return: Markdown table of all metrics.
         """
-        metrics = '\n            '.join([
-            f'| `{m}` | **{self.__metric_value(m):.4f}** | *{m.explain()}* |'
-            for m in self.metrics
-        ])
+        rows = []
+        for key, metric in self._metric_items():
+            value = self.computed_metrics.get(key)
+            formatted = f"{value:.4f}" if isinstance(value, Real) else "unavailable"
+            rows.append(f'| `{key}` | **{formatted}** | *{metric.explain()}* |')
+        metrics = '\n            '.join(rows)
 
         return textwrap.dedent(f'''\
             ### Results
@@ -717,6 +808,7 @@ class Candidate:
         :return: Model explanation, with an overview of the most important features, and graphs.
         """
         return self.pipeline.explain_model(X, nsamples)
+
 
     def predict(self, X: pd.DataFrame) -> list:
         """Run all the steps to predict labels from candidate data

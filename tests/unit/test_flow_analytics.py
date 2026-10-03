@@ -73,6 +73,20 @@ class TestFlowAnalytics(unittest.TestCase):
         self.y = np.tile([0, 1], 12)
         self.dataset = Dataset(self.X, self.y)
 
+    def test_metric_variants_use_aliases_and_exact_objective(self):
+        source = collection("metrics", (PrecisionMetric(pos_label=0), "negative"),
+                            (PrecisionMetric(pos_label=1), "positive"))
+        definitions, objective, _ = compile_metrics(source, "positive", self.dataset)
+        model = DummyClassifier(strategy="constant", constant=1).fit(self.X, self.y)
+        candidate = Candidate(
+            self.dataset, main_metric=objective, metric_definitions=definitions,
+            iaml_pipeline=IAMLPipeline([("model", model)], estimator_type="classifier"),
+        )
+        self.assertEqual(candidate.evaluate(self.X, self.y), {"negative": 0.0, "positive": 0.5})
+        candidate.computed_metrics = candidate.evaluate(self.X, self.y)
+        self.assertEqual(candidate.get_main_metric_value(), 0.5)
+        self.assertEqual(candidate.get_main_metric().pos_label, 1)
+        self.assertIn("`negative`", candidate.describe_metrics())
 
     def test_legacy_objective_parameters_and_collisions(self):
         source = collection("metrics", (PrecisionMetric(), None))
@@ -88,6 +102,23 @@ class TestFlowAnalytics(unittest.TestCase):
             compile_metrics(source, "absent", self.dataset)
 
 
+    def test_secondary_coverage_does_not_invent_zero_or_partial_mean(self):
+        definitions = compile_analyses(collection("metrics", (AccuracyMetric(), "objective"),
+                                                 (SometimesMissingMetric(), "secondary")))
+        candidate = Candidate(self.dataset, main_metric="objective", metric_definitions=definitions)
+        candidate.pipeline.set_model(ActDecisionTreeClassifier())
+        signature = candidate.evaluation_context_signature()
+        scores = candidate.training_evaluate(
+            self.dataset, splitter=partial(kfold_splitter, nb_folds=2), cache_split=False,
+        )
+        self.assertIn("objective", scores)
+        self.assertNotIn("secondary", scores)
+        self.assertEqual(candidate.metric_coverage["secondary"]["available"], 1)
+        self.assertEqual(candidate.metric_coverage["secondary"]["total"], 2)
+        self.assertEqual(candidate.metric_coverage["secondary"]["values"], [0.8])
+        self.assertEqual(len(candidate.fold_metrics), 2)
+        self.assertEqual(signature, candidate.evaluation_context_signature())
+        self.assertEqual({record["fold"] for record in candidate.metric_report}, {1, 2})
 
 
 
@@ -104,6 +135,26 @@ class TestFlowAnalytics(unittest.TestCase):
         self.assertEqual(objective, "precision")
         self.assertEqual(definitions[0].component.pos_label, 0)
 
+    def test_explicit_objective_keeps_accuracy_despite_automatic_balancing_filter(self):
+        from iaml.flow import metrics, use
+
+        self.assertFalse(AccuracyMetric().suitable(self.X, self.y, self.dataset.type_of_target))
+        for objective in (AccuracyMetric(), "requested_accuracy"):
+            with self.subTest(objective=objective):
+                definitions, key, report = compile_metrics(
+                    metrics(use(AccuracyMetric).named("requested_accuracy")),
+                    objective, self.dataset,
+                )
+                self.assertEqual(key, "requested_accuracy")
+                self.assertEqual([definition.key for definition in definitions], [key])
+                self.assertEqual(report[0]["status"], "selected")
+                candidate = Candidate(self.dataset, main_metric=key,
+                                      metric_definitions=definitions)
+                candidate.pipeline.set_model(ActDecisionTreeClassifier())
+                scores = candidate.training_evaluate(
+                    self.dataset, splitter=partial(kfold_splitter, nb_folds=2), cache_split=False,
+                )
+                self.assertTrue(np.isfinite(scores[key]))
 
     def test_unsuitable_secondary_remains_excluded_for_explicit_objective(self):
         from iaml.flow import metrics, use
@@ -117,6 +168,29 @@ class TestFlowAnalytics(unittest.TestCase):
         self.assertEqual(report, [{"key": "secondary", "status": "inapplicable",
                                   "reason": "Not suitable for target 'binary'"}])
 
+    def test_candidate_audit_preserves_variant_and_retained_search_policy(self):
+        from iaml.flow import Const, Int, use
+
+        recipe = use(ActDecisionTreeClassifier, max_depth=Int(2, 8, initial=4)).named("tree")
+        recipe.configure(max_depth=Const(10))
+        model = recipe.instantiate()
+        alternative = use(ActDecisionTreeClassifier, max_depth=Int(1, 3, initial=2)).named("short_tree").instantiate()
+        model._flow_alternatives = (model, alternative)
+        model._flow_choice_id = "models"
+        candidate = Candidate(self.dataset)
+        candidate.pipeline.set_model(model)
+        copied = candidate.to_output()
+        summary = copied.pipeline_audit_summary()
+        step = summary["steps"][0]
+        self.assertEqual(step["alias"], "tree")
+        self.assertEqual(step["node_id"], recipe.node_id)
+        self.assertEqual(step["variant_id"], recipe.node_id)
+        self.assertEqual(step["choice_id"], "models")
+        self.assertTrue(step["search_policy"]["parameters"]["max_depth"]["fixed"])
+        self.assertEqual(step["search_policy"]["parameters"]["max_depth"]["domain"], [2, 8])
+        self.assertEqual([item["alias"] for item in step["search_policy"]["alternatives"]],
+                         ["tree", "short_tree"])
+        json.dumps(summary)
 
 
 
