@@ -114,8 +114,6 @@ class BayesianOptimizer(BaseOptimizer):
             if new_params:
                 for step_idx, step in enumerate(new_candidate.pipeline.training_steps):
                     for key, config in sorted(step[1].configuration.items()):
-                        if key in self.ignored_configs:
-                            continue
                         param_key = f"{step_idx}_{key}"
                         if param_key in optimizer_data['param_keys']:
                             if isinstance(new_params[idx], (np.integer, np.floating, np.bool_)):
@@ -131,8 +129,6 @@ class BayesianOptimizer(BaseOptimizer):
         params = [None]*len(optimizer_data['param_keys'])
         for step_idx, step in enumerate(candidate.pipeline.training_steps):
             for key, config in sorted(step[1].configuration.items()):
-                if key in self.ignored_configs:
-                    continue
                 param_key = f"{step_idx}_{key}"
                 if param_key in optimizer_data['param_keys']:
                     try:

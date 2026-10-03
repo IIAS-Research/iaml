@@ -9,7 +9,7 @@ def parameter_keys(step, ignored=()):
     """Return mutable parameters, honoring domains explicitly declared in recipes."""
     policy = getattr(step, "_flow_parameters", {})
     return [key for key in getattr(step, "configuration", {})
-            if key not in ignored
+            if (key not in ignored or policy.get(key, {}).get("explicit_domain", False))
             and policy.get(key, {}).get("optimizable", getattr(step, "optimizable", False))
             and not policy.get(key, {}).get("fixed", False)]
 
@@ -29,7 +29,7 @@ def _parameter_signature(step, include_values=False):
         if isinstance(value, np.generic):
             value = value.item()
         result.append((key, fixed, domain, config.get("categorical"),
-                       value))
+                       value, bool(policy.get(key, {}).get("explicit_domain", False))))
     return tuple(result)
 
 

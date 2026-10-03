@@ -112,10 +112,62 @@ class TestFlowOptimizers(unittest.TestCase):
         step._flow_parameters['locked']['optimizable'] = False
         self.assertEqual(parameter_keys(step), ['depth'])
 
+    def seed_candidate(self, explicit_domain):
+        recipe = use(DecisionTreeClassifier)
+        recipe.configure(**{key: Const(param.value) for key, param in recipe.parameters.items()
+                            if key != 'random_state'})
+        if explicit_domain:
+            recipe.configure(random_state=Int(1, 5, initial=3))
+        return self.candidate(recipe.instantiate())
 
+    def test_explicit_domain_overrides_ignored_seed_but_default_seed_stays_ignored(self):
+        default = self.seed_candidate(False)
+        explicit = self.seed_candidate(True)
+        for optimizer in (GeneticOptimizer(nb_candidate=4), BayesianOptimizer()):
+            with self.subTest(optimizer=type(optimizer).__name__):
+                self.assertEqual(parameter_keys(default.pipeline.predictor[1],
+                                                optimizer.ignored_configs), [])
+                self.assertEqual(parameter_keys(explicit.pipeline.predictor[1],
+                                                optimizer.ignored_configs), ['random_state'])
+                default_outputs = optimizer.run([deepcopy(default)])
+                self.assertTrue(default_outputs)
+                self.assertEqual({item.pipeline.predictor[1].get_config('random_state')
+                                  for item in default_outputs}, {42})
 
+    def test_genetic_mutates_an_explicit_seed_domain(self):
+        candidate = self.seed_candidate(True)
+        with patch('random.getrandbits', return_value=0), \
+                patch('random.uniform', return_value=4):
+            outputs = GeneticOptimizer(nb_candidate=4).run([candidate])
+        self.assertEqual({item.pipeline.predictor[1].get_config('random_state')
+                          for item in outputs}, {3, 4})
+        self.assertEqual(candidate.pipeline.predictor[1].get_config('random_state'), 3)
 
+    def test_legacy_seed_remains_ignored_by_genetic_and_bayesian(self):
+        step = _SearchPredictor()
+        step.configuration['random_state'] = {'value': 42}
+        candidate = self.candidate(step)
+        for optimizer in (GeneticOptimizer(nb_candidate=4), BayesianOptimizer()):
+            with self.subTest(optimizer=type(optimizer).__name__):
+                self.assertNotIn('random_state', parameter_keys(step, optimizer.ignored_configs))
+                outputs = optimizer.run([deepcopy(candidate)])
+                self.assertTrue(outputs)
+                self.assertEqual({item.pipeline.predictor[1].get_config('random_state')
+                                  for item in outputs}, {42})
 
+    def test_bayesian_exports_and_applies_an_explicit_seed_domain(self):
+        candidate = self.seed_candidate(True)
+        optimizer = BayesianOptimizer()
+        optimizer._initialize_search_space([candidate])
+        backend = next(iter(optimizer.skopt_optimizers.values()))
+        self.assertEqual(backend['param_keys'], ['0_random_state'])
+        self.assertEqual(backend['dimensions'][0].bounds, (1, 5))
+        self.assertEqual(optimizer._export_params(candidate, backend), [3])
+        with patch.object(backend['optimizer'], 'ask', return_value=[[4]]):
+            outputs = optimizer.run([candidate])
+        self.assertEqual([item.pipeline.predictor[1].get_config('random_state')
+                          for item in outputs], [3, 4])
+        self.assertEqual(candidate.pipeline.predictor[1].get_config('random_state'), 3)
 
     def test_const_does_not_clamp_to_inactive_domain(self):
         step = compiled(_SearchPredictor())
@@ -251,6 +303,19 @@ class TestFlowOptimizers(unittest.TestCase):
         first._flow_parameters['depth']['fixed'] = True
         self.assertNotEqual(before, pipeline.fingerprint())
 
+    def test_cache_fingerprint_distinguishes_required_choices_and_explicit_domains(self):
+        step = compiled(_SearchPredictor())
+        before = step.fingerprint()
+        step._flow_required = True
+        self.assertNotEqual(step.fingerprint(), before)
+        before = step.fingerprint()
+        step._flow_parameters['depth']['explicit_domain'] = True
+        self.assertNotEqual(step.fingerprint(), before)
+
+        step._flow_alternatives = (deepcopy(step),)
+        before = step.fingerprint()
+        step._flow_alternatives[0]._flow_required = False
+        self.assertNotEqual(step.fingerprint(), before)
 
 
 class TestFlowFittedCache(unittest.TestCase):
