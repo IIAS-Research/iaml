@@ -30,7 +30,7 @@ scores using the fitted model. It does not replace those stored CV scores.
 
 The selected metric determines the candidate ranking. Other reported metrics
 depend on the task and on what the model can compute. For example, ROC AUC
-requires probability predictions. An unavailable test metric is omitted from
+accepts decision scores or probabilities. An unavailable test metric is omitted from
 the returned dictionary; ``model.evaluation_report`` records its status and
 reason. An absent result should not be interpreted as zero.
 
@@ -132,12 +132,12 @@ The available plot families are:
 
 - **Classification:** confusion matrix, classification report and prediction
   errors. Binary ROC and precision-recall curves additionally require
-  probabilities and both classes in the evaluation data.
+  decision scores or probabilities; ROC requires both classes in the evaluation data.
 - **Regression:** residuals and predicted-versus-observed values.
 - **Survival:** Kaplan–Meier comparison and time-dependent AUC have additional
   prediction and follow-up requirements, described below.
 
-For a classifier without probabilities, request a plot that uses class labels:
+To inspect errors from predicted class labels, request a confusion matrix:
 
 .. code-block:: python
 
@@ -149,7 +149,7 @@ For a classifier without probabilities, request a plot that uses class labels:
 
 To request all classification performance plots for the ``0/1`` Build example,
 use the :ref:`build-probabilities` configuration when creating ``search``, before
-fitting. This selects an objective that requires probability predictions:
+fitting. This recipe selects a classifier that supports probabilities:
 
 .. code-block:: python
 

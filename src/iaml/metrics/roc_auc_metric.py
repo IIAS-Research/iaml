@@ -1,6 +1,7 @@
 """[METRIC] ROC AUC"""
 from typing import Any
 import textwrap
+import numpy as np
 from sklearn.metrics import roc_auc_score
 import pandas as pd
 from ..metric import Metric
@@ -44,7 +45,22 @@ class RocAucMetric(Metric):
 
     @property
     def needed_prediction(self) -> str:
-        return 'predict_proba'
+        return 'decision_function'
 
     def compute(self, y: pd.DataFrame, y_pred: pd.DataFrame, **kwargs) -> float:
-        return roc_auc_score(y, y_pred[:, 1])
+        scores = np.asarray(y_pred)
+        if scores.ndim == 2 and scores.shape[1] == 2:
+            scores = scores[:, 1]
+        elif scores.ndim != 1:
+            raise ValueError("Binary ROC AUC requires decision scores or two probability columns")
+
+        classes = kwargs.get('classes')
+        if classes is not None:
+            classes = np.asarray(classes)
+            if classes.ndim != 1 or len(classes) != 2:
+                raise ValueError("Binary ROC AUC requires exactly two fitted classes")
+            targets = np.asarray(y).reshape(-1)
+            if not np.isin(targets, classes).all():
+                raise ValueError("Evaluation targets contain labels absent from the fitted classes")
+            y = targets == classes[1]
+        return roc_auc_score(y, scores)

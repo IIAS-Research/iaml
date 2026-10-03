@@ -114,6 +114,11 @@ class ActCatBoost(Predictor):
             raise
         return self
 
+    @property
+    def classes_(self):
+        """Original labels, in the order of predict_proba columns."""
+        return self.label_encoder.classes_
+
     def _log_failure(self, dataset: Dataset, exc: Exception) -> None:
         """Log enriched debug info when CatBoost crashes."""
         shape = getattr(dataset.X, "shape", None)

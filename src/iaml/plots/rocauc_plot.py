@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
 from ..metric_plot import MetricPlot, capture
-from ._classification import binary_probability_inputs
+from ._classification import binary_score_inputs
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
 
@@ -18,6 +18,7 @@ class ROCAUCPlot(MetricPlot):
     """[PLOT] ROC-AUC Plot"""
 
     title: str = "Receiver Operating Characteristic - Area Under the Curve"
+    needed_prediction = "decision_function"
     description: str = textwrap.dedent("""
         The ROC-AUC (Receiver Operating Characteristic - Area Under the Curve) plot is a widely used 
         tool to assess the performance of a classification model, especially in the healthcare domain. 
@@ -35,7 +36,7 @@ class ROCAUCPlot(MetricPlot):
         the higher the AUC score, the better the model is at distinguishing between the conditions.
 
         This plot supports binary classifiers. The positive class is the second fitted class,
-        corresponding to the second predict_proba column. Both classes must occur in the
+        scored by decision_function or the second predict_proba column. Both classes must occur in the
         evaluation targets for ROC AUC to be defined.
 
         Doctors and data scientists use this visualization to ensure that the model performs well across 
@@ -54,7 +55,7 @@ class ROCAUCPlot(MetricPlot):
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
 
-        targets, y_prob = binary_probability_inputs(estimator, X, y)
+        targets, y_prob = binary_score_inputs(estimator, X, y)
         if not targets.any() or targets.all():
             raise ValueError("ROC AUC requires both fitted classes in the evaluation targets")
 

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, average_precision_score
 
 from ..metric_plot import MetricPlot, capture
-from ._classification import binary_probability_inputs
+from ._classification import binary_score_inputs
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
 
@@ -20,6 +20,7 @@ class PrecisionRecallCurvePlot(MetricPlot):
     """[PLOT] Precision-Recall Curve Plot"""
 
     title: str = "Precision-Recall Curve"
+    needed_prediction = "decision_function"
     description: str = textwrap.dedent("""
         The Precision-Recall Curve is a valuable visualization tool for evaluating the performance of 
         a classification model, particularly in healthcare where identifying the correct balance between 
@@ -35,7 +36,7 @@ class PrecisionRecallCurvePlot(MetricPlot):
         datasets where one condition (e.g., healthy patients) dominates over others (e.g., rare diseases).
 
         This plot supports binary classifiers. The positive class is the second fitted class,
-        corresponding to the second predict_proba column, even if it is absent from the
+        scored by decision_function or the second predict_proba column, even if it is absent from the
         evaluation targets.
 
         Doctors and data scientists rely on this visualization to optimize the model based on specific healthcare priorities, 
@@ -55,7 +56,7 @@ class PrecisionRecallCurvePlot(MetricPlot):
         """
         self._binary_image = io.BytesIO()
 
-        targets, y_prob = binary_probability_inputs(estimator, X, y)
+        targets, y_prob = binary_score_inputs(estimator, X, y)
 
         # Compute Precision-Recall curve
         precision, recall, _ = precision_recall_curve(targets, y_prob)

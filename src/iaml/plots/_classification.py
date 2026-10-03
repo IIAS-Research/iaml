@@ -1,11 +1,11 @@
-"""Align binary performance curves with the fitted probability columns."""
+"""Align binary performance curves with the fitted class order."""
 from __future__ import annotations
 
 import numpy as np
 
 
-def binary_probability_inputs(estimator, X, y):
-    """Return binary targets and probabilities for ``estimator.classes_[1]``.
+def binary_score_inputs(estimator, X, y):
+    """Return binary targets and scores for ``estimator.classes_[1]``.
 
     The fitted estimator defines the class order, even when a test cohort is
     missing one of its classes. Target values are positional, as in ``Dataset``.
@@ -28,7 +28,13 @@ def binary_probability_inputs(estimator, X, y):
     if not np.isin(targets, classes).all():
         raise ValueError("Evaluation targets contain labels absent from the fitted classes")
 
-    probabilities = np.asarray(estimator.predict_proba(X))
-    if probabilities.shape != (len(targets), 2):
-        raise ValueError("Binary predict_proba must return one column for each fitted class")
-    return targets == classes[1], probabilities[:, 1]
+    if hasattr(estimator, 'decision_function'):
+        scores = np.asarray(estimator.decision_function(X))
+        if scores.shape != (len(targets),):
+            raise ValueError("Binary decision_function must return one score per observation")
+    else:
+        probabilities = np.asarray(estimator.predict_proba(X))
+        if probabilities.shape != (len(targets), 2):
+            raise ValueError("Binary predict_proba must return one column for each fitted class")
+        scores = probabilities[:, 1]
+    return targets == classes[1], scores

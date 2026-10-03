@@ -17,6 +17,7 @@ from .cache_keys import hash_evaluation_context
 from .splitters import random_splitter
 from .iaml_pipeline import IAMLPipeline
 from .metric_plot import MetricPlot
+from .metrics.roc_auc_metric import RocAucMetric
 from .logger import Logger
 from .step_cache import StepCache
 from .study_analyses import (
@@ -671,7 +672,12 @@ class Candidate:
 
         computed = {}
         metric_items = self._metric_items()
-        needs = {metric.needed_prediction for _, metric in metric_items}
+        prediction_methods = {
+            key: ('predict_proba' if isinstance(metric, RocAucMetric)
+                  and not hasattr(pipeline, 'decision_function') else metric.needed_prediction)
+            for key, metric in metric_items
+        }
+        needs = set(prediction_methods.values())
         context = {"fold": fold_number} if fold_number is not None else {}
 
         for need in needs:
@@ -680,12 +686,14 @@ class Candidate:
                 y_pred = method(X_test, **kwargs)
                 for key, metric in metric_items:
                     try:
-                        if metric.needed_prediction == need:
+                        if prediction_methods[key] == need:
+                            metric_kwargs = {'y_train': y_train, 'X_train': X_train}
+                            if isinstance(metric, RocAucMetric):
+                                metric_kwargs['classes'] = pipeline.classes_
                             value = metric.compute(
                                 y_test,
                                 y_pred,
-                                y_train=y_train,
-                                X_train=X_train
+                                **metric_kwargs,
                             )
                             if not self.__finite_metric(value):
                                 raise ValueError("Metric output must be a finite numeric scalar")
@@ -699,7 +707,7 @@ class Candidate:
                 Logger().warning(f"Pipeline {self._pipeline_signature()} cannot produce '{need}': {exc!r}")
                 self.metric_report.extend(
                     {"key": key, "status": status, "reason": repr(exc), **context}
-                    for key, metric in metric_items if metric.needed_prediction == need
+                    for key, metric in metric_items if prediction_methods[key] == need
                 )
         return computed
 

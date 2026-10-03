@@ -36,8 +36,9 @@ The ROC AUC on the held-out observations is **0.967** in this run.
 
 ``chosen_model.explain_model_performance(X_test, y_test)`` generates these
 figures together with a precision–recall curve, classification report and
-prediction-error plot. The script chooses ROC AUC as its objective so that the
-selected classifier supports the probabilities needed by these plots.
+prediction-error plot. The script optimizes ROC AUC. ROC and precision–recall
+curves accept decision scores or probabilities; the classifier in this
+illustrated run also supplied probabilities for its SHAP explanations.
 
 .. _precision-recall:
 

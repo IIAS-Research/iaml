@@ -226,7 +226,7 @@ another objective. Its configuration is retained:
     )
 
 Use a metric appropriate to the task. For example, ``RocAucMetric()`` requires
-binary classification and probability predictions, while
+binary classification and accepts decision scores or probabilities, while
 ``MeanSquaredErrorMetric()`` is a regression objective. IAML handles the score
 direction: it maximizes accuracy-type scores and minimizes error metrics.
 See :ref:`evaluate-positive-class` before interpreting binary metrics.
@@ -247,12 +247,17 @@ classification script with the following, **before calling** ``fit``:
 .. code-block:: python
 
     from iaml import RocAucMetric
+    from iaml.flow import use
+    from iaml.steps import RandomForestClassifier
 
-    search = IAML(main_metric=RocAucMetric(), max_duration=30, max_workers=1)
+    search = IAML(
+        pipeline=use(RandomForestClassifier),
+        main_metric=RocAucMetric(), max_duration=30, max_workers=1,
+    )
 
-ROC AUC requires probability predictions, so the selected candidate must
-support them. Use this setting for binary classification, not for the regression
-or survival examples above.
+This recipe selects a classifier that supplies probabilities. ROC AUC alone
+also accepts decision scores and does not guarantee ``predict_proba``. Use this
+setting for the binary classification examples.
 
 .. _build-history:
 

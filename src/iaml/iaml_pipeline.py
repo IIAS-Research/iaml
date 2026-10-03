@@ -480,18 +480,30 @@ class IAMLPipeline(Pipeline):
             X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict_proba(X)
 
+    def decision_function(self, X: pd.DataFrame, model_only: bool = False, **kwargs):
+        """Return decision scores after applying the fitted preprocessing steps."""
+        if not self.have_model:
+            raise ValueError("Model need to be set before predict")
+
+        if not model_only:
+            X = self.transform(X, **kwargs)
+
+        if model_only and self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
+        return self.predictor[1].decision_function(X)
+
     def __getattribute__(self, attr: str) -> bool:
-        """Overload getattr to allow accurate hasattr on predict_proba
+        """Expose probability and decision methods only when the model supports them.
 
         :param str attr: Attribute to test.
         :raise AttributeError: predict_proba not implemented in this model.
         :return: Does attribute is implemented.
         """
-        if attr == 'predict_proba' \
+        if attr in ('predict_proba', 'decision_function') \
             and not( \
-                self.have_model and hasattr(self.predictor[1], 'predict_proba') \
+                self.have_model and hasattr(self.predictor[1], attr) \
             ):
-            raise AttributeError("predict_proba not implemented in this model")
+            raise AttributeError(f"{attr} not implemented in this model")
 
         return super().__getattribute__(attr)
 
