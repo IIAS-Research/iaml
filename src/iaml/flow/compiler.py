@@ -63,15 +63,20 @@ def supports_component_swaps(optimizer):
 def default_spec():
     """Build one explicit preset shared by IAML and PipelineSpec.default."""
     from ..actionables.cleaning.act_simple_imputer import ActSimpleImputer
+    from ..actionables.features_preprocessing.act_select_percentile import ActSelectPercentile
     main = SequenceSpec([
         AdaptiveSpec(tag="features_precleaning").named("features_precleaning"),
         AdaptiveSpec(tag="cleaning").named("cleaning"),
-        AdaptiveSpec(tag="features_selection").named("features_selection"),
+        choice(tag="features_selection").named("features_selection"),
         choice(tag="normalize").named("normalize"),
         choice(tag="imbalance").named("imbalance"),
         choice(tag="features_preprocessing").named("features_preprocessing"),
         choice(tag="predictor").named("predictor"),
     ]).named("main")
+    main.features_selection._preset_start = "absence"
+    main.features_selection._allow_absence = True
+    main.features_selection.add(use(ActSelectPercentile))
+    main.features_preprocessing.remove(ActSelectPercentile)
     main.normalize._preset_start = "standard"
     main.normalize._allow_absence = True
     main.imbalance._preset_start = "absence"
@@ -174,8 +179,9 @@ def _compile(node, optimizer, preprocessor, fast, *, required=False):
                 # The historical non-mutating optimizers explore every scaler
                 # initially; absence is part of the preset's mutation policy.
                 initial = templates[:-1] if node._allow_absence else templates
-            elif node._preset_start == "absence" and supports_component_swaps(optimizer):
-                initial = templates[-1:]
+            elif node._preset_start == "absence":
+                initial = (templates[-1:] if supports_component_swaps(optimizer)
+                           else templates[-1:] + templates[:-1])
             elif node._preset_start == "preprocessing" and not preprocessor:
                 initial = templates[-1:]
         if not initial:

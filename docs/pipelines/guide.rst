@@ -36,6 +36,10 @@ through ``pipeline.minimal.minimal_predictor``. Remove the latter strategy with
 branch independent. Unique aliases also allow direct access to groups such as
 ``pipeline.normalize`` and ``pipeline.predictor``.
 
+The main strategy starts without feature selection. Its ``features_selection``
+choice can use one selector at a time, including ``SelectPercentile``. Custom
+recipes can still declare successive selections explicitly.
+
 An explicitly supplied pipeline defines the requested search scope: IAML
 generates only its declared branches. No additional minimal candidates are
 added to a custom recipe. Omitting ``pipeline`` selects the complete preset,

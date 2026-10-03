@@ -168,12 +168,13 @@ class _CodeBuilder:
                     self.imports.add("from iaml.flow import AnalysisCollection")
                     self.lines.append(f"{variable} = AnalysisCollection({node.kind!r}, [])")
         elif isinstance(node, GroupSpec) and node.tag is not None and not node._frozen:
-            if isinstance(node, AdaptiveSpec) or node._preset_start is not None or node._allow_absence:
-                self.lines.append(f"{variable} = PipelineSpec.default()[{node.tag!r}].clone()")
-                if isinstance(node, ChoiceSpec) and node._preset_start is None:
-                    self.lines.append(f"{variable}.start()")
+            if isinstance(node, AdaptiveSpec):
+                self.imports.add("from iaml.flow.model import AdaptiveSpec")
+                self.lines.append(f"{variable} = AdaptiveSpec(tag={node.tag!r})")
             else:
                 self.lines.append(f"{variable} = choice(tag={node.tag!r})")
+                self.lines.append(f"{variable}._allow_absence = {node._allow_absence!r}")
+                self.lines.append(f"{variable}._preset_start = {node._preset_start!r}")
             self.family(variable, node)
         elif isinstance(node, PipelineSpec):
             children = [self.node(child) for child in node._children()]

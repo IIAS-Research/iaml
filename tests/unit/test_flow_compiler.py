@@ -15,6 +15,10 @@ from iaml.steps import (ADASYN, DecisionTreeClassifier, DecisionTreeRegressor, L
                         SMOTE, StandardScaler)
 from iaml.optimizers import GeneticOptimizer, RandomOptimizer
 from iaml.void_step import VoidStep
+from iaml.flow.model import AdaptiveSpec
+from iaml.actionables.features_selection.act_select_k_best import ActSelectKBest
+from iaml.actionables.features_selection.act_rfe import ActRFE
+from iaml.actionables.features_preprocessing.act_select_percentile import ActSelectPercentile
 
 
 class FlowCompilerTests(unittest.TestCase):
@@ -160,6 +164,36 @@ class FlowCompilerTests(unittest.TestCase):
         compiled = compile_pipeline(restored)
         self.assertEqual(compiled.steps[1].steps[0].__class__.__name__, "MetaStep")
         self.assertIsInstance(compiled.steps[1].steps[3].steps[0], StandardScaler)
+
+    def test_default_selection_starts_absent_and_has_single_local_alternatives(self):
+        for optimizer in (GeneticOptimizer, RandomOptimizer):
+            with self.subTest(optimizer=optimizer):
+                root = compile_pipeline(PipelineSpec.default(), optimizer=optimizer)
+                selection = root.steps[1].steps[2]
+                self.assertIsInstance(selection.steps[0], VoidStep)
+                alternatives = selection.steps[0]._flow_alternatives
+                self.assertTrue(any(isinstance(step, ActSelectPercentile)
+                                    for step in alternatives))
+                self.assertTrue(all(not hasattr(step, 'steps') for step in alternatives))
+                preprocessing = root.steps[1].steps[5]
+                self.assertFalse(any(isinstance(step, ActSelectPercentile)
+                                     for step in preprocessing.steps[0]._flow_alternatives))
+
+    def test_custom_adaptive_selection_still_runs_multiple_selectors(self):
+        spec = (AdaptiveSpec([use(ActSelectKBest, k=Const(2)),
+                              use(ActRFE, n_features_to_select=Const(1))])
+                >> use(DecisionTreeClassifier))
+        root = compile_pipeline(spec)
+        outputs = root.run(Candidate(self.dataset))
+        self.assertEqual(len(outputs), 1)
+        selectors = [step for _, step in outputs[0].pipeline.training_steps
+                     if isinstance(step, (ActSelectKBest, ActRFE))]
+        self.assertEqual(len(selectors), 2)
+
+        custom = AdaptiveSpec(tag='features_selection') >> use(DecisionTreeClassifier)
+        namespace = {}
+        exec(custom.to_code(), namespace)
+        self.assertIsInstance(namespace['pipeline']._children()[0], AdaptiveSpec)
 
     def test_minimal_imputation_is_conditional_and_initial_steps_are_fresh(self):
         spec = PipelineSpec.default()
