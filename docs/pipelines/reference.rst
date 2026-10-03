@@ -1,5 +1,3 @@
-:orphan:
-
 .. _pipelines-ref:
 
 Pipeline and study API reference

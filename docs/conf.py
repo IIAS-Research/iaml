@@ -42,6 +42,7 @@ language = 'en'
 html_theme = 'furo'
 html_title = 'IAML'
 html_logo = '_static/iias-logo.svg'
+html_favicon = '_static/iias-favicon.png'
 html_theme_options = {
     'light_css_variables': {
         'color-brand-primary': '#176b63',

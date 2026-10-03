@@ -1,5 +1,3 @@
-:orphan:
-
 .. _pipeline-examples:
 
 ===========================

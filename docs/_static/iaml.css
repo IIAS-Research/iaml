@@ -177,7 +177,7 @@ body {
   box-shadow: inset 3px 0 var(--iaml-accent);
 }
 
-.sidebar-tree > ul:first-of-type > li:first-child > .reference {
+.sidebar-tree > ul > li:first-child > .reference {
   display: flex;
   align-items: center;
   gap: .55rem;
@@ -186,7 +186,7 @@ body {
   font-weight: 650;
 }
 
-.sidebar-tree > ul:first-of-type > li:first-child > .reference::before {
+.sidebar-tree > ul > li:first-child > .reference::before {
   content: "";
   flex: 0 0 1.2rem;
   height: 1.2rem;
@@ -194,9 +194,13 @@ body {
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9.25' fill='none' stroke='black' stroke-width='1.5'/%3E%3Cpath d='M10 8l6 4-6 4z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
+.sidebar-tree > ul:nth-of-type(2) > li:first-child > .reference::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M6 3v4m0 4v10M12 3v10m0 4v4M18 3v2m0 4v12'/%3E%3Ccircle cx='6' cy='9' r='2'/%3E%3Ccircle cx='12' cy='15' r='2'/%3E%3Ccircle cx='18' cy='7' r='2'/%3E%3C/svg%3E");
+}
+
 @media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
   @supports (background-clip: text) {
-    .sidebar-tree > ul:first-of-type > li:first-child > .reference {
+    .sidebar-tree > ul > li:first-child > .reference {
       background-image:
         linear-gradient(90deg,
         var(--color-brand-primary) 30%,
@@ -219,6 +223,14 @@ body {
   100% {
     background-position: 0 0, 0 0;
   }
+}
+
+/* Furo's hover background resets the gradient behind transparent text. */
+.sidebar-tree > ul > li:first-child > .reference:is(:hover, :focus-visible) {
+  background: transparent;
+  color: var(--color-brand-primary);
+  -webkit-text-fill-color: currentColor;
+  animation: none;
 }
 
 .iaml-intro .iaml-eyebrow {

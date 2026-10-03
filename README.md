@@ -95,7 +95,7 @@ Recipes remain editable after construction: navigate by alias, call `add`,
 You can also start from `IAML().pipeline` and adapt its visible `main` and
 `minimal` branches.
 
-The [pipeline guide](https://iias-research.github.io/iaml/pipelines/guide.html)
+The [pipeline guide](https://iias-research.github.io/iaml/pipelines/index.html)
 covers construction, editing, fixed values and parameter domains. Continue with
 [study configuration](https://iias-research.github.io/iaml/pipelines/study.html)
 for metrics, descriptive statistics and explanations. The
@@ -116,7 +116,7 @@ to run it. The integrated guides follow the study through
 [explanations](https://iias-research.github.io/iaml/explainability.html) and
 [reporting](https://iias-research.github.io/iaml/scientific.html).
 
-The [advanced guide map](https://iias-research.github.io/iaml/pipelines/guide.html)
+The [advanced guide map](https://iias-research.github.io/iaml/pipelines/index.html)
 connects pipeline construction, study configuration and component extensions.
 Consult [component availability](https://iias-research.github.io/iaml/component_status.html)
 for supported methods and optional dependencies.

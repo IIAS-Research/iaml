@@ -37,7 +37,7 @@ around training. Your own components can join these recipes through the
 extension interfaces.
 
 :doc:`discover_pipelines` introduces these possibilities visually.
-pipelines/index directs you to the construction, study configuration
+:doc:`pipelines/index` directs you to the construction, study configuration
 and extension guides when you are ready to customize a workflow.
 
 What does a run produce?

@@ -1,5 +1,3 @@
-:orphan:
-
 .. _pipelines-study:
 
 Configure a complete study

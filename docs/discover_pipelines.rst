@@ -1,5 +1,3 @@
-:orphan:
-
 :hide-toc:
 
 .. _pipeline-api-discovery:
