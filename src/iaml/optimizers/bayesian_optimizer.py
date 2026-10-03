@@ -12,7 +12,7 @@ from ..candidate import Candidate
 from .optimizer import Optimizer as BaseOptimizer
 from ..step import Step
 from ..logger import Logger
-from ..search_policy import parameter_keys, structure_signature
+from ..search_policy import has_finite_range, parameter_keys, structure_signature
 from ..cache_keys import hash_evaluation_context
 
 class BayesianOptimizer(BaseOptimizer):
@@ -63,7 +63,7 @@ class BayesianOptimizer(BaseOptimizer):
                         if 'range' in config:
                             low, high = config['range']
                             # Keep parameters with unbounded ranges fixed.
-                            if low is None or high is None:
+                            if not has_finite_range(config):
                                 continue
                             if low > high:
                                 low, high = high, low

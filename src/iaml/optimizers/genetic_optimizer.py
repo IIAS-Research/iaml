@@ -7,7 +7,7 @@ from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
 from ..void_step import VoidStep
-from ..search_policy import parameter_keys
+from ..search_policy import has_finite_range, parameter_keys, within_parameter_range
 
 
 class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attributes
@@ -135,9 +135,9 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
                     is_int = isinstance(config['value'], int)
 
                     new_value = None
-                    if 'range' in config: # Random in range
+                    if has_finite_range(config): # Uniform sampling needs two finite bounds
                         new_value = random.uniform(*config['range'])
-                    else: # Explore relative to the current value
+                    else: # Explore open ranges relative to the current value
                         # Randomly choose a positive or negative editing
                         if bool(random.getrandbits(1)):
                             # Negative -> Multiply value by something between 0.01 and 1
@@ -275,9 +275,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         :param dict config: The config to validate.
         :return: Valid ?
         """
-        if 'range' not in config:
-            return True
-        return config['range'][0] <= value <= config['range'][1]
+        return within_parameter_range(config, value)
 
     def __unique(self, candidates: list[Candidate]) -> list[Candidate]:
         """Get a list of unique Candidates

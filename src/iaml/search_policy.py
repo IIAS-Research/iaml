@@ -1,6 +1,7 @@
 """Internal search contracts shared by compiled recipes and optimizers."""
 from copy import deepcopy
 from hashlib import sha256
+from math import isfinite
 import pickle
 import numpy as np
 
@@ -14,8 +15,21 @@ def parameter_keys(step, ignored=()):
             and not policy.get(key, {}).get("fixed", False)]
 
 
+def has_finite_range(config):
+    """Whether a numeric parameter can be sampled uniformly over its whole range."""
+    bounds = config.get("range")
+    return bounds is not None and all(bound is not None and isfinite(bound)
+                                      for bound in bounds)
 
 
+def within_parameter_range(config, value):
+    """Validate numeric proposals against only the declared, present bounds."""
+    if not isfinite(value):
+        return False
+    if "range" not in config:
+        return True
+    low, high = config["range"]
+    return (low is None or low <= value) and (high is None or value <= high)
 
 
 def _parameter_signature(step, include_values=False):

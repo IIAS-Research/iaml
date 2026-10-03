@@ -10,7 +10,7 @@ from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
 from ..logger import Logger
-from ..search_policy import parameter_keys
+from ..search_policy import has_finite_range, parameter_keys, within_parameter_range
 
 class RandomOptimizer(Optimizer):
     def __init__(self, duration:int=None, max_iterations=50):
@@ -38,9 +38,9 @@ class RandomOptimizer(Optimizer):
                     is_int = isinstance(config['value'], int)
                     
                     new_value = None
-                    if 'range' in config: # Random in range
+                    if has_finite_range(config): # Uniform sampling needs two finite bounds
                         new_value = random.uniform(*config['range'])
-                    else: # Explore relative to the current value
+                    else: # Explore open ranges relative to the current value
                         # Randomly choose a positive or negative editing
                         if bool(random.getrandbits(1)):
                             # Negative -> Multiply value by something between 0.01 and 1
@@ -98,6 +98,4 @@ class RandomOptimizer(Optimizer):
     
     # Does the configuration is valid or not ?
     def __valide_config(self, config:dict, value:any) -> bool:
-        if 'range' not in config:
-            return True
-        return config['range'][0] <= value <= config['range'][1]
+        return within_parameter_range(config, value)
