@@ -22,7 +22,7 @@ class ActMaxAbsScaler(Actionable):
         observed in the training data. This keeps values within [-1, 1] while
         preserving sparsity because it does not center the data.
         It is a good fit for sparse datasets where zeros should remain zeros.''')
-    _usage: str = "Use when numeric features are sparse and you want scale to [-1, 1] without centering; compare ActMinMaxScaler. Applicable to numeric data with many zeros or sparse matrices. Avoid when you need centering or heavy outlier handling; consider ActNormalizer or ActRobustScaler."
+    _usage: str = "Use when numeric features are sparse and you want scale to [-1, 1] without centering; compare ActMinMaxScaler. Applicable to numeric data with many zeros or sparse matrices. Avoid when you need centering or heavy outlier handling; consider ActUnitNormScaler or ActRobustScaler."
 
     def __init__(self):
         self.columns: list[str] = None
