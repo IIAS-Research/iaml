@@ -5,10 +5,12 @@ tabular data. Trained candidates expose their pipeline steps, evaluation metrics
 and explanation methods for inspection and study reporting.
 """
 from copy import deepcopy
+from collections import deque
+from weakref import ref
 import time
 import math
 import multiprocessing
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 import numpy as np
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
@@ -497,7 +499,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             Logger().set_callback(log_callback)
 
         start_time = time.monotonic()
-        self.executor = TimedPoolExecutor(max_workers=self.max_workers)
+        self._search_deadline = (math.inf if self.max_duration == -1 else
+                                 start_time + max(0.0, self.max_duration))
+        self.executor = TimedPoolExecutor(
+            max_workers=self.max_workers,
+            deadline=None if math.isinf(self._search_deadline) else self._search_deadline)
+        self._evaluation_jobs = {}
+        self._evaluation_keys = {}
+        self._evaluation_queue = deque()
+        self._evaluation_sequence = 0
+        self._evaluation_progress = None
+        self._evaluation_results = {}
         self.training_history = []
         self._training_history_seen = set()
 
@@ -654,10 +666,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             gen0_candidates = []
             i = 0
             can_be_downsize = True
-            while can_be_downsize and not gen0_candidates and remain_time() >= 1:
+            while not gen0_candidates and remain_time() >= 1:
                 # If process is too long and dataset big enough,
                 # we can downsize it to get quicker training
-                if i > 0:
+                if i > 0 and can_be_downsize:
                     dataset = dataset.sample(0.1)
                     Logger().warning(f"Training is too time consuming. \
                         Let's try again with dataset sample. \
@@ -670,6 +682,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
                 gen0_candidates = self.__run_evaluations(candidates,
                             dataset, timeout=timeout, callback=callback)
+                if (not gen0_candidates and not self.__evaluations_pending()
+                        and not can_be_downsize):
+                    break
 
             if not gen0_candidates:
                 if warmup_candidate and warmup_candidate.computed_metrics:
@@ -691,6 +706,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                                         max_duration=remain_time(),
                                         patience=patience,
                                         callback=callback)
+
+            # A finished optimizer or patience limit must not discard slower
+            # evaluations that were carried across earlier stage boundaries.
+            if self.__evaluations_pending():
+                trailing_candidates = self.__run_evaluations(
+                    [], dataset, timeout=remain_time(), callback=callback,
+                    drain_pending=True)
+                candidates = self.__merge_evaluated_candidates(candidates, trailing_candidates)
 
             ### FINAL FIT
             self.executor.shutdown()
@@ -737,6 +760,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             raise ex
         finally:
             self.executor.shutdown()
+            self._evaluation_progress = None
+            self._evaluation_jobs.clear()
+            self._evaluation_keys.clear()
+            self._evaluation_queue.clear()
+            self._evaluation_results.clear()
 
     @property
     def chosen_model(self) -> 'IAMLPipeline':
@@ -880,7 +908,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         timeout: float = None,
         stage_number: int = None,
         callback: callable = None,
-        stage_timeout: float = None) -> list[Candidate]:
+        stage_timeout: float = None,
+        drain_pending: bool = False) -> list[Candidate]:
         """Evaluate candidates
         
         :param list[Candidate] candidates: Candidates to evaluate.
@@ -891,16 +920,30 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param callable, optional callback: Method called after evaluation. Default to None.
         :param float, optional stage_timeout: Additional cap for this evaluation only;
             the callback still reports the remaining ``timeout`` budget.
+        :param bool, optional drain_pending: Finish evaluations carried over from
+            earlier stages, bounded only by the remaining global search budget.
         """
         start_time = time.monotonic()
-        budget = self.max_stage_duration if timeout is None else min(timeout, self.max_stage_duration)
+        global_deadline = getattr(self, '_search_deadline', None)
+        if global_deadline is None:
+            global_deadline = (math.inf if timeout is None else
+                               start_time + max(0.0, timeout))
+        budget = (global_deadline - start_time if drain_pending else
+                  self.max_stage_duration if timeout is None else
+                  min(timeout, self.max_stage_duration))
         if stage_timeout is not None:
             budget = min(budget, stage_timeout)
-        deadline = start_time + max(0.0, budget)
+        deadline = min(global_deadline, start_time + max(0.0, budget))
+        if not hasattr(self, '_evaluation_jobs'):
+            self._evaluation_jobs = {}
+            self._evaluation_keys = {}
+            self._evaluation_queue = deque()
+            self._evaluation_sequence = 0
+            self._evaluation_results = {}
         new_candidates: list[Candidate] = []
         splitter_fingerprint = hash_evaluation_context(self.splitter)
-        dataset_key = dataset.fingerprint() if splitter_fingerprint is not None else None
-        evaluation_cache_keys: set[str] = set()
+        dataset_key = dataset.fingerprint()
+        evaluation_cache_keys = {}
         with Logger().progress as progress:
             task = progress.add_task(
                 f'Stage {stage_number}' if stage_number is not None else "Initial evaluation",
@@ -909,33 +952,97 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             def update_progressbar(*args): # pylint: disable=unused-argument
                 progress.update(task, advance=1)
 
-            self.executor.set_callback(update_progressbar)
+            self._evaluation_progress = update_progressbar
             for candidate in candidates:
-                if time.monotonic() >= deadline:
-                    break
                 cache_key = self.__evaluation_cache_key(candidate, splitter_fingerprint)
-                if cache_key is not None:
-                    evaluation_cache_keys.add(cache_key)
+                # Pending evaluations can share a callable's identity without
+                # making its unpickleable context eligible for persistent caching.
+                signature = candidate.evaluation_context_signature()
+                key = ((cache_key, dataset_key) if cache_key is not None else
+                       (candidate.pipeline.fingerprint(), signature,
+                        id(self.splitter), dataset_key, self.keep_training_history)
+                       if signature is not None else (id(candidate), dataset_key))
+                if key in self._evaluation_keys:
+                    continue
+                if time.monotonic() >= deadline:
+                    self.__queue_evaluation(candidate, dataset, key, cache_key, dataset_key)
+                    continue
                 from_cache = Cache().from_cache(cache_key, dataset_key) if cache_key else None
 
                 if from_cache:
                     self.__hydrate_cached_candidate(candidate, from_cache, dataset)
                     new_candidates.append(candidate)
+                    self._evaluation_results[id(candidate)] = (ref(candidate), key)
                     update_progressbar() # Update progressbar even if data come from cache
                 else:
-                    submitted = self.executor.submit(
-                            process_executor,
-                            candidate,
-                            dataset,
-                            deadline=deadline,
-                            splitter=self.splitter,
-                            store_audit=self.keep_training_history,
-                        )
-                    if not submitted:
-                        break
+                    self.__queue_evaluation(candidate, dataset, key, cache_key, dataset_key)
+                if cache_key is not None:
+                    evaluation_cache_keys[candidate.pipeline.fingerprint()] = (cache_key, dataset_key)
+
+            while self._evaluation_queue and time.monotonic() < deadline:
+                job_id = self._evaluation_queue[0]
+                job = self._evaluation_jobs.get(job_id)
+                if job is None:
+                    self._evaluation_queue.popleft()
+                    continue
+
+                def completed(result=Ellipsis, evaluation_id=job_id):
+                    current_progress = self._evaluation_progress
+                    if current_progress is not None:
+                        current_progress()
+                    if result is None:
+                        failed_job = self._evaluation_jobs.pop(evaluation_id, None)
+                        if failed_job is not None:
+                            self._evaluation_keys.pop(failed_job['key'], None)
+
+                self.executor.set_callback(completed)
+                submitted = self.executor.submit(
+                    process_executor, job['candidate'], job['dataset'], deadline=deadline,
+                    splitter=job['splitter'], store_audit=job['store_audit'],
+                    evaluation_id=job_id)
+                if not submitted:
+                    break
+                self._evaluation_queue.popleft()
 
             # Preparation and submission have already consumed part of the budget.
-            new_candidates += self.executor.join(max(0.0, deadline - time.monotonic()))
+            cancel_pending = (drain_pending or deadline >= global_deadline
+                              or not getattr(self.executor, 'sliding_stages', True))
+            results = self.executor.join(
+                max(0.0, deadline - time.monotonic()), cancel_pending=cancel_pending)
+            self._evaluation_progress = None
+            for result in results:
+                if isinstance(result, tuple) and len(result) == 2:
+                    job_id, candidate = result
+                    job = self._evaluation_jobs.pop(job_id, None)
+                    if job is None:
+                        continue
+                    self._evaluation_keys.pop(job['key'], None)
+                    self._evaluation_results[id(candidate)] = (ref(candidate), job['key'])
+                    self.__cache_evaluation(candidate, job['cache_key'], job['dataset_key'])
+                else:
+                    # Retain the original Candidate result contract for custom
+                    # executors that do not forward the internal job identifier.
+                    candidate = result
+                    cache_context = evaluation_cache_keys.get(candidate.pipeline.fingerprint())
+                    if cache_context is not None:
+                        self.__cache_evaluation(candidate, *cache_context)
+                    for job_id, job in list(self._evaluation_jobs.items()):
+                        if job['candidate'].pipeline.fingerprint() == candidate.pipeline.fingerprint():
+                            self._evaluation_jobs.pop(job_id, None)
+                            self._evaluation_keys.pop(job['key'], None)
+                            self._evaluation_results[id(candidate)] = (ref(candidate), job['key'])
+                            break
+                new_candidates.append(candidate)
+            if cancel_pending and time.monotonic() >= global_deadline:
+                self._evaluation_jobs.clear()
+                self._evaluation_keys.clear()
+                self._evaluation_queue.clear()
+            elif cancel_pending and not drain_pending:
+                deferred = set(self._evaluation_queue)
+                for job_id, job in list(self._evaluation_jobs.items()):
+                    if job_id not in deferred:
+                        self._evaluation_jobs.pop(job_id, None)
+                        self._evaluation_keys.pop(job['key'], None)
             self.__collect_training_history(new_candidates)
 
             if new_candidates:
@@ -956,16 +1063,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     (no result)'
 
-        # Add to cache
-        for candidate in new_candidates:
-            cache_key = self.__evaluation_cache_key(candidate, splitter_fingerprint)
-            if cache_key in evaluation_cache_keys and not Cache().from_cache(cache_key, dataset_key):
-                Cache().add_to_cache(
-                    cache_key,
-                    dataset_key,
-                    self.__build_cached_candidate(candidate),
-                )
-
         best_metric = new_candidates[0].get_main_metric_value() if new_candidates else None
         remaining_time = (budget if timeout is None else timeout) - (time.monotonic() - start_time)
 
@@ -978,6 +1075,43 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 if stage_number is not None else "Initial evaluation finished")
 
         return new_candidates
+
+    def __queue_evaluation(self, candidate, dataset, key, cache_key, dataset_key):
+        """Keep both submitted and deferred candidates across stage boundaries."""
+        self._evaluation_sequence += 1
+        job_id = self._evaluation_sequence
+        self._evaluation_jobs[job_id] = {
+            'candidate': candidate, 'dataset': dataset, 'key': key,
+            'cache_key': cache_key, 'dataset_key': dataset_key,
+            'splitter': self.splitter, 'store_audit': self.keep_training_history,
+        }
+        self._evaluation_keys[key] = job_id
+        self._evaluation_queue.append(job_id)
+
+    def __cache_evaluation(self, candidate, cache_key, dataset_key):
+        """Cache completed scores with their original evaluation context."""
+        if (candidate.computed_metrics and cache_key is not None
+                and not Cache().from_cache(cache_key, dataset_key)):
+            Cache().add_to_cache(cache_key, dataset_key, self.__build_cached_candidate(candidate))
+
+    def __evaluations_pending(self):
+        """Whether submitted or deferred evaluation work remains."""
+        return bool(getattr(self, '_evaluation_jobs', {}))
+
+    def __merge_evaluated_candidates(self, previous, completed):
+        """Retain scored pipelines while incorporating later stage results."""
+        merged = {}
+        for candidate in previous + completed:
+            signature = candidate.evaluation_context_signature()
+            audit = candidate.training_audit or {}
+            context = getattr(self, '_evaluation_results', {}).get(id(candidate))
+            key = context[1] if context is not None and context[0]() is candidate else (
+                candidate.pipeline.fingerprint(),
+                hash_evaluation_context(signature), audit.get('dataset_fingerprint'))
+            existing = merged.get(key)
+            if existing is None or candidate.get_main_metric_score() >= existing.get_main_metric_score():
+                merged[key] = candidate
+        return sorted(merged.values(), reverse=True)
 
     def __evaluation_cache_key(
         self, candidate: Candidate, splitter_fingerprint: str | None
@@ -1130,11 +1264,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             evaluated_candidates = [candidate for candidate in evaluated_candidates if candidate.computed_metrics]
 
             if not evaluated_candidates:
-                Logger().warning('No candidates produced a valid evaluation; keeping previous best candidates.')
                 candidates = previous_candidates
-                break
+                if not self.__evaluations_pending():
+                    Logger().warning('No candidates produced a valid evaluation; keeping previous best candidates.')
+                    break
+                # A stage timeout only pauses result collection. In particular,
+                # it must not spend patience before slower jobs can be scored.
+                duration = time.monotonic() - starting_time
+                iterations_count += 1
+                continue
 
-            candidates = evaluated_candidates
+            candidates = self.__merge_evaluated_candidates(previous_candidates, evaluated_candidates)
             previous_candidates = candidates
 
             # Improvement ?
@@ -1284,15 +1424,26 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         return None
 
 
-def process_executor(candidate: Candidate, *args, **kwargs) -> 'Candidate':
+class _EvaluationResult(NamedTuple):
+    """Associate an internal job identifier with its public candidate result."""
+
+    evaluation_id: int
+    candidate: Candidate
+
+    def __str__(self):
+        return str(self.candidate)
+
+
+def process_executor(candidate: Candidate, *args, evaluation_id=None, **kwargs):
     """Wrap candidate training to run it in subprocess
 
     :param Candidate candidate: Not trained candidate.
     :param tuple, optional \\*args: Additional parameters.
     :param dict, optional \\**kwargs: Additional parameters.
-    :return: Trained candidate.
+    :return: Trained candidate, paired with the internal evaluation identifier
+        when called by the search orchestrator.
     """
     # Deepcopy -> Without it, process end is never detected. Strange...
     candidate = deepcopy(candidate)
     candidate.training_evaluate(*args, **kwargs)
-    return candidate
+    return candidate if evaluation_id is None else _EvaluationResult(evaluation_id, candidate)

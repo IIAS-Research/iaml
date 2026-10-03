@@ -67,14 +67,16 @@ class WarmupBudgetTests(unittest.TestCase):
         self.queued.append((candidate, options))
         return True
 
-    def join(self, timeout):
+    def join(self, timeout, *, cancel_pending=None):
         self.stages.append({"started": self.now, "timeout": timeout, "queued": list(self.queued)})
-        requested_duration, scores = self.responses.pop(0)
+        requested_duration, scores = self.responses.pop(0) if self.responses else (timeout, {})
         self.now += min(requested_duration, timeout)
         completed = []
+        pending = []
         for candidate, options in self.queued:
             name = candidate.pipeline.predictor[0]
             if name not in scores:
+                pending.append((candidate, options))
                 continue
             # Independent returned instances match the subprocess contract.
             result = deepcopy(candidate)
@@ -85,8 +87,8 @@ class WarmupBudgetTests(unittest.TestCase):
                 "dataset_fingerprint": "training-population", "status": "success",
                 "error": None, "metrics": deepcopy(result.computed_metrics),
             }
-            completed.append(result)
-        self.queued.clear()
+            completed.append((options['evaluation_id'], result))
+        self.queued = [] if cancel_pending and requested_duration >= timeout else pending
         return completed
 
     def fit(self):
@@ -151,7 +153,7 @@ class WarmupBudgetTests(unittest.TestCase):
         result = self.fit()
         self.assertEqual(self.stages[0]["timeout"], 12)
         self.assertEqual(self.stages[1]["started"], 12)
-        self.assertEqual([item.pipeline.predictor[0] for item, _ in self.stages[1]["queued"]], ["normal", "minimal"])
+        self.assertEqual([item.pipeline.predictor[0] for item, _ in self.stages[1]["queued"]], ["minimal", "normal"])
         self.assertEqual(result[0].pipeline.predictor[0], "normal")
         self.assertEqual(self.callback.call_args_list[0].kwargs["generation_size"], 0)
         self.assertEqual(self.callback.call_args_list[1].kwargs["generation_size"], 1)
@@ -196,6 +198,18 @@ class WarmupBudgetTests(unittest.TestCase):
         self.fit()
         self.assertEqual(self.stages[0]["timeout"], 3)
         self.assertEqual(self.stages[1]["started"], 3)
+
+    def test_late_initial_result_is_refitted_after_optimizer_finishes(self):
+        self.responses = [
+            (0.5, {"minimal": 0.7}), (15, {"minimal": 0.7}), (2, {"normal": 0.9}),
+        ]
+        result = self.fit()
+        self.assertEqual(result[0].pipeline.predictor[0], 'normal')
+        self.assertEqual(result[0].get_main_metric_value(), 0.9)
+        self.assertEqual(len(self.engine.training_history), 2)
+        self.assertEqual(len(self.stages), 3)
+        self.assertAlmostEqual(self.stages[-1]['timeout'], 44.5)
+        self.final_fit.assert_called_once()
 
     def test_unlimited_search_still_bounds_warmup_by_stage_duration(self):
         self.engine.max_duration = -1

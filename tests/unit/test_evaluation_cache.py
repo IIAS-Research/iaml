@@ -48,7 +48,7 @@ class SynchronousExecutor:
         self.callback()
         return True
 
-    def join(self, timeout):
+    def join(self, timeout, *, cancel_pending=None):
         result, self.pending = self.pending, []
         return result
 

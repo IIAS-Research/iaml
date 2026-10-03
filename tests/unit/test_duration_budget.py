@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 import pandas as pd
 
 from iaml.candidate import Candidate
+from iaml.actionables.predictors.classifier.act_decision_tree_classifier import ActDecisionTreeClassifier
 from iaml.dataset import Dataset
 from iaml.iaml import IAML
 from iaml.logger import Logger
@@ -35,6 +36,10 @@ class TestDurationBudget(unittest.TestCase):
             Candidate(self.dataset, metrics=[AccuracyMetric()], main_metric=AccuracyMetric())
             for _ in range(3)
         ]
+        for depth, candidate in enumerate(self.candidates, start=1):
+            model = ActDecisionTreeClassifier()
+            model.configure({'max_depth': depth})
+            candidate.pipeline.set_model(model)
         context = patch("iaml.iaml.hash_evaluation_context", return_value="splitter")
         context.start()
         self.addCleanup(context.stop)
@@ -74,7 +79,7 @@ class TestDurationBudget(unittest.TestCase):
             self.evaluate()
 
         self.engine.executor.submit.assert_not_called()
-        self.engine.executor.join.assert_called_once_with(0.0)
+        self.engine.executor.join.assert_called_once_with(0.0, cancel_pending=True)
 
     def test_stops_submitting_after_budget_is_consumed(self):
         def submit(*args, **kwargs):
@@ -85,7 +90,7 @@ class TestDurationBudget(unittest.TestCase):
         self.evaluate()
 
         self.engine.executor.submit.assert_called_once()
-        self.engine.executor.join.assert_called_once_with(0.0)
+        self.engine.executor.join.assert_called_once_with(0.0, cancel_pending=True)
 
     def test_refused_submission_keeps_completed_results(self):
         completed = self.candidates[0]
@@ -102,7 +107,7 @@ class TestDurationBudget(unittest.TestCase):
         self.assertEqual(self.evaluate(callback=callback), [completed])
 
         self.engine.executor.submit.assert_called_once()
-        self.engine.executor.join.assert_called_once_with(0.0)
+        self.engine.executor.join.assert_called_once_with(0.0, cancel_pending=True)
         self.assertEqual(callback.call_args.kwargs["remaining_time"], 0.0)
         self.assertEqual(callback.call_args.kwargs["best"], 0.75)
 
@@ -110,8 +115,12 @@ class TestDurationBudget(unittest.TestCase):
         for timeout in (None, 30, float("inf")):
             with self.subTest(timeout=timeout):
                 self.engine.executor.reset_mock()
+                if hasattr(self.engine, '_evaluation_jobs'):
+                    self.engine._evaluation_jobs.clear()
+                    self.engine._evaluation_keys.clear()
+                    self.engine._evaluation_queue.clear()
                 self.evaluate(timeout=timeout)
-                self.engine.executor.join.assert_called_once_with(10.0)
+                self.engine.executor.join.assert_called_once_with(10.0, cancel_pending=False)
                 self.assertEqual(self.engine.executor.submit.call_args.kwargs["deadline"], 110.0)
 
     def test_exhausted_budget_still_joins_previous_work(self):
@@ -120,7 +129,7 @@ class TestDurationBudget(unittest.TestCase):
                 self.engine.executor.reset_mock()
                 self.evaluate(timeout=timeout)
                 self.engine.executor.submit.assert_not_called()
-                self.engine.executor.join.assert_called_once_with(0.0)
+                self.engine.executor.join.assert_called_once_with(0.0, cancel_pending=True)
 
     def test_callback_keeps_global_budget_when_stage_limit_is_shorter(self):
         def fingerprint():
@@ -147,7 +156,7 @@ class TestDurationBudget(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertTrue(all(candidate.get_main_metric_value() == 0.75 for candidate in results))
         self.engine.executor.submit.assert_not_called()
-        self.engine.executor.join.assert_called_once_with(0.0)
+        self.engine.executor.join.assert_called_once_with(0.0, cancel_pending=True)
 
     def scored_candidate(self):
         candidate = self.candidates[0]
@@ -176,7 +185,7 @@ class TestDurationBudget(unittest.TestCase):
                 self.assertEqual(results, [candidate])
                 optimizer.run.assert_called_once()
                 self.engine.executor.submit.assert_called_once()
-                self.engine.executor.join.assert_called_once_with(10.0)
+                self.engine.executor.join.assert_called_once_with(10.0, cancel_pending=False)
 
     def test_unlimited_default_patience_stops_after_twenty_stagnant_stages(self):
         candidate = self.scored_candidate()
@@ -223,7 +232,7 @@ class TestDurationBudget(unittest.TestCase):
 
         optimizer.run.assert_called_once()
         self.engine.executor.submit.assert_not_called()
-        self.engine.executor.join.assert_called_once_with(0.0)
+        self.engine.executor.join.assert_called_once_with(0.0, cancel_pending=True)
 
     def test_unlimited_optimizer_uses_default_mutation_ratio(self):
         self.engine.optimizer = GeneticOptimizer
