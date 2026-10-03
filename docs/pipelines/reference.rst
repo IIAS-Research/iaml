@@ -6,7 +6,7 @@ Pipeline and study API reference
 ================================
 
 Contracts for the recipe constructors, editing methods and study interfaces.
-For a hands-on introduction, read :doc:`guide` and study; for individual
+For a hands-on introduction, read :doc:`guide` and :doc:`study`; for individual
 Python classes, see :doc:`../autoapi/index`.
 
 Recipes declare configuration and never hold fitted estimators. Training

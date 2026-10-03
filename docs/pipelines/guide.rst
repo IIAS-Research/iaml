@@ -11,7 +11,7 @@ alternatives the search may explore, and configure their parameters. You can
 start from the AutoML preset or describe a pipeline from scratch. The same
 operations work when you revisit an existing recipe.
 
-For metrics, descriptive statistics and explanations, see study.
+For metrics, descriptive statistics and explanations, see :doc:`study`.
 The complete signatures and validation rules are in :doc:`reference`.
 
 Start from the preset or your own recipe
@@ -274,7 +274,7 @@ search domain. If a parameter has no domain, supplying a plain value does not
 invent one; the component's parameter policy remains in effect.
 
 This convention also applies to resamplers. Analytical parameters configure
-fixed calculations instead; see pipelines-study-collections.
+fixed calculations instead; see :ref:`pipelines-study-collections`.
 
 .. _pipeline-guide-start:
 
@@ -312,7 +312,7 @@ fails without changing the group.
 
 A partial start requires an optimizer supporting component replacement,
 such as ``GeneticOptimizer``. Choose the optimizer and validation settings in
-pipelines-study-search. Choices between complete sub-pipelines use
+:ref:`pipelines-study-search`. Choices between complete sub-pipelines use
 full initial generation.
 
 Keep preparation and models together
