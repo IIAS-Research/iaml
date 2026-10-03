@@ -331,7 +331,7 @@ incomplete secondary validation coverage:
 contains the available scores and ``complete`` indicates full coverage.
 
 Continue with :doc:`reference` for exact contracts, or run
-the complete study,
-descriptive statistics before training
-and metrics and the objective
+:download:`the complete study <../examples/pipelines/10_full_workflow.py>`,
+:download:`descriptive statistics before training <../examples/pipelines/11_descriptive_without_model.py>`
+and :download:`metrics and the objective <../examples/pipelines/12_metrics_and_objective.py>`
 from the example catalogue.

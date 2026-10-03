@@ -322,23 +322,9 @@ Independent preparation and model choices allow all their combinations. To
 keep a preparation strategy associated with its model, choose between complete
 sub-pipelines instead:
 
-.. code-block:: python
-
-   def build_pipeline():
-       """Partager le nettoyage, puis choisir entre deux stratégies complètes."""
-       linear = (
-           use(StandardScaler)
-           >> use(LogisticRegression, tol=Float(1e-5, 1e-2, initial=1e-4))
-       ).named("linear")
-
-       forest = use(
-           RandomForestClassifier,
-           n_estimators=Int(100, 500, initial=200),
-           max_depth=Int(3, 30, initial=15),
-       ).named("forest")
-
-       strategy = choice(linear, forest).named("strategy")
-       return use(SimpleImputer).named("cleaning") >> strategy
+.. literalinclude:: ../examples/pipelines/08_coherent_strategies.py
+   :language: python
+   :pyobject: build_pipeline
 
 The ``linear`` branch normalizes the data before logistic regression. The
 ``forest`` branch uses its own random forest configuration and search domains.
@@ -393,7 +379,8 @@ Pass the registered class to ``use``:
        pipeline.add(use(feature_class).named("bmi"), before="cleaning")
        return pipeline
 
-The custom component example contains a complete body mass
+The :download:`custom component example
+<../examples/pipelines/07_custom_component.py>` contains a complete body mass
 index component and its insertion. Its registry tag also determines which
 automatic families discover it. See :doc:`../adaptability` for component
 contracts and other extension points.
