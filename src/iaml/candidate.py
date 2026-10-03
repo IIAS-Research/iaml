@@ -20,7 +20,7 @@ from .metric_plot import MetricPlot
 from .logger import Logger
 from .step_cache import StepCache
 from .study_analyses import (
-    CompiledAnalysis, analyses_signature,
+    CompiledAnalysis, analyses_signature, compile_analyses, compute_explanations,
 )
 
 if TYPE_CHECKING:
@@ -49,6 +49,7 @@ class Candidate:
         main_metric: Metric | str | None = None,
         *,
         metric_definitions: list[CompiledAnalysis] | None = None,
+        explanation_definitions: list[CompiledAnalysis] | None = None,
         study_snapshot: Any = None) -> None:
 
         self.dataset: Dataset = dataset
@@ -60,9 +61,11 @@ class Candidate:
         self.metric_definitions = deepcopy(metric_definitions)
         if self.metric_definitions is not None:
             self.metrics = [definition.component for definition in self.metric_definitions]
+        self.explanation_definitions = deepcopy(explanation_definitions)
         self.study_snapshot = deepcopy(study_snapshot)
         self.metric_report: list[dict[str, Any]] = []
         self.evaluation_report: list[dict[str, Any]] = []
+        self.explanation_report: list[dict[str, Any]] = []
         self.metric_coverage: dict[str, dict[str, Any]] = {}
         self._legacy_metric_ids = tuple(id(metric) for metric in self.metrics)
         self._legacy_metrics_signature = hash_evaluation_context(self.metrics)
@@ -289,6 +292,7 @@ class Candidate:
             stacked_path=self.stacked_path,
             main_metric=self._main_metric,
             metric_definitions=self.metric_definitions if metrics is None else None,
+            explanation_definitions=self.explanation_definitions,
             study_snapshot=self.study_snapshot)
         if metrics is None:
             copied._legacy_metrics_signature = self.metrics_signature()
@@ -809,6 +813,20 @@ class Candidate:
         """
         return self.pipeline.explain_model(X, nsamples)
 
+    def explain(self, X: pd.DataFrame, y=None) -> dict[str, Any]:
+        """Compute the fitted candidate's configured explanations on demand.
+
+        Successful outputs keep their native ``MetricPlot`` or ``Explanation``
+        type. Skipped methods and failures are recorded in ``explanation_report``.
+        """
+        definitions = self.explanation_definitions
+        if definitions is None:
+            from .flow import explanations
+            definitions = compile_analyses(explanations())
+        results, self.explanation_report = compute_explanations(
+            definitions, self.pipeline, self.dataset, X, y,
+        )
+        return results
 
     def predict(self, X: pd.DataFrame) -> list:
         """Run all the steps to predict labels from candidate data

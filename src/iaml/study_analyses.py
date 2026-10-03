@@ -191,3 +191,33 @@ def copy_statistics(table: pd.DataFrame) -> pd.DataFrame:
             result[column] = result[column].map(deepcopy)
     result.attrs = deepcopy(table.attrs)
     return result
+
+
+def compute_explanations(definitions, pipeline, dataset, X, y=None):
+    """Compute applicable configured explanations lazily and independently."""
+    if isinstance(y, pd.DataFrame):
+        if len(y.columns) != 1:
+            raise ValueError("Explanations require a single target column")
+        y = y.iloc[:, 0]
+    results, report = {}, []
+    for definition in deepcopy(definitions):
+        component = definition.component
+        try:
+            if isinstance(component, MetricPlot):
+                suitable = y is not None and component.suitable(dataset.type_of_target)
+            else:
+                suitable = component.suitable(dataset)
+            if not suitable:
+                reason = "Targets are required" if isinstance(component, MetricPlot) and y is None \
+                    else f"Not suitable for target '{dataset.type_of_target}'"
+                report.append({"key": definition.key, "status": "inapplicable", "reason": reason})
+                continue
+            results[definition.key] = component.compute(
+                pipeline, deepcopy(X), deepcopy(y),
+                X_train=deepcopy(dataset.X), y_train=deepcopy(dataset.y),
+            )
+            report.append({"key": definition.key, "status": "success"})
+        except Exception as exc:
+            Logger().warning(f"Explanation '{definition.key}' failed: {exc!r}")
+            report.append({"key": definition.key, "status": "error", "reason": repr(exc)})
+    return results, report

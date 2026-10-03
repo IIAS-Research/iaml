@@ -1,10 +1,12 @@
 """[PLOT] Wrap Shap Plot """
+from __future__ import annotations
 import textwrap
 import io
-from typing import Any
+from typing import Any, TYPE_CHECKING
 import matplotlib.pyplot as plt
 import numpy as np
-import shap
+if TYPE_CHECKING:
+    import shap
 
 from ..plot import Plot
 
@@ -98,6 +100,8 @@ class ShapPlot(Plot):
         :return: A title and description of the SHAP plot type, explaining what it shows and how it 
             relates to model predictions.
         """
+        import shap  # imported only when an explanation plot is requested
+
         features = shap_values.feature_names
         values = shap_values[0].values
 

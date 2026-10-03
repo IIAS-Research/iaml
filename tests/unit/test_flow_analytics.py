@@ -13,6 +13,7 @@ from sklearn.dummy import DummyClassifier
 from iaml.actionables.predictors.classifier.act_decision_tree_classifier import ActDecisionTreeClassifier
 from iaml.candidate import Candidate
 from iaml.dataset import Dataset
+from iaml.explainers import KernelSHAP
 from iaml.iaml_pipeline import IAMLPipeline
 from iaml.logger import Logger
 from iaml.metric import Metric
@@ -104,6 +105,21 @@ class TestFlowAnalytics(unittest.TestCase):
         with self.assertRaises(ValueError):
             compile_metrics(source, "absent", self.dataset)
 
+    def test_candidate_copies_freeze_analytical_configuration(self):
+        definitions = compile_analyses(collection("metrics", (PrecisionMetric(0), "negative")))
+        explanations = compile_analyses(collection("explanations", (KernelSHAP(5), "features")))
+        candidate = Candidate(self.dataset, main_metric="negative", metric_definitions=definitions,
+                              explanation_definitions=explanations,
+                              study_snapshot={"configuration": {"enabled": True}})
+        copied = candidate.to_output()
+        definitions[0].component.pos_label = 1
+        candidate.metrics[0].pos_label = 1
+        candidate.explanation_definitions[0].component.nsamples = 99
+        candidate.study_snapshot["configuration"]["enabled"] = False
+        self.assertEqual(copied.metrics[0].pos_label, 0)
+        self.assertEqual(copied.explanation_definitions[0].component.nsamples, 5)
+        self.assertTrue(copied.study_snapshot["configuration"]["enabled"])
+        self.assertEqual(copied.to_input().main_metric, "negative")
 
     def test_secondary_coverage_does_not_invent_zero_or_partial_mean(self):
         definitions = compile_analyses(collection("metrics", (AccuracyMetric(), "objective"),
@@ -149,8 +165,41 @@ class TestFlowAnalytics(unittest.TestCase):
         canonical.iloc[0, 0] = -999
         self.assertNotEqual(table.iloc[0, 0], -999)
 
+    def test_explanations_are_lazy_and_keep_success_when_another_fails(self):
+        source = collection("explanations", (KernelSHAP(7), "features"),
+                            (BrokenExplanation(), "failed"))
+        definitions = compile_analyses(source)
+        pipeline = IAMLPipeline(estimator_type="classifier")
+        with patch.object(pipeline, "explain_model", return_value="explanation") as explain:
+            candidate = Candidate(self.dataset, iaml_pipeline=pipeline,
+                                  explanation_definitions=definitions)
+            explain.assert_not_called()
+            self.assertEqual(candidate.explain(self.X), {"features": "explanation"})
+            explain.assert_called_once()
+            pd.testing.assert_frame_equal(explain.call_args.args[0], self.X)
+            self.assertEqual(explain.call_args.kwargs, {"nsamples": 7})
+        statuses = {item["key"]: item["status"] for item in candidate.explanation_report}
+        self.assertEqual(statuses, {"features": "success", "failed": "error"})
 
+    def test_kernel_shap_validates_effort(self):
+        for value in (0, -1, 1.5, True):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                KernelSHAP(value)
 
+    def test_real_collections_compile_the_same_variant_contract(self):
+        from iaml.flow import metrics, statistics, explanations, use
+
+        source = metrics(use(PrecisionMetric, pos_label=0).named("negative"),
+                         use(PrecisionMetric, pos_label=1).named("positive"))
+        definitions, objective, _ = compile_metrics(source, "positive", self.dataset)
+        self.assertEqual([definition.key for definition in definitions], ["negative", "positive"])
+        self.assertEqual(objective, "positive")
+        source["negative"].configure(pos_label=1)
+        self.assertEqual(definitions[0].component.pos_label, 0)
+        statistics_defs = compile_analyses(statistics(use(MeanStatistic).named("average")))
+        self.assertEqual(compute_statistics(statistics_defs, self.dataset)[0].index.tolist(), ["average"])
+        explanation_defs = compile_analyses(explanations(use(KernelSHAP, nsamples=7).named("features")))
+        self.assertEqual(explanation_defs[0].component.nsamples, 7)
 
     def test_supplied_objective_is_not_reconstructed_during_compilation(self):
         from iaml.flow import metrics

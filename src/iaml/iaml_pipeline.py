@@ -10,7 +10,6 @@ from copy import deepcopy
 from hashlib import md5
 
 import numpy as np
-import shap
 import pandas as pd
 
 from sklearn.pipeline import Pipeline
@@ -516,6 +515,8 @@ class IAMLPipeline(Pipeline):
         """
         if not self.have_model:
             raise RuntimeError('There is no model to explain.')
+
+        import shap  # pylint: disable=import-outside-toplevel
 
         def p(pred_data):
             df = pd.DataFrame(pred_data, columns=X.columns)
