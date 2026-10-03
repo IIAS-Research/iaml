@@ -97,6 +97,10 @@ class Recipe:
             node = node._parent
         return node
 
+    def attach(self, owner, field):
+        """Attach a root to its study; used by the study integration layer."""
+        self._owner, self._owner_field = owner, field
+        return self
 
     def clone(self):
         result = deepcopy(self)
@@ -133,7 +137,21 @@ class Recipe:
         self.alias = alias
         return self
 
+    def __getitem__(self, alias):
+        if not isinstance(alias, str):
+            raise TypeError("Recipe selectors must be aliases; use find_all for a class")
+        for node in self._walk():
+            if node.alias == alias:
+                return node
+        raise KeyError(f"Unknown alias {alias!r}")
 
+    def __getattr__(self, alias):
+        if alias.startswith("_"):
+            raise AttributeError(alias)
+        try:
+            return self[alias]
+        except KeyError as error:
+            raise AttributeError(alias) from error
 
     def __iter__(self):
         return iter(self._children())
@@ -150,7 +168,39 @@ class Recipe:
                 children.append(part)
         return SequenceSpec(children)
 
+    def find_all(self, component):
+        component_kind(component)
+        return Selection(self, [node for node in self._walk()
+                                if isinstance(node, ComponentSpec) and node.component is component])
 
+    def replace(self, recipe):
+        if self._parent is None and self._owner is None:
+            raise ValueError("replace requires an attached recipe")
+        replacement = as_recipe(recipe).clone()
+        if replacement.kind != self.kind:
+            raise TypeError("Replacement belongs to a different component family")
+        if self._parent is not None:
+            # Apply the same container contract as construction and add before
+            # changing aliases, ownership, or the parent's contents.
+            self._parent._coerce(replacement)
+        if replacement.alias not in (None, self.alias):
+            raise ValueError("Replacement root must have no alias or the existing alias")
+        replacement.alias = self.alias
+        remaining = {n.alias for n in self._root()._walk() if n not in list(self._walk())
+                     and n.alias is not None}
+        replacement._check_aliases()
+        if remaining.intersection(n.alias for n in replacement._walk() if n.alias is not None):
+            raise ValueError("Replacement introduces a duplicate alias")
+        if self._parent is not None:
+            parent = self._parent
+            parent._replace_child(self, replacement)
+            replacement._parent = parent
+        else:
+            owner, field = self._owner, self._owner_field
+            replacement.attach(owner, field)
+            setattr(owner, field, replacement)
+        self._parent = self._owner = self._owner_field = None
+        return replacement
 
 
 
@@ -259,6 +309,35 @@ class ComponentSpec(Recipe):
         return instance
 
 
+class Selection:
+    """A snapshot of component objects, with atomic collective configuration."""
+    def __init__(self, scope, targets):
+        self.scope, self.targets = scope, tuple(targets)
+        self._root = scope._root()
+        self._owner = self._root._owner
+        self._owner_field = self._root._owner_field
+
+    def __iter__(self):
+        return iter(self.targets)
+
+    def __len__(self):
+        return len(self.targets)
+
+    def configure(self, **params):
+        if not self.targets:
+            return self
+        if self.scope._root() is not self._root or (
+            self._owner is not None and getattr(self._owner, self._owner_field, None) is not self._root
+        ):
+            raise ValueError("Selection scope was detached; call find_all again")
+        current = set(self.scope._walk())
+        if any(target not in current for target in self.targets):
+            raise ValueError("Selection contains detached components; call find_all again")
+        prepared = [(target, target._prepare(params)) for target in self.targets]
+        for target, configuration in prepared:
+            target.parameters = configuration
+            target._declared_params.update(params)
+        return self
 
 
 class GroupSpec(Recipe):
@@ -285,15 +364,123 @@ class GroupSpec(Recipe):
             raise TypeError(f"Expected {self.kind} recipe, received {recipe.kind}")
         return recipe
 
+    def _registry(self):
+        return [cls for cls, tags in Step.available_steps.items() if self.tag in tags]
 
     def _children(self):
-        return list(self.children)
+        if self.tag is None or self._frozen:
+            return list(self.children)
+        found = []
+        catalogue = set(self._registry()).union(self._replaced_slots)
+        for component in sorted(catalogue, key=lambda cls: (cls.__module__, cls.__qualname__)):
+            if component in self.excluded and component not in self._replaced_slots:
+                continue
+            if component not in self._materialized:
+                node = ComponentSpec(component)
+                node._parent = self
+                self._materialized[component] = node
+            node = self._materialized[component]
+            if node.node_id not in self._removed_ids:
+                found.append(node)
+        return found + list(self.children)
 
+    def _replace_child(self, old, new):
+        if old in self.children:
+            self.children[self.children.index(old)] = new
+        else:
+            # Registry entries have stable slots too. Retain the registry key
+            # even when a replacement uses a different class or group mode.
+            component = next(cls for cls, child in self._materialized.items() if child is old)
+            self._materialized[component] = new
+            self._replaced_slots.add(component)
 
+    def _restore_registry_replacement(self, component, recipe):
+        """Reconstruct an explicit replacement at its original registry slot.
 
+        The original component can be excluded or absent from the current
+        registry, while the explicitly supplied replacement remains allowed.
+        """
+        node = self._coerce(recipe).clone()
+        node._check_aliases()
+        old = self._materialized.get(component)
+        replaced = set(old._walk()) if old is not None else set()
+        aliases = {n.alias for n in self._root()._walk() if n not in replaced and n.alias is not None}
+        if aliases.intersection(n.alias for n in node._walk() if n.alias is not None):
+            raise ValueError("Replacement introduces a duplicate alias")
+        if old is not None:
+            old._parent = None
+        self._materialized[component] = node
+        self._replaced_slots.add(component)
+        node._parent = self
+        return self
 
+    def add(self, recipe, before=None):
+        node = self._coerce(recipe).clone()
+        if before is not None:
+            anchor = self[before]
+            parent = anchor._parent
+            if not isinstance(parent, SequenceSpec):
+                raise ValueError("before must designate an item of a sequence")
+            return self._insert(node, parent, parent.children.index(anchor))
+        return self._insert(node, self, len(self.children))
 
+    def _insert(self, node, parent, index):
+        node._check_aliases()
+        aliases = {n.alias for n in self._root()._walk() if n.alias is not None}
+        if aliases.intersection(n.alias for n in node._walk() if n.alias is not None):
+            raise ValueError("Addition introduces a duplicate alias")
+        parent.children.insert(index, node)
+        node._parent = parent
+        # An explicit variant is authorized through children even if its class
+        # remains excluded from automatic registry expansion. This must not
+        # resurrect the default variant that the user removed.
+        return self
 
+    def remove(self, *selectors):
+        targets = []
+        for selector in selectors:
+            if isinstance(selector, str):
+                node = self[selector]
+                if node is self:
+                    raise ValueError("A group cannot remove itself")
+                targets.append(node)
+            elif isinstance(selector, type):
+                matches = [node for node in self._children()
+                           if isinstance(node, ComponentSpec) and node.component is selector]
+                if not matches:
+                    raise ValueError(f"Component {selector.__name__} is absent from this group")
+                targets.extend(matches)
+            else:
+                raise TypeError("remove expects aliases or component classes")
+        for node in targets:
+            parent = node._parent
+            if isinstance(parent, ChoiceSpec) and parent.initial_aliases is not None and node.alias in parent.initial_aliases:
+                raise ValueError(f"Call start() or choose another start before removing {node.alias!r}")
+        for node in dict.fromkeys(targets):
+            parent = node._parent
+            if node in parent.children:
+                parent.children.remove(node)
+            else:
+                parent._removed_ids.add(node.node_id)
+            if parent.tag is not None and isinstance(node, ComponentSpec):
+                # Class removal excludes every registered occurrence, while alias
+                # removal keeps other variants of the class available.
+                if node.component in selectors:
+                    parent.excluded.add(node.component)
+            node._parent = None
+        return self
+
+    def freeze(self):
+        children = self._children()
+        self.children = children
+        self._materialized = {}
+        self._replaced_slots = set()
+        self._frozen = True
+        for child in children:
+            child._parent = self
+            if isinstance(child, GroupSpec):
+                child.freeze()
+        return self
 
 
 class SequenceSpec(GroupSpec):
@@ -313,17 +500,89 @@ class ChoiceSpec(GroupSpec):
         self._allow_absence = False
         super().__init__(children, tag=tag)
 
+    def start(self, *aliases):
+        if len(set(aliases)) != len(aliases):
+            raise ValueError("start aliases must be distinct")
+        available = {node.alias for node in self._children() if node.alias is not None}
+        if any(alias not in available for alias in aliases):
+            raise KeyError("start requires aliases of direct alternatives")
+        self.initial_aliases = tuple(aliases) if aliases else None
+        self._preset_start = None
+        return self
 
 
 class PipelineSpec(ChoiceSpec):
     """Root of the default recipe, containing main and minimal strategies."""
 
 
+class AnalysisCollection(GroupSpec):
+    """All requested analytic computations, rather than candidate alternatives."""
+    mode = "analyses"
+
+    def __init__(self, kind, children=(), *, defaults=False):
+        self.kind = kind
+        super().__init__(children, tag=kind if defaults else None)
+
+    def _coerce(self, child):
+        node = as_recipe(child)
+        if not isinstance(node, ComponentSpec) or node.kind != self.kind:
+            raise TypeError(f"Expected a {self.kind} component")
+        return node
+
+    def _registry(self):
+        if self.kind == "explanations":
+            module = importlib.import_module("iaml.plots")
+            found = {value for value in vars(module).values() if isinstance(value, type)
+                     and issubclass(value, MetricPlot) and value is not MetricPlot}
+            try:
+                found.add(importlib.import_module("iaml.explainers").KernelSHAP)
+            except (ImportError, AttributeError):
+                pass
+            return found
+        base = Metric if self.kind == "metrics" else Statistic
+        module = importlib.import_module(f"iaml.{self.kind}")
+        public = {value for value in vars(module).values() if isinstance(value, type)
+                  and issubclass(value, base) and value is not base}
+        # Imported experimental IAML components stay out of automatic families.
+        public.update(cls for cls in base.all_subclasses() if not cls.__module__.startswith("iaml."))
+        return public
+
+    def resolved(self):
+        self._check_aliases()
+        return list(self._children())
 
 
 def use(component, **params):
     return ComponentSpec(component, **params)
 
 
-def choice(*alternatives):
-    return ChoiceSpec(alternatives)
+def choice(*alternatives, tag=None):
+    if alternatives and tag is not None:
+        raise ValueError("choice accepts alternatives or tag, not both")
+    return ChoiceSpec(alternatives, tag=tag)
+
+
+def normalizers():
+    return choice(tag="normalize")
+
+
+def predictors():
+    return choice(tag="predictor")
+
+
+def optional(recipe):
+    result = ChoiceSpec([recipe])
+    result._allow_absence = True
+    return result
+
+
+def metrics(*components):
+    return AnalysisCollection("metrics", components, defaults=not components)
+
+
+def statistics(*components):
+    return AnalysisCollection("statistics", components, defaults=not components)
+
+
+def explanations(*components):
+    return AnalysisCollection("explanations", components, defaults=not components)
