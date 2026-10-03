@@ -8,7 +8,7 @@ from difflib import unified_diff
 import json
 
 from .model import (AdaptiveSpec, AnalysisCollection, ChoiceSpec, ComponentSpec,
-                    GroupSpec, PipelineSpec, SequenceSpec)
+                    GroupSpec, PipelineSpec)
 
 
 def _class_name(component):
@@ -16,16 +16,23 @@ def _class_name(component):
 
 
 def _parameter_state(parameter):
-    return {"value": deepcopy(parameter.value), "domain": deepcopy(parameter.domain),
-            "fixed": parameter.fixed, "optimizable": parameter.optimizable and not parameter.fixed,
-            "categorical": deepcopy(parameter.categorical), "explicit_domain": parameter.explicit_domain}
+    return {
+        "value": deepcopy(parameter.value),
+        "domain": deepcopy(parameter.domain),
+        "fixed": parameter.fixed,
+        "optimizable": parameter.optimizable and not parameter.fixed,
+        "categorical": deepcopy(parameter.categorical),
+        "explicit_domain": parameter.explicit_domain,
+    }
 
 
 def _state(recipe):
     payload = {"alias": recipe.alias, "kind": recipe.kind}
     if isinstance(recipe, ComponentSpec):
-        payload.update(component=_class_name(recipe.component),
-                       parameters={key: _parameter_state(value) for key, value in recipe.parameters.items()})
+        payload.update(
+            component=_class_name(recipe.component),
+            parameters={key: _parameter_state(value) for key, value in recipe.parameters.items()},
+        )
         if getattr(recipe, "_conditional_missing", False):
             payload["condition"] = "missing values in the generation input"
     else:
@@ -53,7 +60,7 @@ class RecipeReport(Mapping):
         return len(self.data)
 
     def to_dict(self):
-        from copy import deepcopy
+        """Return an independent copy of the structured report."""
         return deepcopy(self.data)
 
     def __str__(self):
@@ -83,25 +90,36 @@ class RecipeReport(Mapping):
 
 
 def describe(recipe):
+    """Describe the recipe as a structured tree."""
     return RecipeReport({"tree": _state(recipe)})
 
 
 def diff(recipe, base):
+    """Compare the recipe with its declarative base."""
     before = json.dumps(_state(base), indent=2, sort_keys=True, default=repr).splitlines()
     after = json.dumps(_state(recipe), indent=2, sort_keys=True, default=repr).splitlines()
-    return RecipeReport({"changes": "\n".join(unified_diff(before, after, fromfile="base", tofile="recipe")),
-                         "before": _state(base), "after": _state(recipe)})
+    return RecipeReport({
+        "changes": "\n".join(unified_diff(before, after, fromfile="base", tofile="recipe")),
+        "before": _state(base),
+        "after": _state(recipe),
+    })
 
 
 class _CodeBuilder:
+    """Build executable Python declarations for a recipe."""
+
     def __init__(self):
         self.lines = []
-        self.imports = {"from iaml.flow import PipelineSpec, Const, Int, Float, use, choice, optional, metrics, statistics, explanations"}
+        self.imports = {
+            "from iaml.flow import PipelineSpec, Const, Int, Float, use, choice, "
+            "optional, metrics, statistics, explanations"
+        }
         self.classes = {}
         self.index = 0
         self.aliases = set()
 
     def component(self, cls):
+        """Import a component once and return its expression."""
         if cls not in self.classes:
             if "<locals>" in cls.__qualname__:
                 raise ValueError("to_code requires importable component classes")
@@ -112,6 +130,7 @@ class _CodeBuilder:
         return self.classes[cls]
 
     def literal(self, value):
+        """Represent a parameter value as executable Python."""
         if callable(value):
             module, name = getattr(value, "__module__", None), getattr(value, "__qualname__", None)
             if not module or not name or "<locals>" in name or name == "<lambda>":
@@ -125,6 +144,7 @@ class _CodeBuilder:
         raise TypeError(f"to_code cannot represent parameter value {type(value).__name__}")
 
     def configuration(self, target, node):
+        """Append the node's explicitly declared parameter configuration."""
         for key in sorted(node._declared_params):
             parameter = node.parameters[key]
             value = self.literal(parameter.value)
@@ -134,15 +154,26 @@ class _CodeBuilder:
                                            for v in (low, high)) else "Float"
                 initial = parameter.value
                 if parameter.fixed:
-                    initial = parameter._retained_initial if parameter._retained_initial is not None else low
+                    initial = (
+                        parameter._retained_initial
+                        if parameter._retained_initial is not None else low
+                    )
                 declaration = f"{domain_type}({low!r}, {high!r}, initial={initial!r})"
                 self.lines.append(f"{target}.configure({key}={declaration})")
                 if parameter.fixed:
                     self.lines.append(f"{target}.configure({key}=Const({value}))")
             else:
-                self.lines.append(f"{target}.configure({key}={'Const(' + value + ')' if parameter.fixed and node.kind == 'pipeline' else value})")
+                self.lines.append(
+                    f"{target}.configure({key}="
+                    + (
+                        'Const(' + value + ')'
+                        if parameter.fixed and node.kind == 'pipeline' else value
+                    )
+                    + ")"
+                )
 
     def node(self, node):
+        """Append a recipe node's declaration and return its variable name."""
         variable = f"_recipe{self.index}"
         self.index += 1
         if isinstance(node, ComponentSpec):
@@ -153,7 +184,10 @@ class _CodeBuilder:
                 # the initial use(), rather than configured after construction.
                 params = ""
                 if node.kind != "pipeline":
-                    params = "".join(f", {key}={self.literal(param.value)}" for key, param in node.parameters.items())
+                    params = "".join(
+                        f", {key}={self.literal(param.value)}"
+                        for key, param in node.parameters.items()
+                    )
                 self.lines.append(f"{variable} = use({self.component(node.component)}{params})")
             self.configuration(variable, node)
         elif isinstance(node, AnalysisCollection):
@@ -212,15 +246,21 @@ class _CodeBuilder:
             if node.tag is not None:
                 self.lines.append(f"{variable}.tag = {node.tag!r}")
             if node.excluded:
-                exclusions = ", ".join(self.component(cls) for cls in sorted(node.excluded, key=_class_name))
+                exclusions = ", ".join(
+                    self.component(cls) for cls in sorted(node.excluded, key=_class_name)
+                )
                 self.lines.append(f"{variable}.excluded = {{{exclusions}}}")
             if isinstance(node, ChoiceSpec):
                 self.lines.append(f"{variable}._preset_start = {node._preset_start!r}")
         if isinstance(node, ChoiceSpec) and node.initial_aliases is not None:
-            self.lines.append(f"{variable}.start({', '.join(repr(alias) for alias in node.initial_aliases)})")
+            self.lines.append(
+                f"{variable}.start("
+                f"{', '.join(repr(alias) for alias in node.initial_aliases)})"
+            )
         return variable
 
     def family(self, variable, node):
+        """Restore configurations, removals, and replacements in an open family."""
         # Registry variants can carry configurations/aliases independently of
         # explicitly added variants of the same class.
         for component, child in node._materialized.items():
@@ -253,13 +293,17 @@ class _CodeBuilder:
             if component not in node._replaced_slots or child.node_id in node._removed_ids:
                 continue
             child_variable = self.node(child)
-            self.lines.append(f"{variable}._restore_registry_replacement({self.component(component)}, {child_variable})")
+            self.lines.append(
+                f"{variable}._restore_registry_replacement("
+                f"{self.component(component)}, {child_variable})"
+            )
         for child in node.children:
             child_variable = self.node(child)
             self.lines.append(f"{variable}.add({child_variable})")
 
 
 def to_code(recipe):
+    """Return executable Python that reconstructs the declarative recipe."""
     builder = _CodeBuilder()
     builder.aliases = {node.alias for node in recipe._walk() if node.alias is not None}
     variable = builder.node(recipe)

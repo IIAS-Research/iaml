@@ -5,18 +5,23 @@ from typing import Any
 
 import numpy as np
 
+# Backend availability varies with optional dependencies and scikit-survival versions.
 try:
-    from sksurv.linear_model import WeibullAFT
+    from sksurv.linear_model import WeibullAFT  # pylint: disable=no-name-in-module
+# pylint: disable-next=broad-exception-caught
 except Exception:  # pragma: no cover - optional dependency
     try:
+        # pylint: disable-next=import-error,no-name-in-module
         from sksurv.parametric import WeibullAFT
+    # pylint: disable-next=broad-exception-caught
     except Exception:  # pragma: no cover - optional dependency
-        WeibullAFT = None
+        WeibullAFT = None  # pylint: disable=invalid-name
 
 try:
-    from lifelines import WeibullAFTFitter
+    from lifelines import WeibullAFTFitter  # pylint: disable=import-error
+# pylint: disable-next=broad-exception-caught
 except Exception:  # pragma: no cover - optional dependency
-    WeibullAFTFitter = None
+    WeibullAFTFitter = None  # pylint: disable=invalid-name
 
 from ....predictor import Predictor
 from ....candidate import Candidate
@@ -30,7 +35,12 @@ class ActWeibullAFT(Predictor):
     """[STEP] Weibull AFT"""
 
     name: str = "WeibullAFT"
-    _usage: str = "Use when you want a parametric Weibull AFT model with time ratios, rather than ActCox. Applicable to tabular right-censored survival data with numeric features. Avoid when Weibull fit is implausible or you need flexible nonparametric models like ActExtraSurvivalTrees."
+    _usage: str = (
+        "Use when you want a parametric Weibull AFT model with time ratios, rather than ActCox. "
+        "Applicable to tabular right-censored survival data with numeric features. "
+        "Avoid when Weibull fit is implausible or you need flexible nonparametric models "
+        "like ActExtraSurvivalTrees."
+    )
     _description: str = textwrap.dedent('''\
         WeibullAFT is a parametric accelerated failure time model
         that assumes survival times follow a Weibull distribution and
@@ -131,13 +141,13 @@ class ActWeibullAFT(Predictor):
         return name
 
     def _prepare_lifelines_frame(self, X, y) -> tuple[Any, str, str]:
-        X_selected = self._select_features(X).copy()
-        event_col = self._unique_column_name("_event", X_selected.columns)
-        time_col = self._unique_column_name("_time", X_selected.columns)
+        x_selected = self._select_features(X).copy()
+        event_col = self._unique_column_name("_event", x_selected.columns)
+        time_col = self._unique_column_name("_time", x_selected.columns)
         events, times = self._split_survival_target(y)
-        X_selected[event_col] = events
-        X_selected[time_col] = times
-        return X_selected, time_col, event_col
+        x_selected[event_col] = events
+        x_selected[time_col] = times
+        return x_selected, time_col, event_col
 
     def fit(self, dataset: Dataset):  # pylint: disable=unused-argument
         self.columns = dataset.get_columns_names_by_type(DataType.NUMERIC)
@@ -165,29 +175,31 @@ class ActWeibullAFT(Predictor):
         return self
 
     def predict(self, X):
-        X_selected = self._select_features(X)
+        x_selected = self._select_features(X)
         if self.model and hasattr(self.model, 'predict'):
-            return super().predict(X_selected)
+            return super().predict(x_selected)
         if self.model and hasattr(self.model, 'predict_median'):
-            return self.model.predict_median(X_selected)
+            return self.model.predict_median(x_selected)
         if self.model and hasattr(self.model, 'predict_expectation'):
-            return self.model.predict_expectation(X_selected)
+            return self.model.predict_expectation(x_selected)
         return None
 
     def predict_survival_function(self, X):
-        X_selected = self._select_features(X)
+        x_selected = self._select_features(X)
         if self.model and hasattr(self.model, 'predict_survival_function'):
-            return self.model.predict_survival_function(X_selected)
+            return self.model.predict_survival_function(x_selected)
         raise AttributeError("Unable to predict survival function with this model")
 
     def predict_cumulative_hazard_function(self, X):
-        X_selected = self._select_features(X)
+        x_selected = self._select_features(X)
         if self.model and hasattr(self.model, 'predict_cumulative_hazard_function'):
-            return self.model.predict_cumulative_hazard_function(X_selected)
+            return self.model.predict_cumulative_hazard_function(x_selected)
         if self.model and hasattr(self.model, 'predict_cumulative_hazard'):
-            return self.model.predict_cumulative_hazard(X_selected)
+            return self.model.predict_cumulative_hazard(x_selected)
         raise AttributeError("Unable to predict cumulative hazard function with this model")
 
+    # Preserve the backend-specific scoring options exposed by this adapter.
+    # pylint: disable-next=arguments-differ,keyword-arg-before-vararg
     def score(self, X, y=None, *args, **kwargs):
         if self.backend == 'lifelines':
             if y is None:
@@ -202,22 +214,22 @@ class ActWeibullAFT(Predictor):
                         "lifelines score requires y or a DataFrame containing the "
                         "duration/event columns from fit."
                     )
-                X_frame = self._select_features(X).copy()
-                X_frame[self._lifelines_event_col] = X[self._lifelines_event_col]
-                X_frame[self._lifelines_time_col] = X[self._lifelines_time_col]
-                return self.model.score(X_frame, *args, **kwargs)
-            X_frame = self._select_features(X).copy()
+                x_frame = self._select_features(X).copy()
+                x_frame[self._lifelines_event_col] = X[self._lifelines_event_col]
+                x_frame[self._lifelines_time_col] = X[self._lifelines_time_col]
+                return self.model.score(x_frame, *args, **kwargs)
+            x_frame = self._select_features(X).copy()
             events, times = self._split_survival_target(y)
             if self._lifelines_event_col is None or self._lifelines_time_col is None:
                 self._lifelines_event_col = self._unique_column_name(
-                    "_event", X_frame.columns
+                    "_event", x_frame.columns
                 )
                 self._lifelines_time_col = self._unique_column_name(
-                    "_time", X_frame.columns
+                    "_time", x_frame.columns
                 )
-            X_frame[self._lifelines_event_col] = events
-            X_frame[self._lifelines_time_col] = times
-            return self.model.score(X_frame, *args, **kwargs)
+            x_frame[self._lifelines_event_col] = events
+            x_frame[self._lifelines_time_col] = times
+            return self.model.score(x_frame, *args, **kwargs)
         return self.model.score(self._select_features(X), y, *args, **kwargs)
 
     def suitable(self, dataset: Dataset) -> bool:

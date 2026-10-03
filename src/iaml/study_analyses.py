@@ -112,21 +112,23 @@ def compile_metrics(collection, main_metric, dataset):
     applicable, report = [], []
     for definition in definitions:
         suitable = definition.component.suitable(dataset.X, dataset.y, dataset.type_of_target)
-        if suitable or (main_metric is not None and definition.key == objective):
-            applicable.append(definition)
-            if not suitable:
-                # Existing suitable() methods sometimes express an automatic
-                # recommendation (e.g. accuracy on unbalanced classes). An
-                # explicit objective keeps its exact definition; fold scoring
-                # still rejects unusable predictions or invalid metric outputs.
-                report.append({"key": definition.key, "status": "selected",
-                               "reason": "Explicit objective bypasses the automatic suitability filter"})
-        else:
+        if not suitable and not (main_metric is not None and definition.key == objective):
             record = {"key": definition.key, "status": "inapplicable", "reason":
                       f"Not suitable for target '{dataset.type_of_target}'"}
             report.append(record)
             if definition.key == objective:
                 raise ValueError(f"Main metric '{objective}' is incompatible with this dataset")
+            continue
+        applicable.append(definition)
+        if not suitable:
+            # Existing suitable() methods sometimes express an automatic
+            # recommendation (e.g. accuracy on unbalanced classes). An
+            # explicit objective keeps its exact definition; fold scoring
+            # still rejects unusable predictions or invalid metric outputs.
+            report.append({
+                "key": definition.key, "status": "selected",
+                "reason": "Explicit objective bypasses the automatic suitability filter",
+            })
     return applicable, objective, report
 
 
@@ -155,13 +157,16 @@ def compute_statistics(definitions, dataset):
                 )
             tables.append(display)
             report.append({"key": definition.key, "status": "success"})
-        except Exception as exc:  # independent analyses must retain successful outputs
+        # Isolate arbitrary statistic plugins while retaining successful outputs.
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             Logger().warning(f"Statistic '{definition.key}' failed: {exc!r}")
             report.append({"key": definition.key, "status": "error", "reason": repr(exc)})
     table = pd.concat(tables) if tables else pd.DataFrame()
     if table.index.has_duplicates:
         duplicate = table.index[table.index.duplicated()][0]
-        raise ValueError(f"Several statistics produce row '{duplicate}'; name each variant with .named(...)")
+        raise ValueError(
+            f"Several statistics produce row '{duplicate}'; name each variant with .named(...)"
+        )
     canonical = pd.concat(canonical_tables) if canonical_tables else pd.DataFrame()
     # attrs carry the plotting representation without altering visible labels.
     # Store plain records rather than a nested DataFrame (pandas attrs equality).
@@ -217,7 +222,8 @@ def compute_explanations(definitions, pipeline, dataset, X, y=None):
                 X_train=deepcopy(dataset.X), y_train=deepcopy(dataset.y),
             )
             report.append({"key": definition.key, "status": "success"})
-        except Exception as exc:
+        # Isolate arbitrary explanation plugins while retaining successful outputs.
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             Logger().warning(f"Explanation '{definition.key}' failed: {exc!r}")
             report.append({"key": definition.key, "status": "error", "reason": repr(exc)})
     return results, report

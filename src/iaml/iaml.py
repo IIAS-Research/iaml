@@ -26,13 +26,11 @@ from .worker_manager import WorkerManager
 from .splitters import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
-from .meta_partial_explorer_step import MetaPartialExplorerStep
-from .optimizers import Optimizer, GeneticOptimizer, RandomOptimizer, BayesianOptimizer
+from .optimizers import Optimizer, GeneticOptimizer
 from .predictor import Predictor
 from .logger import Logger
 from .plot import StatisticPlot
 from .actionables.cleaning.act_simple_imputer import ActSimpleImputer
-from .actionables.normalize.act_standard_scaler import ActStandardScaler
 from .sklearn_preprocessor import SklearnPreprocessor
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps
@@ -116,7 +114,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         self.optimizer = optimizer
         """Choose Optimizer"""
-        
+
         self.train_on_n_samples = train_on_n_samples
         """If defined, pick n sample in the dataset before train"""
 
@@ -189,8 +187,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         metrics.clone() if hasattr(metrics, 'clone') else metrics)
         self.statistics = (statistic_family() if statistics is None else
                            statistics.clone() if hasattr(statistics, 'clone') else statistics)
-        self.explanations = (explanation_family() if explanations is None else
-                             explanations.clone() if hasattr(explanations, 'clone') else explanations)
+        self.explanations = (
+            explanation_family() if explanations is None else
+            explanations.clone() if hasattr(explanations, 'clone') else explanations)
         self._metrics_explicit = metrics is not None
         if pipeline is None:
             self.default_pipeline()
@@ -276,6 +275,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     @property
     def metrics(self):
+        """Configured metrics used to evaluate candidate pipelines."""
         return self._metrics_spec
 
     @metrics.setter
@@ -285,6 +285,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     @property
     def statistics(self):
+        """Configured statistics describing the input dataset."""
         return self._statistics_spec
 
     @statistics.setter
@@ -293,6 +294,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     @property
     def explanations(self):
+        """Configured explanations available for fitted candidates."""
         return self._explanations_spec
 
     @explanations.setter
@@ -329,7 +331,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         from .flow.inspection import RecipeReport
         if self._study_snapshot is None:
             data = {
-                'pipeline': self.pipeline.describe().to_dict() if self.pipeline is not None else None,
+                 'pipeline': (self.pipeline.describe().to_dict()
+                              if self.pipeline is not None else None),
                 'metrics': self.metrics.describe().to_dict(),
                 'statistics': self.statistics.describe().to_dict(),
                 'explanations': self.explanations.describe().to_dict(),
@@ -354,7 +357,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def __callback(self, callback: callable, **kwargs: dict) -> None:
         """Call callback function if defined
-        
+
         :param callable callback: Function to call.
         :param dict, optional \\**kwargs: Additional parameters.
         """
@@ -369,15 +372,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         groups_columns: list[str] = None,
         generation_sample_size: int = 200,
         verbose: int = 1) -> list[Candidate]:
-        """Run a very basic pipeline to train a model baseline 
-        
-        :param pd.DataFrame X: Training features 
+        """Run a very basic pipeline to train a model baseline
+
+        :param pd.DataFrame X: Training features
         :param pd.DataFrame y: Training labels
-        :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
+        :param pd.DataFrame, optional groups: Dataframe used to split data by groups.
             Default to None.
-        :param list[str], optional groups_columns: List of column names used to split data by 
+        :param list[str], optional groups_columns: List of column names used to split data by
             groups. Default to None.
-        :param int, optional generation_sample_size: Size of the sample dataset used to generate 
+        :param int, optional generation_sample_size: Size of the sample dataset used to generate
             first generation of candidates (default 200).
         :param int, optional verbose: Verbosity level. Default to 1.
 
@@ -473,16 +476,16 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         callback: callable = None,
         verbose: int = 1,
         log_callback: callable = None) -> list[Candidate]:
-        """Run Pipeline to fit steps and models on X & y data. 
+        """Run Pipeline to fit steps and models on X & y data.
 
-        :param pd.DataFrame X: Training features 
+        :param pd.DataFrame X: Training features
         :param pd.DataFrame y: Training labels
-        :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
+        :param pd.DataFrame, optional groups: Dataframe used to split data by groups.
             Default to None.
-        :param list[str], optional groups_columns: List of column names used to split data by 
+        :param list[str], optional groups_columns: List of column names used to split data by
             groups. Default to None.
         :param int, optional patience: Max generation without improvement. Default to -1.
-        :param int, optional generation_sample_size: Size of the sample dataset used to generate 
+        :param int, optional generation_sample_size: Size of the sample dataset used to generate
             first generation of candidates (default 200).
         :param int, optional n_candidates: Number of candidates to return. Default to 1.
         :param callable, optional callback: Method call after each big step of training.
@@ -591,7 +594,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 }
                 from importlib.metadata import version, PackageNotFoundError
                 versions = {}
-                for package in ('PyIAML', 'numpy', 'pandas', 'scikit-learn', 'imbalanced-learn', 'shap'):
+                for package in (
+                        'PyIAML', 'numpy', 'pandas', 'scikit-learn', 'imbalanced-learn', 'shap'):
                     try:
                         versions[package] = version(package)
                     except PackageNotFoundError:
@@ -753,7 +757,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 Cache.reset()
                 current_candidate = deepcopy(candidate)
                 try:
-                    Logger().info(f"Final fit: {len(refit_X)} rows, {current_candidate.pipeline.name}")
+                    Logger().info(
+                        f"Final fit: {len(refit_X)} rows, {current_candidate.pipeline.name}")
                     current_candidate.pipeline.fit(
                         refit_X,
                         refit_y,
@@ -921,7 +926,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def check_pipeline(self) -> None:
         """Raise Exception if pipeline is not valid
-        
+
         :raise AttributeError: Step Pipeline must contains at least one predictor
         """
         steps = self.__all_steps()
@@ -949,7 +954,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         stage_timeout: float = None,
         drain_pending: bool = False) -> list[Candidate]:
         """Evaluate candidates
-        
+
         :param list[Candidate] candidates: Candidates to evaluate.
         :param Dataset dataset: Dataset used for evaluation.
         :param float, optional timeout: Budget including preparation and submission.
@@ -1022,7 +1027,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 else:
                     self.__queue_evaluation(candidate, dataset, key, cache_key, dataset_key)
                 if cache_key is not None:
-                    evaluation_cache_keys[candidate.pipeline.fingerprint()] = (cache_key, dataset_key)
+                    evaluation_cache_keys[candidate.pipeline.fingerprint()] = (
+                        cache_key, dataset_key)
 
             while self._evaluation_queue and time.monotonic() < deadline:
                 job_id = self._evaluation_queue[0]
@@ -1072,7 +1078,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     if cache_context is not None:
                         self.__cache_evaluation(candidate, *cache_context)
                     for job_id, job in list(self._evaluation_jobs.items()):
-                        if job['candidate'].pipeline.fingerprint() == candidate.pipeline.fingerprint():
+                        if (job['candidate'].pipeline.fingerprint()
+                                == candidate.pipeline.fingerprint()):
                             self._evaluation_jobs.pop(job_id, None)
                             self._evaluation_keys.pop(job['key'], None)
                             self._evaluation_results[id(candidate)] = (ref(candidate), job['key'])
@@ -1096,7 +1103,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     Logger().warning(
                         f"Skipped {skipped} candidates with no computed metrics."
                     )
-                new_candidates = [candidate for candidate in new_candidates if candidate.computed_metrics]
+                new_candidates = [candidate for candidate in new_candidates
+                                  if candidate.computed_metrics]
 
             for candidate in new_candidates:
                 context = self._evaluation_results.get(id(candidate))
@@ -1224,7 +1232,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 candidate.pipeline.fingerprint(),
                 hash_evaluation_context(signature), audit.get('dataset_fingerprint'))
             existing = merged.get(key)
-            if existing is None or candidate.get_main_metric_score() >= existing.get_main_metric_score():
+            if (existing is None
+                    or candidate.get_main_metric_score() >= existing.get_main_metric_score()):
                 merged[key] = candidate
         return sorted(merged.values(), reverse=True)
 
@@ -1323,7 +1332,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         max_duration: int = -1,
         callback: callable = None) -> list[Candidate]:
         """Optimize candidates.
-        
+
         :param Dataset dataset: Dataset used for optimization.
         :param list[Candidate], optional candidates: Candidates to optimize.
         :param Optimizer, optional optimizer: Optimizer to use.
@@ -1376,12 +1385,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         callback=callback)
 
             # Remove not computed (error or timeout)
-            evaluated_candidates = [candidate for candidate in evaluated_candidates if candidate.computed_metrics]
+            evaluated_candidates = [candidate for candidate in evaluated_candidates
+                                    if candidate.computed_metrics]
 
             if not evaluated_candidates:
                 candidates = previous_candidates
                 if not self.__evaluations_pending():
-                    Logger().warning('No candidates produced a valid evaluation; keeping previous best candidates.')
+                    Logger().warning(
+                        'No candidates produced a valid evaluation; keeping previous best candidates.')
                     break
                 # A stage timeout only pauses result collection. In particular,
                 # it must not spend patience before slower jobs can be scored.
@@ -1389,7 +1400,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 iterations_count += 1
                 continue
 
-            candidates = self.__merge_evaluated_candidates(previous_candidates, evaluated_candidates)
+            candidates = self.__merge_evaluated_candidates(
+                previous_candidates, evaluated_candidates)
             previous_candidates = candidates
 
             # Improvement ?
@@ -1490,9 +1502,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         return self.first_step.json_pipeline()
 
     def all_configurations(self) -> list[dict]:
-        """Return a dict with configurations of all steps. 
+        """Return a dict with configurations of all steps.
 
-        :return: Configurations of all steps. 
+        :return: Configurations of all steps.
         """
         if self.first_step is None:
             self._prepare_flow()

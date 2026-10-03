@@ -15,6 +15,7 @@ from .parameters import Const, Int, Float, ParameterSpec
 
 
 def component_kind(component):
+    """Return the recipe family supported by an IAML component class."""
     if not isinstance(component, type):
         raise TypeError("use expects an IAML component class")
     if issubclass(component, Step):
@@ -23,12 +24,16 @@ def component_kind(component):
         return "metrics"
     if issubclass(component, Statistic):
         return "statistics"
-    if issubclass(component, MetricPlot) or getattr(component, "_flow_kind", None) == "explanations":
+    if (
+        issubclass(component, MetricPlot)
+        or getattr(component, "_flow_kind", None) == "explanations"
+    ):
         return "explanations"
     raise TypeError(f"{component.__name__} is not an IAML training or analysis component")
 
 
 def as_recipe(value):
+    """Keep a recipe or wrap an IAML component class in a component recipe."""
     return value if isinstance(value, Recipe) else ComponentSpec(value)
 
 
@@ -103,6 +108,7 @@ class Recipe:
         return self
 
     def clone(self):
+        """Copy this recipe with fresh identities and no attached study owner."""
         result = deepcopy(self)
         def renew(node):
             old = node.node_id
@@ -112,7 +118,9 @@ class Recipe:
                 children = list(node.children) + list(node._materialized.values())
                 for child in dict.fromkeys(children):
                     mapping.update(renew(child))
-                node._removed_ids = {mapping.get(identity, identity) for identity in node._removed_ids}
+                node._removed_ids = {
+                    mapping.get(identity, identity) for identity in node._removed_ids
+                }
             return mapping
         renew(result)
         return result
@@ -126,6 +134,7 @@ class Recipe:
                 aliases.add(node.alias)
 
     def named(self, alias):
+        """Assign a unique alias used to select and edit this recipe node."""
         if not isinstance(alias, str) or not alias:
             raise ValueError("An alias must be a nonempty string")
         if any(node is not self and node.alias == alias for node in self._root()._walk()):
@@ -169,11 +178,13 @@ class Recipe:
         return SequenceSpec(children)
 
     def find_all(self, component):
+        """Select every occurrence of a component class within this recipe."""
         component_kind(component)
         return Selection(self, [node for node in self._walk()
                                 if isinstance(node, ComponentSpec) and node.component is component])
 
     def replace(self, recipe):
+        """Replace an attached node while retaining its alias and container position."""
         if self._parent is None and self._owner is None:
             raise ValueError("replace requires an attached recipe")
         replacement = as_recipe(recipe).clone()
@@ -203,14 +214,17 @@ class Recipe:
         return replacement
 
     def describe(self):
+        """Return a readable description of this recipe and its configuration."""
         from .inspection import describe
         return describe(self)
 
     def diff(self, base):
+        """Describe the changes between this recipe and a reference recipe."""
         from .inspection import diff
         return diff(self, base)
 
     def to_code(self):
+        """Return Python code that reconstructs this recipe."""
         from .inspection import to_code
         return to_code(self)
 
@@ -229,7 +243,9 @@ class ComponentSpec(Recipe):
             try:
                 instance = component()
             except TypeError as error:
-                raise TypeError(f"{component.__name__} must support an unfitted default constructor") from error
+                raise TypeError(
+                    f"{component.__name__} must support an unfitted default constructor"
+                ) from error
             for key, conf in instance.configuration.items():
                 self._constructor_defaults[key] = deepcopy(conf.get("default", conf.get("value")))
                 self.parameters[key] = ParameterSpec(
@@ -241,10 +257,14 @@ class ComponentSpec(Recipe):
         else:
             signature = inspect.signature(component.__init__)
             for key, parameter in signature.parameters.items():
-                if key != "self" and parameter.kind not in (parameter.VAR_KEYWORD, parameter.VAR_POSITIONAL):
+                if key != "self" and parameter.kind not in (
+                    parameter.VAR_KEYWORD, parameter.VAR_POSITIONAL
+                ):
                     if parameter.default is not parameter.empty:
                         self._constructor_defaults[key] = deepcopy(parameter.default)
-                        self.parameters[key] = ParameterSpec(deepcopy(parameter.default), fixed=True)
+                        self.parameters[key] = ParameterSpec(
+                            deepcopy(parameter.default), fixed=True
+                        )
         self.configure(**params)
 
     def _prepare(self, params):
@@ -252,7 +272,9 @@ class ComponentSpec(Recipe):
         if not params:
             return prepared
         signature = inspect.signature(self.component.__init__)
-        constraints = _backend_parameter_constraints(self.component) if self.kind == "pipeline" else {}
+        constraints = (
+            _backend_parameter_constraints(self.component) if self.kind == "pipeline" else {}
+        )
         for key, value in params.items():
             if self.kind == "pipeline":
                 if key not in prepared:
@@ -260,15 +282,22 @@ class ComponentSpec(Recipe):
                 prepared[key] = prepared[key].updated(value)
                 default = self._constructor_defaults[key]
                 actual = prepared[key].value
-                if key not in constraints and isinstance(default, bool) and not isinstance(actual, bool):
+                if (
+                    key not in constraints
+                    and isinstance(default, bool)
+                    and not isinstance(actual, bool)
+                ):
                     raise TypeError(f"{self.component.__name__}.{key} requires a boolean")
                 if isinstance(default, Integral) and not isinstance(default, bool) and (
-                    isinstance(actual, bool) or (key not in constraints and not isinstance(actual, Integral))
+                    isinstance(actual, bool)
+                    or (key not in constraints and not isinstance(actual, Integral))
                 ):
                     raise TypeError(f"{self.component.__name__}.{key} requires an integer")
             else:
                 if isinstance(value, (Int, Float)):
-                    raise TypeError(f"Analysis parameter {key!r} is fixed; search domains are unsupported")
+                    raise TypeError(
+                        f"Analysis parameter {key!r} is fixed; search domains are unsupported"
+                    )
                 if key not in signature.parameters or key == "self":
                     raise AttributeError(f"Unknown parameter {key!r} for {self.component.__name__}")
                 actual = value.value if isinstance(value, Const) else value
@@ -278,12 +307,17 @@ class ComponentSpec(Recipe):
             try:
                 self.component(**kwargs)
             except Exception as error:
-                raise ValueError(f"Invalid configuration of {self.component.__name__}: {error}") from error
+                raise ValueError(
+                    f"Invalid configuration of {self.component.__name__}: {error}"
+                ) from error
         else:
-            _validate_backend_constraints(self.component, {key: prepared[key].value for key in params}, constraints)
+            _validate_backend_constraints(
+                self.component, {key: prepared[key].value for key in params}, constraints
+            )
         return prepared
 
     def configure(self, **params):
+        """Validate and apply parameter values or search domains to this component."""
         prepared = self._prepare(params)
         self.parameters = prepared
         self._declared_params.update(params)
@@ -292,7 +326,9 @@ class ComponentSpec(Recipe):
     def instantiate(self):
         """Create a fresh unfitted component carrying its declared policy."""
         if self.kind != "pipeline":
-            return self.component(**{key: deepcopy(param.value) for key, param in self.parameters.items()})
+            return self.component(
+                **{key: deepcopy(param.value) for key, param in self.parameters.items()}
+            )
         instance = self.component()
         policy = {}
         for key, param in self.parameters.items():
@@ -304,9 +340,11 @@ class ComponentSpec(Recipe):
             elif param.explicit_domain:
                 conf.pop("categorical", None)
                 conf["range"] = list(param.domain)
-            policy[key] = {"fixed": param.fixed, "domain": list(param.domain) if param.domain else None,
-                           "optimizable": param.optimizable and not param.fixed,
-                           "explicit_domain": param.explicit_domain}
+            policy[key] = {
+                "fixed": param.fixed, "domain": list(param.domain) if param.domain else None,
+                "optimizable": param.optimizable and not param.fixed,
+                "explicit_domain": param.explicit_domain,
+            }
         instance._flow_parameters = policy
         instance._flow_node_id = self.node_id
         instance._flow_variant_id = self.node_id
@@ -333,10 +371,12 @@ class Selection:
         return len(self.targets)
 
     def configure(self, **params):
+        """Apply validated parameters atomically to every selected component."""
         if not self.targets:
             return self
         if self.scope._root() is not self._root or (
-            self._owner is not None and getattr(self._owner, self._owner_field, None) is not self._root
+            self._owner is not None
+            and getattr(self._owner, self._owner_field, None) is not self._root
         ):
             raise ValueError("Selection scope was detached; call find_all again")
         current = set(self.scope._walk())
@@ -350,6 +390,8 @@ class Selection:
 
 
 class GroupSpec(Recipe):
+    """A group of explicit children or components from an automatic registry."""
+
     mode = "sequence"
 
     def __init__(self, children=(), *, tag=None):
@@ -413,7 +455,9 @@ class GroupSpec(Recipe):
         node._check_aliases()
         old = self._materialized.get(component)
         replaced = set(old._walk()) if old is not None else set()
-        aliases = {n.alias for n in self._root()._walk() if n not in replaced and n.alias is not None}
+        aliases = {
+            n.alias for n in self._root()._walk() if n not in replaced and n.alias is not None
+        }
         if aliases.intersection(n.alias for n in node._walk() if n.alias is not None):
             raise ValueError("Replacement introduces a duplicate alias")
         if old is not None:
@@ -424,6 +468,7 @@ class GroupSpec(Recipe):
         return self
 
     def add(self, recipe, before=None):
+        """Add a cloned recipe, optionally before an aliased sequence item."""
         node = self._coerce(recipe).clone()
         if before is not None:
             anchor = self[before]
@@ -446,6 +491,7 @@ class GroupSpec(Recipe):
         return self
 
     def remove(self, *selectors):
+        """Remove children selected by alias or component class."""
         targets = []
         for selector in selectors:
             if isinstance(selector, str):
@@ -463,8 +509,14 @@ class GroupSpec(Recipe):
                 raise TypeError("remove expects aliases or component classes")
         for node in targets:
             parent = node._parent
-            if isinstance(parent, ChoiceSpec) and parent.initial_aliases is not None and node.alias in parent.initial_aliases:
-                raise ValueError(f"Call start() or choose another start before removing {node.alias!r}")
+            if (
+                isinstance(parent, ChoiceSpec)
+                and parent.initial_aliases is not None
+                and node.alias in parent.initial_aliases
+            ):
+                raise ValueError(
+                    f"Call start() or choose another start before removing {node.alias!r}"
+                )
         for node in dict.fromkeys(targets):
             parent = node._parent
             if node in parent.children:
@@ -480,6 +532,7 @@ class GroupSpec(Recipe):
         return self
 
     def freeze(self):
+        """Replace automatic registry expansion with the currently resolved children."""
         children = self._children()
         self.children = children
         self._materialized = {}
@@ -493,14 +546,20 @@ class GroupSpec(Recipe):
 
 
 class SequenceSpec(GroupSpec):
+    """A recipe whose children run in their declared order."""
+
     mode = "sequence"
 
 
 class AdaptiveSpec(GroupSpec):
+    """A recipe that runs each applicable child for the candidate dataset."""
+
     mode = "adaptive"
 
 
 class ChoiceSpec(GroupSpec):
+    """A recipe representing alternative component or pipeline choices."""
+
     mode = "choice"
 
     def __init__(self, children=(), *, tag=None):
@@ -510,6 +569,7 @@ class ChoiceSpec(GroupSpec):
         super().__init__(children, tag=tag)
 
     def start(self, *aliases):
+        """Choose aliased direct alternatives to evaluate at the start of search."""
         if len(set(aliases)) != len(aliases):
             raise ValueError("start aliases must be distinct")
         available = {node.alias for node in self._children() if node.alias is not None}
@@ -524,6 +584,7 @@ class PipelineSpec(ChoiceSpec):
     """Root of the default recipe, containing main and minimal strategies."""
     @classmethod
     def default(cls):
+        """Build a fresh copy of IAML's default main and minimal recipes."""
         from .compiler import default_spec
         return default_spec()
 
@@ -557,45 +618,56 @@ class AnalysisCollection(GroupSpec):
         public = {value for value in vars(module).values() if isinstance(value, type)
                   and issubclass(value, base) and value is not base}
         # Imported experimental IAML components stay out of automatic families.
-        public.update(cls for cls in base.all_subclasses() if not cls.__module__.startswith("iaml."))
+        public.update(
+            cls for cls in base.all_subclasses() if not cls.__module__.startswith("iaml.")
+        )
         return public
 
     def resolved(self):
+        """Return the requested analysis components after validating their aliases."""
         self._check_aliases()
         return list(self._children())
 
 
 def use(component, **params):
+    """Declare an unfitted component with optional parameter configuration."""
     return ComponentSpec(component, **params)
 
 
 def choice(*alternatives, tag=None):
+    """Declare explicit alternatives or an automatic family selected by tag."""
     if alternatives and tag is not None:
         raise ValueError("choice accepts alternatives or tag, not both")
     return ChoiceSpec(alternatives, tag=tag)
 
 
 def normalizers():
+    """Declare a choice from the registered normalization components."""
     return choice(tag="normalize")
 
 
 def predictors():
+    """Declare a choice from the registered predictor components."""
     return choice(tag="predictor")
 
 
 def optional(recipe):
+    """Allow a recipe to be either present or omitted during search."""
     result = ChoiceSpec([recipe])
     result._allow_absence = True
     return result
 
 
 def metrics(*components):
+    """Declare requested metrics, using the registered defaults when omitted."""
     return AnalysisCollection("metrics", components, defaults=not components)
 
 
 def statistics(*components):
+    """Declare requested statistics, using the registered defaults when omitted."""
     return AnalysisCollection("statistics", components, defaults=not components)
 
 
 def explanations(*components):
+    """Declare requested explanations, using the registered defaults when omitted."""
     return AnalysisCollection("explanations", components, defaults=not components)

@@ -502,9 +502,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         :param Candidate candidate: Candidate to run the step for.
         :return: Run candidate.
         """
-        
+
         # Never fit predictor during generation of candidates
-        if self.tags and 'predictor' in self.tags:
+        if 'predictor' in (self.tags or ()):
             return candidate.add_to_pipeline(self)
 
         self.fit(candidate.dataset)
