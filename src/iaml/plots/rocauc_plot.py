@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
 from ..metric_plot import MetricPlot, capture
+from ._classification import binary_probability_inputs
 if TYPE_CHECKING:
     from ..iaml_pipeline import IAMLPipeline
 
@@ -33,19 +34,9 @@ class ROCAUCPlot(MetricPlot):
         patients with the disease from those without. The closer the curve is to the top-left corner and 
         the higher the AUC score, the better the model is at distinguishing between the conditions.
 
-        **Micro-average** and **macro-average** ROC curves are useful when dealing with multiclass classification 
-        problems (where there are more than two classes). 
-
-        - **Micro-average** ROC aggregates the contributions of all classes and calculates metrics globally 
-            by counting the total true positives, false positives, true negatives, and false negatives. 
-            It provides a single ROC curve by combining all classes, treating each decision as a binary one 
-            (one-vs-rest). This is useful when you care about the overall performance of the classifier across 
-            all categories.
-
-        - **Macro-average** ROC computes the ROC curve for each class separately and then averages the results. 
-            This gives equal weight to all classes, regardless of the number of samples. Macro-average is useful 
-            when you want to evaluate the model's performance on each class individually, giving each class the 
-            same importance, regardless of how often it appears in the dataset.
+        This plot supports binary classifiers. The positive class is the second fitted class,
+        corresponding to the second predict_proba column. Both classes must occur in the
+        evaluation targets for ROC AUC to be defined.
 
         Doctors and data scientists use this visualization to ensure that the model performs well across 
         different threshold values, making it a critical tool in situations where misdiagnosis could have 
@@ -63,15 +54,12 @@ class ROCAUCPlot(MetricPlot):
         **kwargs) -> MetricPlot:
         self._binary_image = io.BytesIO()
 
-        pos_label = None
-        if y.dtype not in ['int', 'bool']:
-            pos_label = y.iloc[0] if isinstance(y, pd.Series) else y[0]
-
-        # Predict probabilities
-        y_prob = estimator.predict_proba(X)[:, 1]
+        targets, y_prob = binary_probability_inputs(estimator, X, y)
+        if not targets.any() or targets.all():
+            raise ValueError("ROC AUC requires both fitted classes in the evaluation targets")
 
         # Compute ROC curve and AUC
-        fpr, tpr, _ = roc_curve(y, y_prob, pos_label=pos_label)
+        fpr, tpr, _ = roc_curve(targets, y_prob)
         roc_auc = auc(fpr, tpr)
 
         # Create the ROC plot
