@@ -149,7 +149,9 @@ class SlidingStageSearchTests(unittest.TestCase):
         executor = self.engine.executor
         executor.completions = [(1, {}), (1, {'slow': 0.9, 'newer': 0.8}), (0, {})]
         self.assertEqual(self.evaluate([slow]), [])
-        self.assertEqual(len(self.evaluate([newer], dataset=changed)), 2)
+        # The earlier score is retained with its provenance, but does not enter
+        # the changed population's ranking until it has been evaluated there.
+        self.assertEqual(len(self.evaluate([newer], dataset=changed)), 1)
         key = self.engine._IAML__evaluation_cache_key(
             slow, hash_evaluation_context(self.engine.splitter))
         self.assertIsNotNone(Cache().from_cache(key, self.dataset.fingerprint()))

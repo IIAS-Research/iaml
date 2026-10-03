@@ -4,7 +4,7 @@ Search and evaluate modular prediction pipelines for clinical research with
 tabular data. Trained candidates expose their pipeline steps, evaluation metrics
 and explanation methods for inspection and study reporting.
 """
-from copy import deepcopy
+from copy import copy, deepcopy
 from collections import deque
 from weakref import ref
 import time
@@ -513,6 +513,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self._evaluation_sequence = 0
         self._evaluation_progress = None
         self._evaluation_results = {}
+        self._completed_evaluations = {}
+        self._evaluation_datasets = {}
+        self._evaluation_splitter_contexts = {}
         self.training_history = []
         self._training_history_seen = set()
 
@@ -640,6 +643,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
 
             sampling_started_at = time.monotonic()
+            warmup_dataset = dataset
 
             # Warmup is real CV, so it must use the same interruptible executor
             # and shared search/stage budgets as every subsequent evaluation.
@@ -696,11 +700,19 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     break
 
             if not gen0_candidates:
-                if warmup_candidate and warmup_candidate.computed_metrics:
+                fallback_candidates, fallback_dataset = self.__previous_population(dataset)
+                if fallback_candidates:
+                    Logger().warning(
+                        "No current-population result before timeout; using completed evaluations "
+                        "from one earlier search population."
+                    )
+                    gen0_candidates, dataset = fallback_candidates, fallback_dataset
+                elif warmup_candidate and warmup_candidate.computed_metrics:
                     Logger().warning(
                         "No candidates evaluated before timeout; using warmup candidate."
                     )
                     gen0_candidates = [warmup_candidate]
+                    dataset = warmup_dataset
                 elif remain_time() < 1:
                     raise TimeoutError('IAML was unable to generate a model within the \
                         imposed time limit. Try increasing the processing time')
@@ -723,6 +735,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     [], dataset, timeout=remain_time(), callback=callback,
                     drain_pending=True)
                 candidates = self.__merge_evaluated_candidates(candidates, trailing_candidates)
+
+            # Scores from earlier search populations remain available, but can
+            # enter this ranking only after evaluation on the current data.
+            candidates = self.__compare_completed_candidates(
+                candidates, dataset, timeout=remain_time(), callback=callback)
 
             ### FINAL FIT
             self.executor.shutdown()
@@ -776,6 +793,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self._evaluation_keys.clear()
             self._evaluation_queue.clear()
             self._evaluation_results.clear()
+            self._completed_evaluations.clear()
+            self._evaluation_datasets.clear()
+            self._evaluation_splitter_contexts.clear()
 
     @property
     def chosen_model(self) -> 'IAMLPipeline':
@@ -958,9 +978,16 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self._evaluation_queue = deque()
             self._evaluation_sequence = 0
             self._evaluation_results = {}
+            self._completed_evaluations = {}
+            self._evaluation_datasets = {}
+            self._evaluation_splitter_contexts = {}
         new_candidates: list[Candidate] = []
         splitter_fingerprint = hash_evaluation_context(self.splitter)
         dataset_key = dataset.fingerprint()
+        self._evaluation_datasets[dataset_key] = dataset
+        if candidates or dataset_key not in self._evaluation_splitter_contexts:
+            self._evaluation_splitter_contexts[dataset_key] = (
+                id(self.splitter), splitter_fingerprint)
         evaluation_cache_keys = {}
         with Logger().progress as progress:
             task = progress.add_task(
@@ -1071,6 +1098,16 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     )
                 new_candidates = [candidate for candidate in new_candidates if candidate.computed_metrics]
 
+            for candidate in new_candidates:
+                context = self._evaluation_results.get(id(candidate))
+                if context is not None and context[0]() is candidate:
+                    self._completed_evaluations[context[1]] = candidate
+
+            # A result carried across a downsizing boundary belongs to the
+            # population on which its worker actually evaluated it.
+            new_candidates = [candidate for candidate in new_candidates
+                              if self.__evaluation_matches(candidate, dataset_key)]
+
             new_candidates.sort(reverse=True)
 
             # Add results to progressbar
@@ -1118,6 +1155,63 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def __evaluations_pending(self):
         """Whether submitted or deferred evaluation work remains."""
         return bool(getattr(self, '_evaluation_jobs', {}))
+
+    def __evaluation_matches(self, candidate, dataset_key):
+        context = getattr(self, '_evaluation_results', {}).get(id(candidate))
+        if context is not None and context[0]() is candidate:
+            key = context[1]
+            evaluated_dataset = key[3] if len(key) == 5 else key[-1]
+            if evaluated_dataset != dataset_key:
+                return False
+            splitter_id, splitter_key = self._evaluation_splitter_contexts[dataset_key]
+            if len(key) == 2 and isinstance(key[0], str) and key[0].startswith('IAML_'):
+                return key[0].startswith(f'IAML_{splitter_key}_')
+            return len(key) != 5 or key[2] == splitter_id
+        audit_key = (candidate.training_audit or {}).get('dataset_fingerprint')
+        return audit_key is None or audit_key == dataset_key
+
+    def __previous_population(self, current_dataset):
+        """Choose one population with completed scores without comparing populations."""
+        populations = getattr(self, '_evaluation_datasets', {})
+        current_key = current_dataset.fingerprint()
+        ordered_keys = [current_key] + [key for key in reversed(populations) if key != current_key]
+        completed = list(getattr(self, '_completed_evaluations', {}).values())
+        for dataset_key in ordered_keys:
+            candidates = [candidate for candidate in completed
+                          if self.__evaluation_matches(candidate, dataset_key)]
+            if candidates:
+                return self.__merge_evaluated_candidates([], candidates), populations.get(
+                    dataset_key, current_dataset)
+        return [], current_dataset
+
+    def __compare_completed_candidates(self, candidates, dataset, timeout, callback=None):
+        """Use remaining search time to bring earlier candidates onto common data."""
+        dataset_key = dataset.fingerprint()
+        completed = list(getattr(self, '_completed_evaluations', {}).values())
+        comparable = [candidate for candidate in candidates + completed
+                      if self.__evaluation_matches(candidate, dataset_key)]
+        comparable = self.__merge_evaluated_candidates([], comparable)
+        signatures = {(candidate.pipeline.fingerprint(), candidate.evaluation_context_signature())
+                      for candidate in comparable}
+        missing = {}
+        for candidate in completed:
+            signature = candidate.pipeline.fingerprint(), candidate.evaluation_context_signature()
+            if signature not in signatures:
+                missing.setdefault(signature, candidate)
+        if missing and timeout > 0:
+            Logger().info(f"Comparing {len(missing)} earlier pipelines on {len(dataset.X)} rows")
+            previous_context = self._evaluation_splitter_contexts.get(dataset_key)
+            completed = self.__run_evaluations(
+                [copy(candidate) for candidate in missing.values()], dataset,
+                timeout=timeout, callback=callback, drain_pending=True)
+            merged = self.__merge_evaluated_candidates(comparable, completed)
+            current = [candidate for candidate in merged
+                       if self.__evaluation_matches(candidate, dataset_key)]
+            if current:
+                comparable = current
+            elif previous_context is not None:
+                self._evaluation_splitter_contexts[dataset_key] = previous_context
+        return comparable
 
     def __merge_evaluated_candidates(self, previous, completed):
         """Retain scored pipelines while incorporating later stage results."""
