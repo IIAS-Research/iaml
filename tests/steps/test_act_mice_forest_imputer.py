@@ -140,6 +140,7 @@ class TestMICEConfiguration(StepTestCase):
         first = self.make_kernel()
         first.mice.side_effect = IndexError("mean matching failed")
         fallback = self.make_kernel()
+        fallback.mean_match_candidates = {"age": 0}
         completed = SimpleNamespace(complete_data=lambda dataset: self.df[["age"]].ffill())
         fallback.impute_new_data.side_effect = [KeyError("seed"), completed]
         with patch("iaml.actionables.cleaning.act_mice.mf.ImputationKernel",
@@ -155,5 +156,6 @@ class TestMICEConfiguration(StepTestCase):
         self.assertEqual(factory.call_args.kwargs["mean_match_candidates"], 0)
         for call in fallback.impute_new_data.call_args_list:
             self.assertEqual(call.kwargs["iterations"], 2)
-        self.assertEqual(fallback.impute_new_data.call_args.kwargs["mean_match_candidates"], 0)
+        self.assertNotIn("mean_match_candidates", fallback.impute_new_data.call_args.kwargs)
+        self.assertEqual(fallback.mean_match_candidates, {"age": 0})
         self.assertFalse(result["age"].isna().any())
