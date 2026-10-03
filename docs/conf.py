@@ -63,9 +63,9 @@ html_static_path = ['_static']
 html_css_files = ['iaml.css', 'workflow-demo.css']
 
 
-def add_homepage_scripts(app, pagename, _templatename, _context, _doctree):
-    """Load the locally bundled animation library only on the homepage."""
-    if pagename == 'index':
+def add_discovery_scripts(app, pagename, _templatename, _context, _doctree):
+    """Load the locally bundled walkthrough scripts on the discovery pages."""
+    if pagename in {'index', 'discover_pipelines'}:
         for filename in (
             'vendor/gsap/gsap.min.js',
             'vendor/gsap/ScrollTrigger.min.js',
@@ -75,4 +75,4 @@ def add_homepage_scripts(app, pagename, _templatename, _context, _doctree):
 
 
 def setup(app):
-    app.connect('html-page-context', add_homepage_scripts)
+    app.connect('html-page-context', add_discovery_scripts)

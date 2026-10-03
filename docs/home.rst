@@ -36,7 +36,7 @@ permitted alternatives, edit parameter domains and configure the analyses
 around training. Your own components can join these recipes through the
 extension interfaces.
 
-discover_pipelines introduces these possibilities visually.
+:doc:`discover_pipelines` introduces these possibilities visually.
 pipelines/index directs you to the construction, study configuration
 and extension guides when you are ready to customize a workflow.
 

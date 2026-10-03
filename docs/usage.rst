@@ -317,7 +317,7 @@ and ``minimal`` separately; ``search.pipeline.remove("minimal")`` removes the
 minimal strategy. ``PipelineSpec.default()`` provides the same preset for use
 outside a study.
 
-Continue with discover_pipelines for a tour of composition, reusable
+Continue with :doc:`discover_pipelines` for a tour of composition, reusable
 fragments and component extensions. The :doc:`construction guide <pipelines/guide>`
 shows how to supply a complete recipe, edit variants and define parameter
 domains through the same training entry point.

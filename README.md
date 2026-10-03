@@ -61,7 +61,7 @@ shows the model, performance plots and SHAP outputs produced by this workflow.
 ## Compose and adapt complete pipelines
 
 Pipeline configuration is optional. To see what it enables, explore
-[Customize IAML](https://iias-research.github.io/iaml/pipelines/guide.html),
+[Customize IAML](https://iias-research.github.io/iaml/discover_pipelines.html),
 then try the recipe below when your study needs specific methods.
 
 Build a recipe from reusable components, then train it through the same `fit`

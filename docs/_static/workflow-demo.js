@@ -1,21 +1,35 @@
-/* GSAP pins the recorded walkthrough. Reduced motion keeps the complete page readable. */
+/* GSAP pins the discovery walkthroughs. Reduced motion keeps every slide readable. */
 (() => {
   "use strict";
 
   function enhance(root, gsap, ScrollTrigger) {
     const pin = root.querySelector(".iaml-story-pin");
     const progress = root.querySelector(".iaml-story-progress");
+    const controls = root.querySelector(".iaml-story-controls");
     const buttons = [...root.querySelectorAll(".iaml-story-controls [data-story-step]")];
     const phases = buttons.map(button => root.querySelector(
       '[data-story-phase="' + button.dataset.storyStep + '"]'));
     const captions = buttons.map(button => root.querySelector(
       '[data-story-caption="' + button.dataset.storyStep + '"]'));
-    if (!pin || !progress || buttons.length < 2
+    if (!pin || !progress || !controls || buttons.length < 2
         || phases.some(phase => !phase) || captions.some(caption => !caption)) return;
 
     let timeline = null;
     let active = -1;
     const last = phases.length - 1;
+
+    function revealActiveButton() {
+      if (!controls.hasAttribute("data-scroll-steps")) return;
+      const viewport = controls.getBoundingClientRect();
+      const button = buttons[active].getBoundingClientRect();
+      if (button.left < viewport.left || button.right > viewport.right) {
+        controls.scrollTo({
+          left: controls.scrollLeft + button.left - viewport.left
+            - (controls.clientWidth - button.width) / 2,
+          behavior: "auto",
+        });
+      }
+    }
 
     function syncAccessibility() {
       if (!timeline) return;
@@ -33,6 +47,7 @@
           else buttons[i].removeAttribute("aria-current");
         });
         if (moveFocus) buttons[active].focus({ preventScroll: true });
+        revealActiveButton();
       }
       const percent = Math.round(timeline.progress() * 100);
       progress.setAttribute("aria-valuenow", String(percent));

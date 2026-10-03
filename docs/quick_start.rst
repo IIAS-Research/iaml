@@ -69,6 +69,6 @@ Compose pipelines for your team
 ===============================
 
 For reusable recipes and study-specific methods, continue with
-discover_pipelines. This optional tour introduces the
+:doc:`discover_pipelines`. This optional tour introduces the
 Pipeline API and :doc:`component extensions <adaptability>`
 while keeping the training and evaluation workflow shown here.
