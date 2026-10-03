@@ -156,11 +156,11 @@ class BoxPlot(StatisticPlot):
             plt.savefig(self._binary_image, format='png')
             return self
 
-        plt.figure(figsize=(max(4.0, 0.9 * len(entries)), 4.0))
-        plt.bxp(entries, showfliers=False)
-        plt.ylabel('Value')
+        figure, axes = plt.subplots(figsize=(max(4.0, 0.9 * len(entries)), 4.0))
+        axes.bxp(entries, showfliers=False)
+        axes.set_ylabel('Value')
         if base_name:
-            plt.title(f"Box plot: {base_name}")
-        plt.tight_layout()
-        plt.savefig(self._binary_image, format='png')
+            axes.set_title(f"Box plot: {base_name}")
+        figure.tight_layout()
+        figure.savefig(self._binary_image, format='png')
         return self
