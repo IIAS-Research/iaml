@@ -10,6 +10,7 @@ from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
 from ..logger import Logger
+from ..search_policy import parameter_keys
 
 class RandomOptimizer(Optimizer):
     def __init__(self, duration:int=None, max_iterations=50):
@@ -28,8 +29,9 @@ class RandomOptimizer(Optimizer):
     
     def _randomize_hyperparameters(self, candidate):
         """Randomly modifies the hyperparameters of a given candidate."""
-        for _, step in candidate.pipeline.steps:
-            for key, config in step.configuration.items():
+        for _, step in candidate.pipeline.training_steps:
+            for key in parameter_keys(step):
+                config = step.configuration[key]
                 # Get random values
                 
                 if type(config['value']) in [int, float]: # Numeric value ? Let's apply multiplier
@@ -38,7 +40,7 @@ class RandomOptimizer(Optimizer):
                     new_value = None
                     if 'range' in config: # Random in range
                         new_value = random.uniform(*config['range'])
-                    else: # Strong multiplier -> kind of random
+                    else: # Explore relative to the current value
                         # Randomly choose a positive or negative editing
                         if bool(random.getrandbits(1)):
                             # Negative -> Multiply value by something between 0.01 and 1
@@ -96,6 +98,6 @@ class RandomOptimizer(Optimizer):
     
     # Does the configuration is valid or not ?
     def __valide_config(self, config:dict, value:any) -> bool:
-        if 'range' not in config.keys():
+        if 'range' not in config:
             return True
         return config['range'][0] <= value <= config['range'][1]

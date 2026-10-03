@@ -95,7 +95,7 @@ class TestFlowOptimizers(unittest.TestCase):
         return candidate
 
     def test_all_optimizers_keep_const_and_original_candidate(self):
-        for optimizer in (GeneticOptimizer(nb_candidate=4),):
+        for optimizer in (RandomOptimizer(), GeneticOptimizer(nb_candidate=4)):
             with self.subTest(optimizer=type(optimizer).__name__):
                 candidate = self.candidate()
                 before = candidate.pipeline.fingerprint()
@@ -128,6 +128,12 @@ class TestFlowOptimizers(unittest.TestCase):
 
 
 
+    def test_random_and_bayesian_include_resamplers(self):
+        candidate = self.candidate(resampler=compiled(_SearchResampler()))
+        with patch('iaml.optimizers.random_optimizer.random.uniform', return_value=7):
+            result = RandomOptimizer()._randomize_hyperparameters(deepcopy(candidate))
+        self.assertEqual(result.pipeline.resamplers[0][1].get_config('depth'), 7)
+        self.assertEqual(result.pipeline.resamplers[0][1].get_config('locked'), 4)
 
     def test_genetic_uses_only_local_configured_variants(self):
         first = compiled(_SearchTransform(), variant='first')
