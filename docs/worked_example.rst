@@ -15,9 +15,10 @@ The script reverses the original dataset labels to make that convention explicit
 Read the results
 ================
 
-IAML compares candidates using five-fold cross-validation, then fits the
-selected pipeline on the training observations. In the illustrated run it
-selected a **CatBoost classifier**, with no additional feature transformation.
+By default, IAML compares candidates using three-fold cross-validation, then
+fits the selected pipeline on the training observations. The illustrated run
+used five folds and selected a **CatBoost classifier**, with no additional
+feature transformation.
 The ROC AUC on the held-out observations is **0.967** in this run.
 
 .. figure:: _static/showcase/roc.png

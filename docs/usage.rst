@@ -162,7 +162,7 @@ Separate test data and cross-validation
 =======================================
 
 Reserve a test set before the search. IAML's default internal validation uses
-five folds: stratified folds for classification, ordinary folds for regression
+three folds: stratified folds for classification, ordinary folds for regression
 and survival. Preprocessing is fitted within each training fold.
 
 For repeated observations from the same patient, split the external test set
@@ -201,7 +201,7 @@ To change the number of internal folds:
     from iaml.splitters import kfold_splitter
 
     search = IAML(
-        splitter=partial(kfold_splitter, nb_folds=3),
+        splitter=partial(kfold_splitter, nb_folds=5),
         max_duration=30,
         max_workers=1,
     )

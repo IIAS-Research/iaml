@@ -6,11 +6,11 @@ from sklearn.model_selection import GroupKFold
 from ..dataset import Dataset
 
 
-def kfold_splitter(dataset: Dataset, nb_folds: int = 5) -> Iterator[tuple['Dataset', 'Dataset']]:
+def kfold_splitter(dataset: Dataset, nb_folds: int = 3) -> Iterator[tuple['Dataset', 'Dataset']]:
     """Allow to split a dataset into n folds to compute crossvalidation
 
     :param Dataset dataset: The dataset to split.
-    :param int, optional nb_folds: The number of folds to create. Default to 5.
+    :param int, optional nb_folds: The number of folds to create. Default to 3.
     :return: Iterator of tuples of train/test Dataset objects
     """
     kwargs = {}
