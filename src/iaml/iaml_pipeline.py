@@ -390,6 +390,9 @@ class IAMLPipeline(Pipeline):
         :param pd.DataFrame X: candidate data.
         :return: Transformed DF.
         """
+        # Historical adapters may transform their argument in place. Keep the
+        # public input reusable for later predictions and analytical methods.
+        X = deepcopy(X)
         for _, step in self.transformers:
             X = step.transform(X)
 
@@ -409,7 +412,7 @@ class IAMLPipeline(Pipeline):
             raise ValueError("Model need to be set before predict")
 
         if not model_only:
-            return super().predict(X, **kwargs)
+            return super().predict(deepcopy(X), **kwargs)
 
         if self._trained_columns and isinstance(X, pd.DataFrame):
             X = X.reindex(columns=self._trained_columns, fill_value=0)
@@ -453,7 +456,7 @@ class IAMLPipeline(Pipeline):
             raise ValueError("Model need to be set before predict")
 
         if not model_only:
-            return super().predict_proba(X, **kwargs)
+            return super().predict_proba(deepcopy(X), **kwargs)
 
         if self._trained_columns and isinstance(X, pd.DataFrame):
             X = X.reindex(columns=self._trained_columns, fill_value=0)
