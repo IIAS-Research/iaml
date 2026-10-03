@@ -142,7 +142,7 @@ the search.
 Call ``run_study`` inside your script's ``if __name__ == "__main__":`` guard,
 with your training and test data, and save its return value as ``results``.
 The functions do not train when imported.
-The example catalogue includes a runnable
+The :doc:`example catalogue <../examples/pipelines/README>` includes a runnable
 script with a bundled dataset.
 
 Both recall variants measure the same candidate. ``event_recall`` ranks it;
@@ -334,4 +334,4 @@ Continue with :doc:`reference` for exact contracts, or run
 :download:`the complete study <../examples/pipelines/10_full_workflow.py>`,
 :download:`descriptive statistics before training <../examples/pipelines/11_descriptive_without_model.py>`
 and :download:`metrics and the objective <../examples/pipelines/12_metrics_and_objective.py>`
-from the example catalogue.
+from the :doc:`example catalogue <../examples/pipelines/README>`.
