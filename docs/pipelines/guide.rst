@@ -40,6 +40,10 @@ The main strategy starts without feature selection. Its ``features_selection``
 choice can use one selector at a time, including ``SelectPercentile``. Custom
 recipes can still declare successive selections explicitly.
 
+The minimal strategy imputes missing values when needed, then ordinal-encodes
+categorical features before fitting its predictor. The encoder is learned again
+on each cross-validation training fold and retained for later predictions.
+
 An explicitly supplied pipeline defines the requested search scope: IAML
 generates only its declared branches. No additional minimal candidates are
 added to a custom recipe. Omitting ``pipeline`` selects the complete preset,

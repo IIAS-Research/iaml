@@ -63,6 +63,7 @@ def supports_component_swaps(optimizer):
 def default_spec():
     """Build one explicit preset shared by IAML and PipelineSpec.default."""
     from ..actionables.cleaning.act_simple_imputer import ActSimpleImputer
+    from ..actionables.cleaning.act_ordinal_encoder import ActOrdinalEncoder
     from ..actionables.features_preprocessing.act_select_percentile import ActSelectPercentile
     main = SequenceSpec([
         AdaptiveSpec(tag="features_precleaning").named("features_precleaning"),
@@ -86,7 +87,9 @@ def default_spec():
     imputer = use(ActSimpleImputer).named("minimal_imputer")
     imputer._conditional_missing = True
     minimal = SequenceSpec([
-        imputer, choice(tag="minimal_predictor").named("minimal_predictor"),
+        imputer,
+        AdaptiveSpec([use(ActOrdinalEncoder)]).named("minimal_encoding"),
+        choice(tag="minimal_predictor").named("minimal_predictor"),
     ]).named("minimal")
     # The old implementation generated this branch first and warms up the first
     # resulting candidate after both pools have been generated.
