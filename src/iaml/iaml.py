@@ -63,8 +63,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param int, optional max_stage_duration: Maximum duration of a stage. Default to None.
     :param callable, optional splitter: Split function to use. Default to kfold_splitter.
     :param int, optional max_duration: Search time budget. -1 means no global limit.
-    :param int | str, optional time_before_sample_use: Time before we use sampled data. 
-        Default to None.
+    :param int | str, optional time_before_sample_use: Evaluation time before automatic
+        search downsizing. None disables it; ``auto`` derives a delay from the global budget.
     :param bool, optional preprocessor: Use preprocessor. Default to False.
     :param main_metric: Metric instance preserving its parameters, or the result key
         of a configured metric. None selects the default objective for the task.
@@ -639,6 +639,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             Logger().info(f"{len(candidates)} generated pipelines")
 
 
+            sampling_started_at = time.monotonic()
+
             # Warmup is real CV, so it must use the same interruptible executor
             # and shared search/stage budgets as every subsequent evaluation.
             # Prefer a declared fast or baseline predictor without adding a
@@ -671,26 +673,26 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             ### INITIAL EVALUATION
             # Evaluate candidates
             gen0_candidates = []
-            i = 0
-            can_be_downsize = True
             while not gen0_candidates and remain_time() >= 1:
-                # If process is too long and dataset big enough,
-                # we can downsize it to get quicker training
-                if i > 0 and can_be_downsize:
+                can_be_downsize = (math.isfinite(self.time_before_sample_use)
+                                   and dataset.X.shape[0] >= 500)
+                sampling_delay = self.time_before_sample_use - (
+                    time.monotonic() - sampling_started_at)
+                if can_be_downsize and sampling_delay <= 0:
                     dataset = dataset.sample(0.1)
                     Logger().warning(f"Training is too time consuming. \
                         Let's try again with dataset sample. \
                         New features shape {dataset.X.shape}")
-                i+= 1
-                can_be_downsize = dataset.X.shape[0] >= 500
+                    sampling_started_at = time.monotonic()
+                    sampling_delay = self.time_before_sample_use
+                    can_be_downsize = dataset.X.shape[0] >= 500
 
-                timeout = min(remain_time(), self.time_before_sample_use) \
+                timeout = min(remain_time(), sampling_delay) \
                     if can_be_downsize else remain_time()
 
                 gen0_candidates = self.__run_evaluations(candidates,
                             dataset, timeout=timeout, callback=callback)
-                if (not gen0_candidates and not self.__evaluations_pending()
-                        and not can_be_downsize):
+                if not gen0_candidates and not self.__evaluations_pending():
                     break
 
             if not gen0_candidates:

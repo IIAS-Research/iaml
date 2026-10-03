@@ -39,7 +39,8 @@ class TestRefitSampling(unittest.TestCase):
         self.y = np.tile([False, True], 12)
 
     def fit_small_model(self, X=None, y=None, *, groups_columns=None,
-                        survival=False, force_downsize=False, **options):
+                        survival=False, empty_stage_durations=(),
+                        pending_empty_stages=True, **options):
         """Keep production generation/refit and real CV, with no process pool."""
         X = self.X if X is None else X
         y = self.y if y is None else y
@@ -57,6 +58,7 @@ class TestRefitSampling(unittest.TestCase):
         training_inputs = []
         evaluation_datasets = []
         native_fit = step_class.fit
+        clock = [0.0]
 
         def record_real_fit(step, dataset):
             training_inputs.append((dataset.X.copy(), dataset.y.copy()))
@@ -64,9 +66,10 @@ class TestRefitSampling(unittest.TestCase):
 
         def evaluate(candidates, dataset, **kwargs):
             evaluation_datasets.append(dataset)
-            # The first bounded evaluation is now warmup. Fail the subsequent
-            # initial search stage to exercise its automatic downsizing path.
-            if force_downsize and len(evaluation_datasets) == 2:
+            # Warmup finishes first; later stages can carry an unfinished job.
+            stage_index = len(evaluation_datasets) - 2
+            if 0 <= stage_index < len(empty_stage_durations):
+                clock[0] += empty_stage_durations[stage_index]
                 return []
             for candidate in candidates:
                 scores = candidate.training_evaluate(
@@ -77,8 +80,12 @@ class TestRefitSampling(unittest.TestCase):
 
         with (
             patch("iaml.iaml.TimedPoolExecutor"),
+            patch("iaml.iaml.time.monotonic", side_effect=lambda: clock[0]),
             patch.object(engine, "_IAML__metrics_selection", return_value=[metric]),
             patch.object(engine, "_IAML__run_evaluations", side_effect=evaluate),
+            patch.object(engine, "_IAML__evaluations_pending", side_effect=lambda:
+                         pending_empty_stages and
+                         2 <= len(evaluation_datasets) < 2 + len(empty_stage_durations)),
             patch.object(engine, "_IAML__optimize", side_effect=lambda ds, cands, **kw: cands),
             patch.object(step_class, "fit", autospec=True, side_effect=record_real_fit),
         ):
@@ -187,10 +194,52 @@ class TestRefitSampling(unittest.TestCase):
         X = pd.DataFrame({"row_number": np.arange(520, dtype=float)})
         y = np.tile([0, 1], 260)
         _, fitted_X, fitted_y, evaluations = self.fit_small_model(
-            X, y, train_on_n_samples=500, refit_on_sample=True, force_downsize=True,
+            X, y, train_on_n_samples=500, refit_on_sample=True,
+            time_before_sample_use=5, empty_stage_durations=(5,),
         )
 
         self.assertEqual([len(dataset.X) for dataset in evaluations], [500, 500, 50])
         self.assertEqual(len(fitted_X), 500)
         self.assert_fitted_dataset(fitted_X, fitted_y, evaluations[0])
         np.testing.assert_array_equal(fitted_y, y[fitted_X["row_number"].to_numpy(dtype=int)])
+
+    def test_disabled_downsizing_keeps_large_data_across_empty_stages(self):
+        X = pd.DataFrame({"row_number": np.arange(520, dtype=float)})
+        y = np.tile([0, 1], 260)
+        _, fitted_X, _, evaluations = self.fit_small_model(
+            X, y, time_before_sample_use=None, empty_stage_durations=(20, 20),
+        )
+
+        self.assertEqual([len(dataset.X) for dataset in evaluations], [520] * 4)
+        self.assertEqual(len(fitted_X), 520)
+
+    def test_empty_stages_do_not_downsize_before_configured_delay(self):
+        X = pd.DataFrame({"row_number": np.arange(520, dtype=float)})
+        y = np.tile([0, 1], 260)
+        _, fitted_X, _, evaluations = self.fit_small_model(
+            X, y, time_before_sample_use=5, empty_stage_durations=(2, 3),
+        )
+
+        self.assertEqual([len(dataset.X) for dataset in evaluations], [520, 520, 520, 52])
+        self.assertEqual(len(fitted_X), 520)
+
+    def test_auto_downsizing_uses_delay_derived_from_global_budget(self):
+        X = pd.DataFrame({"row_number": np.arange(520, dtype=float)})
+        y = np.tile([0, 1], 260)
+        engine, _, _, evaluations = self.fit_small_model(
+            X, y, time_before_sample_use="auto", empty_stage_durations=(20,),
+        )
+
+        self.assertEqual(engine.time_before_sample_use, 60)
+        self.assertEqual([len(dataset.X) for dataset in evaluations], [520, 520, 520])
+
+    def test_failed_candidates_without_pending_work_do_not_trigger_downsizing(self):
+        X = pd.DataFrame({"row_number": np.arange(520, dtype=float)})
+        y = np.tile([0, 1], 260)
+        _, fitted_X, _, evaluations = self.fit_small_model(
+            X, y, time_before_sample_use=5, empty_stage_durations=(5,),
+            pending_empty_stages=False,
+        )
+
+        self.assertEqual([len(dataset.X) for dataset in evaluations], [520, 520])
+        self.assertEqual(len(fitted_X), 520)

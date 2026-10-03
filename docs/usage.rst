@@ -284,6 +284,9 @@ Control time and dataset size
   Unfinished and queued evaluations carry over to later stages, where their
   results are collected once. Expiring the global search budget stops those
   evaluations and cancels the remaining queue.
+- ``time_before_sample_use=None`` disables automatic search downsizing.
+  A positive delay is measured across evaluation stages on the current
+  population; ``"auto"`` derives it from the global search budget.
 - ``patience``, passed to ``fit``, stops optimization after that many generations
   without improvement. Its default is unlimited when a time budget is set,
   and 20 generations without improvement when ``max_duration=-1``.
