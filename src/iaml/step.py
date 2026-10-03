@@ -22,6 +22,7 @@ from .dataset import Dataset
 from .decorators.runner import runner
 from .reference import Reference
 from .step_cache import StepCache
+from .search_policy import policy_fingerprint
 
 if TYPE_CHECKING:
     from .candidate import Candidate
@@ -518,6 +519,9 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         to_hash = f"{str(self.__class__)} = \
             {json.dumps(self.serializable_resume_configuration(), sort_keys=True)}"
 
+        policy = policy_fingerprint(self)
+        if policy is not None:
+            to_hash += f"\nsearch-policy={policy}"
         return md5(to_hash.encode()).hexdigest()
 
     ####################

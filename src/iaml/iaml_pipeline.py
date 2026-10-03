@@ -20,6 +20,7 @@ from .void_step import VoidStep
 from .explanation import Explanation
 from .cache import Cache
 from .reference import Reference
+from .search_policy import policy_fingerprint, restore_flow_metadata
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -262,6 +263,7 @@ class IAMLPipeline(Pipeline):
                 from_cache = Cache().from_cache(fit_key, fit_data_key)
                 if from_cache is not None:
                     fitted_step, dataset = from_cache
+                    restore_flow_metadata(step, fitted_step)
                     self.replace_step(step, fitted_step)
                     step = fitted_step
                 else:
@@ -559,7 +561,7 @@ class IAMLPipeline(Pipeline):
         :return: md5 sting
         """
         current_version = tuple(
-            (id(step), getattr(step, "_config_version", None))
+            (id(step), getattr(step, "_config_version", None), policy_fingerprint(step))
             for _, step in self.training_steps
         )
         if self._fingerprint_cache is None or self._fingerprint_cache_version != current_version:
@@ -571,7 +573,7 @@ class IAMLPipeline(Pipeline):
     def transformers_resamplers_fingerprint(self) -> str:
         """Fingerprint for transformers/resamplers only (used by Candidate)."""
         current_version = tuple(
-            (id(step), getattr(step, "_config_version", None))
+            (id(step), getattr(step, "_config_version", None), policy_fingerprint(step))
             for _, step in self._preprocessing_steps
         )
         if self._transform_fingerprint_cache is None \
