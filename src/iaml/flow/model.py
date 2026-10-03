@@ -210,6 +210,9 @@ class Recipe:
         from .inspection import diff
         return diff(self, base)
 
+    def to_code(self):
+        from .inspection import to_code
+        return to_code(self)
 
 
 class ComponentSpec(Recipe):

@@ -89,6 +89,27 @@ class FlowRecipeTests(unittest.TestCase):
         self.assertEqual(len(family.find_all(Normalizer)), 1)
         self.assertIn(Normalizer, family.excluded)
 
+    def test_unit_norm_scaler_preserves_family_scope_and_reconstruction(self):
+        family = normalizers()
+        self.assertEqual(len(family.find_all(UnitNormScaler)), 1)
+        family.remove(UnitNormScaler)
+        self.assertEqual(len(family.find_all(Normalizer)), 0)
+        with self.assertRaises(ValueError):
+            family.remove(Normalizer)
+
+        family.add(use(UnitNormScaler, norm=Const("l1")).named("unit_norm"))
+        self.assertIs(family["unit_norm"].component, Normalizer)
+        self.assertEqual(family["unit_norm"].instantiate().get_config("norm"), "l1")
+        self.assertIn(Normalizer, family.excluded)
+
+        namespace = {}
+        code = family.to_code()
+        self.assertIn("import ActUnitNormScaler as", code)
+        component_name = family["unit_norm"].describe()["tree"]["component"]
+        self.assertTrue(component_name.endswith(".ActUnitNormScaler"))
+        exec(code, namespace)
+        restored = namespace["pipeline"]
+        self.assertEqual(family.describe().to_dict(), restored.describe().to_dict())
 
     def test_unit_norm_scaler_loads_current_and_historical_pipeline_names(self):
         step = use(UnitNormScaler, norm=Const("l1")).instantiate()
@@ -144,6 +165,15 @@ class FlowRecipeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             optional(use(RecallMetric))
 
+    def test_to_code_preserves_domains_aliases_and_partial_start(self):
+        models = choice(self.forest("forest", 100, 500), use(RandomForestClassifier).named("other"))
+        models["forest"].configure(n_estimators=Const(700))
+        models.start("forest")
+        pipeline = use(SimpleImputer) >> models
+        namespace = {}
+        exec(pipeline.to_code(), namespace)
+        restored = namespace["pipeline"]
+        self.assertEqual(pipeline.describe().to_dict(), restored.describe().to_dict())
 
 
     def test_domains_validate_types_and_initial_values(self):
@@ -174,6 +204,15 @@ class FlowRecipeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             selection.configure(n_estimators=200)
 
+    def test_reconstruction_preserves_edited_optional_and_valid_inactive_start(self):
+        # A search interval can be wider than intrinsic estimator constraints;
+        # its actual start must be valid and remain valid during reconstruction.
+        forest = use(RandomForestClassifier, n_estimators=Int(0, 5, initial=2))
+        forest.configure(n_estimators=Const(700))
+        pipeline = optional(use(StandardScaler)).add(use(RobustScaler)) >> forest
+        namespace = {}
+        exec(pipeline.to_code(), namespace)
+        self.assertEqual(pipeline.describe().to_dict(), namespace["pipeline"].describe().to_dict())
 
     def test_analytic_component_replacement_enforces_container_contract_atomically(self):
         for analyses, replacement in (
@@ -244,10 +283,87 @@ class FlowRecipeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             use(SMOTEENN, kind_sel=Const("nonsense"))
 
+    def test_reconstruction_keeps_single_child_and_nested_sequence_containers(self):
+        from iaml.flow.model import SequenceSpec
+        recipe = (use(StandardScaler).named("scale")
+                  >> use(DecisionTreeClassifier).named("tree")).named("sequence")
+        recipe.remove("scale")
+        namespace = {}
+        exec(recipe.to_code(), namespace)
+        restored = namespace["pipeline"]
+        self.assertEqual(recipe.describe().to_dict(), restored.describe().to_dict())
+        restored.add(use(StandardScaler).named("new"), before="tree")
+        self.assertEqual([node.alias for node in restored], ["new", "tree"])
 
+        nested = SequenceSpec([use(StandardScaler) >> use(RobustScaler),
+                               use(DecisionTreeClassifier)])
+        namespace = {}
+        exec(nested.to_code(), namespace)
+        self.assertEqual(nested.describe().to_dict(), namespace["pipeline"].describe().to_dict())
 
+    def test_family_replacement_retains_slot_and_reconstructs_named_or_unnamed_variants(self):
+        for alias in (None, "scale"):
+            with self.subTest(alias=alias):
+                family = normalizers()
+                old = next(iter(family.find_all(MinMaxScaler)))
+                if alias:
+                    old.named(alias)
+                index = list(family).index(old)
+                selection = family.find_all(MinMaxScaler)
+                replacement = old.replace(use(RobustScaler))
+                self.assertIs(list(family)[index], replacement)
+                self.assertIsNone(old._parent)
+                with self.assertRaises(ValueError):
+                    selection.configure()
+                namespace = {}
+                exec(family.to_code(), namespace)
+                self.assertEqual(family.describe().to_dict(), namespace["pipeline"].describe().to_dict())
+                self.assertEqual(family.describe().to_dict(), family.clone().describe().to_dict())
 
+    def test_family_replacements_remain_explicit_across_exclusions_and_removal(self):
+        family = normalizers().remove(RobustScaler)
+        old = next(iter(family.find_all(StandardScaler))).named("custom")
+        old.replace(use(RobustScaler))
+        # Removing another explicit variant of the original class must not
+        # conceal the replacement sitting in that class's registry slot.
+        family.add(use(StandardScaler).named("extra")).remove(StandardScaler)
+        self.assertEqual(len(family.find_all(RobustScaler)), 1)
+        namespace = {}
+        exec(family.to_code(), namespace)
+        self.assertEqual(family.describe().to_dict(), namespace["pipeline"].describe().to_dict())
+        family.remove("custom")
+        self.assertEqual(len(family.find_all(RobustScaler)), 0)
+        namespace = {}
+        exec(family.to_code(), namespace)
+        self.assertEqual(family.describe().to_dict(), namespace["pipeline"].describe().to_dict())
 
+    def test_family_removal_reconstruction_allows_reusing_the_removed_alias(self):
+        family = normalizers()
+        next(iter(family.find_all(StandardScaler))).named("reused")
+        family.remove("reused")
+        next(iter(family.find_all(RobustScaler))).named("reused")
+        namespace = {}
+        exec(family.to_code(), namespace)
+        self.assertEqual(family.describe().to_dict(), namespace["pipeline"].describe().to_dict())
+
+    def test_chained_family_replacements_keep_group_modes_and_detached_references(self):
+        family = normalizers()
+        original = next(iter(family.find_all(MinMaxScaler))).named("slot")
+        index = list(family).index(original)
+        group = original.replace(choice(StandardScaler, RobustScaler))
+        namespace = {}
+        exec(family.to_code(), namespace)
+        self.assertEqual(family.describe().to_dict(), namespace["pipeline"].describe().to_dict())
+        replacement = group.replace(use(UnitNormScaler, norm=Const("l1")))
+        self.assertIs(list(family)[index], replacement)
+        self.assertIsNone(group._parent)
+        group.add(MinMaxScaler)
+        self.assertIs(family["slot"], replacement)
+        family.remove(UnitNormScaler)
+        self.assertEqual(len(family.find_all(UnitNormScaler)), 0)
+        namespace = {}
+        exec(family.to_code(), namespace)
+        self.assertEqual(family.describe().to_dict(), namespace["pipeline"].describe().to_dict())
 
 
 if __name__ == "__main__":
