@@ -522,6 +522,10 @@ class ChoiceSpec(GroupSpec):
 
 class PipelineSpec(ChoiceSpec):
     """Root of the default recipe, containing main and minimal strategies."""
+    @classmethod
+    def default(cls):
+        from .compiler import default_spec
+        return default_spec()
 
 
 class AnalysisCollection(GroupSpec):

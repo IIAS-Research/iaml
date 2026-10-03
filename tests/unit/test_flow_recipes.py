@@ -74,6 +74,19 @@ class FlowRecipeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             pipeline[StandardScaler]
 
+    def test_root_replace_and_insertion_into_default_main(self):
+        owner = SimpleNamespace(pipeline=PipelineSpec.default())
+        owner.pipeline.attach(owner, "pipeline")
+        owner.pipeline.add(use(StandardScaler).named("extra"), before="cleaning")
+        sequence = list(owner.pipeline.main)
+        self.assertLess([n.alias for n in sequence].index("extra"), [n.alias for n in sequence].index("cleaning"))
+        owner.pipeline.remove("imbalance")
+        with self.assertRaises(KeyError):
+            owner.pipeline["imbalance"]
+        old = owner.pipeline
+        new = old.replace(use(RandomForestClassifier))
+        self.assertIs(owner.pipeline, new)
+        self.assertIsNone(old._owner)
 
     def test_start_and_strict_subtraction(self):
         models = choice(self.forest("one", 1, 100), self.forest("two", 1, 500)).start("one")
@@ -175,6 +188,17 @@ class FlowRecipeTests(unittest.TestCase):
         restored = namespace["pipeline"]
         self.assertEqual(pipeline.describe().to_dict(), restored.describe().to_dict())
 
+    def test_default_reconstruction_keeps_subtractions_and_variant_edits(self):
+        pipeline = PipelineSpec.default()
+        pipeline.normalize.remove(Normalizer)
+        next(iter(pipeline.normalize.find_all(StandardScaler))).named("standard")
+        pipeline.normalize.start("standard")
+        pipeline.predictor.add(self.forest("small", 10, 100))
+        pipeline["small"].configure(n_estimators=Const(70))
+        pipeline.remove("imbalance")
+        namespace = {}
+        exec(pipeline.to_code(), namespace)
+        self.assertEqual(pipeline.describe().to_dict(), namespace["pipeline"].describe().to_dict())
 
     def test_domains_validate_types_and_initial_values(self):
         with self.assertRaises(ValueError):

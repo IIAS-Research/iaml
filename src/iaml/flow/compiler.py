@@ -24,8 +24,35 @@ class RecipeValidationError(ValueError):
     """
 
 
+@is_step("meta")
+class _PresetExplorerStep(MetaExplorerStep):
+    """Generate declared strategies in order, preserving baseline warmup."""
+    @runner
+    def run(self, candidate):
+        output = []
+        for step in self.steps:
+            output.extend(step.run(candidate.to_input()))
+        return output
 
 
+@is_step("meta")
+class _ConditionalImputerStep(Step):
+    """Preserve the preset's generation-time missingness condition."""
+    def __init__(self, component):
+        self.component = component
+
+    @runner
+    def run(self, candidate):
+        if candidate.dataset.X.isna().values.any():
+            return self.component.run(candidate)
+        return candidate
+
+    def all_steps(self):
+        return [self, self.component]
+
+    def configure_parents(self, *parents):
+        self.component.configure_parents(*parents)
+        super().configure_parents(*parents)
 
 
 def supports_component_swaps(optimizer):
@@ -33,6 +60,34 @@ def supports_component_swaps(optimizer):
             or bool(getattr(optimizer, "supports_component_swap", False)))
 
 
+def default_spec():
+    """Build one explicit preset shared by IAML and PipelineSpec.default."""
+    from ..actionables.cleaning.act_simple_imputer import ActSimpleImputer
+    main = SequenceSpec([
+        AdaptiveSpec(tag="features_precleaning").named("features_precleaning"),
+        AdaptiveSpec(tag="cleaning").named("cleaning"),
+        AdaptiveSpec(tag="features_selection").named("features_selection"),
+        choice(tag="normalize").named("normalize"),
+        choice(tag="imbalance").named("imbalance"),
+        choice(tag="features_preprocessing").named("features_preprocessing"),
+        choice(tag="predictor").named("predictor"),
+    ]).named("main")
+    main.normalize._preset_start = "standard"
+    main.normalize._allow_absence = True
+    main.imbalance._preset_start = "absence"
+    main.imbalance._allow_absence = True
+    main.features_preprocessing._preset_start = "preprocessing"
+    main.features_preprocessing._allow_absence = True
+    imputer = use(ActSimpleImputer).named("minimal_imputer")
+    imputer._conditional_missing = True
+    minimal = SequenceSpec([
+        imputer, choice(tag="minimal_predictor").named("minimal_predictor"),
+    ]).named("minimal")
+    # The old implementation generated this branch first and warms up the first
+    # resulting candidate after both pools have been generated.
+    preset = PipelineSpec([minimal, main])
+    preset._is_default_preset = True
+    return preset
 
 
 def _path_shapes(node):
@@ -79,6 +134,8 @@ def _compile(node, optimizer, preprocessor, fast, *, required=False):
     if isinstance(node, ComponentSpec):
         component = node.instantiate()
         component._flow_required = required
+        if getattr(node, "_conditional_missing", False):
+            return _ConditionalImputerStep(component)
         return component
     if isinstance(node, ChoiceSpec):
         alternatives = node._children()
@@ -123,7 +180,7 @@ def _compile(node, optimizer, preprocessor, fast, *, required=False):
                 initial = templates[-1:]
         if not initial:
             raise ValueError(f"No initial alternative for choice {node.alias or '<unnamed>'}")
-        group_type = MetaExplorerStep
+        group_type = _PresetExplorerStep if getattr(node, "_is_default_preset", False) else MetaExplorerStep
         if simple and len(initial) == 1 and len(templates) > 1:
             group_type = MetaPartialExplorerStep
         group = group_type(name=node.alias or "Choice")

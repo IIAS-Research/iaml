@@ -138,9 +138,58 @@ class FlowCompilerTests(unittest.TestCase):
         self.assertEqual(len(second.steps[0].steps), count + 1)
         self.assertFalse(recipe._frozen)
 
+    def test_default_has_explicit_minimal_and_main_and_preserves_start_policies(self):
+        root = compile_pipeline(PipelineSpec.default())
+        self.assertEqual([child._flow_alias for child in root.steps], ["minimal", "main"])
+        main = root.steps[1]
+        stages = {step.tag: step for step in main.steps}
+        self.assertEqual(len(stages["normalize"].steps), 1)
+        self.assertIsInstance(stages["normalize"].steps[0], StandardScaler)
+        self.assertTrue(any(isinstance(template, VoidStep)
+                            for template in stages["normalize"].steps[0]._flow_alternatives))
+        self.assertIsInstance(stages["imbalance"].steps[0], VoidStep)
+        full = compile_pipeline(PipelineSpec.default(), optimizer=RandomOptimizer)
+        self.assertEqual(len(full.steps[1].steps[3].steps), 5)
 
+    def test_snapshot_reconstruction_preserves_modes_and_preset_policies(self):
+        snapshot = compile_pipeline(PipelineSpec.default())._flow_resolved_spec
+        namespace = {}
+        exec(snapshot.to_code(), namespace)
+        restored = namespace["pipeline"]
+        self.assertEqual(snapshot.describe().to_dict(), restored.describe().to_dict())
+        compiled = compile_pipeline(restored)
+        self.assertEqual(compiled.steps[1].steps[0].__class__.__name__, "MetaStep")
+        self.assertIsInstance(compiled.steps[1].steps[3].steps[0], StandardScaler)
 
+    def test_minimal_imputation_is_conditional_and_initial_steps_are_fresh(self):
+        spec = PipelineSpec.default()
+        spec.remove("main")
+        minimal = spec.minimal_predictor
+        for child in list(minimal):
+            minimal.remove(child.component)
+        minimal.add(use(DecisionTreeClassifier).named("tree"))
+        root = compile_pipeline(spec)
+        outputs = root.run(Candidate(self.dataset))
+        self.assertEqual(len(outputs), 1)
+        self.assertEqual(len(outputs[0].pipeline.training_steps), 1)
+        missing = deepcopy(self.dataset)
+        missing.X.loc[0, "a"] = np.nan
+        second = compile_pipeline(spec)
+        outputs = second.run(Candidate(missing))
+        self.assertEqual(len(outputs[0].pipeline.training_steps), 2)
+        self.assertIsInstance(outputs[0].pipeline.training_steps[0][1], SimpleImputer)
+        self.assertFalse(outputs[0].dataset.X.isna().values.any())
+        self.assertIsNot(root, second)
 
+    def test_minimal_predictor_can_be_replaced_by_a_simple_component(self):
+        spec = PipelineSpec.default()
+        spec.remove("main")
+        spec.minimal_predictor.replace(use(DecisionTreeClassifier))
+        root = compile_pipeline(spec)
+        self.assertEqual([step._flow_alias for step in root.steps], ["minimal"])
+        outputs = root.run(Candidate(self.dataset))
+        self.assertEqual(len(outputs), 1)
+        self.assertIsInstance(outputs[0].pipeline.predictor[1], DecisionTreeClassifier)
 
 
 if __name__ == "__main__":

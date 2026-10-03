@@ -177,7 +177,10 @@ class _CodeBuilder:
             self.family(variable, node)
         elif isinstance(node, PipelineSpec):
             children = [self.node(child) for child in node._children()]
-            self.lines.append(f"{variable} = PipelineSpec([{', '.join(children)}])")
+            self.lines.append(f"{variable} = PipelineSpec.default()")
+            self.lines.append(f"{variable}.remove('minimal', 'main')")
+            for child in children:
+                self.lines.append(f"{variable}.add({child})")
         elif isinstance(node, ChoiceSpec):
             children = [self.node(child) for child in node._children()]
             constructor = f"choice({', '.join(children)})"
