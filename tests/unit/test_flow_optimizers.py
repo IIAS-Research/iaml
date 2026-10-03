@@ -94,6 +94,16 @@ class TestFlowOptimizers(unittest.TestCase):
         candidate.computed_metrics = {candidate.main_metric: 0.8}
         return candidate
 
+    def test_all_optimizers_keep_const_and_original_candidate(self):
+        for optimizer in (GeneticOptimizer(nb_candidate=4),):
+            with self.subTest(optimizer=type(optimizer).__name__):
+                candidate = self.candidate()
+                before = candidate.pipeline.fingerprint()
+                outputs = optimizer.run([candidate])
+                self.assertTrue(outputs)
+                self.assertEqual(candidate.pipeline.fingerprint(), before)
+                for item in outputs:
+                    self.assertEqual(item.pipeline.predictor[1].get_config('locked'), 4)
 
     def test_explicit_domain_activates_only_its_parameter(self):
         step = compiled(_SearchPredictor())
@@ -119,7 +129,37 @@ class TestFlowOptimizers(unittest.TestCase):
 
 
 
+    def test_genetic_uses_only_local_configured_variants(self):
+        first = compiled(_SearchTransform(), variant='first')
+        second = compiled(_SearchTransform(), variant='second', alias='robust')
+        second.configure('locked', 9)
+        second.configuration['depth']['range'] = [1, 4]
+        second._flow_parameters['depth']['domain'] = [1, 4]
+        first._flow_alternatives = (deepcopy(first), deepcopy(second))
+        first.is_interchangeable = True
+        with patch.object(first, 'step_with_same_tags', side_effect=AssertionError('global registry')):
+            changed = GeneticOptimizer._GeneticOptimizer__interchange(first)
+        self.assertIs(type(changed), _SearchTransform)
+        self.assertEqual(changed._flow_variant_id, 'second')
+        self.assertEqual(changed._flow_alias, 'robust')
+        self.assertEqual(changed.get_config('locked'), 9)
+        self.assertEqual(changed.configuration['depth']['range'], [1, 4])
+        changed.configure('locked', 6)
+        self.assertEqual(second.get_config('locked'), 9)
 
+    def test_optional_void_is_available_only_when_declared(self):
+        step = compiled(_SearchTransform())
+        step._flow_alternatives = (deepcopy(step),)
+        step.is_interchangeable = True
+        self.assertIs(GeneticOptimizer._GeneticOptimizer__interchange(step), step)
+        void = VoidStep(step_to_mimic=deepcopy(step))
+        void._flow_explicit = True
+        void._flow_variant_id = 'absent'
+        void._flow_parameters = {}
+        step._flow_alternatives = (deepcopy(step), void)
+        changed = GeneticOptimizer._GeneticOptimizer__interchange(step)
+        self.assertIsInstance(changed, VoidStep)
+        self.assertEqual(changed._flow_choice_id, 'slot')
 
     def test_cache_fingerprint_tracks_policy_without_alias_or_ids(self):
         first = compiled(_SearchPredictor())
