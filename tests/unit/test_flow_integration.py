@@ -45,6 +45,23 @@ class FlowStudyIntegrationTests(unittest.TestCase):
         options.update(kwargs)
         return IAML(**options)
 
+    def test_explicit_pipeline_trains_without_implicit_candidates(self):
+        study = self.make_study()
+        model = study.fit(self.X, self.y, verbose=0)[0]
+        self.assertEqual(len(study.candidates), 1)
+        self.assertEqual(set(model.computed_metrics), {'quality'})
+        self.assertEqual(model.pipeline.predictor[1].get_config('max_depth'), 2)
+        scores = deepcopy(model.computed_metrics)
+        self.assertEqual(set(model.evaluate(self.X, self.y)), {'quality'})
+        self.assertEqual(model.computed_metrics, scores)
+        self.assertEqual(model.predict(self.X).shape, (24,))
+        report = study.describe()
+        self.assertEqual(report['status'], 'resolved')
+        self.assertIn('evaluated_candidates', report)
+        self.assertIn('versions', report)
+        self.assertTrue(report['metrics']['tree']['resolved'])
+        self.assertTrue(report['statistics']['tree']['resolved'])
+        self.assertEqual(report['compiled_analyses']['metrics'][0]['key'], 'quality')
 
 
 

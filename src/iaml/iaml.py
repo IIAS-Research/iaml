@@ -322,6 +322,26 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self._install_flow_pipeline()
         return True
 
+    def describe(self):
+        """Return the last launch snapshot, or the current untrained recipe."""
+        from .flow.inspection import RecipeReport
+        if self._study_snapshot is None:
+            data = {
+                'pipeline': self.pipeline.describe().to_dict() if self.pipeline is not None else None,
+                'metrics': self.metrics.describe().to_dict(),
+                'statistics': self.statistics.describe().to_dict(),
+                'explanations': self.explanations.describe().to_dict(),
+                'status': 'declared',
+            }
+        else:
+            data = deepcopy(self._study_snapshot)
+            data['status'] = 'resolved'
+        data['analysis_reports'] = deepcopy(self._analysis_reports)
+        if self.chosen_candidate is not None:
+            data['metric_coverage'] = deepcopy(self.chosen_candidate.metric_coverage)
+            data['metric_report'] = deepcopy(self.chosen_candidate.metric_report)
+            data['explanation_report'] = deepcopy(self.chosen_candidate.explanation_report)
+        return RecipeReport(data)
 
     def default_pipeline(self, fast: bool = False) -> None:
         """Install the shared default recipe, including its visible minimal branch."""
@@ -511,6 +531,36 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 from .study_analyses import compile_metrics
                 metric_definitions, objective, metric_report = compile_metrics(
                     analysis_specs['metrics'], self.main_metric, dataset)
+                resolved = getattr(self._flow_execution_root, '_flow_resolved_spec', None)
+                self._study_snapshot = {
+                    'pipeline': resolved.describe().to_dict() if resolved is not None else None,
+                    **{field: recipe.describe().to_dict()
+                       for field, recipe in analysis_specs.items()},
+                    'objective': objective,
+                    'metric_report': metric_report,
+                    'compiled_analyses': {
+                        field: [{
+                            'key': definition.key,
+                            'component': (type(definition.component).__module__ + '.'
+                                          + type(definition.component).__qualname__),
+                            'configuration': deepcopy(definition.configuration),
+                        } for definition in definitions]
+                        for field, definitions in (
+                            ('metrics', metric_definitions),
+                            ('statistics', statistic_definitions),
+                            ('explanations', explanation_definitions))
+                    },
+                }
+                from importlib.metadata import version, PackageNotFoundError
+                versions = {}
+                for package in ('PyIAML', 'numpy', 'pandas', 'scikit-learn', 'imbalanced-learn', 'shap'):
+                    try:
+                        versions[package] = version(package)
+                    except PackageNotFoundError:
+                        pass
+                self._study_snapshot['versions'] = versions
+                self._study_snapshot['catalogue'] = deepcopy(
+                    getattr(self._flow_execution_root, '_flow_catalogue', []))
             self.init_candidate: Candidate = Candidate(
                 dataset.sample(generation_sample_size),
                 main_metric=objective,
@@ -655,6 +705,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             self.chosen_candidate = fit_candidates[0]
             self.last_stage_candidates = candidates
+            if getattr(self, '_study_snapshot', None) is not None:
+                self._study_snapshot['evaluated_candidates'] = [
+                    candidate.pipeline_audit_summary() for candidate in candidates]
 
             return fit_candidates
         except TerminatedError:
