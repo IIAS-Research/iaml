@@ -175,7 +175,43 @@ class FlowRecipeTests(unittest.TestCase):
             selection.configure(n_estimators=200)
 
 
+    def test_analytic_component_replacement_enforces_container_contract_atomically(self):
+        for analyses, replacement in (
+            (metrics(use(RecallMetric).named("item")), metrics(RecallMetric)),
+            (statistics(use(TopKValueCountsStatistic).named("item")),
+             statistics(TopKValueCountsStatistic)),
+        ):
+            with self.subTest(kind=analyses.kind):
+                old = analyses["item"]
+                before = analyses.describe().to_dict()
+                with self.assertRaises(TypeError):
+                    old.replace(replacement)
+                self.assertIs(analyses["item"], old)
+                self.assertIs(old._parent, analyses)
+                self.assertEqual(analyses.describe().to_dict(), before)
+                new = old.replace(use(old.component))
+                self.assertIs(analyses["item"], new)
+                self.assertIsNone(old._parent)
 
+    def test_constants_follow_backend_union_types_and_reject_invalid_values(self):
+        for key, value in (("max_depth", None), ("min_samples_leaf", 0.1),
+                           ("min_samples_split", 0.5)):
+            with self.subTest(parameter=key):
+                recipe = use(DecisionTreeClassifier, **{key: Const(value)})
+                self.assertEqual(recipe.instantiate().get_config(key), value)
+                self.assertTrue(recipe.parameters[key].fixed)
+                recipe.configure(**{key: Const(2)})
+                recipe.configure(**{key: Const(value)})
+                before = recipe.describe().to_dict()
+                with self.assertRaises(ValueError):
+                    recipe.configure(**{key: Const(-1)})
+                self.assertEqual(recipe.describe().to_dict(), before)
+        with self.assertRaises(ValueError):
+            use(DecisionTreeClassifier, min_samples_leaf=0.1)
+        with self.assertRaises(TypeError):
+            use(DecisionTreeClassifier, max_depth=Const(True))
+        self.assertEqual(use(RandomForestClassifier, n_estimators=Const(np.int64(10)))
+                         .instantiate().get_config("n_estimators"), 10)
 
     def test_custom_components_can_declare_constraints_or_keep_default_type_checks(self):
         class Custom(Step):
@@ -193,6 +229,20 @@ class FlowRecipeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             recipe.configure(count=Const(1.5))
 
+    def test_composite_resampler_constants_are_validated_before_instantiation(self):
+        for component in (SMOTE, SMOTETomek, SMOTEENN):
+            with self.subTest(component=component.__name__):
+                recipe = use(component)
+                before = recipe.describe().to_dict()
+                with self.assertRaises(ValueError):
+                    recipe.configure(sampling_strategy=Const("nonsense"))
+                self.assertEqual(recipe.describe().to_dict(), before)
+                with self.assertRaises(ValueError):
+                    use(component, k_neighbors=Const(0))
+                self.assertEqual(use(component, sampling_strategy=Const(0.75))
+                                 .instantiate().get_config("sampling_strategy"), 0.75)
+        with self.assertRaises(ValueError):
+            use(SMOTEENN, kind_sel=Const("nonsense"))
 
 
 

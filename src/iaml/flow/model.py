@@ -202,7 +202,13 @@ class Recipe:
         self._parent = self._owner = self._owner_field = None
         return replacement
 
+    def describe(self):
+        from .inspection import describe
+        return describe(self)
 
+    def diff(self, base):
+        from .inspection import diff
+        return diff(self, base)
 
 
 
