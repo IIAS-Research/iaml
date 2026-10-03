@@ -7,13 +7,15 @@ from ....predictor import Predictor
 from ....candidate import Candidate
 from ....dataset import Dataset
 from ....decorators.all import is_step
+from ._survival_forest import SurvivalForestMemoryMixin, survival_forest_constraints
 
 
 @is_step('predictor', 'tabular', 'survival')
-class ActRandomSurvivalForest(Predictor):
+class ActRandomSurvivalForest(SurvivalForestMemoryMixin, Predictor):
     """[STEP] Random Survival Forest"""
 
     name: str = "RandomSurvivalForest"
+    _flow_parameter_constraints = survival_forest_constraints(RandomSurvivalForest)
     _usage: str = "Use when you want a flexible tree-ensemble survival model; choose over ActCox when PH is doubtful, or consider ActExtraSurvivalTrees for more randomness. Applicable to tabular time-to-event data with censoring. Avoid when data are tiny or effects are well modeled by linear PH."
     _description: str = textwrap.dedent('''\
         RandomSurvivalForest is a survival analysis algorithm
@@ -55,13 +57,13 @@ class ActRandomSurvivalForest(Predictor):
             },
             'min_samples_split': {
                 'description': 'The minimum number of samples required to split an internal node.',
-                'default': 2,
+                'default': 10,
                 'range': [2, 20],
                 'passthrough': True
             },
             'min_samples_leaf': {
                 'description': 'The minimum number of samples required to be at a leaf node.',
-                'default': 1,
+                'default': 5,
                 'range': [1, 20],
                 'passthrough': True
             },
@@ -69,20 +71,35 @@ class ActRandomSurvivalForest(Predictor):
                 'description': textwrap.dedent('''\
                     The maximum depth of the tree. If None, then nodes are
                     expanded until all leaves are pure.'''),
-                'default': None,
+                'default': 12,
                 'range': [1, None],
+                'passthrough': True
+            },
+            'max_leaf_nodes': {
+                'description': 'Maximum number of leaves per tree. Set None to remove this limit.',
+                'default': 64,
+                'range': [2, None],
+                'passthrough': True
+            },
+            'random_state': {
+                'description': 'Random seed (integer or None) for the estimator.',
+                'default': None,
+                'passthrough': True
+            },
+            'low_memory': {
+                'description': (
+                    "Use 'auto' to store risk scores only when every requested metric and "
+                    'prediction requires only predict(). False preserves survival and hazard '
+                    'curves; True requires a risk-only output contract.'
+                ),
+                'default': 'auto',
                 'passthrough': True
             }
         }
         self.model: RandomSurvivalForest = None
 
     def fit(self, dataset: Dataset):  # pylint: disable=unused-argument
-        self.model = RandomSurvivalForest(
-            **self.passthrough_parameters()
-        )
-        X, y = dataset.to_survival()
-        self.model.fit(X, y)
-        return self
+        return self._fit_survival_forest(RandomSurvivalForest, dataset)
 
     def suitable(self, dataset: Dataset) -> bool:
         return dataset.type_of_target == 'survival'

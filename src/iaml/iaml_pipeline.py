@@ -17,6 +17,7 @@ from sklearn.pipeline import Pipeline
 from .dataset import Dataset
 from .void_step import VoidStep
 from .explanation import Explanation
+from .metric_plot import MetricPlot
 from .cache import Cache
 from .reference import Reference
 from .search_policy import policy_fingerprint, restore_flow_metadata
@@ -200,6 +201,7 @@ class IAMLPipeline(Pipeline):
         only_predictor: bool = False,
         groups_columns: list[str] = None,
         metrics: list[Metric] = None,
+        explanations: list = None,
         **kwargs: dict) -> 'IAMLPipeline':
         """Fit Pipeline on new data (or with new parameters)
         
@@ -209,6 +211,8 @@ class IAMLPipeline(Pipeline):
         :param list[str], optional groups_columns: Columns name to use in splitting. 
             Default to None.
         :param list[Metric], optional metrics: List of Metrics to compute. Default to None.
+        :param list, optional explanations: Configured explanations whose prediction
+            outputs must remain available after fitting.
         :param dict, optional \\**kwargs: Additional parameters.
         :return: Fitted IAMLPipeline.
         """
@@ -227,6 +231,20 @@ class IAMLPipeline(Pipeline):
         if self.predictor[1].suitable(dataset):
             if isinstance(dataset.X, pd.DataFrame):
                 self._trained_columns = list(dataset.X.columns)
+            configure = getattr(self.predictor[1], 'configure_prediction_requirements', None)
+            if callable(configure):
+                requirements = {metric.needed_prediction for metric in metrics or ()}
+                for explanation in explanations or ():
+                    try:
+                        applicable = explanation.suitable(
+                            dataset.type_of_target if isinstance(explanation, MetricPlot) else dataset)
+                    except Exception:  # Unknown analyses retain curves for later computation.
+                        requirements.add('predict_survival_function')
+                        continue
+                    if applicable:
+                        requirements.add(getattr(explanation, 'needed_prediction',
+                                                 'predict_survival_function'))
+                configure(requirements if metrics is not None or explanations is not None else None)
             self.predictor[1].fit(dataset, **kwargs)
         else:
             self.predictor = None

@@ -534,7 +534,11 @@ class Candidate:
                     train_ds = train_ds.decline(*copied_pipe.fit_transform(train_ds.X, train_ds.y))
                     test_ds = test_ds.decline(copied_pipe.transform(test_ds.X), test_ds.y)
 
-                copied_pipe.fit(train_ds.X, train_ds.y, only_predictor=True)
+                copied_pipe.fit(
+                    train_ds.X, train_ds.y, only_predictor=True, metrics=self.metrics,
+                    explanations=[definition.component for definition in
+                                  self.explanation_definitions or ()],
+                )
             except (ValueError, np.linalg.LinAlgError) as exc:
                 Logger().warning(
                     f"Skip candidate {self._pipeline_signature()} after training failure: {exc!r}"

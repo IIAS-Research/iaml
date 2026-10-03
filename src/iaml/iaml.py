@@ -437,7 +437,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             if candidate.pipeline.predictor is not None]
 
         for candidate in candidates:
-            candidate.pipeline.fit(dataset.X, dataset.y, metrics=candidate.metrics)
+            candidate.pipeline.fit(
+                dataset.X, dataset.y, metrics=candidate.metrics,
+                explanations=[definition.component
+                              for definition in candidate.explanation_definitions or ()])
 
         return candidates
 
@@ -733,6 +736,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         refit_y,
                         groups_columns=refit_groups_columns,
                         metrics=current_candidate.metrics,
+                        explanations=[definition.component for definition
+                                      in current_candidate.explanation_definitions or ()],
                     )
                 except (ValueError, np.linalg.LinAlgError) as exc:
                     Logger().warning(

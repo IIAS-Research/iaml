@@ -17,6 +17,9 @@ if TYPE_CHECKING:
 class ROCDynamiqueCurvePlot(MetricPlot):
     """[PLOT] ROC Dynamique Curve for Survival Models using sksurv"""
 
+    needed_prediction = "predict"
+    """The dynamic ROC plot needs risk scores rather than survival functions."""
+
     title: str = "ROC Dynamique Curve"
     description: str = textwrap.dedent("""
         This curve represents how well a predictive survival model is able to distinguish 
