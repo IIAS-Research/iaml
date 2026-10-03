@@ -128,3 +128,66 @@ def compile_metrics(collection, main_metric, dataset):
             if definition.key == objective:
                 raise ValueError(f"Main metric '{objective}' is incompatible with this dataset")
     return applicable, objective, report
+
+
+def compute_statistics(definitions, dataset):
+    """Return an aliased DataFrame and a report, preserving canonical plot rows."""
+    tables, canonical_tables, report = [], [], []
+    for definition in deepcopy(definitions):
+        component = definition.component
+        try:
+            if not component.suitable(dataset):
+                report.append({"key": definition.key, "status": "inapplicable",
+                               "reason": f"Not suitable for target '{dataset.type_of_target}'"})
+                continue
+            result = component.compute(deepcopy(dataset))
+            if result is None or result.empty:
+                report.append({"key": definition.key, "status": "inapplicable",
+                               "reason": "No applicable columns or outputs"})
+                continue
+            canonical = result.copy(deep=True)
+            canonical_tables.append(canonical)
+            display = result.copy(deep=True)
+            if definition.alias:
+                display.index = (
+                    [definition.alias] if len(display.index) == 1
+                    else [f"{definition.alias} : {label}" for label in display.index]
+                )
+            tables.append(display)
+            report.append({"key": definition.key, "status": "success"})
+        except Exception as exc:  # independent analyses must retain successful outputs
+            Logger().warning(f"Statistic '{definition.key}' failed: {exc!r}")
+            report.append({"key": definition.key, "status": "error", "reason": repr(exc)})
+    table = pd.concat(tables) if tables else pd.DataFrame()
+    if table.index.has_duplicates:
+        duplicate = table.index[table.index.duplicated()][0]
+        raise ValueError(f"Several statistics produce row '{duplicate}'; name each variant with .named(...)")
+    canonical = pd.concat(canonical_tables) if canonical_tables else pd.DataFrame()
+    # attrs carry the plotting representation without altering visible labels.
+    # Store plain records rather than a nested DataFrame (pandas attrs equality).
+    table.attrs["iaml_canonical_rows"] = list(canonical.index)
+    table.attrs["iaml_statistics_signature"] = analyses_signature(definitions)
+    table.attrs["iaml_dataset_fingerprint"] = dataset.fingerprint()
+    return table, report
+
+
+def canonical_statistics(table: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy suitable for the existing canonical-label plot adapters."""
+    result = copy_statistics(table)
+    labels = table.attrs.get("iaml_canonical_rows")
+    if labels is not None and len(labels) == len(result.index):
+        result.index = labels
+    result.attrs = {}
+    # Multiple variants may share a plot's canonical rows. The first declared
+    # variant supplies the existing plot adapter, while the table keeps them all.
+    return result.loc[~result.index.duplicated(keep="first")]
+
+
+def copy_statistics(table: pd.DataFrame) -> pd.DataFrame:
+    """Copy also nested object cells, which pandas' deep copy shares otherwise."""
+    result = table.copy(deep=True)
+    for column in result.columns:
+        if result[column].dtype == object:
+            result[column] = result[column].map(deepcopy)
+    result.attrs = deepcopy(table.attrs)
+    return result

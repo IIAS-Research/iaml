@@ -93,7 +93,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         train_on_n_samples: int = None,
         keep_training_history: bool = False,
         refit_on_sample: bool = True,
-        initial_preprocessor: Any = None) -> None:
+        initial_preprocessor: Any = None,
+        *,
+        statistics=None) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -160,6 +162,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.executor: TimedPoolExecutor = None
         """Hold TimePoolExecutor"""
 
+        self._analysis_reports = {}
+        self._descriptive_cache = {}
+        from .flow import statistics as statistic_family
+        self.statistics = (statistic_family() if statistics is None else
+                           statistics.clone() if hasattr(statistics, 'clone') else statistics)
+
         self.default_pipeline() # Load default pipeline
         self.max_workers = max_workers if (max_workers is not None and max_workers > 0) \
             else multiprocessing.cpu_count()
@@ -186,6 +194,36 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         """
         self.first_step = Step.from_pipeline(pipeline)
         self.minimal_predictor_step = self.__build_minimal_predictor_step()
+
+    def _set_analysis_collection(self, field, value):
+        from .flow import metrics, statistics, explanations
+        from .flow.model import AnalysisCollection
+        factory = {'metrics': metrics, 'statistics': statistics,
+                   'explanations': explanations}[field]
+        if not isinstance(value, AnalysisCollection):
+            if not isinstance(value, (list, tuple)):
+                raise TypeError(f'{field} must be a {field} collection or a list')
+            value = factory(*value) if value else AnalysisCollection(field, [])
+        if value.kind != field:
+            raise TypeError(f'{field} requires a collection of the same kind')
+        if getattr(value, '_owner', None) not in (None, self):
+            value = value.clone()
+        previous = getattr(self, '_' + field + '_spec', None)
+        if previous is not None and previous is not value:
+            previous._owner = previous._owner_field = None
+        return value.attach(self, field)
+
+
+
+    @property
+    def statistics(self):
+        return self._statistics_spec
+
+    @statistics.setter
+    def statistics(self, value):
+        self._statistics_spec = self._set_analysis_collection('statistics', value)
+
+
 
     def default_pipeline(self, fast: bool = False) -> None:
         """Load the default pipeline.
@@ -583,6 +621,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def visualize_descriptive_statistics(self) -> list[StatisticPlot]:
         """Return a list of plots that show descriptive statistics."""
+        if hasattr(self, '_statistics_spec') and self._last_dataset is not None:
+            self.get_descriptive_statistics()
         if self.descriptive_statistics is None and self._last_dataset is not None:
             self.__ensure_descriptive_statistics(self._last_dataset)
 
@@ -590,7 +630,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return []
 
         plots: list[StatisticPlot] = []
-        stats_df = self.descriptive_statistics
+        from .study_analyses import canonical_statistics
+        stats_df = canonical_statistics(self.descriptive_statistics)
 
         def group_columns_by_feature(dataframe: pd.DataFrame) -> dict[str, list[str]]:
             columns = list(dataframe.columns)
@@ -630,15 +671,45 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         return plots
 
-    def get_descriptive_statistics(self) -> pd.DataFrame:
-        """Return descriptive statistics, computing them on demand if needed."""
-        if self.descriptive_statistics is None and self._last_dataset is not None:
-            self.__ensure_descriptive_statistics(self._last_dataset)
-
-        return self.descriptive_statistics if self.descriptive_statistics is not None else pd.DataFrame()
+    def get_descriptive_statistics(self, X=None, y=None) -> pd.DataFrame:
+        """Describe supplied data, or the last raw search dataset, without fitting."""
+        if X is None and y is not None:
+            raise ValueError('X and y must be supplied together')
+        if X is not None:
+            if y is None:
+                raise ValueError('The explicit descriptive request requires y')
+            dataset = Dataset(deepcopy(X), deepcopy(y))
+        else:
+            dataset = self._last_dataset
+        if dataset is None:
+            return pd.DataFrame()
+        if hasattr(self, '_statistics_spec'):
+            from .study_analyses import (compile_analyses, compute_statistics,
+                                         analyses_signature, copy_statistics)
+            definitions = compile_analyses(self.statistics)
+            signature = analyses_signature(definitions)
+            key = (dataset.fingerprint(), signature)
+            if signature is not None and key in self._descriptive_cache:
+                table, report = self._descriptive_cache[key]
+            else:
+                table, report = compute_statistics(definitions, dataset)
+                if signature is not None:
+                    self._descriptive_cache[key] = (copy_statistics(table), deepcopy(report))
+            self._analysis_reports['statistics'] = deepcopy(report)
+            if X is None:
+                self.descriptive_statistics = copy_statistics(table)
+            return copy_statistics(table)
+        if X is not None:
+            return self.__compute_descriptive_statistics(dataset).copy(deep=True)
+        self.__ensure_descriptive_statistics(dataset)
+        return (self.descriptive_statistics.copy(deep=True)
+                if self.descriptive_statistics is not None else pd.DataFrame())
 
     def __ensure_descriptive_statistics(self, dataset: Dataset) -> None:
         """Compute descriptive statistics once, for on-demand usage."""
+        if hasattr(self, '_statistics_spec'):
+            self.get_descriptive_statistics()
+            return
         if self.descriptive_statistics is not None:
             return
 

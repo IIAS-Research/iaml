@@ -20,7 +20,10 @@ from iaml.metrics import AccuracyMetric, PrecisionMetric
 from iaml.splitters import kfold_splitter
 from iaml.statistic import Statistic
 from iaml.statistics import MeanStatistic, BoundStatistic
-from iaml.study_analyses import analyses_signature, compile_analyses, compile_metrics
+from iaml.study_analyses import (
+    analyses_signature, canonical_statistics, compile_analyses,
+    compile_metrics, compute_statistics, copy_statistics,
+)
 
 
 def collection(kind, *entries):
@@ -120,7 +123,31 @@ class TestFlowAnalytics(unittest.TestCase):
         self.assertEqual(signature, candidate.evaluation_context_signature())
         self.assertEqual({record["fold"] for record in candidate.metric_report}, {1, 2})
 
+    def test_copy_statistics_does_not_share_nested_cells(self):
+        table = pd.DataFrame({"feature": [{"counts": [1, 2, 3]}]})
+        table.attrs["metadata"] = {"values": ["original"]}
+        copied = copy_statistics(table)
+        copied.iloc[0, 0]["counts"][0] = 99
+        copied.attrs["metadata"]["values"].append("edited")
+        self.assertEqual(table.iloc[0, 0], {"counts": [1, 2, 3]})
+        self.assertEqual(table.attrs["metadata"], {"values": ["original"]})
 
+    def test_statistics_aliases_keep_canonical_plot_rows_and_partial_results(self):
+        definitions = compile_analyses(collection("statistics", (MeanStatistic(), "average"),
+                                                 (BoundStatistic(), "extremes"),
+                                                 (BrokenStatistic(), "failed")))
+        table, report = compute_statistics(definitions, self.dataset)
+        self.assertIn("average", table.index)
+        self.assertIn("extremes : min", table.index)
+        self.assertIn("extremes : max", table.index)
+        canonical = canonical_statistics(table)
+        self.assertIn("mean", canonical.index)
+        self.assertIn("min", canonical.index)
+        self.assertEqual(table.attrs["iaml_dataset_fingerprint"], self.dataset.fingerprint())
+        self.assertEqual(table.attrs["iaml_statistics_signature"], analyses_signature(definitions))
+        self.assertEqual(next(r for r in report if r["key"] == "failed")["status"], "error")
+        canonical.iloc[0, 0] = -999
+        self.assertNotEqual(table.iloc[0, 0], -999)
 
 
 
@@ -192,6 +219,26 @@ class TestFlowAnalytics(unittest.TestCase):
                          ["tree", "short_tree"])
         json.dumps(summary)
 
+    def test_iaml_descriptive_before_fit_caches_configuration_and_copies_object_cells(self):
+        from iaml import IAML, TopKValueCountsStatistic
+        from iaml.flow import statistics, use
+
+        frame = pd.DataFrame({"category": ["a", "b", "c", "a"] * 6})
+        search = IAML(statistics=statistics(use(TopKValueCountsStatistic, k=2).named("categories")))
+        original_compute = TopKValueCountsStatistic.compute
+        with patch.object(TopKValueCountsStatistic, "compute", autospec=True,
+                          side_effect=original_compute) as compute:
+            first = search.get_descriptive_statistics(frame, self.y)
+            self.assertIsNone(search._last_dataset)
+            self.assertEqual(len(first.iloc[0, 0]), 2)
+            first.iloc[0, 0].append(("unwanted", 99, 0.5))
+            second = search.get_descriptive_statistics(frame, self.y)
+            self.assertEqual(len(second.iloc[0, 0]), 2)
+            self.assertEqual(compute.call_count, 1)
+            search.statistics["categories"].configure(k=1)
+            third = search.get_descriptive_statistics(frame, self.y)
+            self.assertEqual(len(third.iloc[0, 0]), 1)
+            self.assertEqual(compute.call_count, 2)
 
 
 if __name__ == "__main__":
