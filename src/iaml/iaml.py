@@ -641,19 +641,22 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             # Warmup is real CV, so it must use the same interruptible executor
             # and shared search/stage budgets as every subsequent evaluation.
-            # Minimal candidates already lead the pool and provide a quick,
-            # honestly evaluated starting point without removing full pipelines.
+            # Prefer a declared fast or baseline predictor without adding a
+            # model or changing the preprocessing specified by the recipe.
             warmup_candidate = None
             if candidates and remain_time() >= 1:
                 # A single slow baseline must leave time to evaluate the other
                 # candidates. Unlimited searches retain the stage duration cap.
                 remaining = remain_time()
                 warmup_timeout = remaining / 5
+                warmup_index = min(range(len(candidates)),
+                                   key=lambda index: self.__warmup_priority(candidates[index]))
+                warmup_input = candidates[warmup_index]
                 Logger().info(
                     f"Warming up (at most {min(warmup_timeout, self.max_stage_duration):.2f}s): "
-                    f"{candidates[0].pipeline.name}")
+                    f"{warmup_input.pipeline.name}")
                 warmup_candidates = self.__run_evaluations(
-                    candidates[:1], dataset, timeout=remaining, callback=callback,
+                    [warmup_input], dataset, timeout=remaining, callback=callback,
                     stage_timeout=warmup_timeout)
                 if warmup_candidates:
                     warmup_candidate = warmup_candidates[0]
@@ -662,7 +665,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     Logger().info("No warmup result within the stage budget.")
                     # Try alternatives before retrying the same candidate,
                     # especially when only one worker is available.
-                    candidates = candidates[1:] + candidates[:1]
+                    candidates = (candidates[:warmup_index] + candidates[warmup_index + 1:]
+                                  + [warmup_input])
 
             ### INITIAL EVALUATION
             # Evaluate candidates
@@ -906,6 +910,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         # TODO Others tests ?
 
+    @staticmethod
+    def __warmup_priority(candidate):
+        model = candidate.pipeline.predictor[1]
+        tags = set(model.tags or ())
+        return (not bool(tags & {'fast_predictor', 'baseline_predictor'}),
+                len(candidate.pipeline.transformers))
+
     def __run_evaluations(
         self,
         candidates: list[Candidate],
@@ -1004,7 +1015,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 submitted = self.executor.submit(
                     process_executor, job['candidate'], job['dataset'], deadline=deadline,
                     splitter=job['splitter'], store_audit=job['store_audit'],
-                    evaluation_id=job_id)
+                    evaluation_id=job_id, queued_at=job['queued_at'])
                 if not submitted:
                     break
                 self._evaluation_queue.popleft()
@@ -1089,9 +1100,12 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             'candidate': candidate, 'dataset': dataset, 'key': key,
             'cache_key': cache_key, 'dataset_key': dataset_key,
             'splitter': self.splitter, 'store_audit': self.keep_training_history,
+            'queued_at': time.monotonic() if Logger().verbose > 1 else None,
         }
         self._evaluation_keys[key] = job_id
         self._evaluation_queue.append(job_id)
+        Logger().info(f"Evaluation {job_id} queued on {len(dataset.X)} rows: "
+                      f"{candidate.pipeline.name}")
 
     def __cache_evaluation(self, candidate, cache_key, dataset_key):
         """Cache completed scores with their original evaluation context."""
@@ -1439,7 +1453,7 @@ class _EvaluationResult(NamedTuple):
         return str(self.candidate)
 
 
-def process_executor(candidate: Candidate, *args, evaluation_id=None, **kwargs):
+def process_executor(candidate: Candidate, *args, evaluation_id=None, queued_at=None, **kwargs):
     """Wrap candidate training to run it in subprocess
 
     :param Candidate candidate: Not trained candidate.
@@ -1448,7 +1462,18 @@ def process_executor(candidate: Candidate, *args, evaluation_id=None, **kwargs):
     :return: Trained candidate, paired with the internal evaluation identifier
         when called by the search orchestrator.
     """
-    # Deepcopy -> Without it, process end is never detected. Strange...
+    logger = Logger()
+    started_at = time.monotonic() if logger.verbose > 1 else None
+    if started_at is not None:
+        wait = max(0.0, started_at - queued_at) if queued_at is not None else 0.0
+        logger.info(f"Evaluation {evaluation_id} started after {wait:.2f}s waiting: "
+                    f"{candidate.pipeline.name}")
     candidate = deepcopy(candidate)
-    candidate.training_evaluate(*args, **kwargs)
-    return candidate if evaluation_id is None else _EvaluationResult(evaluation_id, candidate)
+    try:
+        candidate.training_evaluate(*args, **kwargs)
+        return candidate if evaluation_id is None else _EvaluationResult(evaluation_id, candidate)
+    finally:
+        if started_at is not None:
+            status = 'success' if candidate.computed_metrics else 'failed'
+            logger.info(f"Evaluation {evaluation_id} finished in "
+                        f"{time.monotonic() - started_at:.2f}s ({status})")
