@@ -2,10 +2,9 @@
 From data to explanations
 =========================
 
-The :doc:`quick_start` gives you a trained, usable pipeline. This example shows
-what you can obtain from the same workflow with **performance plots, SHAP
-explanations and a record of the analysis**. All figures below come from one
-IAML run.
+Apply the workflow from :doc:`quick_start` to one dataset, then read its
+performance plots and SHAP explanations. All figures below come from one
+IAML run; the complete script also saves a record of the analysis.
 
 The question is concrete: can measurements in the breast cancer dataset bundled
 with scikit-learn distinguish malignant from benign samples? To keep the example
@@ -102,5 +101,6 @@ The illustration uses ``nsamples=64`` with six features. This controls SHAP's
 sampling effort, separately from the five observations being explained.
 See :doc:`explainability` for the explained output, background and interpretation.
 
-To adapt the workflow to your own study, continue with :doc:`usage`,
-:doc:`evaluation` and :doc:`scientific`.
+To adapt the data format, validation design or training budget, continue with
+:doc:`usage`. The :doc:`evaluation`, :doc:`explainability` and
+:doc:`scientific` guides explain the individual outputs and reporting choices.

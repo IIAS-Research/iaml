@@ -4,14 +4,9 @@
 01 / Build
 ==========
 
-This chapter and the following guides help you **understand and tailor your
-workflow**: prepare study data, choose validation settings, interpret results
-and document the methods used. For a first pipeline with minimal setup, start
-with the :doc:`quick_start`.
-
-Here, choose an outcome, prepare your study table and search for a prediction
-pipeline. IAML compares candidates by cross-validation, then fits the selected
-pipeline on the training data.
+Choose an outcome, prepare the study table and configure training. IAML
+compares candidates by cross-validation, then fits the selected pipeline on
+the training data. For a first run using the defaults, see :doc:`quick_start`.
 
 .. _build-data:
 
@@ -216,9 +211,9 @@ To change the number of internal folds:
 Choose the search objective
 ===========================
 
-The defaults are balanced accuracy for classification, R² for regression and
-IPCW concordance for survival. Pass a metric instance to choose another
-objective. Its configuration is retained:
+The default objectives are balanced accuracy for classification, R² for
+regression and IPCW concordance for survival. Pass a metric instance to choose
+another objective. Its configuration is retained:
 
 .. code-block:: python
 
@@ -235,6 +230,10 @@ binary classification and probability predictions, while
 ``MeanSquaredErrorMetric()`` is a regression objective. IAML handles the score
 direction: it maximizes accuracy-type scores and minimizes error metrics.
 See :ref:`evaluate-positive-class` before interpreting binary metrics.
+
+For several metric variants, see :ref:`evaluate-configure-metrics`; the
+:ref:`study collection guide <pipelines-study-metrics>` defines alias selection
+and editing.
 
 .. _build-probabilities:
 
@@ -297,6 +296,31 @@ the same initial sample. Use ``False`` to search on the sample and then fit on
 all training rows. Without a positive sample limit, final fitting uses all
 training rows. Further automatic downsizing during the search does not change
 the initial sample retained for final fitting. A row limit is not a timeout.
+
+.. _build-pipeline:
+
+Choose the pipelines AutoML can explore
+=======================================
+
+Pipeline customization is optional. To narrow the built-in search, edit
+``search.pipeline`` after constructing ``search`` and before calling ``fit``:
+
+.. code-block:: python
+
+    from iaml.steps import MaxAbsScaler, UnitNormScaler
+
+    search.pipeline.normalize.remove(UnitNormScaler, MaxAbsScaler)
+    print(search.pipeline.describe())
+
+These exclusions affect the main branch. The default recipe exposes ``main``
+and ``minimal`` separately; ``search.pipeline.remove("minimal")`` removes the
+minimal strategy. ``PipelineSpec.default()`` provides the same preset for use
+outside a study.
+
+Continue with discover_pipelines for a tour of composition, reusable
+fragments and component extensions. The :doc:`construction guide <pipelines/guide>`
+shows how to supply a complete recipe, edit variants and define parameter
+domains through the same training entry point.
 
 .. _build-text:
 

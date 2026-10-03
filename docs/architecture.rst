@@ -2,10 +2,24 @@
 How it works
 ============
 
-IAML (Integrated AutoML for Medical Labs) builds and compares pipelines for
-tabular classification, regression and survival analysis. A pipeline combines
-data preparation steps with a predictor. A candidate holds that pipeline, its
-evaluation metrics and the data needed during the search.
+This page explains how IAML turns a pipeline definition into evaluated and
+fitted results, and how its core classes divide that work. For training
+settings, start with :doc:`usage`; for component implementation, see
+:doc:`adaptability`.
+
+Recipes and fitted pipelines
+============================
+
+A **recipe** describes permitted pipeline structures and parameter domains;
+a **candidate** is one concrete pipeline evaluated during the search.
+At the start of ``fit``, IAML copies and resolves the recipe into execution
+steps. Each run therefore has its own search scope and analytical definitions.
+Editing a recipe later does not change its previously fitted candidates.
+
+The built-in recipe combines a full ``main`` strategy and a ``minimal`` strategy
+for predictors needing little preparation. A custom recipe defines its own
+branches. Both entry points use the same execution engine described below;
+:doc:`pipelines/guide` covers recipe construction and editing.
 
 From data to a fitted pipeline
 ==============================
@@ -16,22 +30,15 @@ From data to a fitted pipeline
    genetic search starts with a limited set of preprocessing choices and
    explores alternatives during optimization.
 2. **Evaluate candidates.** Each pipeline is fitted and evaluated with
-   cross-validation. The default splitter uses five folds, with stratification
-   for classification and group separation when groups are supplied. Metrics
-   are averaged across folds. The main metric determines candidate ranking.
+   cross-validation. Each fold learns preparation and model state from its
+   training observations. The main metric determines candidate ranking.
 3. **Optimize candidates.** The default genetic optimizer changes pipeline
    components and parameters, retaining promising candidates for further
    evaluation. Search continues until the time budget, patience limit or
-   optimizer stopping condition is reached. Bayesian parameter optimization
-   is also available.
+   optimizer stopping condition is reached.
 4. **Refit the selected pipelines.** IAML fits the best candidates on the
-   training data and returns them in ranked order. If ``train_on_n_samples``
-   is set, final fitting uses that sample by default. Set
-   ``refit_on_sample=False`` to refit on all input rows. The first returned
-   candidate is also available as ``chosen_candidate``.
-
-The search time budget does not include every initialization or final fitting
-operation, so total wall time can exceed ``max_duration``.
+   training data and returns them in ranked order. The first returned candidate
+   is also available as ``chosen_candidate``.
 
 .. figure:: architecture_flow_diagram.png
    :alt: IAML training loop showing candidate generation, optimization, cross-validation and stopping conditions
@@ -44,7 +51,8 @@ operation, so total wall time can exceed ``max_duration``.
 Choose the validation strategy and main metric for the study before starting
 the search. Cross-validation scores guide model selection. Use a separate
 evaluation dataset to assess the selected pipeline. See :doc:`usage` for
-configuration and :doc:`evaluation` for evaluation methods.
+validation, sampling, refitting and time-budget settings, and :doc:`evaluation`
+for interpreting scores and assessing held-out data.
 
 Components and extensions
 =========================
@@ -66,6 +74,10 @@ The search and its results
      - Coordinates candidate generation, validation, optimization and final
        fitting. Holds the search settings and exposes the selected candidate
        through ``chosen_candidate``.
+   * - ``iaml.flow`` recipes
+     - Describe the pipeline's structure and search scope, along with metric,
+       statistic and explanation collections. Compilation creates fresh
+       execution instances for each run.
    * - :py:class:`~iaml.dataset.Dataset`
      - Carries features, targets, optional groups and detected data types.
        Steps use this information to check applicability. Splitting and
@@ -94,29 +106,9 @@ resampling operations and predictors.
 and expose its prediction methods. Probability and survival outputs depend
 on the wrapped estimator's capabilities.
 
-Meta steps organize the construction of candidates:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 70
-
-   * - Class
-     - Role
-   * - :py:class:`~iaml.metastep.MetaStep`
-     - Chooses the next child step according to its priority for the current
-       candidate.
-   * - :py:class:`~iaml.meta_ordered_step.MetaOrderedStep`
-     - Runs child steps in the supplied order, such as imputation before
-       normalization.
-   * - :py:class:`~iaml.meta_explorer_step.MetaExplorerStep`
-     - Explores alternatives from the same input candidate, producing
-       separate candidates for evaluation.
-   * - :py:class:`~iaml.meta_partial_explorer_step.MetaPartialExplorerStep`
-     - Starts with one choice or no transformation. Compatible alternatives
-       remain available for later mutations, limiting initial branching.
-
-Tags associate registered steps with search stages. The meta steps determine
-how those stages are traversed.
+Tags associate registered steps with search stages. Compiled meta steps control
+whether a stage executes components in order, selects them adaptively or
+branches into alternatives.
 
 Evaluation, optimization and reporting
 --------------------------------------

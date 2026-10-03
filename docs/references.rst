@@ -2,11 +2,13 @@
 References
 ===========
 
-This page lists the key references for Python packages used in IAML, including libraries and frameworks. These references provide a technical overview of the tools and ensure proper attribution.
+This page credits libraries and assets used by IAML and its documentation.
+For references to the methods used by a fitted candidate, see the
+:ref:`study bibliography <method-bibliography>`.
 
 Core Libraries and Frameworks
 ===============================
-IAML leverages several Python libraries and frameworks to deliver robust and efficient machine learning automation. Below are the primary references:
+The principal library references are:
 
 - **Scikit-learn:**
     Scikit-learn: Machine Learning in Python. Available at: https://scikit-learn.org/.
@@ -35,6 +37,7 @@ designed by Ryoichi Tsunekawa, under the SIL Open Font License 1.1.
 Documentation animation
 =======================
 
-The homepage uses `GSAP and ScrollTrigger <https://gsap.com/docs/v3/Plugins/ScrollTrigger/>`_
+The Discover IAML and Customize IAML pages use
+`GSAP and ScrollTrigger <https://gsap.com/docs/v3/Plugins/ScrollTrigger/>`_
 under the `GSAP Standard License <https://gsap.com/standard-license/>`_. The
 library and its license notice are bundled with the documentation.
