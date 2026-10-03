@@ -1,5 +1,7 @@
 """[STEP] Permutation Importance Selector."""
 import textwrap
+from copy import deepcopy
+from uuid import uuid4
 
 import numpy as np
 import pandas as pd
@@ -9,9 +11,34 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 
 from ...actionable import Actionable
 from ...candidate import Candidate
+from ...cache_keys import hash_evaluation_context
 from ...data_type import DataType
 from ...dataset import Dataset
 from ...decorators.all import is_step
+from ...metric import Metric
+from ...metrics.balanced_accuracy_metric import BalancedAccuracyMetric
+from ...metrics.r2_score_metric import R2ScoreMetric
+from ...metrics.roc_auc_metric import RocAucMetric
+
+
+class _ObjectiveScorer:
+    """Use the search objective and its direction for permutation importance."""
+
+    def __init__(self, metric: Metric, dataset: Dataset):
+        self.metric = metric
+        self.X_train = dataset.X
+        self.y_train = dataset.y
+
+    def __call__(self, estimator, X, y) -> float:
+        metric = deepcopy(self.metric)
+        prediction = metric.needed_prediction
+        kwargs = {'X_train': self.X_train, 'y_train': self.y_train}
+        if isinstance(metric, RocAucMetric):
+            if not hasattr(estimator, 'decision_function'):
+                prediction = 'predict_proba'
+            kwargs['classes'] = estimator.classes_
+        score = metric.compute(y, getattr(estimator, prediction)(X), **kwargs)
+        return float(score) if metric.greater_is_better else -float(score)
 
 
 @is_step('features_selection')
@@ -52,7 +79,7 @@ class ActPermutationImportanceSelector(Actionable):
                 'range': [1, 50]
             },
             'scoring': {
-                'description': 'Scoring metric ("auto" to use estimator.score).',
+                'description': 'Scoring metric ("auto" to use the main search metric).',
                 'default': 'auto'
             },
             'random_state': {
@@ -84,6 +111,56 @@ class ActPermutationImportanceSelector(Actionable):
         self.importances_std: dict[str, float] = {}
         self.threshold_value: float | None = None
         self.estimator = None
+        self._objective_metric: Metric | None = None
+        self._objective_context: dict | None = None
+
+    def _uses_objective(self) -> bool:
+        scoring = self.get_config('scoring')
+        return isinstance(scoring, str) and scoring.strip().lower() == 'auto'
+
+    def _set_objective(self, metric: Metric | str, key: str) -> None:
+        if isinstance(metric, str):
+            defaults = (BalancedAccuracyMetric(), R2ScoreMetric(), RocAucMetric())
+            metric = next((item for item in defaults if str(item) == metric), None)
+            if metric is None:
+                raise ValueError(f"Cannot resolve permutation scoring objective '{key}'")
+        configuration = deepcopy(vars(metric))
+        signature = hash_evaluation_context(type(metric), configuration,
+                                            metric.greater_is_better,
+                                            metric.needed_prediction)
+        context = {'objective': key, 'metric': str(metric),
+                   'configuration': configuration,
+                   'signature': signature or uuid4().hex}
+        if self._objective_context is None or (
+            self._objective_context['objective'], self._objective_context['signature']
+        ) != (context['objective'], context['signature']):
+            self._config_version += 1
+        self._objective_metric = deepcopy(metric)
+        self._objective_context = context
+
+    def run(self, candidates: Candidate | list[Candidate]) -> list[Candidate]:
+        """Resolve the objective before the base runner consults step caches."""
+        if isinstance(candidates, Candidate):
+            candidates = [candidates]
+        results = []
+        for candidate in candidates:
+            if self._uses_objective():
+                self._set_objective(candidate.get_main_metric(), candidate.main_metric)
+            results.extend(super().run(candidate))
+        self.candidate = results
+        return results
+
+    def resume_configuration(self) -> dict:
+        configuration = super().resume_configuration()
+        if self._uses_objective() and self._objective_context is not None:
+            configuration['resolved_scoring'] = deepcopy(self._objective_context)
+        return configuration
+
+    def serializable_resume_configuration(self) -> dict:
+        configuration = super().serializable_resume_configuration()
+        if 'resolved_scoring' in configuration:
+            configuration['resolved_scoring'].pop('configuration')
+        return configuration
 
     def _resolve_positive_int(self, key: str) -> int | None:
         value = self.get_config(key)
@@ -133,7 +210,13 @@ class ActPermutationImportanceSelector(Actionable):
             return None
         return value
 
-    def _resolve_scoring(self) -> str | None:
+    def _resolve_scoring(self, dataset: Dataset):
+        if self._uses_objective():
+            if self._objective_metric is None:
+                metric = (BalancedAccuracyMetric() if dataset.needed_estimator == 'classifier'
+                          else R2ScoreMetric())
+                self._set_objective(metric, str(metric))
+            return _ObjectiveScorer(self._objective_metric, dataset)
         scoring = self.get_config('scoring')
         if scoring is None:
             return None
@@ -262,7 +345,7 @@ class ActPermutationImportanceSelector(Actionable):
         if n_repeats is None:
             return self
 
-        scoring = self._resolve_scoring()
+        scoring = self._resolve_scoring(dataset)
 
         max_features = self._resolve_max_features(len(self.columns))
         if max_features is not None and max_features != self.get_config('max_features'):
