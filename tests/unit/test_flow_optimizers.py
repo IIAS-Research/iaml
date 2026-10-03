@@ -95,7 +95,7 @@ class TestFlowOptimizers(unittest.TestCase):
         return candidate
 
     def test_all_optimizers_keep_const_and_original_candidate(self):
-        for optimizer in (RandomOptimizer(), GeneticOptimizer(nb_candidate=4)):
+        for optimizer in (RandomOptimizer(), BayesianOptimizer(), GeneticOptimizer(nb_candidate=4)):
             with self.subTest(optimizer=type(optimizer).__name__):
                 candidate = self.candidate()
                 before = candidate.pipeline.fingerprint()
@@ -123,10 +123,76 @@ class TestFlowOptimizers(unittest.TestCase):
         self.assertTrue(step.check_configuration())
         self.assertEqual(step.get_config('locked'), 30)
 
+    def test_bayesian_bounds_keep_zero_and_negative_integers(self):
+        optimizer = BayesianOptimizer()
+        optimizer._initialize_search_space([self.candidate()])
+        backend = next(iter(optimizer.skopt_optimizers.values()))
+        self.assertEqual(backend['param_keys'], ['0_depth'])
+        self.assertEqual(backend['dimensions'][0].bounds, (-5, 10))
 
+    def test_bayesian_spaces_distinguish_domain_fixed_and_class(self):
+        optimizer = BayesianOptimizer()
+        candidate = self.candidate()
+        original = optimizer._generate_structure_id(candidate)
+        same = deepcopy(candidate)
+        same.pipeline.predictor[1].configure('depth', 8)
+        self.assertEqual(original, optimizer._generate_structure_id(same))
+        same.pipeline.predictor[1]._flow_alias = 'renamed'
+        same.pipeline.predictor[1]._flow_node_id = 'another-id'
+        self.assertEqual(original, optimizer._generate_structure_id(same))
+        same.pipeline.predictor[1].configure('locked', 5)
+        self.assertNotEqual(original, optimizer._generate_structure_id(same))
+        other = deepcopy(candidate)
+        step = other.pipeline.predictor[1]
+        step.configuration['depth']['range'] = [0, 20]
+        step._flow_parameters['depth']['domain'] = [0, 20]
+        self.assertNotEqual(original, optimizer._generate_structure_id(other))
+        class _OtherPredictor(_SearchPredictor):
+            pass
+        self.assertNotEqual(original, optimizer._generate_structure_id(
+            self.candidate(compiled(_OtherPredictor()))))
 
+    def test_all_fixed_or_singleton_preserves_bayesian_candidate(self):
+        for fixed in (True, False):
+            with self.subTest(fixed=fixed):
+                step = compiled(_SearchPredictor(), fixed=('depth', 'locked') if fixed else ('locked',))
+                if not fixed:
+                    step.configuration['depth']['range'] = [3, 3]
+                    step._flow_parameters['depth']['domain'] = [3, 3]
+                candidate = self.candidate(step)
+                optimizer = BayesianOptimizer()
+                self.assertEqual(optimizer.run([candidate]), [candidate])
+                self.assertIs(optimizer.run([candidate])[0], candidate)
+                self.assertEqual(optimizer.skopt_optimizers, {})
 
+    def test_bayesian_signature_normalizes_numpy_scalar_types(self):
+        optimizer = BayesianOptimizer()
+        candidate = self.candidate()
+        original = optimizer._generate_structure_id(candidate)
+        candidate.pipeline.predictor[1].configure('depth', np.int64(8))
+        self.assertEqual(original, optimizer._generate_structure_id(candidate))
 
+    def test_bayesian_local_variants_have_separate_stable_spaces(self):
+        first = compiled(_SearchPredictor(), variant='first', alias='small')
+        second = compiled(_SearchPredictor(), variant='second', alias='large')
+        first._flow_variant_key, second._flow_variant_key = 0, 1
+        alternatives = (deepcopy(first), deepcopy(second))
+        first._flow_alternatives = second._flow_alternatives = alternatives
+        first.is_interchangeable = second.is_interchangeable = True
+        optimizer = BayesianOptimizer()
+        one, two = self.candidate(first), self.candidate(second)
+        original = optimizer._generate_structure_id(one)
+        self.assertNotEqual(original, optimizer._generate_structure_id(two))
+        self.assertNotEqual(one.pipeline.fingerprint(), two.pipeline.fingerprint())
+        optimizer._initialize_search_space([one, two])
+        self.assertEqual(len(optimizer.skopt_optimizers), 2)
+
+        first.configure('depth', 8)
+        alternatives[0].configure('depth', 5)
+        alternatives[1].configure('depth', 9)
+        first._flow_alias = 'renamed'
+        first._flow_variant_id = 'fresh-id'
+        self.assertEqual(original, optimizer._generate_structure_id(one))
 
     def test_random_and_bayesian_include_resamplers(self):
         candidate = self.candidate(resampler=compiled(_SearchResampler()))
@@ -134,6 +200,10 @@ class TestFlowOptimizers(unittest.TestCase):
             result = RandomOptimizer()._randomize_hyperparameters(deepcopy(candidate))
         self.assertEqual(result.pipeline.resamplers[0][1].get_config('depth'), 7)
         self.assertEqual(result.pipeline.resamplers[0][1].get_config('locked'), 4)
+        optimizer = BayesianOptimizer()
+        optimizer._initialize_search_space([candidate])
+        backend = next(iter(optimizer.skopt_optimizers.values()))
+        self.assertEqual(backend['param_keys'], ['0_depth', '1_depth'])
 
     def test_genetic_uses_only_local_configured_variants(self):
         first = compiled(_SearchTransform(), variant='first')

@@ -12,6 +12,8 @@ from ..candidate import Candidate
 from .optimizer import Optimizer as BaseOptimizer
 from ..step import Step
 from ..logger import Logger
+from ..search_policy import parameter_keys, structure_signature
+from ..cache_keys import hash_evaluation_context
 
 class BayesianOptimizer(BaseOptimizer):
     def __init__(self, duration: int = None, max_iterations=50):
@@ -27,22 +29,26 @@ class BayesianOptimizer(BaseOptimizer):
     
     def _generate_structure_id(self, candidate):
         """Generate a unique identifier for the candidate structure."""
-        return hash(tuple((step[0], tuple(sorted(step[1].configuration.keys()))) for step in candidate.pipeline.steps))
+        return hash_evaluation_context(tuple(
+            structure_signature(step, self.ignored_configs)
+            for _, step in candidate.pipeline.training_steps
+        ))
     
     def _initialize_search_space(self, candidates):
         """Define the search space for each unique candidate structure."""
         for candidate in candidates:
             structure_id = self._generate_structure_id(candidate)
+            if structure_id is None:
+                continue
             if structure_id in self.skopt_optimizers:
                 continue  # Avoid reinitializing existing structures
             
             dimensions = []
             param_keys = []
             
-            for step_idx, step in enumerate(candidate.pipeline.steps):
-                for key, config in sorted(step[1].configuration.items()):
-                    if key in self.ignored_configs:
-                        continue
+            for step_idx, step in enumerate(candidate.pipeline.training_steps):
+                for key in sorted(parameter_keys(step[1], self.ignored_configs)):
+                    config = step[1].configuration[key]
                     param_key = f"{step_idx}_{key}"
                     
                     value = config['value']
@@ -61,10 +67,12 @@ class BayesianOptimizer(BaseOptimizer):
                                 continue
                             if low > high:
                                 low, high = high, low
+                            if low == high:
+                                continue
                             if isinstance(value, float):
                                 dimensions.append(Real(low, high))
                             else:
-                                if low <= 0:
+                                if low <= 0 and not getattr(step[1], '_flow_explicit', False):
                                     low = 1
                                 dimensions.append(Integer(low, high))
                         else:
@@ -104,7 +112,7 @@ class BayesianOptimizer(BaseOptimizer):
             new_candidate = deepcopy(candidate)
             idx = 0
             if new_params:
-                for step_idx, step in enumerate(new_candidate.pipeline.steps):
+                for step_idx, step in enumerate(new_candidate.pipeline.training_steps):
                     for key, config in sorted(step[1].configuration.items()):
                         if key in self.ignored_configs:
                             continue
@@ -121,7 +129,7 @@ class BayesianOptimizer(BaseOptimizer):
     
     def _export_params(self, candidate, optimizer_data):
         params = [None]*len(optimizer_data['param_keys'])
-        for step_idx, step in enumerate(candidate.pipeline.steps):
+        for step_idx, step in enumerate(candidate.pipeline.training_steps):
             for key, config in sorted(step[1].configuration.items()):
                 if key in self.ignored_configs:
                     continue
@@ -149,8 +157,7 @@ class BayesianOptimizer(BaseOptimizer):
         :param candidates: List of Candidate objects to optimize.
         :return: New list of candidates optimized using Bayesian Optimization.
         """
-        if self.current_iteration == 0:
-            self._initialize_search_space(candidates)
+        self._initialize_search_space(candidates)
         
         candidates.sort(reverse=True)
         
