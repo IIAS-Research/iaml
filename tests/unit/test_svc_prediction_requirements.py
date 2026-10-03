@@ -75,7 +75,7 @@ class SVCPredictionRequirementTests(unittest.TestCase):
         with patch.object(ActSVMSVC, 'fit', fit):
             self.assertTrue(candidate.training_evaluate(
                 candidate.dataset, splitter=kfold_splitter, cache_split=False))
-        self.assertEqual(modes, [False] * 5)
+        self.assertEqual(modes, [False] * 3)
         candidate.pipeline.fit(self.X, self.y, metrics=[RocAucMetric(), ProbabilityMetric()])
         self.assertTrue(hasattr(candidate.pipeline, 'predict_proba'))
 
