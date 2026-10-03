@@ -276,6 +276,9 @@ Control time and dataset size
   The default, ``-1``, sets no global time limit.
 - ``max_stage_duration`` caps an evaluation stage. Its default is
   ``max(max_duration / 5, 900)``. A remaining global budget can shorten a stage.
+  Unfinished and queued evaluations carry over to later stages, where their
+  results are collected once. Expiring the global search budget stops those
+  evaluations and cancels the remaining queue.
 - ``patience``, passed to ``fit``, stops optimization after that many generations
   without improvement. Its default is unlimited when a time budget is set,
   and 20 generations without improvement when ``max_duration=-1``.

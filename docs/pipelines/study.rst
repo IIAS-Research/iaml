@@ -164,8 +164,11 @@ searches and evaluates them:
   The built-in splitter accounts for classification targets and supplied
   groups. Keep held-out test data separate from these internal folds.
 * ``max_duration`` sets the search budget in seconds; ``max_stage_duration``
-  limits an individual stage. Initialization and final fitting can add time,
-  so the budget is not a wall-clock limit for the complete study.
+  limits an individual stage. Unfinished and queued evaluations continue
+  across stages, and their results are collected once. The global budget
+  stops running evaluations and cancels queued ones. Initialization and final
+  fitting can add time, so the budget is not a wall-clock limit for the
+  complete study.
 * ``max_workers`` controls worker concurrency. ``keep_training_history=True``
   records validation audit information in ``search.training_history``.
 
