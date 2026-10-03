@@ -5,9 +5,10 @@ from .model import (
     AnalysisCollection, Selection, choice, use, optional, normalizers, predictors,
     metrics, statistics, explanations,
 )
+from .compiler import compile_pipeline
 
 __all__ = [
     "PipelineSpec", "Const", "Int", "Float", "use", "choice", "optional",
     "normalizers", "predictors", "metrics", "statistics", "explanations",
-    "AnalysisCollection", "Selection",
+    "AnalysisCollection", "Selection", "compile_pipeline",
 ]

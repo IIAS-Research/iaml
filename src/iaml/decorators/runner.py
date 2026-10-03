@@ -79,7 +79,11 @@ def runner(func: callable) -> callable:
                 if not candidate:
                     candidate = func(self, current_candidate)
                     self.add_cache(current_candidate, candidate)
-            else: # If the step is disabled or not suitable for the dataset, do nothing
+            elif getattr(self, '_flow_required', False):
+                # A choice permits only its declared alternatives. Its optional
+                # absence, if any, is explored separately by the compiler.
+                candidate = []
+            else: # Standalone and adaptive steps retain their applicability skip.
                 candidate = current_candidate
 
 

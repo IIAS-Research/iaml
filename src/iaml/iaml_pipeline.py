@@ -271,7 +271,19 @@ class IAMLPipeline(Pipeline):
                         # (e.g. a target encoder's out-of-fold training transform).
                         Cache().add_to_cache(fit_key, fit_data_key, (step, dataset))
                     else:
-                        if step.is_interchangeable:
+                        if getattr(step, '_flow_explicit', False) and (
+                                step.is_interchangeable or getattr(step, '_flow_required', False)):
+                            absence = next((item for item in getattr(step, '_flow_alternatives', ())
+                                            if isinstance(item, VoidStep)), None)
+                            if absence is None:
+                                label = getattr(step, '_flow_alias', None) or step.name
+                                raise ValueError(f"Required pipeline step '{label}' is inapplicable")
+                            old_step = step
+                            step = deepcopy(absence)
+                            step._flow_alternatives = old_step._flow_alternatives
+                            step._flow_choice_id = getattr(old_step, '_flow_choice_id', None)
+                            self.replace_step(old_step, step)
+                        elif step.is_interchangeable:
                             old_step = step
                             step = VoidStep(step_to_mimic=step)
                             self.replace_step(old_step, step)
