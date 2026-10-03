@@ -7,18 +7,26 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
+from iaml import ConcordanceIndexMetric, IAML
 from iaml.cache import Cache
 from iaml.candidate import Candidate
 from iaml.dataset import Dataset
-from iaml.flow import Const, use
+from iaml.flow import Const, metrics, use
 from iaml.logger import Logger
 from iaml.optimizers import BayesianOptimizer, GeneticOptimizer, RandomOptimizer
 from iaml.step import Step
 from iaml.steps import SurvivalTree
 
 
+class _OneGenerationGeneticOptimizer(GeneticOptimizer):
+    def __init__(self, duration=None):
+        super().__init__(nb_candidate=4, duration=duration)
+        self.max_generations = 1
 
 
+class _OneIterationRandomOptimizer(RandomOptimizer):
+    def __init__(self, duration=None):
+        super().__init__(duration=duration, max_iterations=1)
 
 
 class OpenBoundsOptimizerTests(unittest.TestCase):
@@ -107,6 +115,26 @@ class OpenBoundsOptimizerTests(unittest.TestCase):
                 for item in outputs:
                     self.assertEqual(item.pipeline.predictor[1].get_config('max_depth'), 3)
 
+    def test_survival_initial_depth_completes_public_fit_with_open_domain(self):
+        recipe = use(SurvivalTree, max_depth=3)
+        recipe.configure(**{key: Const(param.value) for key, param in recipe.parameters.items()
+                            if key != 'max_depth'})
+        for optimizer in (_OneGenerationGeneticOptimizer, _OneIterationRandomOptimizer):
+            with self.subTest(optimizer=optimizer.__name__):
+                search = IAML(
+                    pipeline=recipe, optimizer=optimizer, max_workers=1,
+                    max_duration=15, max_stage_duration=5,
+                    metrics=metrics(use(ConcordanceIndexMetric).named('quality')),
+                    main_metric='quality', statistics=[], explanations=[],
+                )
+                random_state = random.getstate()
+                self.addCleanup(random.setstate, random_state)
+                random.seed(33)
+                model = search.fit(self.X, self.y, verbose=0)[0]
+                self.assertIn('quality', model.computed_metrics)
+                self.assertEqual(model.pipeline.predictor[1].configuration['max_depth']['range'],
+                                 [1, None])
+                self.assertEqual(model.predict(self.X).shape, (60,))
 
 
 if __name__ == '__main__':

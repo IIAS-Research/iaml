@@ -7,7 +7,6 @@ and explanation methods for inspection and study reporting.
 from copy import deepcopy
 import time
 import math
-import textwrap
 import multiprocessing
 from typing import TYPE_CHECKING, Any
 import numpy as np
@@ -65,8 +64,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param int | str, optional time_before_sample_use: Time before we use sampled data. 
         Default to None.
     :param bool, optional preprocessor: Use preprocessor. Default to False.
-    :param Metric, optional main_metric: Main metric instance, preserving its parameters.
-        Default to None.
+    :param main_metric: Metric instance preserving its parameters, or the result key
+        of a configured metric. None selects the default objective for the task.
     :param Optimizer, optional optimizer: Optimizer class to use. Default to GeneticOptimizer.
     :param int, optional train_on_n_samples: Limit the initial search dataset to this many
         rows. None or nonpositive values use all rows.
@@ -79,6 +78,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         a numeric DataFrame with unchanged rows and index. Every generated pipeline,
         including minimalist candidates, starts with this mandatory transformer.
         It is fitted afresh within each CV training fold and during final fitting.
+    :param pipeline: Declarative training recipe. None uses the shared preset with
+        visible ``minimal`` and ``main`` branches. Supplied recipes are copied.
+    :param metrics: Metric collection or list. None uses the default family.
+        Aliases identify scores and may select the main objective.
+    :param statistics: Descriptive collection or list. None uses the default family;
+        an empty list disables collective descriptive calculations.
+    :param explanations: Explanation collection or list. None uses the default family;
+        an empty list disables collective explanations. Calculations remain on demand.
     """
     def __init__( # pylint: disable=too-many-arguments
         self,
@@ -88,14 +95,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         max_duration: int = -1,
         time_before_sample_use: int | str = None,
         preprocessor: bool = False,
-        main_metric: Metric = None,
+        main_metric: Metric | str = None,
         optimizer: Optimizer = GeneticOptimizer,
         train_on_n_samples: int = None,
         keep_training_history: bool = False,
         refit_on_sample: bool = True,
         initial_preprocessor: Any = None,
         *,
-        statistics=None) -> None:
+        pipeline=None,
+        metrics=None,
+        statistics=None,
+        explanations=None) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -134,7 +144,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.splitter: callable = splitter if splitter is not None else kfold_splitter
         """Splitter callable"""
 
-        self.main_metric: Metric = main_metric
+        self.main_metric: Metric | str = main_metric
         """Main metric"""
 
         self.max_duration: int = max_duration
@@ -162,13 +172,37 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.executor: TimedPoolExecutor = None
         """Hold TimePoolExecutor"""
 
+        self._pipeline_spec = None
+        self._flow_execution_root = None
+        self._flow_compiled_first_step = None
+        self.minimal_predictor_step = None
+        self._flow_active = False
+        self._study_snapshot = None
         self._analysis_reports = {}
         self._descriptive_cache = {}
-        from .flow import statistics as statistic_family
+        self._metrics_explicit = metrics is not None
+        from .flow import metrics as metric_family, statistics as statistic_family
+        from .flow import explanations as explanation_family
+        self.metrics = (metric_family() if metrics is None else
+                        metrics.clone() if hasattr(metrics, 'clone') else metrics)
         self.statistics = (statistic_family() if statistics is None else
                            statistics.clone() if hasattr(statistics, 'clone') else statistics)
-
-        self.default_pipeline() # Load default pipeline
+        self.explanations = (explanation_family() if explanations is None else
+                             explanations.clone() if hasattr(explanations, 'clone') else explanations)
+        self._metrics_explicit = metrics is not None
+        if pipeline is None:
+            self.default_pipeline()
+        else:
+            from .flow.model import Recipe
+            if not isinstance(pipeline, Recipe) or pipeline.kind != 'pipeline':
+                raise TypeError('pipeline must be an IAML training recipe')
+            self.pipeline = pipeline.clone()
+            from .flow.compiler import RecipeValidationError
+            try:
+                self._install_flow_pipeline()
+            except RecipeValidationError:
+                # An incomplete attached recipe remains editable until launch.
+                pass
         self.max_workers = max_workers if (max_workers is not None and max_workers > 0) \
             else multiprocessing.cpu_count()
         """Hold maximum number of parallel workers"""
@@ -193,7 +227,32 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param dict pipeline: JSON description of the pipeline
         """
         self.first_step = Step.from_pipeline(pipeline)
-        self.minimal_predictor_step = self.__build_minimal_predictor_step()
+        self.minimal_predictor_step = None
+        self._pipeline_spec = None
+        self._flow_execution_root = None
+        self._flow_active = False
+
+    @property
+    def pipeline(self):
+        """Editable declarative recipe belonging to this study."""
+        return self._pipeline_spec
+
+    @pipeline.setter
+    def pipeline(self, recipe):
+        from .flow import PipelineSpec
+        if not isinstance(recipe, PipelineSpec):
+            # A composed fragment is also a valid complete recipe.
+            from .flow.model import Recipe
+            if not isinstance(recipe, Recipe):
+                raise TypeError('pipeline must be an IAML recipe')
+        if recipe.kind != 'pipeline':
+            raise TypeError('pipeline requires a training recipe')
+        if getattr(recipe, '_owner', None) not in (None, self):
+            recipe = recipe.clone()
+        previous = getattr(self, '_pipeline_spec', None)
+        if previous is not None and previous is not recipe:
+            previous._owner = previous._owner_field = None
+        self._pipeline_spec = recipe.attach(self, 'pipeline')
 
     def _set_analysis_collection(self, field, value):
         from .flow import metrics, statistics, explanations
@@ -213,7 +272,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             previous._owner = previous._owner_field = None
         return value.attach(self, field)
 
+    @property
+    def metrics(self):
+        return self._metrics_spec
 
+    @metrics.setter
+    def metrics(self, value):
+        self._metrics_spec = self._set_analysis_collection('metrics', value)
+        self._metrics_explicit = True
 
     @property
     def statistics(self):
@@ -223,90 +289,46 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     def statistics(self, value):
         self._statistics_spec = self._set_analysis_collection('statistics', value)
 
+    @property
+    def explanations(self):
+        return self._explanations_spec
+
+    @explanations.setter
+    def explanations(self, value):
+        self._explanations_spec = self._set_analysis_collection('explanations', value)
+
+    def _install_flow_pipeline(self):
+        from .flow.compiler import compile_pipeline
+        root = compile_pipeline(self.pipeline, optimizer=self.optimizer,
+                                preprocessor=self.preprocessor,
+                                fast=getattr(self, '_flow_fast', False))
+        self._flow_execution_root = root
+        # Keep the principal execution tree available to historical low-level users.
+        main = next((step for step in getattr(root, 'steps', [])
+                     if getattr(step, '_flow_alias', None) == 'main'), None)
+        self.first_step = main if main is not None else root
+        self._flow_compiled_first_step = self.first_step
+        self.minimal_predictor_step = None
+        self._flow_active = True
+
+    def _prepare_flow(self):
+        if getattr(self, '_pipeline_spec', None) is None:
+            return False
+        if (self.first_step is not getattr(self, '_flow_compiled_first_step', None)
+                or self.minimal_predictor_step is not None):
+            # Explicit legacy execution-tree overrides remain supported.
+            self._flow_active = False
+            return False
+        self._install_flow_pipeline()
+        return True
 
 
     def default_pipeline(self, fast: bool = False) -> None:
-        """Load the default pipeline.
-        Default pipeline is the recommended way to create classifier and regressor
-
-        Genetic search starts with one normalization and no resampling, then
-        explores alternatives through mutations. Other optimizers retain full
-        initial exploration because they only change hyperparameters.
-
-        :param bool, optional fast: If true, will only load fast machine learning model.
-            Fast mode is use to create fast pipeline and iterate
-            quickly when debugging code. Defaults to False.
-        """
-        self.first_step = MetaOrderedStep(tag="Main") # First step -> Contain all pipeline's stages
-
-        self.first_step.add_step(MetaStep(tag='features_precleaning',
-            name='Features Precleaning',
-            description=textwrap.dedent('''\
-                Converts complex columns into several columns, which helps the
-                model to extract information from your data.''')))
-        self.first_step.add_step(MetaStep(tag='cleaning',
-            name='Features Cleaning',
-            description=textwrap.dedent('''\
-                Improve data quality, handle missing values, extract
-                information from textual columns, etc.''')))
-        self.first_step.add_step(MetaStep(tag='features_selection',
-            name='Features Selection',
-            description=textwrap.dedent('''\
-                Decrease number of column to improve the models' performance.''')))
-        partial_exploration = (isinstance(self.optimizer, type)
-                               and issubclass(self.optimizer, GeneticOptimizer))
-        explorer = MetaPartialExplorerStep if partial_exploration else MetaExplorerStep
-        normalization_options = {'initial_step': ActStandardScaler()} if partial_exploration else {}
-        imbalance_options = {} if partial_exploration else {'also_explore_without': True}
-        self.first_step.add_step(explorer(tag='normalize',
-            **normalization_options,
-            name='Features Normalization',
-            description=textwrap.dedent('''\
-                Normalize data to help model to give the same interest to each column''')))
-        self.first_step.add_step(explorer(tag='imbalance',
-            **imbalance_options,
-            name='Handle Imbalanced Data',
-            description=textwrap.dedent('''\
-                Balance the dataset to ensure the model does not favor the
-                majority class over the minority class''')))
-
-        if self.preprocessor:
-            self.first_step.add_step(
-                MetaExplorerStep(tag='features_preprocessing', also_explore_without=True)
-            )
-        else:
-            self.first_step.add_step(
-                MetaPartialExplorerStep(
-                    tag='features_preprocessing',
-                    name="Dimensionality Reduction (optional)",
-                    description=textwrap.dedent('''\
-                        Reduce the complexity of data and make computations
-                        more efficient'''))
-            )
-
-        learning_tag = 'fast_predictor' if fast else 'predictor'
-
-        self.first_step.add_step(
-            MetaExplorerStep(
-                tag=learning_tag,
-                name="Machine learning models",
-                description="List of machine learning models IAML will try to optimize"))
-
-        self.minimal_predictor_step = self.__build_minimal_predictor_step()
-
-    def __build_minimal_predictor_step(self) -> MetaExplorerStep | None:
-        """Build the minimalist predictor stage if suitable models exist."""
-        minimal_step = MetaExplorerStep(
-            tag='minimal_predictor',
-            name='Minimalist Predictors',
-            description=textwrap.dedent('''\
-                Try high-performing boosting-style models without any preprocessing
-                to provide quick baseline candidates before the full pipeline is explored.'''))
-
-        if not minimal_step.steps:
-            return None
-
-        return minimal_step
+        """Install the shared default recipe, including its visible minimal branch."""
+        from .flow import PipelineSpec
+        self._flow_fast = fast
+        self.pipeline = PipelineSpec.default()
+        self._install_flow_pipeline()
 
     def __callback(self, callback: callable, **kwargs: dict) -> None:
         """Call callback function if defined
@@ -427,6 +449,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         if groups_columns is None:
             groups_columns = []
 
+        self._prepare_flow()
         self.check_pipeline() # Raise error if the pipeline is not valid
 
         Logger().verbose = verbose # Set logger verbose
@@ -462,9 +485,38 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.descriptive_statistics = None
 
             ### INITIAL GENERATE CANDIDATE
+            metric_definitions = None
+            explanation_definitions = None
+            statistic_definitions = None
+            objective = self.main_metric
+            self._study_snapshot = None
+            analysis_specs = {}
+            if hasattr(self, '_explanations_spec'):
+                from .study_analyses import compile_analyses
+                analysis_specs = {field: getattr(self, field).clone().freeze()
+                                  for field in ('metrics', 'statistics', 'explanations')}
+                explanation_definitions = compile_analyses(analysis_specs['explanations'])
+                # Validate result keys before fitting, even for on-demand analyses.
+                statistic_definitions = compile_analyses(analysis_specs['statistics'])
+            metric_recipe = getattr(self, '_metrics_spec', None)
+            metric_recipe_edited = (metric_recipe is not None and (
+                metric_recipe.tag is None or metric_recipe.children
+                or metric_recipe.excluded or metric_recipe._removed_ids
+                or any(getattr(node, '_declared_params', ()) or node.alias
+                       for node in metric_recipe._walk() if hasattr(node, 'parameters'))))
+            if (metric_recipe is not None
+                    and (getattr(self, '_flow_active', False)
+                         or getattr(self, '_metrics_explicit', False)
+                         or metric_recipe_edited)):
+                from .study_analyses import compile_metrics
+                metric_definitions, objective, metric_report = compile_metrics(
+                    analysis_specs['metrics'], self.main_metric, dataset)
             self.init_candidate: Candidate = Candidate(
                 dataset.sample(generation_sample_size),
-                main_metric=self.main_metric)
+                main_metric=objective,
+                metric_definitions=metric_definitions,
+                explanation_definitions=explanation_definitions,
+                study_snapshot=self._study_snapshot if hasattr(self, '_study_snapshot') else None)
 
             if self.initial_preprocessor is not None:
                 # Encode the generation sample so both branches can discover
@@ -475,11 +527,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 self.init_candidate = self.init_candidate.add_to_pipeline(initial_step)
 
             # Select metrics used to evaluate performances
-            for metric \
-                in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-                self.init_candidate.add_metric(metric)
+            if metric_definitions is None:
+                for metric in self.__metrics_selection(
+                        dataset.X, dataset.y, dataset.type_of_target):
+                    self.init_candidate.add_metric(metric)
 
-            minimal_candidates = self.__generate_minimal_candidates(self.init_candidate)
+            minimal_candidates = ([] if getattr(self, '_flow_active', False) else
+                                  self.__generate_minimal_candidates(self.init_candidate))
 
             # Generate candidates
             pipeline_candidates = self.__run(self.init_candidate)
@@ -491,6 +545,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             candidates = [candidate for candidate in candidates \
                 if candidate.pipeline.predictor is not None]
             self.candidates = candidates
+
+            if not candidates and getattr(self, '_flow_active', False):
+                raise ValueError('No applicable candidate pipeline matches the declared recipe')
 
             if minimal_candidates:
                 Logger().info(f"{len(minimal_candidates)} minimalist pipelines generated")
@@ -1085,7 +1142,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :return: List of all the generated candidates. Sorted by performances.
         """
         Logger().info("Generate candidate...")
-        self.candidates = self.first_step.run(candidate)
+        root = (self._flow_execution_root if getattr(self, '_flow_active', False)
+                else self.first_step)
+        self.candidates = root.run(candidate)
 
         return self.candidates
 
@@ -1098,6 +1157,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         :return: Loaded Pipeline in a JSON format
         """
+        if self.first_step is None:
+            self._prepare_flow()
         return self.first_step.json_pipeline()
 
     def all_configurations(self) -> list[dict]:
@@ -1105,6 +1166,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         :return: Configurations of all steps. 
         """
+        if self.first_step is None:
+            self._prepare_flow()
         return self.first_step.all_configurations()
 
     def configure_all(self, configs: dict) -> None:
@@ -1113,11 +1176,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param dict configs: key is a step_id and value is the configuration to set.
         """
         all_steps = self.__all_steps()
+        recipe_nodes = ({node.node_id: node for node in self.pipeline._walk()}
+                        if self.pipeline is not None else {})
 
         for step_id, config in configs.items():
             current_step: Step = self.__find_step_by_id(all_steps, step_id)
             if current_step:
-                for key, value in config:
+                updates = dict(config)
+                recipe = recipe_nodes.get(getattr(current_step, '_flow_node_id', None))
+                if recipe is not None and hasattr(recipe, 'configure'):
+                    recipe.configure(**updates)
+                for key, value in updates.items():
                     current_step.configure(key, value)  # pylint: disable=no-member
 
     def __all_steps(self) -> list[Step]:
@@ -1125,6 +1194,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         :return: All flatten pipelines's steps
         """
+        if self.first_step is None:
+            self._prepare_flow()
         return self.first_step.all_steps()
 
     def __find_step_by_id(self, step_list: list[Step], step_id: int) -> Step | None:
