@@ -320,6 +320,8 @@ class Step: # pylint: disable=too-many-public-methods, too-many-instance-attribu
         :return: Whether the configuration is wrong. Fixed issues return True.
         """
         for key, config in self.configuration.items():
+            if getattr(self, '_flow_parameters', {}).get(key, {}).get('fixed', False):
+                continue
             if 'categorical' in config:
                 if self.get_config(key) not in config['categorical']:
                     if fix:

@@ -17,6 +17,10 @@ from ...decorators.all import is_step
 class ActSMOTE(Actionable):
     """[STEP] SMOTE"""
 
+    # These declared parameters are shared by the numeric and categorical
+    # backends; categorical_features is supplied by the adapter at fit time.
+    _flow_parameter_constraints = SMOTE._parameter_constraints
+
     name: str = "SMOTE"
     _usage: str = "Use when imbalanced classification needs synthetic minority samples; compare ActADASYN for adaptive oversampling. Applicable to binary or multiclass with numeric features (categoricals via SMOTENC). Avoid when non-classification, text/date-only, or minority count <= 1."
     _description: str = textwrap.dedent('''\

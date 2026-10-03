@@ -20,6 +20,12 @@ from ...decorators.all import is_step
 class ActSMOTEENN(Actionable):
     """[STEP] SMOTEENN"""
 
+    _flow_parameter_constraints = {
+        **SMOTE._parameter_constraints,
+        **{key: EditedNearestNeighbours._parameter_constraints[key]
+           for key in ("n_neighbors", "kind_sel")},
+    }
+
     name: str = "SMOTE ENN"
     _description: str = textwrap.dedent('''\
         SMOTEENN balances data by creating synthetic minority samples and
