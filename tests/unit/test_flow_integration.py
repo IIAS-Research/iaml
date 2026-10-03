@@ -63,9 +63,47 @@ class FlowStudyIntegrationTests(unittest.TestCase):
         self.assertTrue(report['statistics']['tree']['resolved'])
         self.assertEqual(report['compiled_analyses']['metrics'][0]['key'], 'quality')
 
+    def test_baseline_preserves_metric_alias_and_frozen_analysis_definitions(self):
+        study = self.make_study(
+            metrics=metrics(use(RecallMetric, pos_label=0).named('quality')),
+            explanations=explanations(use(KernelSHAP, nsamples=4).named('shap')),
+        )
+        candidates = study.baseline(self.X, self.y, verbose=0)
+        self.assertTrue(candidates)
+        study.metrics['quality'].configure(pos_label=1)
+        study.explanations['shap'].configure(nsamples=8)
+        for candidate in candidates:
+            self.assertEqual(candidate.main_metric, 'quality')
+            self.assertEqual(candidate.metrics[0].pos_label, 0)
+            self.assertEqual(set(candidate.evaluate(self.X, self.y)), {'quality'})
+            with patch.object(candidate.pipeline, 'explain_model', return_value='explained') as explain:
+                self.assertEqual(candidate.explain(self.X.iloc[:2]), {'shap': 'explained'})
+                self.assertEqual(explain.call_args.kwargs['nsamples'], 4)
 
+    def test_baseline_respects_disabled_explanations(self):
+        study = self.make_study()
+        candidates = study.baseline(self.X, self.y, verbose=0)
+        self.assertTrue(candidates)
+        for candidate in candidates:
+            self.assertEqual(candidate.explain(self.X.iloc[:2]), {})
 
+    def test_baseline_uses_the_mandatory_input_preprocessor(self):
+        template = SklearnStandardScaler().set_output(transform='pandas')
+        study = self.make_study(initial_preprocessor=template)
+        candidates = study.baseline(self.X, self.y, verbose=0)
+        self.assertTrue(candidates)
+        self.assertFalse(hasattr(template, 'mean_'))
+        expected = SklearnStandardScaler().set_output(transform='pandas').fit_transform(self.X)
+        for candidate in candidates:
+            initial = candidate.pipeline.training_steps[0][1]
+            self.assertIsInstance(initial, SklearnPreprocessor)
+            pd.testing.assert_frame_equal(initial.transform(self.X), expected)
+            self.assertEqual(candidate.predict(self.X).shape, self.y.shape)
 
+    def test_baseline_validates_missing_objective_before_generation(self):
+        study = self.make_study(metrics=[])
+        with self.assertRaisesRegex(ValueError, "Main metric 'quality' is absent"):
+            study.baseline(self.X, self.y, verbose=0)
 
     def test_analytic_and_recipe_snapshots_survive_later_edits(self):
         recipe = use(DecisionTreeClassifier, max_depth=Const(2)).named('tree')

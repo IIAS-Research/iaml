@@ -366,7 +366,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         groups: pd.DataFrame = None,
         groups_columns: list[str] = None,
         generation_sample_size: int = 200,
-        verbose: int = 1) -> Candidate:
+        verbose: int = 1) -> list[Candidate]:
         """Run a very basic pipeline to train a model baseline 
         
         :param pd.DataFrame X: Training features 
@@ -378,7 +378,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param int, optional generation_sample_size: Size of the sample dataset used to generate 
             first generation of candidates (default 200).
         :param int, optional verbose: Verbosity level. Default to 1.
-        :return: Baseline candidate
+
+        Configured metrics, objective and explanations are copied into baseline
+        candidates, independently of later edits to the study collections.
+
+        :return: List of fitted baseline candidates.
         """
         # Avoid [] dangerous default value in the signature
         if groups_columns is None:
@@ -397,15 +401,31 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             groups=groups,
             groups_columns=groups_columns)
 
+        metric_definitions = None
+        explanation_definitions = None
+        objective = self.main_metric
+        if hasattr(self, '_metrics_spec'):
+            from .study_analyses import compile_analyses, compile_metrics
+            metric_definitions, objective, _ = compile_metrics(
+                self.metrics.clone().freeze(), self.main_metric, dataset)
+            explanation_definitions = compile_analyses(self.explanations.clone().freeze())
+
         ### INITIAL GENERATE CANDIDATE
         init_candidate: Candidate = Candidate(
             dataset.sample(generation_sample_size),
-            main_metric=self.main_metric)
+            main_metric=objective,
+            metric_definitions=metric_definitions,
+            explanation_definitions=explanation_definitions)
 
         # Select metrics used to evaluate performances
-        for metric \
-            in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-            init_candidate.add_metric(metric)
+        if metric_definitions is None:
+            for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                init_candidate.add_metric(metric)
+
+        if self.initial_preprocessor is not None:
+            initial_step = SklearnPreprocessor(self.initial_preprocessor)
+            initial_step.fit(init_candidate.dataset)
+            init_candidate = init_candidate.add_to_pipeline(initial_step)
 
         # Generate candidates
         candidates = baseline_pipe.run(init_candidate)
@@ -415,7 +435,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             if candidate.pipeline.predictor is not None]
 
         for candidate in candidates:
-            candidate.pipeline.fit(dataset.X, dataset.y)
+            candidate.pipeline.fit(dataset.X, dataset.y, metrics=candidate.metrics)
 
         return candidates
 
