@@ -44,63 +44,69 @@ class ActCatBoostRegressor(Predictor):
             'iterations': {
                 'description': 'The maximum number of trees that can be built.',
                 'default': 1000,
-                'range': [100, 10000]
+                'range': [300, 10000],
             },
             'learning_rate': {
                 'description': 'The learning rate.',
                 'default': 0.03,
-                'range': [0.001, 1.0]
+                'range': [0.005, 0.20],
             },
             'depth': {
                 'description': 'Depth of the tree.',
                 'default': 6,
-                'range': [1, 16]
+                'range': [3, 10],
+            },
+            'grow_policy': {
+                'description': 'The tree growing policy.',
+                'default': 'SymmetricTree',
+                'categorical': ['SymmetricTree', 'Depthwise', 'Lossguide'],
             },
             'l2_leaf_reg': {
-                'description': 'Coefficient at the L2 regularization term of the cost function.',
-                'default': 3,
-                'range': [0, 10]
+                'description': 'Coefficient of L2 regularization on leaf values.',
+                'default': 3.0,
+                'range': [1e-3, 1e3],
             },
-            'border_count': {
-                'description': 'The number of splits for numerical features.',
-                'default': 254,
-                'range': [1, 255]
+            'random_strength': {
+                'description': 'Randomness added when scoring potential splits.',
+                'default': 1.0,
+                'range': [0.0, 5.0],
+            },
+            'min_data_in_leaf': {
+                'description': 'Minimum sample count in a leaf eligible for splitting.',
+                'default': 1,
+                'range': [1, 300],
             },
             'loss_function': {
-                'description': 'The metric to use in training.',
+                'description': 'The regression objective, fixed during automatic search.',
                 'default': 'RMSE',
-                'categorical': ['RMSE',
-                                'MAE',
-                                'Quantile',
-                                'LogLinQuantile',
-                                'Poisson',
-                                'MAPE']
-                                #, 'Lq']
             },
             'eval_metric': {
-                'description': 'The metric to be used for validation data.',
-                'default': 'RMSE',
-                'categorical': ['RMSE',
-                                'MAE',
-                                'R2',
-                                'Quantile',
-                                'LogLinQuantile',
-                                'Poisson',
-                                'MAPE']
-                                # , 'Lq']
+                'description': 'Validation metric; None keeps the CatBoost default.',
+                'default': None,
+            },
+            'border_count': {
+                'description': 'Numeric split count; None keeps the CatBoost default.',
+                'default': None,
             },
             'bootstrap_type': {
-                'description': 'The method for sampling the weights of objects.',
-                'default': 'Bayesian',
-                'categorical': ['Bayesian', 'Bernoulli', 'MVS']
+                'description': 'Weight sampling method; None keeps the CatBoost default.',
+                'default': None,
             },
             'leaf_estimation_iterations': {
-                'description': 'The number of iterations for leaf estimation.',
-                'default': 10,
-                'range': [1, 50]
-            }
+                'description': 'Leaf estimation iterations; None keeps the CatBoost default.',
+                'default': None,
+            },
         }
+
         self.model: CatBoostRegressor = None
+
+    def passthrough_parameters(self, default: bool = True) -> dict[str, Any]:
+        """Keep CatBoost defaults and omit leaf size for symmetric trees."""
+        parameters = {key: value for key, value in super().passthrough_parameters(default).items()
+                      if value is not None}
+        if self.get_config('grow_policy') == 'SymmetricTree':
+            parameters.pop('min_data_in_leaf', None)
+        return parameters
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         self.model = CatBoostRegressor(verbose=0, **self.passthrough_parameters())
