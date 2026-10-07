@@ -1,8 +1,9 @@
-from collections import deque
+"""Process-shared bounded cache services and their manager."""
+
 from copy import deepcopy
-from typing import Any, Tuple
+from typing import Any
+
 import multiprocess.managers
-from .logger import Logger
 
 
 class CacheService:
@@ -14,7 +15,9 @@ class CacheService:
         self._disabled = None
         self._lock = None
 
-    def __set_backend__(self, saved, lru, disabled, lock, maxsize: int):
+    # Keep the shared proxies together in the existing backend initialization API.
+    def __set_backend__(self, saved, lru, disabled, lock, maxsize: int):  # pylint: disable=too-many-positional-arguments
+        """Attach the shared storage, eviction order, flag, and lock."""
         self._saved = saved
         self._lru = lru
         self._disabled = disabled
@@ -23,18 +26,21 @@ class CacheService:
 
     # API
     def disable(self) -> None:
+        """Disable cache reads and writes across workers."""
         with self._lock:
             self._disabled.value = True
 
     def enable(self) -> None:
+        """Enable cache reads and writes across workers."""
         with self._lock:
             self._disabled.value = False
 
     def get(self, fingerprint: str, df_hash: str) -> Any | None:
+        """Return a copy of the cached output and mark it as recently used."""
         if self._disabled.value:
             return None
         key = (fingerprint, df_hash)
-            
+
         with self._lock:
             if key in self._saved:
                 try:
@@ -46,10 +52,11 @@ class CacheService:
         return None
 
     def put(self, fingerprint: str, df_hash: str, output: Any) -> None:
+        """Store a copy of the output and evict the least recently used entries."""
         if self._disabled.value:
             return
         key = (fingerprint, df_hash)
-        
+
         with self._lock:
             self._saved[key] = deepcopy(output)
             try:
@@ -63,8 +70,10 @@ class CacheService:
                 self._saved.pop(old_key, None)
 
 
-class CacheManager(multiprocess.managers.BaseManager):
-    pass
+# Cache access methods are registered dynamically by start_cache_manager.
+class CacheManager(multiprocess.managers.BaseManager):  # pylint: disable=too-few-public-methods
+    """Manager exposing a dynamically registered shared cache service."""
+
 
 def start_cache_manager(max_cache_size: int = 100) -> tuple[CacheManager, CacheService]:
     """
@@ -72,8 +81,7 @@ def start_cache_manager(max_cache_size: int = 100) -> tuple[CacheManager, CacheS
     À appeler UNE FOIS dans le process parent AVANT de lancer les workers.
     """
     def _cache_factory():
-        from multiprocess.managers import SyncManager
-        sm = SyncManager()
+        sm = multiprocess.managers.SyncManager()
         sm.start()
         saved = sm.dict()
         lru = sm.list()

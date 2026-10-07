@@ -30,8 +30,16 @@ scores using the fitted model. It does not replace those stored CV scores.
 
 The selected metric determines the candidate ranking. Other reported metrics
 depend on the task and on what the model can compute. For example, ROC AUC
-requires probability predictions. An unavailable test metric is omitted from
-the returned dictionary. An absent result should not be interpreted as zero.
+accepts decision scores or probabilities. An unavailable test metric is omitted from
+the returned dictionary; ``model.evaluation_report`` records its status and
+reason. An absent result should not be interpreted as zero.
+
+A secondary CV metric has an aggregate score only when every fold supplies
+a valid finite value. If some folds cannot provide it, inspect the available
+values and statuses in ``model.metric_report`` and its coverage in
+``model.metric_coverage``. An incomplete secondary metric does not invalidate
+an otherwise valid objective score. A missing or invalid objective on a fold
+prevents that candidate from being ranked.
 
 To retain per-fold records, create the search with
 ``keep_training_history=True`` before fitting, as shown in :ref:`build-history`.
@@ -41,7 +49,7 @@ results. See :doc:`scientific` for reporting an experiment.
 .. _evaluate-predictions:
 
 Make predictions
-=================
+================
 
 Use the same feature names and definitions as during training, without the
 outcome or patient grouping columns:
@@ -118,18 +126,18 @@ the event of interest encoded as ``1``.
 .. _evaluate-plots:
 
 Inspect performance plots
-==========================
+=========================
 
 The available plot families are:
 
 - **Classification:** confusion matrix, classification report and prediction
   errors. Binary ROC and precision-recall curves additionally require
-  probabilities and both classes in the evaluation data.
+  decision scores or probabilities; ROC requires both classes in the evaluation data.
 - **Regression:** residuals and predicted-versus-observed values.
 - **Survival:** Kaplan–Meier comparison and time-dependent AUC have additional
   prediction and follow-up requirements, described below.
 
-For a classifier without probabilities, request a plot that uses class labels:
+To inspect errors from predicted class labels, request a confusion matrix:
 
 .. code-block:: python
 
@@ -141,7 +149,7 @@ For a classifier without probabilities, request a plot that uses class labels:
 
 To request all classification performance plots for the ``0/1`` Build example,
 use the :ref:`build-probabilities` configuration when creating ``search``, before
-fitting. This selects an objective that requires probability predictions:
+fitting. This recipe selects a classifier that supports probabilities:
 
 .. code-block:: python
 
@@ -157,7 +165,7 @@ plot with ``display(Image(plot.image))`` after importing
 after training.
 
 Survival plotting limits
--------------------------
+------------------------
 
 Survival plots are not interchangeable across models. A Kaplan–Meier comparison
 requires predicted survival functions. Time-dependent AUC uses risk predictions
@@ -171,5 +179,37 @@ prediction method is not exposed by ``IAMLPipeline``. Therefore, do not use that
 all-plots call as a general survival example. Select a compatible plot explicitly
 and check its API requirements, or start with the numerical survival metrics
 returned by ``evaluate``.
+
+.. _configure-metrics-before-fitting:
+.. _evaluate-configure-metrics:
+
+Configure metrics before the next search
+========================================
+
+To rank candidates by another objective or retain multiple variants of one
+metric, configure a ``metrics`` collection. This optional configuration belongs
+to training: replace the construction of ``search`` in the Build example with
+the following, then call ``fit``. Here, label ``1`` is the event of interest:
+
+.. code-block:: python
+
+    from iaml import AccuracyMetric, IAML, RecallMetric
+    from iaml.flow import metrics, use
+
+    search = IAML(
+        metrics=metrics(
+            use(RecallMetric, pos_label=1).named("event_recall"),
+            use(RecallMetric, pos_label=0).named("other_recall"),
+            use(AccuracyMetric).named("accuracy"),
+        ),
+        main_metric="event_recall",
+        max_duration=60,
+        max_workers=1,
+    )
+
+The built-in pipeline remains in use, with ``event_recall`` as the objective.
+The three aliases identify scores in both CV and held-out results. This change
+applies to a new search; existing candidates retain their metric definitions.
+See :ref:`pipelines-study-metrics` for collection editing and objective resolution.
 
 Next, use :doc:`explainability` to inspect pipeline steps and feature contributions.

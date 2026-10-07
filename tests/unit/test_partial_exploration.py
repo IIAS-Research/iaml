@@ -76,6 +76,9 @@ class TestPartialExploration(unittest.TestCase):
             if isinstance(options[0], type):
                 self.assertIn(replacement, options)
                 return replacement
+            if (getattr(options[0], '_flow_variant_id', None) is not None
+                    and not hasattr(options[0], '_flow_alternatives')):
+                return next(step for step in options if type(step) is replacement)
             return next(step for step in options if tag in step.tags)
 
         optimizer = GeneticOptimizer(nb_candidate=4)
@@ -119,7 +122,9 @@ class TestPartialExploration(unittest.TestCase):
                 stages = self.default_stages(optimizer)
                 self.assertIs(type(stages['normalize']), MetaExplorerStep)
                 self.assertEqual(len(stages['normalize'].steps), 5)
-                self.assertTrue(stages['imbalance'].also_explore_without)
+                # Absence is an explicit local variant, shared with mutations.
+                self.assertTrue(any(isinstance(step, VoidStep)
+                                    for step in stages['imbalance'].steps))
                 self.assertGreater(len(stages['imbalance'].steps), 1)
 
     def test_genetic_subclasses_use_partial_exploration(self):

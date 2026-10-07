@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import textwrap
+from typing import TYPE_CHECKING
 
 import numpy as np
-import shap
+if TYPE_CHECKING:
+    import shap
 
 from .plots.shap_plot import ShapPlot
 

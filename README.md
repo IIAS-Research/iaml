@@ -1,31 +1,20 @@
 # IAML — Integrated AutoML for Medical Labs
 
 IAML (Integrated AutoML for Medical Labs) is a Python framework developed by IIAS
-to make machine learning more accessible to clinical research teams. It brings
-preprocessing, model search and evaluation into one workflow for classification,
-regression and survival analysis on tabular data.
+for clinical research teams working with tabular data. It supports classification,
+regression and survival analysis through two complementary strengths:
 
-Researchers can inspect the steps of a selected pipeline, evaluate its predictions
-and generate explanations to discuss with clinicians and data scientists.
-IAML includes a broad set of built-in methods. **Go further with customization.**
-Add your team's preprocessing steps, models, metrics, validation splitters
-and search optimizers to adapt the workflow to your research domain.
-These contributions can be shared and reused across studies.
-The [extension guide](https://iias-research.github.io/iaml/adaptability.html) shows how to get started.
+- **An integrated workflow with very little configuration.** Describe your data,
+  train prediction pipelines with AutoML, evaluate the selected model and request
+  explanations and study outputs. Built-in components and an automatic pipeline
+  let you start with a few lines of Python.
+- **A pipeline API for teams going further.** Compose complete pipelines with
+  `>>`, choose or exclude methods, edit reusable fragments and configure parameter
+  domains. The same API configures metrics, descriptive statistics and explanations,
+  and lets your team's components become reusable building blocks.
 
-## Clinical research workflow
-
-- **Build prediction pipelines:** search preprocessing steps, models and their
-  parameters through a Python API.
-- **Evaluate a study outcome:** choose the metric and validation strategy, then
-  assess the selected candidate on held-out data.
-- **Inspect and explain:** describe pipeline steps, compute SHAP explanations and
-  generate task-specific performance plots.
-- **Document an experiment:** collect method references and optionally retain
-  cross-validation records with `keep_training_history=True`.
-
-The [research guide](https://iias-research.github.io/iaml/scientific.html) shows how to use these outputs when
-reporting a study and recording the settings needed to repeat an experiment.
+Both paths use IAML's training, cross-validation and model selection workflow.
+Start with the defaults or build a recipe around your study's methods.
 
 ## Installation
 
@@ -37,7 +26,7 @@ python -m pip install PyIAML
 
 The distribution is named `PyIAML`. The Python import is `iaml`.
 
-## How to run
+## Use the integrated workflow
 
 Save this example as `example.py` and run it with `python example.py`.
 It uses a dataset bundled with scikit-learn, so no dataset download is needed.
@@ -53,6 +42,7 @@ if __name__ == "__main__":
         X, y, stratify=y, random_state=42
     )
     search = IAML(max_duration=30, max_workers=1)
+    print(search.get_descriptive_statistics(X_train, y_train))
     search.fit(X_train, y_train)
     chosen_model = search.chosen_candidate
     print(chosen_model.evaluate(X_test, y_test))
@@ -64,18 +54,72 @@ malignant and `1` for benign. Keep the `__main__` guard because training uses
 multiprocessing. The example uses one worker and a 30-second search budget.
 Final fitting can take additional time.
 
+Request descriptive statistics, evaluation, plots and explanations when you
+need them. The [worked example](https://iias-research.github.io/iaml/worked_example.html)
+shows the model, performance plots and SHAP outputs produced by this workflow.
+
+## Compose and adapt complete pipelines
+
+Pipeline configuration is optional. To see what it enables, explore
+[Customize IAML](https://iias-research.github.io/iaml/discover_pipelines.html),
+then try the recipe below when your study needs specific methods.
+
+Build a recipe from reusable components, then train it through the same `fit`
+and `evaluate` calls. For example, impute missing values, choose from the
+normalization family except `UnitNormScaler`, and compare two predictors:
+
+```python
+from iaml import IAML
+from iaml.flow import Int, choice, normalizers, use
+from iaml.steps import (
+    LogisticRegression, UnitNormScaler, RandomForestClassifier, SimpleImputer,
+)
+
+pipeline = (
+    use(SimpleImputer).named("cleaning")
+    >> normalizers().remove(UnitNormScaler).named("normalize")
+    >> choice(
+        use(LogisticRegression).named("logistic"),
+        use(
+            RandomForestClassifier,
+            n_estimators=Int(100, 300, initial=150),
+        ).named("forest"),
+    ).named("predictor")
+)
+search = IAML(pipeline=pipeline, max_duration=30, max_workers=1)
+```
+
+Recipes remain editable after construction: navigate by alias, call `add`,
+`remove` or `replace`, and configure all occurrences of a component with
+`find_all(Class).configure(...)`. Clone a fragment to reuse it independently.
+You can also start from `IAML().pipeline` and adapt its visible `main` and
+`minimal` branches.
+
+The [pipeline guide](https://iias-research.github.io/iaml/pipelines/index.html)
+covers construction, editing, fixed values and parameter domains. Continue with
+[study configuration](https://iias-research.github.io/iaml/pipelines/study.html)
+for metrics, descriptive statistics and explanations. The
+[example catalogue](docs/examples/pipelines/README.rst) provides runnable Python examples.
+
+Add custom preprocessing steps, models, metrics, validation splitters or search
+optimizers when your domain needs them. These components can be shared across
+studies; the [extension guide](https://iias-research.github.io/iaml/adaptability.html)
+explains how to implement them.
+
 ## Documentation
 
-The [user guides](https://iias-research.github.io/iaml/) cover data preparation, model search, evaluation
-and interpretation:
+Start with [Discover IAML](https://iias-research.github.io/iaml/) for a visual
+study walkthrough or [Quick Start](https://iias-research.github.io/iaml/quick_start.html)
+to run it. The integrated guides follow the study through
+[training](https://iias-research.github.io/iaml/usage.html),
+[evaluation](https://iias-research.github.io/iaml/evaluation.html),
+[explanations](https://iias-research.github.io/iaml/explainability.html) and
+[reporting](https://iias-research.github.io/iaml/scientific.html).
 
-- [Quick Start](https://iias-research.github.io/iaml/quick_start.html): install IAML and run an example.
-- [01 / Build](https://iias-research.github.io/iaml/usage.html): prepare data and configure a search.
-- [02 / Evaluate](https://iias-research.github.io/iaml/evaluation.html): assess predictions on held-out data.
-- [03 / Explain](https://iias-research.github.io/iaml/explainability.html): inspect methods and interpret feature contributions.
-- [Study reporting](https://iias-research.github.io/iaml/scientific.html): save outputs and record experiment settings.
-- [Extending IAML](https://iias-research.github.io/iaml/adaptability.html): add reusable methods for your team's research.
-- [Component availability](https://iias-research.github.io/iaml/component_status.html): explore the main component families and their API documentation.
+The [advanced guide map](https://iias-research.github.io/iaml/pipelines/index.html)
+connects pipeline construction, study configuration and component extensions.
+Consult [component availability](https://iias-research.github.io/iaml/component_status.html)
+for supported methods and optional dependencies.
 
 ## Credits
 

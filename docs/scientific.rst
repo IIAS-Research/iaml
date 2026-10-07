@@ -2,10 +2,9 @@
 Study reporting
 ===============
 
-Keep a record of the selected pipeline, its evaluation and the choices made
-during the study. :doc:`usage` covers building a search, :doc:`evaluation`
-covers held-out evaluation, and :doc:`explainability` covers pipeline inspection
-and feature contributions.
+Record the selected pipeline, the search that produced it and the context
+needed to interpret the results. This guide exports those records and prepares
+method references for a study report.
 
 The snippets below continue :ref:`build-classification` with ``search`` and its
 selected ``model``. In the example script, place them inside ``main()``, after
@@ -29,16 +28,17 @@ starting another search:
     from pathlib import Path
 
     audit = {
+        "study": search.describe().to_dict(),
         "pipeline": model.pipeline_audit_summary(),
         "training_history": search.training_history,
     }
     Path("iaml_audit.json").write_text(
-        json.dumps(audit, ensure_ascii=False, indent=2, allow_nan=False),
+        json.dumps(audit, ensure_ascii=False, indent=2, default=str, allow_nan=False),
         encoding="utf-8",
     )
 
-The audit uses simple, serializable values. Some configuration objects are
-represented as strings. The strict JSON export rejects non-finite numbers such
+The export stores simple values directly and represents other configuration
+objects as strings. The strict JSON export rejects non-finite numbers such
 as NaN or infinity if they occur in a metric, so inspect those results before
 exporting them.
 
@@ -51,11 +51,10 @@ records separately.
 Report results with their context
 =================================
 
-Keep the held-out scores returned by ``model.evaluate(X_test, y_test)`` separate
-from the search's cross-validation scores. ``model.describe_metrics()`` describes
-the latter, including after a call to ``evaluate``. Use the workflow in
-:doc:`evaluation` to compute and interpret the held-out results, and
-:doc:`explainability` to save figures as image files.
+Save held-out scores from :ref:`evaluate-cv` alongside the audit, identified
+separately from the search's cross-validation scores. Retain the performance
+figures from :ref:`evaluate-plots` and the SHAP outputs from
+:doc:`explainability` when they form part of the analysis.
 
 Record the following alongside the outputs:
 
@@ -71,6 +70,38 @@ Record the following alongside the outputs:
 
 The audit is one part of this record. It does not capture all these settings
 automatically or guarantee identical results on another run.
+
+Retain the recipe and the resolved study
+========================================
+
+When you customize pipelines, keep the editable recipe alongside the
+resolved study already included in the audit. ``describe()`` displays the
+recipe, ``diff(base)`` compares it with a baseline and ``to_code()`` exports
+its configuration as Python:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from iaml.flow import PipelineSpec
+
+    print(search.pipeline.describe())
+    print(search.pipeline.diff(PipelineSpec.default()))
+    Path("pipeline_recipe.py").write_text(
+        search.pipeline.to_code(), encoding="utf-8",
+    )
+
+After ``fit``, ``search.describe()`` reports that run's resolved catalogue,
+objective, analytical definitions and available evaluation reports. Later
+recipe edits do not rewrite its frozen configuration or the selected
+candidate. ``search.pipeline.describe()`` and ``to_code()`` describe the
+current editable recipe, so save them before changing it for another run.
+
+Exported recipe code retains active domains, inactive domains behind
+``Const``, aliases, exclusions and initial choices. An open family is resolved
+against the installed components when rerun; retain the resolved study report
+and dependency versions as well. Recipe reconstruction does not reproduce
+fitted state or guarantee identical scores. See :doc:`pipelines/reference`
+for inspection and run snapshots.
 
 .. _method-bibliography:
 

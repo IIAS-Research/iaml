@@ -1,10 +1,13 @@
-"""Deadline and queue bounds, without starting processes or training models."""
+"""Stage deadlines, cancellation and result delivery with local and real queues."""
 
 import pickle
 import queue
+import threading
 import time
 import unittest
 from unittest.mock import Mock, patch
+
+from multiprocess.connection import wait as wait_for_processes
 
 from iaml.timed_pool_executor import TerminatedError, TimedPoolExecutor
 
@@ -37,6 +40,10 @@ class TestTimedPoolExecutor(unittest.TestCase):
         self.executor.main_daemon = None
         self.executor.callbacks = [None]
         self.executor.results = []
+        self.executor._state_lock = threading.RLock()
+        self.executor._workers_lock = threading.RLock()
+        self.executor._global_deadline = None
+        self.executor._global_timed_out = False
         self.executor.submit_count = 0
         self.executor.finished_run = 0
         self.executor.process = []
@@ -185,7 +192,7 @@ class TestTimedPoolExecutor(unittest.TestCase):
 
         self.assertEqual(self.clock.sleeps, [0.05, 0.05])
 
-    def test_timeout_preserves_results_and_allows_the_next_sliding_stage(self):
+    def test_stage_timeout_preserves_results_and_pending_sliding_candidates(self):
         self.executor.sliding_stages = True
         self.executor.submit(abs, -1)
         self.executor.submit(abs, -2)
@@ -196,13 +203,180 @@ class TestTimedPoolExecutor(unittest.TestCase):
 
         self.assertEqual(self.executor.join(timeout=0.1), [1])
 
-        self.assertEqual(self.executor.submit_count, 1)
+        self.assertEqual(self.executor.submit_count, 2)
         self.assertEqual(self.executor.finished_run, 1)
-        self.assertTrue(self.executor.to_run_queue.empty())
+        self.assertEqual(self.executor.to_run_queue.qsize(), 1)
         self.assertEqual(self.executor.results, [])
         self.assertTrue(self.executor.submit(abs, -3, deadline=0.2))
+        self.assertEqual(self.executor.submit_count, 3)
+        self.assertEqual(self.executor.to_run_queue.qsize(), 2)
+
+    def test_completion_at_stage_deadline_is_returned_only_once(self):
+        self.executor.sliding_stages = True
+        self.executor.submit(abs, -1)
+
+        def finish_at_deadline():
+            if self.clock.now >= 0.1:
+                self.executor.to_run_queue.get_nowait()
+                self.executor.results.append(1)
+                self.executor.finished_run += 1
+
+        self.clock.on_sleep = finish_at_deadline
+
+        self.assertEqual(self.executor.join(timeout=0.1), [1])
+        self.assertEqual(self.executor.join(timeout=0), [])
+        self.assertAlmostEqual(self.clock.now, 0.1)
+        self.assertEqual(self.executor.submit_count, 1)
+        self.assertEqual(self.executor.finished_run, 1)
+
+    def test_result_collected_after_completion_signal_is_not_lost(self):
+        self.executor.sliding_stages = True
+        self.executor.submit(abs, -1)
+
+        def signal_completion():
+            self.executor.to_run_queue.get_nowait()
+            self.executor.finished_run += 1
+
+        self.clock.on_sleep = signal_completion
+        self.collectors.side_effect = lambda: self.executor.results.append(1)
+
+        self.assertEqual(self.executor.join(timeout=0.1), [1])
+        self.collectors.side_effect = None
+        self.assertEqual(self.executor.join(timeout=0), [])
+
+    def test_returned_results_are_not_changed_by_a_later_completion(self):
+        self.executor.sliding_stages = True
+        self.executor.submit(abs, -1)
+        self.executor.submit(abs, -2)
+        self.executor.to_run_queue.get_nowait()
+        self.executor.results.append(1)
+        self.executor.finished_run = 1
+
+        first_stage = self.executor.join(timeout=0)
+        self.executor.results.append(2)
+        self.executor.finished_run += 1
+        self.assertEqual(self.executor.join(timeout=0), [2])
+        self.assertEqual(first_stage, [1])
+
+    def test_explicit_cancellation_overrides_sliding_and_keeps_ready_results(self):
+        self.executor.sliding_stages = True
+        self.executor.max_workers = 4
+        self.executor.submit(abs, -1)
+        self.executor.submit(abs, -2)
+        self.executor.to_run_queue.get_nowait()
+        self.executor.to_run_queue.get_nowait()
+        self.executor.results.append(1)
+        self.executor.finished_run = 1
+
+        self.assertEqual(self.executor.join(timeout=0.1, cancel_pending=True), [1])
+
+        self.assertAlmostEqual(self.clock.now, 0.1)
+        self.assertEqual(self.executor.pending_count, 0)
+        self.assertEqual(self.executor.join(timeout=0), [])
+
+    def test_sliding_stage_can_advance_while_one_candidate_is_still_running(self):
+        self.executor.sliding_stages = True
+        self.executor.max_workers = 4
+        self.executor.submit(abs, -1)
+        self.executor.submit(abs, -2)
+        self.executor.to_run_queue.get_nowait()
+        self.executor.to_run_queue.get_nowait()
+        self.executor.results.append(1)
+        self.executor.finished_run = 1
+
+        self.assertEqual(self.executor.join(timeout=10), [1])
+
+        self.assertEqual(self.clock.now, 0)
+        self.assertEqual(self.executor.pending_count, 1)
         self.assertEqual(self.executor.submit_count, 2)
-        self.assertEqual(self.executor.to_run_queue.qsize(), 1)
+        self.assertEqual(self.executor.finished_run, 1)
+
+    def test_preserving_pending_tasks_does_not_reset_callbacks_in_nonsliding_mode(self):
+        callback = Mock()
+        self.executor.set_callback(callback)
+        self.executor.submit(abs, -1)
+
+        self.assertEqual(self.executor.join(timeout=0, cancel_pending=False), [])
+
+        self.assertEqual(self.executor.pending_count, 1)
+        self.assertEqual(self.executor.callbacks, [None, callback])
+        self.executor.to_run_queue.get_nowait()
+        self.executor.results.append(1)
+        self.executor.finished_run += 1
+        self.assertEqual(self.executor.join(timeout=0), [1])
+
+    def test_global_budget_prevents_submission_including_debug_mode(self):
+        self.executor._global_deadline = 0.0
+        for debug in (False, True):
+            with self.subTest(debug=debug):
+                self.executor.debug = debug
+                target = Mock()
+
+                self.assertFalse(self.executor.submit(target))
+
+                target.assert_not_called()
+                self.assertEqual(self.executor.submit_count, 0)
+
+    def test_global_budget_bounds_backpressure_before_submission_deadline(self):
+        self.executor._global_deadline = 0.1
+        self.executor.submit(abs, -1)
+        self.executor.submit(abs, -2)
+
+        self.assertFalse(self.executor.submit(abs, -3, deadline=10.0))
+
+        self.assertAlmostEqual(self.clock.now, 0.1)
+        self.assertEqual(self.executor.submit_count, 2)
+
+    def test_finite_global_budget_rejects_noninterruptible_sequential_execution(self):
+        self.executor._global_deadline = 1.0
+        self.executor.debug = True
+        target = Mock()
+
+        with self.assertRaisesRegex(RuntimeError, "finite global budget"):
+            self.executor.submit(target)
+
+        target.assert_not_called()
+        self.assertEqual(self.executor.submit_count, 0)
+
+    def test_unlimited_budget_allows_sequential_serialization_fallback(self):
+        self.executor.to_run_queue.put = Mock(side_effect=pickle.PicklingError("cannot serialize"))
+        callback = Mock()
+        self.executor.set_callback(callback)
+        target = Mock(return_value="fallback result")
+
+        with self.assertWarns(UserWarning):
+            self.assertTrue(self.executor.submit(target))
+
+        target.assert_called_once_with()
+        callback.assert_called_once_with("fallback result")
+        self.assertEqual(self.executor.join(timeout=0), ["fallback result"])
+
+    def test_finite_global_budget_rejects_unserializable_task_without_running_it(self):
+        self.executor._global_deadline = 1.0
+        self.executor.to_run_queue.put = Mock(side_effect=pickle.PicklingError("cannot serialize"))
+        target = Mock()
+
+        with self.assertWarns(UserWarning):
+            with self.assertRaisesRegex(RuntimeError, "finite global budget"):
+                self.executor.submit(target)
+
+        target.assert_not_called()
+        self.assertEqual(self.executor.submit_count, 0)
+
+    def test_serialization_expiring_global_budget_does_not_start_fallback(self):
+        self.executor._global_deadline = 0.1
+
+        def failed_put(_):
+            self.clock.now = 0.1
+            raise pickle.PicklingError("cannot serialize")
+
+        self.executor.to_run_queue.put = failed_put
+        target = Mock()
+
+        self.assertFalse(self.executor.submit(target, deadline=10.0))
+
+        target.assert_not_called()
+        self.assertEqual(self.executor.submit_count, 0)
 
 
 def delayed_result(delay, value):
@@ -213,6 +387,13 @@ def delayed_result(delay, value):
 
 def failed_task():
     raise ValueError("expected worker failure")
+
+
+def blocked_result(started, release, value):
+    """Keep a worker occupied until the test explicitly permits completion."""
+    started.set()
+    release.wait()
+    return value
 
 
 class TestTimedPoolExecutorProcesses(unittest.TestCase):
@@ -258,6 +439,201 @@ class TestTimedPoolExecutorProcesses(unittest.TestCase):
         self.executor.submit(abs, -2, deadline=deadline)
         self.assertTrue(self.executor.submit(abs, -3, deadline=deadline))
         self.assertEqual(self.executor.join(5), [2, 3])
+
+    def test_sliding_stages_preserve_running_and_queued_tasks_without_duplicates(self):
+        self.executor.sliding_stages = True
+        first_started = self.executor.manager.Event()
+        first_release = self.executor.manager.Event()
+        second_started = self.executor.manager.Event()
+        second_release = self.executor.manager.Event()
+        first_collected = threading.Event()
+        previous_stage_results = []
+        next_stage_results = []
+
+        def previous_callback(value):
+            previous_stage_results.append(value)
+            if value == "first":
+                first_collected.set()
+
+        self.executor.set_callback(previous_callback)
+        self.executor.submit(blocked_result, first_started, first_release, "first")
+        self.assertTrue(first_started.wait(5), "The first candidate did not start")
+        self.executor.submit(blocked_result, second_started, second_release, "second")
+        original_workers = [process.pid for process in self.executor.process]
+
+        self.assertEqual(self.executor.join(0.05), [])
+        self.assertEqual(self.executor.join(0), [])
+        self.assertEqual([process.pid for process in self.executor.process], original_workers)
+        self.assertEqual(self.executor.submit_count - self.executor.finished_run, 2)
+        self.assertFalse(second_started.is_set())
+
+        self.executor.set_callback(next_stage_results.append)
+        first_release.set()
+        self.assertTrue(first_collected.wait(5), "The first result was not collected")
+        self.assertTrue(second_started.wait(5), "The queued candidate did not start")
+        first_stage = self.executor.join(0)
+        self.assertEqual(first_stage, ["first"])
+        self.assertEqual(self.executor.join(0), [])
+        self.assertTrue(self.executor.submit(abs, -3, deadline=time.monotonic() + 5))
+
+        second_release.set()
+        self.assertEqual(self.executor.join(5), ["second", 3])
+        self.assertEqual(self.executor.join(0), [])
+        self.assertEqual(first_stage, ["first"])
+        self.assertEqual(previous_stage_results, ["first", "second"])
+        self.assertEqual(next_stage_results, [3])
+
+    def test_global_timeout_cancels_sliding_backlog_and_pool_is_reusable(self):
+        self.executor.sliding_stages = True
+        completed = []
+        collected = threading.Event()
+        running_started = self.executor.manager.Event()
+        running_release = self.executor.manager.Event()
+        queued_started = self.executor.manager.Event()
+        queued_release = self.executor.manager.Event()
+
+        def callback(value):
+            completed.append(value)
+            collected.set()
+
+        self.executor.set_callback(callback)
+        self.executor.submit(abs, -2)
+        self.assertTrue(collected.wait(5), "The completed result was not collected")
+        self.executor.submit(blocked_result, running_started, running_release, "running")
+        self.assertTrue(running_started.wait(5), "The running candidate did not start")
+        self.executor.submit(blocked_result, queued_started, queued_release, "queued")
+        original_workers = list(self.executor.process)
+
+        self.assertEqual(self.executor.join(0.05, cancel_pending=True), [2])
+
+        self.assertTrue(all(not process.is_alive() for process in original_workers))
+        self.assertFalse(queued_started.is_set())
+        self.assertTrue(self.executor.to_run_queue.empty())
+        self.assertEqual(self.executor.pending_count, 0)
+        self.assertEqual(completed, [2])
+        self.assertEqual(self.executor.join(0), [])
+
+        self.assertTrue(self.executor.submit(abs, -7, deadline=time.monotonic() + 5))
+        self.assertEqual(self.executor.join(5), [7])
+        self.assertEqual(completed, [2, 7])
+
+    def test_failed_callback_does_not_lose_current_or_later_results(self):
+        self.executor.sliding_stages = True
+        callback_results = []
+
+        def callback(value):
+            callback_results.append(value)
+            if value == 1:
+                raise ValueError("expected callback failure")
+
+        self.executor.set_callback(callback)
+        self.executor.submit(abs, -1)
+        self.executor.submit(abs, -2)
+
+        self.assertEqual(self.executor.join(5), [1, 2])
+
+        self.assertEqual(callback_results, [1, 2])
+        self.assertEqual(self.executor.pending_count, 0)
+        self.assertEqual(self.executor.join(0), [])
+
+    def test_stop_string_is_an_ordinary_result(self):
+        self.executor.sliding_stages = True
+        callback_results = []
+        self.executor.set_callback(callback_results.append)
+        self.executor.submit(str, "stop")
+        self.executor.submit(abs, -2)
+
+        self.assertEqual(self.executor.join(5), ["stop", 2])
+
+        self.assertEqual(callback_results, ["stop", 2])
+        self.assertEqual(self.executor.join(0), [])
+
+    def test_global_deadline_stops_workers_between_stages_without_a_join(self):
+        self.executor.shutdown()
+        self.executor = TimedPoolExecutor(
+            max_workers=1, sliding_stages=True, deadline=time.monotonic() + 60
+        )
+        self.addCleanup(self.executor.shutdown)
+        if not self.executor._mp_capable or self.executor.debug:
+            self.skipTest("Multiprocessing IPC is unavailable")
+        completed = []
+        collected = threading.Event()
+        running_started = self.executor.manager.Event()
+        running_release = self.executor.manager.Event()
+        queued_started = self.executor.manager.Event()
+        queued_release = self.executor.manager.Event()
+
+        def callback(value):
+            completed.append(value)
+            collected.set()
+
+        self.executor.set_callback(callback)
+        self.executor.submit(abs, -2)
+        self.assertTrue(collected.wait(5), "The completed result was not collected")
+        self.executor.submit(blocked_result, running_started, running_release, "running")
+        self.assertTrue(running_started.wait(5), "The running candidate did not start")
+        self.executor.submit(blocked_result, queued_started, queued_release, "queued")
+        original_workers = list(self.executor.process)
+
+        # Advance the executor's deadline after startup, without changing the
+        # system clock or relying on a task's execution speed.
+        self.executor._global_deadline = time.monotonic()
+        for process in original_workers:
+            self.assertTrue(wait_for_processes([process.sentinel], timeout=3))
+        # The watchdog joins the workers itself. Serialize this assertion with
+        # that join rather than having two threads reap the same process.
+        with self.executor._workers_lock:
+            self.assertTrue(all(not process.is_alive() for process in original_workers))
+
+        self.assertEqual(self.executor.join(0), [2])
+        self.assertEqual(self.executor.pending_count, 0)
+        self.assertFalse(queued_started.is_set())
+        self.assertEqual(completed, [2])
+        target = Mock()
+        self.assertFalse(self.executor.submit(target, deadline=time.monotonic() + 5))
+        target.assert_not_called()
+        self.assertEqual(self.executor.join(0), [])
+
+    def test_shutdown_between_stages_keeps_ready_results_and_cancels_pending_tasks(self):
+        self.executor.sliding_stages = True
+        completed = []
+        collected = threading.Event()
+        running_started = self.executor.manager.Event()
+        running_release = self.executor.manager.Event()
+        queued_started = self.executor.manager.Event()
+        queued_release = self.executor.manager.Event()
+
+        def callback(value):
+            completed.append(value)
+            collected.set()
+
+        self.executor.set_callback(callback)
+        self.executor.submit(abs, -2)
+        self.assertTrue(collected.wait(5), "The completed result was not collected")
+        self.executor.submit(blocked_result, running_started, running_release, "running")
+        self.assertTrue(running_started.wait(5), "The running candidate did not start")
+        self.executor.submit(blocked_result, queued_started, queued_release, "queued")
+        original_workers = list(self.executor.process)
+
+        self.executor.shutdown()
+
+        self.assertTrue(all(not process.is_alive() for process in original_workers))
+        self.assertEqual(self.executor.join(0), [2])
+        self.assertEqual(self.executor.pending_count, 0)
+        self.assertEqual(completed, [2])
+        self.assertEqual(self.executor.join(0), [])
+        with self.assertRaises(TerminatedError):
+            self.executor.submit(abs, -3)
+
+    def test_infinite_global_budget_still_allows_explicit_debug_execution(self):
+        self.executor.shutdown()
+        self.executor = TimedPoolExecutor(
+            max_workers=1, debug=True, deadline=float("inf")
+        )
+        self.addCleanup(self.executor.shutdown)
+
+        self.assertTrue(self.executor.submit(abs, -3))
+        self.assertEqual(self.executor.join(0), [3])
 
 
 if __name__ == "__main__":

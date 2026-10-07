@@ -6,7 +6,8 @@ Excluded from automatic model selection.
 """
 import textwrap
 from typing import Any
-from lifelines import AalenAdditiveFitter
+# Explicitly importing this experimental adapter requires the optional backend.
+from lifelines import AalenAdditiveFitter  # pylint: disable=import-error
 import pandas as pd
 
 from ....predictor import Predictor
@@ -20,7 +21,12 @@ class ActAalenAdditiveFitter(Predictor):
     """[STEP] Aalen's Additive Model for Survival Analysis"""
 
     name: str = "AalenAdditiveFitter"
-    _usage: str = "Use when effects change over time and you want an additive alternative to ActCox. Applicable to tabular survival data with event/time and censoring. Avoid when hazards are time-constant or nonlinear interactions favor ActRandomSurvivalForest."
+    _usage: str = (
+        "Use when effects change over time and you want an additive alternative to ActCox. "
+        "Applicable to tabular survival data with event/time and censoring. "
+        "Avoid when hazards are time-constant or nonlinear interactions favor "
+        "ActRandomSurvivalForest."
+    )
     _description: str = textwrap.dedent('''\
         Aalen's Additive Model is a semi-parametric survival analysis model
         that estimates survival time as a function of covariates, using a linear combination

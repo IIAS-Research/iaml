@@ -84,7 +84,7 @@ job:docs:create:
   tags:
     - unix
   script:
-    - 'uv run --locked sphinx-build -W --keep-going -b html docs public'
+    - 'uv run --locked sphinx-build -W --keep-going -b html -d docs/_build/doctrees docs public'
   artifacts:
     expose_as: 'HTML Static documentation'
     paths:

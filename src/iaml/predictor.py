@@ -58,18 +58,25 @@ class Predictor(Actionable, BaseEstimator, metaclass=ABCMeta):
 
         raise AttributeError("Unable to predict probabilities with this model")
 
+    def decision_function(self, X: pd.DataFrame):
+        """Return the fitted model's unthresholded decision scores."""
+        if self.model and hasattr(self.model, 'decision_function'):
+            return self.model.decision_function(X)
+
+        raise AttributeError("Unable to produce decision scores with this model")
+
     def __getattribute__(self, attr: str) -> bool:
-        """Overload getattr to allow accurate hasattr on predict_proba
+        """Expose probability and decision methods only when the model supports them.
 
         :param str attr: Attribute to test.
         :raise AttributeError: predict_proba not implemented in this model.
         :return: Is attribute implemented ?
         """
-        if attr == 'predict_proba' \
+        if attr in ('predict_proba', 'decision_function') \
             and not( \
-                self.model and hasattr(self.model, 'predict_proba') \
+                self.model and hasattr(self.model, attr) \
             ):
-            raise AttributeError("predict_proba not implemented in this model")
+            raise AttributeError(f"{attr} not implemented in this model")
 
         return super().__getattribute__(attr)
 

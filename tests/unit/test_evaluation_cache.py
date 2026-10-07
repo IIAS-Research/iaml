@@ -3,6 +3,7 @@ from functools import partial
 from threading import RLock
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -48,7 +49,7 @@ class SynchronousExecutor:
         self.callback()
         return True
 
-    def join(self, timeout):
+    def join(self, timeout, *, cancel_pending=None):
         result, self.pending = self.pending, []
         return result
 
@@ -229,3 +230,61 @@ class TestEvaluationCache(unittest.TestCase):
         self.assertEqual(len(first.fold_metrics), 2)
         self.assertEqual(len(second.fold_metrics), 3)
         self.assertEqual(engine.executor.submissions, 2)
+
+        compared = engine._IAML__compare_completed_candidates([first, second], dataset, timeout=0)
+        self.assertEqual(compared, [second])
+        self.assertIs(compared[0], second)
+        fallback, population = engine._IAML__previous_population(dataset)
+        self.assertEqual(fallback, [second])
+        self.assertIs(fallback[0], second)
+        self.assertIs(population, dataset)
+
+    def test_draining_results_keeps_the_last_pre_evaluation_splitter_context(self):
+        engine = self.make_iaml()
+        engine.splitter = StatefulSplitter()
+        dataset = Dataset(self.X, self.y)
+        result = self.evaluate(engine, dataset)
+        context = engine._evaluation_splitter_contexts[dataset.fingerprint()]
+
+        self.assertEqual(engine._IAML__run_evaluations([], dataset, timeout=60), [])
+        compared = engine._IAML__compare_completed_candidates([result], dataset, timeout=0)
+
+        self.assertEqual(engine._evaluation_splitter_contexts[dataset.fingerprint()], context)
+        self.assertEqual(compared, [result])
+
+    def prepare_stateful_population_comparison(self):
+        engine = self.make_iaml()
+        engine.splitter = StatefulSplitter()
+        reference = Dataset(self.X, self.y.astype(bool))
+        subset = reference.sample(12)
+        current_candidate = self.make_candidate(reference)
+        earlier_candidate = self.make_candidate(subset)
+        earlier_candidate.pipeline.predictor[1].configure({'max_depth': 2})
+        current = engine._IAML__run_evaluations([current_candidate], reference, timeout=60)[0]
+        engine._IAML__run_evaluations([earlier_candidate], subset, timeout=60)
+        return engine, reference, current
+
+    def test_final_reevaluation_keeps_only_the_new_successful_context(self):
+        engine, reference, current = self.prepare_stateful_population_comparison()
+
+        compared = engine._IAML__compare_completed_candidates([current], reference, timeout=60)
+
+        self.assertEqual(len(current.fold_metrics), 2)
+        self.assertEqual(len(compared), 1)
+        self.assertEqual(len(compared[0].fold_metrics), 4)
+        self.assertTrue(engine._IAML__evaluation_matches(compared[0], reference.fingerprint()))
+        self.assertEqual(len(engine._completed_evaluations), 3)
+
+    def test_final_reevaluation_without_score_keeps_the_previous_context(self):
+        engine, reference, current = self.prepare_stateful_population_comparison()
+        previous_context = engine._evaluation_splitter_contexts[reference.fingerprint()]
+
+        with patch.object(TargetMeanMetric, 'compute', return_value=float('nan')):
+            compared = engine._IAML__compare_completed_candidates([current], reference, timeout=60)
+
+        self.assertEqual(compared, [current])
+        self.assertIs(compared[0], current)
+        self.assertEqual(len(compared[0].fold_metrics), 2)
+        self.assertEqual(engine._evaluation_splitter_contexts[reference.fingerprint()], previous_context)
+        self.assertTrue(engine._IAML__evaluation_matches(compared[0], reference.fingerprint()))
+        self.assertEqual(len(engine._completed_evaluations), 2)

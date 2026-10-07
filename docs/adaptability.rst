@@ -2,11 +2,14 @@
 Extending IAML
 ==============
 
-IAML is modular throughout. Data preparation, models, validation, search and
-reporting are separate building blocks. You can add a block or replace an
-existing one to incorporate your team's methods, provided it follows the
-corresponding interface. Extensions can live in your study project and be
-reused across studies without changing IAML itself.
+Implement a custom component when your study needs a method outside the
+:doc:`existing catalogue <component_status>`. The examples below cover
+transformations, predictors and the interfaces around training. Save the
+components in your own project, then connect them through recipes or the
+corresponding ``IAML`` setting.
+
+To combine or configure existing components, follow :doc:`pipelines/guide`.
+This page focuses on the Python interfaces a new implementation must satisfy.
 
 The main building blocks
 ========================
@@ -103,7 +106,19 @@ Missing or nonpositive measurements produce a missing BMI.
 
 **Connect it.** Importing the module registers this transformation with the
 regular ``features_precleaning`` stage. It can also be placed explicitly in a
-workflow, as shown below.
+recipe with ``use(StudyBMI)``. To insert it into the main default strategy:
+
+.. code-block:: python
+
+   from iaml import IAML
+   from iaml.flow import use
+
+   search = IAML()
+   search.pipeline.add(use(StudyBMI).named("bmi"), before="cleaning")
+
+The anchor finds the sequence containing ``cleaning``. The separate
+``minimal`` branch remains available; use ``initial_preprocessor`` when a
+transformation must precede every branch.
 
 **Design constraints.**
 
@@ -153,7 +168,8 @@ using the existing imbalanced-learn dependency.
 **Connect it.** The ``imbalance`` tag makes it available to the corresponding
 search stage. With the default genetic optimizer, resampling alternatives can
 be introduced by mutation. In an explicit classification workflow, place
-``StudyOversampling()`` after preprocessing and before the predictor.
+``optional(use(StudyOversampling))`` after preprocessing and before the
+predictor to explore both the resampled and original training data.
 
 **Design constraints.**
 
@@ -212,9 +228,10 @@ provides Ridge regression, so the example demonstrates the adapter contract.
            return self
 
 **Connect it.** Importing the class makes it available through the ``predictor``
-tag. Create an instance and call ``configure({"alpha": 0.1})`` to set a value
-in an explicit workflow. The additional ``study_regression`` tag separates
-this family from built-in predictors when genetic mutations replace steps.
+tag. Use ``use(StudyRidge, alpha=0.1)`` in a recipe, or declare a domain with
+``alpha=Float(0.1, 10.0, initial=1.0)``. The recipe's local alternatives define
+which predictors the genetic optimizer can substitute. The additional
+``study_regression`` tag allows discovery of just this component family.
 
 **Design constraints.**
 
@@ -228,51 +245,47 @@ this family from built-in predictors when genetic mutations replace steps.
   outputs are available only when that estimator supports them.
 
 .. _extend-composition:
+.. _organize-or-replace-pipeline-stages:
 
-Organize or replace pipeline stages
+Compose a recipe for the extensions
 ===================================
 
-Meta steps compose other steps. This reusable workflow derives BMI, imputes
-missing values, scales features and explores two Ridge configurations.
+A reusable recipe derives BMI, imputes missing values, scales features and
+explores two named Ridge configurations:
 
 .. code-block:: python
    :name: extension-composition
 
-   from iaml import (
-       ActSimpleImputer, ActStandardScaler, MetaExplorerStep, MetaOrderedStep,
-   )
-   from iaml.decorators.is_step import is_step
+   from iaml.flow import choice, use
+   from iaml.steps import SimpleImputer, StandardScaler
 
 
-   @is_step("study_workflow")
-   class StudyWorkflow(MetaOrderedStep):
-       def __init__(self):
-           predictors = MetaExplorerStep()
-           for alpha in (0.1, 10.0):
-               predictor = StudyRidge()
-               predictor.configure({"alpha": alpha})
-               predictors.add_step(predictor)
-           self.add_steps([
-               StudyBMI(), ActSimpleImputer(), ActStandardScaler(), predictors,
-           ])
+   def build_study_pipeline():
+       models = choice(
+           use(StudyRidge, alpha=0.1).named("ridge_low"),
+           use(StudyRidge, alpha=10.0).named("ridge_high"),
+       ).named("predictor")
+       return (
+           use(StudyBMI).named("bmi")
+           >> use(SimpleImputer).named("cleaning")
+           >> use(StandardScaler).named("normalize")
+           >> models
+       )
 
-**Connect it.** After constructing ``search``, assign
-``search.first_step = StudyWorkflow()``. To use only this workflow, also set
-``search.minimal_predictor_step = None``. Otherwise IAML retains a separate
-branch of minimally preprocessed predictors. The final script applies both
-settings.
+**Connect it.** Pass ``pipeline=build_study_pipeline()`` to ``IAML``. Only the
+declared branches are generated; IAML does not add a minimal strategy to an
+explicit recipe. The final script uses this factory.
 
 **Design constraints.**
 
-* ``MetaOrderedStep`` preserves the supplied order. ``MetaStep`` instead
-  chooses child steps by priority for the current candidate.
-* ``MetaExplorerStep`` creates alternative candidates from the same input.
-  Every completed branch must end with a suitable predictor.
-* ``MetaPartialExplorerStep`` starts with one choice or no transformation,
-  leaving alternatives to later mutations. Use it to limit initial branching.
+* Put feature derivation before imputation and scaling when it needs the
+  original measurements. Every completed branch ends with one predictor.
 * Tags identify eligible components, not execution order. Adding a new tag
   requires a stage that uses it. Registration alone does not make a step
   mandatory in every candidate.
+
+See :ref:`pipelines-ref-composition` for ordering and search-scope rules, and
+:ref:`pipelines-ref-editing` to modify an attached recipe.
 
 Ordinary transformations and predictors reuse the inherited ``run`` method.
 If a new orchestration strategy needs its own ``run(candidate)``, decorate it
@@ -311,7 +324,10 @@ example implements mean absolute error to show the contract for a custom loss.
 
 **Connect it.** Pass the instance ``main_metric=StudyAbsoluteError()`` to
 ``IAML``. Imported metric subclasses are also considered for secondary scores
-when suitable.
+when suitable. To choose exact calculations and name their outputs, use
+``metrics(use(StudyAbsoluteError).named("absolute_error"))`` and
+``main_metric="absolute_error"``. See :doc:`pipelines/study` for analytical
+collections.
 
 **Design constraints.** Use a unique string identifier and a constructor with
 no required arguments. Return a finite scalar and declare the correct
@@ -365,6 +381,7 @@ small grid around the best ``StudyRidge`` pipeline in one optimization round.
 
    from time import monotonic
    from iaml import Optimizer
+   from iaml.search_policy import parameter_keys
 
 
    class StudyOptimizer(Optimizer):
@@ -390,10 +407,14 @@ small grid around the best ``StudyRidge`` pipeline in one optimization round.
            if not ridge_candidates:
                return proposals
            seed = max(ridge_candidates)
+           predictor = seed.pipeline.predictor[1]
+           if "alpha" not in parameter_keys(predictor):
+               return proposals
+           low, high = predictor.configuration["alpha"]["range"]
            for alpha in (0.1, 1.0, 10.0):
                if monotonic() >= self.deadline:
                    break
-               if alpha == seed.pipeline.predictor[1].get_config("alpha"):
+               if not low <= alpha <= high or alpha == predictor.get_config("alpha"):
                    continue
                proposal = seed.to_output()
                proposal.pipeline.predictor[1].configure({"alpha": alpha})
@@ -412,6 +433,10 @@ it with the remaining search ``duration``, or ``None`` for an unlimited search.
   while exploring alternatives.
 * Copy candidates with ``to_output()`` before editing them. Use ``configure``
   so parameter changes update the cache fingerprints.
+* This example works on the internal candidate API. ``parameter_keys`` is the
+  engine's shared eligibility contract: honor ``Const`` and each compiled
+  parameter domain. An optimizer that does not replace components cannot
+  support partial ``start`` selections.
 * Bound proposal generation and check the remaining duration. Custom ``run``
   code is not interrupted at its deadline. Its stopping condition does not
   limit initial candidate generation or final fitting.
@@ -450,9 +475,11 @@ a regression dataset.
            return pd.DataFrame([width], index=[str(self)])
 
 **Connect it.** Import the class before calling
-``search.get_descriptive_statistics()``. IAML discovers suitable subclasses
-and includes their rows in the returned table. Results are computed on demand
-and cached for that fit.
+``search.get_descriptive_statistics(X, y)``. IAML discovers suitable subclasses
+in its default statistics family. To request this statistic explicitly, pass
+``statistics=statistics(use(StudyCentralWidth).named("central_width"))`` to
+``IAML``. See :ref:`pipelines-study-statistics` for selecting statistics and
+using their results before or after training.
 
 **Design constraints.** Provide a constructor with no required arguments and
 implement ``suitable(dataset)``. Return a DataFrame with unique statistic
@@ -503,8 +530,10 @@ single-output regression.
 
 **Connect it.** After import, the figure is included in
 ``chosen_model.explain_model_performance(X_test, y_test)`` for regression.
-To generate only this figure, call its ``compute`` method directly as in the
-final example.
+For a configured on-demand collection, pass
+``explanations=explanations(use(StudyObservedPredicted).named("observed"))``
+to ``IAML`` and call ``chosen_model.explain(X_test, y_test)``. To generate only
+this figure directly, call its ``compute`` method as in the final example.
 
 **Design constraints.** Inherit directly from ``MetricPlot`` for automatic
 discovery and provide a constructor with no required arguments. Declare the
@@ -535,7 +564,7 @@ resampler is not used in this regression example.
    import pandas as pd
    from iaml import IAML
    from study_components import (
-       StudyAbsoluteError, StudyOptimizer, StudyWorkflow,
+       StudyAbsoluteError, StudyOptimizer, build_study_pipeline,
        StudyObservedPredicted, study_splitter,
    )
 
@@ -551,14 +580,13 @@ resampler is not used in this regression example.
        X_train, X_test = X.iloc[:36], X.iloc[36:]
        y_train, y_test = y.iloc[:36], y.iloc[36:]
        search = IAML(
+           pipeline=build_study_pipeline(),
            main_metric=StudyAbsoluteError(),
            splitter=study_splitter,
            optimizer=StudyOptimizer,
            max_duration=30,
            max_workers=1,
        )
-       search.first_step = StudyWorkflow()
-       search.minimal_predictor_step = None
        search.fit(X_train, y_train, groups=groups.iloc[:36])
        chosen_model = search.chosen_candidate
        print(chosen_model.evaluate(X_test, y_test))

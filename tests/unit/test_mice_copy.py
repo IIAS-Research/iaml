@@ -131,6 +131,48 @@ class TestMICECopy(unittest.TestCase):
         with self.no_kernel_restoration():
             self.assertIs(self.step.kernel, kernel)
 
+    def test_missing_seed_fallback_uses_real_miceforest_api_and_restores_mean_matching(self):
+        kernel = self.step.kernel
+        original_candidates = kernel.mean_match_candidates
+        for model in kernel.models.values():
+            model.params.pop("seed", None)
+        impute_new_data = kernel.impute_new_data
+
+        with patch.object(self.step, "_ensure_seed_on_kernel_models", return_value=0), \
+             patch.object(kernel, "impute_new_data", autospec=True,
+                          side_effect=impute_new_data) as impute:
+            result = self.step.transform(self.probe.copy())
+
+        self.assertEqual(impute.call_count, 2)
+        self.assertFalse(result.isna().any().any())
+        self.assertIs(kernel.mean_match_candidates, original_candidates)
+        for column in self.probe.columns:
+            observed = self.probe[column].notna()
+            pd.testing.assert_series_equal(result.loc[observed, column],
+                                           self.probe.loc[observed, column])
+        for call in impute.call_args_list:
+            self.assertNotIn("mean_match_candidates", call.kwargs)
+
+    def test_failed_new_data_fallback_restores_mean_matching_settings(self):
+        kernel = self.step.kernel
+        original_candidates = kernel.mean_match_candidates
+
+        def fail_imputation(new_data, datasets=None, iterations=None, **kwargs):
+            del new_data, datasets, iterations, kwargs
+            if kernel.mean_match_candidates is original_candidates:
+                raise KeyError("seed")
+            self.assertEqual(kernel.mean_match_candidates,
+                             dict.fromkeys(original_candidates, 0))
+            raise ValueError("fallback failed")
+
+        with patch.object(kernel, "impute_new_data", autospec=True,
+                          side_effect=fail_imputation) as impute:
+            with self.assertRaisesRegex(ValueError, "fallback failed"):
+                self.step.transform(self.probe.copy())
+
+        self.assertEqual(impute.call_count, 2)
+        self.assertIs(kernel.mean_match_candidates, original_candidates)
+
     def test_clones_have_independent_models_and_random_state(self):
         first = deepcopy(self.step)
         second = deepcopy(self.step)

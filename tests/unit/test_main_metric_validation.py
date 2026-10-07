@@ -11,9 +11,22 @@ from iaml.actionables.predictors.classifier.act_linear_svc import ActLinearSVC
 from iaml.candidate import Candidate
 from iaml.dataset import Dataset
 from iaml.logger import Logger
+from iaml.metric import Metric
 from iaml.metrics import AccuracyMetric, RocAucMetric
 from iaml.splitters import kfold_splitter
 from tests.helpers.datasets import make_classification_data
+
+
+class _ProbabilityMetric(Metric):
+    @property
+    def needed_prediction(self):
+        return 'predict_proba'
+
+    def __str__(self):
+        return 'probability_metric'
+
+    def compute(self, y, y_pred, **kwargs):
+        return float(np.mean(y_pred[:, 1]))
 
 
 class TestMainMetricValidation(unittest.TestCase):
@@ -41,19 +54,24 @@ class TestMainMetricValidation(unittest.TestCase):
         self.assertEqual(candidate.training_audit["status"], "failed")
         self.assertEqual(candidate.training_audit["metrics"], {})
 
-    def test_linear_svc_is_rejected_when_auc_is_the_main_metric(self):
+    def test_linear_svc_is_valid_when_auc_is_the_main_metric(self):
         candidate = self.make_candidate(RocAucMetric(), ActLinearSVC())
         candidate.add_metric(AccuracyMetric())
-        self.assertEqual(self.evaluate(candidate), {})
-        self.assert_failed(candidate)
-        self.assertIn(candidate.main_metric, candidate.training_audit["error"])
+        scores = self.evaluate(candidate)
+        self.assertEqual(set(scores), {'ROC AUC', 'accuracy'})
+        self.assertTrue(np.isfinite(scores[candidate.main_metric]))
+        self.assertEqual(candidate.training_audit['status'], 'success')
 
     def test_failed_secondary_metric_does_not_reject_valid_main_metric(self):
         candidate = self.make_candidate(AccuracyMetric(), ActLinearSVC())
-        candidate.add_metric(RocAucMetric())
+        candidate.add_metric(_ProbabilityMetric())
         scores = self.evaluate(candidate)
         self.assertTrue(np.isfinite(scores[candidate.main_metric]))
         self.assertEqual(candidate.training_audit["status"], "success")
+        self.assertNotIn('probability_metric', scores)
+        self.assertTrue(any(record['key'] == 'probability_metric'
+                            and record['status'] == 'inapplicable'
+                            for record in candidate.metric_report))
 
     def test_invalid_fold_discards_partial_and_previous_scores(self):
         for invalid in (None, np.nan, np.inf, -np.inf, np.array([0.2, 0.8]), ValueError("failed")):

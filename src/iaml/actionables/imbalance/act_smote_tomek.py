@@ -20,6 +20,9 @@ from ...decorators.all import is_step
 class ActSMOTETomek(Actionable):
     """[STEP] SMOTETomek"""
 
+    # The exposed parameters configure the nested SMOTE backend.
+    _flow_parameter_constraints = SMOTE._parameter_constraints
+
     name: str = "SMOTE Tomek"
     _description: str = textwrap.dedent('''\
         SMOTETomek balances data by creating synthetic minority samples

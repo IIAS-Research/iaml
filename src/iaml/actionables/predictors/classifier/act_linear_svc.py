@@ -122,6 +122,9 @@ class ActLinearSVC(Predictor):
     def predict(self, X):
         return super().predict(self._select_features(X))
 
+    def decision_function(self, X):
+        return super().decision_function(self._select_features(X))
+
     def score(self, X, y=None, *args, **kwargs):
         return self.model.score(self._select_features(X), y, *args, **kwargs)
 

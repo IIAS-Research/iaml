@@ -13,8 +13,8 @@ AutoML for clinical research
 
 .. toctree::
    :hidden:
-   :maxdepth: 3
-   :caption: User guide
+   :maxdepth: 2
+   :caption: Integrated workflow
 
    Discover IAML <self>
    Overview <home>
@@ -24,14 +24,16 @@ AutoML for clinical research
    02 / Evaluate <evaluation>
    03 / Explain <explainability>
    Study reporting <scientific>
-   references
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
-   :caption: Technical guides
+   :maxdepth: 3
+   :caption: Pipeline API & advanced use
 
-   How it works <architecture>
+   Customize IAML <discover_pipelines>
+   pipelines/index
    Component availability <component_status>
    Extending IAML <adaptability>
-   API reference <autoapi/index>
+   How it works <architecture>
+   Python API reference <autoapi/index>
+   references

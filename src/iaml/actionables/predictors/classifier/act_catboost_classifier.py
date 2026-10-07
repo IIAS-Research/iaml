@@ -43,63 +43,81 @@ class ActCatBoost(Predictor):
             'iterations': {
                 'description': 'The maximum number of trees that can be built.',
                 'default': 1000,
-                'range': [100, 10000]
+                'range': [300, 10000],
             },
             'learning_rate': {
                 'description': 'The learning rate.',
                 'default': 0.03,
-                'range': [0.001, 1.0]
+                'range': [0.005, 0.20],
             },
             'depth': {
                 'description': 'Depth of the tree.',
                 'default': 6,
-                'range': [1, 16]
+                'range': [3, 10],
+            },
+            'grow_policy': {
+                'description': 'The tree growing policy.',
+                'default': 'SymmetricTree',
+                'categorical': ['SymmetricTree', 'Depthwise', 'Lossguide'],
             },
             'l2_leaf_reg': {
-                'description': 'Coefficient at the L2 regularization term of the cost function.',
-                'default': 3,
-                'range': [0, 10]
+                'description': 'Coefficient of L2 regularization on leaf values.',
+                'default': 3.0,
+                'range': [1e-3, 1e3],
             },
-            'border_count': {
-                'description': 'The number of splits for numerical features.',
-                'default': 254,
-                'range': [1, 255]
+            'random_strength': {
+                'description': 'Randomness added when scoring potential splits.',
+                'default': 1.0,
+                'range': [0.0, 5.0],
+            },
+            'min_data_in_leaf': {
+                'description': 'Minimum sample count in a leaf eligible for splitting.',
+                'default': 1,
+                'range': [1, 300],
             },
             'loss_function': {
-                'description': 'The metric to use in training.',
+                'description': 'The classification objective, adapted to the target type.',
                 'default': 'Logloss',
-                'categorical': ['Logloss', 'CrossEntropy', 'MultiClass', 'MultiClassOneVsAll']
+                'categorical': ['Logloss', 'CrossEntropy', 'MultiClass', 'MultiClassOneVsAll'],
             },
             'eval_metric': {
-                'description': 'The metric to be used for validation data.',
-                'default': 'AUC',
-                'categorical': ['AUC', 'Accuracy', 'Logloss']
+                'description': 'Validation metric; None keeps the CatBoost default.',
+                'default': None,
+            },
+            'border_count': {
+                'description': 'Numeric split count; None keeps the CatBoost default.',
+                'default': None,
             },
             'bootstrap_type': {
-                'description': 'The method for sampling the weights of objects.',
-                'default': 'Bayesian',
-                'categorical': ['Bayesian', 'Bernoulli', 'MVS']
+                'description': 'Weight sampling method; None keeps the CatBoost default.',
+                'default': None,
             },
             'leaf_estimation_iterations': {
-                'description': 'The number of iterations for leaf estimation.',
-                'default': 10,
-                'range': [1, 50]
-            }
+                'description': 'Leaf estimation iterations; None keeps the CatBoost default.',
+                'default': None,
+            },
         }
 
         self.model: CatBoostClassifier = None
         self.label_encoder: LabelEncoder = LabelEncoder()
 
+    def passthrough_parameters(self, default: bool = True) -> dict[str, Any]:
+        """Keep CatBoost defaults and omit leaf size for symmetric trees."""
+        parameters = {key: value for key, value in super().passthrough_parameters(default).items()
+                      if value is not None}
+        if self.get_config('grow_policy') == 'SymmetricTree':
+            parameters.pop('min_data_in_leaf', None)
+        return parameters
+
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
-        if dataset.type_of_target == 'binary':
-            self.configuration['loss_function']['categorical'] = ['Logloss', 'CrossEntropy']
-        else:
-            self.configuration['eval_metric']['categorical'] = ['AUC', 'Accuracy']
-            self.configuration['loss_function']['categorical'] = [
-                                                                'MultiClass',
-                                                                'MultiClassOneVsAll'
-                                                                ]
-        self.check_configuration()
+        losses = (['Logloss', 'CrossEntropy'] if dataset.type_of_target == 'binary'
+                  else ['MultiClass', 'MultiClassOneVsAll'])
+        self.configuration['loss_function']['categorical'] = losses
+        self.configuration['loss_function']['default'] = losses[0]
+        if (self.get_config('loss_function') not in losses
+                and not getattr(self, '_flow_parameters', {}).get(
+                    'loss_function', {}).get('fixed', False)):
+            self.configure({'loss_function': losses[0]})
 
         self.model = CatBoostClassifier(verbose=0, **self.passthrough_parameters())
         self.label_encoder.fit(dataset.y)
@@ -113,6 +131,11 @@ class ActCatBoost(Predictor):
             self._log_failure(dataset, exc)
             raise
         return self
+
+    @property
+    def classes_(self):
+        """Original labels, in the order of predict_proba columns."""
+        return self.label_encoder.classes_
 
     def _log_failure(self, dataset: Dataset, exc: Exception) -> None:
         """Log enriched debug info when CatBoost crashes."""

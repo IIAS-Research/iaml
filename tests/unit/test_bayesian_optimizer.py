@@ -188,9 +188,11 @@ class TestBayesianOptimizerParameters(unittest.TestCase):
                 self.assertEqual(backend["param_keys"], [
                     "0_min_samples_leaf", "0_min_samples_split", "0_n_estimators",
                 ])
-                self.assertEqual(backend["optimizer"].Xi[0], [1, 2, 100])
+                self.assertEqual(backend["optimizer"].Xi[0], [5, 10, 100])
                 proposed_model = suggested.pipeline.predictor[1]
                 self.assertEqual(proposed_model.get_config("max_depth"), depth)
+                self.assertEqual(proposed_model.get_config("max_leaf_nodes"), 64)
+                self.assertEqual(proposed_model.get_config("low_memory"), "auto")
                 for key, dimension in zip(backend["param_keys"], backend["dimensions"]):
                     self.assertIn(proposed_model.get_config(key[2:]), dimension)
                 # Exercise the generated configuration with the real survival estimator.

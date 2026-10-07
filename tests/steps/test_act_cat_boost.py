@@ -74,10 +74,7 @@ class TestActCatBoost(StepTestCase):
             step.configuration["loss_function"]["categorical"],
             ["MultiClass", "MultiClassOneVsAll"],
         )
-        self.assertEqual(
-            step.configuration["eval_metric"]["categorical"],
-            ["AUC", "Accuracy"],
-        )
+        self.assertEqual(step.model.get_params()["eval_metric"], "Accuracy")
 
     def test_fit_wraps_catboost_error(self) -> None:
         X = pd.DataFrame(

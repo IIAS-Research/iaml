@@ -10,7 +10,6 @@ from copy import deepcopy
 from hashlib import md5
 
 import numpy as np
-import shap
 import pandas as pd
 
 from sklearn.pipeline import Pipeline
@@ -18,8 +17,10 @@ from sklearn.pipeline import Pipeline
 from .dataset import Dataset
 from .void_step import VoidStep
 from .explanation import Explanation
+from .metric_plot import MetricPlot
 from .cache import Cache
 from .reference import Reference
+from .search_policy import policy_fingerprint, restore_flow_metadata
 
 if TYPE_CHECKING:
     from .metric import Metric
@@ -200,6 +201,7 @@ class IAMLPipeline(Pipeline):
         only_predictor: bool = False,
         groups_columns: list[str] = None,
         metrics: list[Metric] = None,
+        explanations: list = None,
         **kwargs: dict) -> 'IAMLPipeline':
         """Fit Pipeline on new data (or with new parameters)
         
@@ -209,6 +211,8 @@ class IAMLPipeline(Pipeline):
         :param list[str], optional groups_columns: Columns name to use in splitting. 
             Default to None.
         :param list[Metric], optional metrics: List of Metrics to compute. Default to None.
+        :param list, optional explanations: Configured explanations whose prediction
+            outputs must remain available after fitting.
         :param dict, optional \\**kwargs: Additional parameters.
         :return: Fitted IAMLPipeline.
         """
@@ -227,6 +231,20 @@ class IAMLPipeline(Pipeline):
         if self.predictor[1].suitable(dataset):
             if isinstance(dataset.X, pd.DataFrame):
                 self._trained_columns = list(dataset.X.columns)
+            configure = getattr(self.predictor[1], 'configure_prediction_requirements', None)
+            if callable(configure):
+                requirements = {metric.needed_prediction for metric in metrics or ()}
+                for explanation in explanations or ():
+                    try:
+                        applicable = explanation.suitable(
+                            dataset.type_of_target if isinstance(explanation, MetricPlot) else dataset)
+                    except Exception:  # Unknown analyses retain curves for later computation.
+                        requirements.add('predict_survival_function')
+                        continue
+                    if applicable:
+                        requirements.add(getattr(explanation, 'needed_prediction',
+                                                 'predict_survival_function'))
+                configure(requirements if metrics is not None or explanations is not None else None)
             self.predictor[1].fit(dataset, **kwargs)
         else:
             self.predictor = None
@@ -262,6 +280,7 @@ class IAMLPipeline(Pipeline):
                 from_cache = Cache().from_cache(fit_key, fit_data_key)
                 if from_cache is not None:
                     fitted_step, dataset = from_cache
+                    restore_flow_metadata(step, fitted_step)
                     self.replace_step(step, fitted_step)
                     step = fitted_step
                 else:
@@ -271,7 +290,19 @@ class IAMLPipeline(Pipeline):
                         # (e.g. a target encoder's out-of-fold training transform).
                         Cache().add_to_cache(fit_key, fit_data_key, (step, dataset))
                     else:
-                        if step.is_interchangeable:
+                        if getattr(step, '_flow_explicit', False) and (
+                                step.is_interchangeable or getattr(step, '_flow_required', False)):
+                            absence = next((item for item in getattr(step, '_flow_alternatives', ())
+                                            if isinstance(item, VoidStep)), None)
+                            if absence is None:
+                                label = getattr(step, '_flow_alias', None) or step.name
+                                raise ValueError(f"Required pipeline step '{label}' is inapplicable")
+                            old_step = step
+                            step = deepcopy(absence)
+                            step._flow_alternatives = old_step._flow_alternatives
+                            step._flow_choice_id = getattr(old_step, '_flow_choice_id', None)
+                            self.replace_step(old_step, step)
+                        elif step.is_interchangeable:
                             old_step = step
                             step = VoidStep(step_to_mimic=step)
                             self.replace_step(old_step, step)
@@ -377,6 +408,9 @@ class IAMLPipeline(Pipeline):
         :param pd.DataFrame X: candidate data.
         :return: Transformed DF.
         """
+        # Historical adapters may transform their argument in place. Keep the
+        # public input reusable for later predictions and analytical methods.
+        X = deepcopy(X)
         for _, step in self.transformers:
             X = step.transform(X)
 
@@ -396,7 +430,7 @@ class IAMLPipeline(Pipeline):
             raise ValueError("Model need to be set before predict")
 
         if not model_only:
-            return super().predict(X, **kwargs)
+            return super().predict(deepcopy(X), **kwargs)
 
         if self._trained_columns and isinstance(X, pd.DataFrame):
             X = X.reindex(columns=self._trained_columns, fill_value=0)
@@ -440,24 +474,36 @@ class IAMLPipeline(Pipeline):
             raise ValueError("Model need to be set before predict")
 
         if not model_only:
-            return super().predict_proba(X, **kwargs)
+            return super().predict_proba(deepcopy(X), **kwargs)
 
         if self._trained_columns and isinstance(X, pd.DataFrame):
             X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict_proba(X)
 
+    def decision_function(self, X: pd.DataFrame, model_only: bool = False, **kwargs):
+        """Return decision scores after applying the fitted preprocessing steps."""
+        if not self.have_model:
+            raise ValueError("Model need to be set before predict")
+
+        if not model_only:
+            X = self.transform(X, **kwargs)
+
+        if model_only and self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
+        return self.predictor[1].decision_function(X)
+
     def __getattribute__(self, attr: str) -> bool:
-        """Overload getattr to allow accurate hasattr on predict_proba
+        """Expose probability and decision methods only when the model supports them.
 
         :param str attr: Attribute to test.
         :raise AttributeError: predict_proba not implemented in this model.
         :return: Does attribute is implemented.
         """
-        if attr == 'predict_proba' \
+        if attr in ('predict_proba', 'decision_function') \
             and not( \
-                self.have_model and hasattr(self.predictor[1], 'predict_proba') \
+                self.have_model and hasattr(self.predictor[1], attr) \
             ):
-            raise AttributeError("predict_proba not implemented in this model")
+            raise AttributeError(f"{attr} not implemented in this model")
 
         return super().__getattribute__(attr)
 
@@ -503,6 +549,8 @@ class IAMLPipeline(Pipeline):
         if not self.have_model:
             raise RuntimeError('There is no model to explain.')
 
+        import shap  # pylint: disable=import-outside-toplevel
+
         def p(pred_data):
             df = pd.DataFrame(pred_data, columns=X.columns)
 
@@ -547,7 +595,7 @@ class IAMLPipeline(Pipeline):
         :return: md5 sting
         """
         current_version = tuple(
-            (id(step), getattr(step, "_config_version", None))
+            (id(step), getattr(step, "_config_version", None), policy_fingerprint(step))
             for _, step in self.training_steps
         )
         if self._fingerprint_cache is None or self._fingerprint_cache_version != current_version:
@@ -559,7 +607,7 @@ class IAMLPipeline(Pipeline):
     def transformers_resamplers_fingerprint(self) -> str:
         """Fingerprint for transformers/resamplers only (used by Candidate)."""
         current_version = tuple(
-            (id(step), getattr(step, "_config_version", None))
+            (id(step), getattr(step, "_config_version", None), policy_fingerprint(step))
             for _, step in self._preprocessing_steps
         )
         if self._transform_fingerprint_cache is None \

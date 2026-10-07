@@ -139,7 +139,10 @@ class TestSurvivalHyperparameters(unittest.TestCase):
                 actual = step.model.get_params()
                 for name, specification in step.configuration.items():
                     with self.subTest(parameter=name):
-                        self.assertEqual(actual[name], specification["default"])
+                        expected = specification["default"]
+                        if name == "low_memory" and expected == "auto":
+                            expected = False  # An unspecified output contract preserves curves.
+                        self.assertEqual(actual[name], expected)
 
     def test_invalid_number_of_estimators_is_rejected(self):
         """Invalid values reach backend validation instead of silently using 100 stages."""

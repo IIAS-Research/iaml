@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 class CumulativeHazardModelComparisonPlot(MetricPlot):
     """[PLOT] Cumulative Hazard Model Comparison Plot using sksurv"""
 
+    needed_prediction = "predict_cumulative_hazard_function"
+    """Prediction output required when this explanation is configured."""
+
     title: str = "Cumulative Hazard"
     description: str = textwrap.dedent("""
         The Cumulative Hazard Model Comparison Plot is a diagnostic tool used to evaluate the performance of 

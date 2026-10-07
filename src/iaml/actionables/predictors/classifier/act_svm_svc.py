@@ -70,10 +70,18 @@ class ActSVMSVC(Predictor):
             }
         }
         self.model: svm.SVC = None
+        self._required_predictions = None
+
+    def configure_prediction_requirements(self, required_predictions):
+        """Keep probabilities when requested, or when output requirements are unknown."""
+        self._required_predictions = (None if required_predictions is None
+                                      else frozenset(required_predictions))
 
     def fit(self, dataset: Dataset): # pylint: disable=unused-argument
         self.model = svm.SVC(
-            probability = True, # Enable predict_proba.
+            probability=(self._required_predictions is None or
+                         not self._required_predictions.issubset(
+                             {'predict', 'decision_function'})),
             **self.passthrough_parameters()
             )
         self.model.fit(dataset.X, dataset.y)

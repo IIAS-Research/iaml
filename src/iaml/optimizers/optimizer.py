@@ -9,6 +9,7 @@ class Optimizer:
     """Base class of IAML Optimizer. Optimizer receive a pool of Candidates, 
     optimize parameters and return a new pool of candidate
     """
+    supports_component_swap: bool = False
     def __init__(self):
         self.__finished: bool = False
         """Is the optimization done ?"""

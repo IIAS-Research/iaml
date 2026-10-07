@@ -4,12 +4,13 @@ Search and evaluate modular prediction pipelines for clinical research with
 tabular data. Trained candidates expose their pipeline steps, evaluation metrics
 and explanation methods for inspection and study reporting.
 """
-from copy import deepcopy
+from copy import copy, deepcopy
+from collections import deque
+from weakref import ref
 import time
 import math
-import textwrap
 import multiprocessing
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 import numpy as np
 import pandas as pd
 from .timed_pool_executor import TimedPoolExecutor, TerminatedError
@@ -25,13 +26,11 @@ from .worker_manager import WorkerManager
 from .splitters import kfold_splitter
 from .meta_ordered_step import MetaOrderedStep
 from .meta_explorer_step import MetaExplorerStep
-from .meta_partial_explorer_step import MetaPartialExplorerStep
-from .optimizers import Optimizer, GeneticOptimizer, RandomOptimizer, BayesianOptimizer
+from .optimizers import Optimizer, GeneticOptimizer
 from .predictor import Predictor
 from .logger import Logger
 from .plot import StatisticPlot
 from .actionables.cleaning.act_simple_imputer import ActSimpleImputer
-from .actionables.normalize.act_standard_scaler import ActStandardScaler
 from .sklearn_preprocessor import SklearnPreprocessor
 
 # Default Actionables -> Must be a wildcard import to help IAML to know all available the steps
@@ -62,11 +61,11 @@ class IAML:  # pylint: disable=too-many-instance-attributes
     :param int, optional max_stage_duration: Maximum duration of a stage. Default to None.
     :param callable, optional splitter: Split function to use. Default to kfold_splitter.
     :param int, optional max_duration: Search time budget. -1 means no global limit.
-    :param int | str, optional time_before_sample_use: Time before we use sampled data. 
-        Default to None.
+    :param int | str, optional time_before_sample_use: Evaluation time before automatic
+        search downsizing. None disables it; ``auto`` derives a delay from the global budget.
     :param bool, optional preprocessor: Use preprocessor. Default to False.
-    :param Metric, optional main_metric: Main metric instance, preserving its parameters.
-        Default to None.
+    :param main_metric: Metric instance preserving its parameters, or the result key
+        of a configured metric. None selects the default objective for the task.
     :param Optimizer, optional optimizer: Optimizer class to use. Default to GeneticOptimizer.
     :param int, optional train_on_n_samples: Limit the initial search dataset to this many
         rows. None or nonpositive values use all rows.
@@ -79,6 +78,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         a numeric DataFrame with unchanged rows and index. Every generated pipeline,
         including minimalist candidates, starts with this mandatory transformer.
         It is fitted afresh within each CV training fold and during final fitting.
+    :param pipeline: Declarative training recipe. None uses the shared preset with
+        visible ``minimal`` and ``main`` branches. Supplied recipes are copied.
+    :param metrics: Metric collection or list. None uses the default family.
+        Aliases identify scores and may select the main objective.
+    :param statistics: Descriptive collection or list. None uses the default family;
+        an empty list disables collective descriptive calculations.
+    :param explanations: Explanation collection or list. None uses the default family;
+        an empty list disables collective explanations. Calculations remain on demand.
     """
     def __init__( # pylint: disable=too-many-arguments
         self,
@@ -88,12 +95,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         max_duration: int = -1,
         time_before_sample_use: int | str = None,
         preprocessor: bool = False,
-        main_metric: Metric = None,
+        main_metric: Metric | str = None,
         optimizer: Optimizer = GeneticOptimizer,
         train_on_n_samples: int = None,
         keep_training_history: bool = False,
         refit_on_sample: bool = True,
-        initial_preprocessor: Any = None) -> None:
+        initial_preprocessor: Any = None,
+        *,
+        pipeline=None,
+        metrics=None,
+        statistics=None,
+        explanations=None) -> None:
         # Set pandas config to avoid SettingsWithcopyWarning
         pd.options.mode.copy_on_write = True
 
@@ -102,7 +114,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         self.optimizer = optimizer
         """Choose Optimizer"""
-        
+
         self.train_on_n_samples = train_on_n_samples
         """If defined, pick n sample in the dataset before train"""
 
@@ -132,7 +144,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.splitter: callable = splitter if splitter is not None else kfold_splitter
         """Splitter callable"""
 
-        self.main_metric: Metric = main_metric
+        self.main_metric: Metric | str = main_metric
         """Main metric"""
 
         self.max_duration: int = max_duration
@@ -160,7 +172,38 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         self.executor: TimedPoolExecutor = None
         """Hold TimePoolExecutor"""
 
-        self.default_pipeline() # Load default pipeline
+        self._pipeline_spec = None
+        self._flow_execution_root = None
+        self._flow_compiled_first_step = None
+        self.minimal_predictor_step = None
+        self._flow_active = False
+        self._study_snapshot = None
+        self._analysis_reports = {}
+        self._descriptive_cache = {}
+        self._metrics_explicit = metrics is not None
+        from .flow import metrics as metric_family, statistics as statistic_family
+        from .flow import explanations as explanation_family
+        self.metrics = (metric_family() if metrics is None else
+                        metrics.clone() if hasattr(metrics, 'clone') else metrics)
+        self.statistics = (statistic_family() if statistics is None else
+                           statistics.clone() if hasattr(statistics, 'clone') else statistics)
+        self.explanations = (
+            explanation_family() if explanations is None else
+            explanations.clone() if hasattr(explanations, 'clone') else explanations)
+        self._metrics_explicit = metrics is not None
+        if pipeline is None:
+            self.default_pipeline()
+        else:
+            from .flow.model import Recipe
+            if not isinstance(pipeline, Recipe) or pipeline.kind != 'pipeline':
+                raise TypeError('pipeline must be an IAML training recipe')
+            self.pipeline = pipeline.clone()
+            from .flow.compiler import RecipeValidationError
+            try:
+                self._install_flow_pipeline()
+            except RecipeValidationError:
+                # An incomplete attached recipe remains editable until launch.
+                pass
         self.max_workers = max_workers if (max_workers is not None and max_workers > 0) \
             else multiprocessing.cpu_count()
         """Hold maximum number of parallel workers"""
@@ -185,94 +228,136 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param dict pipeline: JSON description of the pipeline
         """
         self.first_step = Step.from_pipeline(pipeline)
-        self.minimal_predictor_step = self.__build_minimal_predictor_step()
+        self.minimal_predictor_step = None
+        self._pipeline_spec = None
+        self._flow_execution_root = None
+        self._flow_active = False
+
+    @property
+    def pipeline(self):
+        """Editable declarative recipe belonging to this study."""
+        return self._pipeline_spec
+
+    @pipeline.setter
+    def pipeline(self, recipe):
+        from .flow import PipelineSpec
+        if not isinstance(recipe, PipelineSpec):
+            # A composed fragment is also a valid complete recipe.
+            from .flow.model import Recipe
+            if not isinstance(recipe, Recipe):
+                raise TypeError('pipeline must be an IAML recipe')
+        if recipe.kind != 'pipeline':
+            raise TypeError('pipeline requires a training recipe')
+        if getattr(recipe, '_owner', None) not in (None, self):
+            recipe = recipe.clone()
+        previous = getattr(self, '_pipeline_spec', None)
+        if previous is not None and previous is not recipe:
+            previous._owner = previous._owner_field = None
+        self._pipeline_spec = recipe.attach(self, 'pipeline')
+
+    def _set_analysis_collection(self, field, value):
+        from .flow import metrics, statistics, explanations
+        from .flow.model import AnalysisCollection
+        factory = {'metrics': metrics, 'statistics': statistics,
+                   'explanations': explanations}[field]
+        if not isinstance(value, AnalysisCollection):
+            if not isinstance(value, (list, tuple)):
+                raise TypeError(f'{field} must be a {field} collection or a list')
+            value = factory(*value) if value else AnalysisCollection(field, [])
+        if value.kind != field:
+            raise TypeError(f'{field} requires a collection of the same kind')
+        if getattr(value, '_owner', None) not in (None, self):
+            value = value.clone()
+        previous = getattr(self, '_' + field + '_spec', None)
+        if previous is not None and previous is not value:
+            previous._owner = previous._owner_field = None
+        return value.attach(self, field)
+
+    @property
+    def metrics(self):
+        """Configured metrics used to evaluate candidate pipelines."""
+        return self._metrics_spec
+
+    @metrics.setter
+    def metrics(self, value):
+        self._metrics_spec = self._set_analysis_collection('metrics', value)
+        self._metrics_explicit = True
+
+    @property
+    def statistics(self):
+        """Configured statistics describing the input dataset."""
+        return self._statistics_spec
+
+    @statistics.setter
+    def statistics(self, value):
+        self._statistics_spec = self._set_analysis_collection('statistics', value)
+
+    @property
+    def explanations(self):
+        """Configured explanations available for fitted candidates."""
+        return self._explanations_spec
+
+    @explanations.setter
+    def explanations(self, value):
+        self._explanations_spec = self._set_analysis_collection('explanations', value)
+
+    def _install_flow_pipeline(self):
+        from .flow.compiler import compile_pipeline
+        root = compile_pipeline(self.pipeline, optimizer=self.optimizer,
+                                preprocessor=self.preprocessor,
+                                fast=getattr(self, '_flow_fast', False))
+        self._flow_execution_root = root
+        # Keep the principal execution tree available to historical low-level users.
+        main = next((step for step in getattr(root, 'steps', [])
+                     if getattr(step, '_flow_alias', None) == 'main'), None)
+        self.first_step = main if main is not None else root
+        self._flow_compiled_first_step = self.first_step
+        self.minimal_predictor_step = None
+        self._flow_active = True
+
+    def _prepare_flow(self):
+        if getattr(self, '_pipeline_spec', None) is None:
+            return False
+        if (self.first_step is not getattr(self, '_flow_compiled_first_step', None)
+                or self.minimal_predictor_step is not None):
+            # Explicit legacy execution-tree overrides remain supported.
+            self._flow_active = False
+            return False
+        self._install_flow_pipeline()
+        return True
+
+    def describe(self):
+        """Return the last launch snapshot, or the current untrained recipe."""
+        from .flow.inspection import RecipeReport
+        if self._study_snapshot is None:
+            data = {
+                 'pipeline': (self.pipeline.describe().to_dict()
+                              if self.pipeline is not None else None),
+                'metrics': self.metrics.describe().to_dict(),
+                'statistics': self.statistics.describe().to_dict(),
+                'explanations': self.explanations.describe().to_dict(),
+                'status': 'declared',
+            }
+        else:
+            data = deepcopy(self._study_snapshot)
+            data['status'] = 'resolved'
+        data['analysis_reports'] = deepcopy(self._analysis_reports)
+        if self.chosen_candidate is not None:
+            data['metric_coverage'] = deepcopy(self.chosen_candidate.metric_coverage)
+            data['metric_report'] = deepcopy(self.chosen_candidate.metric_report)
+            data['explanation_report'] = deepcopy(self.chosen_candidate.explanation_report)
+        return RecipeReport(data)
 
     def default_pipeline(self, fast: bool = False) -> None:
-        """Load the default pipeline.
-        Default pipeline is the recommended way to create classifier and regressor
-
-        Genetic search starts with one normalization and no resampling, then
-        explores alternatives through mutations. Other optimizers retain full
-        initial exploration because they only change hyperparameters.
-
-        :param bool, optional fast: If true, will only load fast machine learning model.
-            Fast mode is use to create fast pipeline and iterate
-            quickly when debugging code. Defaults to False.
-        """
-        self.first_step = MetaOrderedStep(tag="Main") # First step -> Contain all pipeline's stages
-
-        self.first_step.add_step(MetaStep(tag='features_precleaning',
-            name='Features Precleaning',
-            description=textwrap.dedent('''\
-                Converts complex columns into several columns, which helps the
-                model to extract information from your data.''')))
-        self.first_step.add_step(MetaStep(tag='cleaning',
-            name='Features Cleaning',
-            description=textwrap.dedent('''\
-                Improve data quality, handle missing values, extract
-                information from textual columns, etc.''')))
-        self.first_step.add_step(MetaStep(tag='features_selection',
-            name='Features Selection',
-            description=textwrap.dedent('''\
-                Decrease number of column to improve the models' performance.''')))
-        partial_exploration = (isinstance(self.optimizer, type)
-                               and issubclass(self.optimizer, GeneticOptimizer))
-        explorer = MetaPartialExplorerStep if partial_exploration else MetaExplorerStep
-        normalization_options = {'initial_step': ActStandardScaler()} if partial_exploration else {}
-        imbalance_options = {} if partial_exploration else {'also_explore_without': True}
-        self.first_step.add_step(explorer(tag='normalize',
-            **normalization_options,
-            name='Features Normalization',
-            description=textwrap.dedent('''\
-                Normalize data to help model to give the same interest to each column''')))
-        self.first_step.add_step(explorer(tag='imbalance',
-            **imbalance_options,
-            name='Handle Imbalanced Data',
-            description=textwrap.dedent('''\
-                Balance the dataset to ensure the model does not favor the
-                majority class over the minority class''')))
-
-        if self.preprocessor:
-            self.first_step.add_step(
-                MetaExplorerStep(tag='features_preprocessing', also_explore_without=True)
-            )
-        else:
-            self.first_step.add_step(
-                MetaPartialExplorerStep(
-                    tag='features_preprocessing',
-                    name="Dimensionality Reduction (optional)",
-                    description=textwrap.dedent('''\
-                        Reduce the complexity of data and make computations
-                        more efficient'''))
-            )
-
-        learning_tag = 'fast_predictor' if fast else 'predictor'
-
-        self.first_step.add_step(
-            MetaExplorerStep(
-                tag=learning_tag,
-                name="Machine learning models",
-                description="List of machine learning models IAML will try to optimize"))
-
-        self.minimal_predictor_step = self.__build_minimal_predictor_step()
-
-    def __build_minimal_predictor_step(self) -> MetaExplorerStep | None:
-        """Build the minimalist predictor stage if suitable models exist."""
-        minimal_step = MetaExplorerStep(
-            tag='minimal_predictor',
-            name='Minimalist Predictors',
-            description=textwrap.dedent('''\
-                Try high-performing boosting-style models without any preprocessing
-                to provide quick baseline candidates before the full pipeline is explored.'''))
-
-        if not minimal_step.steps:
-            return None
-
-        return minimal_step
+        """Install the shared default recipe, including its visible minimal branch."""
+        from .flow import PipelineSpec
+        self._flow_fast = fast
+        self.pipeline = PipelineSpec.default()
+        self._install_flow_pipeline()
 
     def __callback(self, callback: callable, **kwargs: dict) -> None:
         """Call callback function if defined
-        
+
         :param callable callback: Function to call.
         :param dict, optional \\**kwargs: Additional parameters.
         """
@@ -286,19 +371,23 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         groups: pd.DataFrame = None,
         groups_columns: list[str] = None,
         generation_sample_size: int = 200,
-        verbose: int = 1) -> Candidate:
-        """Run a very basic pipeline to train a model baseline 
-        
-        :param pd.DataFrame X: Training features 
+        verbose: int = 1) -> list[Candidate]:
+        """Run a very basic pipeline to train a model baseline
+
+        :param pd.DataFrame X: Training features
         :param pd.DataFrame y: Training labels
-        :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
+        :param pd.DataFrame, optional groups: Dataframe used to split data by groups.
             Default to None.
-        :param list[str], optional groups_columns: List of column names used to split data by 
+        :param list[str], optional groups_columns: List of column names used to split data by
             groups. Default to None.
-        :param int, optional generation_sample_size: Size of the sample dataset used to generate 
+        :param int, optional generation_sample_size: Size of the sample dataset used to generate
             first generation of candidates (default 200).
         :param int, optional verbose: Verbosity level. Default to 1.
-        :return: Baseline candidate
+
+        Configured metrics, objective and explanations are copied into baseline
+        candidates, independently of later edits to the study collections.
+
+        :return: List of fitted baseline candidates.
         """
         # Avoid [] dangerous default value in the signature
         if groups_columns is None:
@@ -317,15 +406,31 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             groups=groups,
             groups_columns=groups_columns)
 
+        metric_definitions = None
+        explanation_definitions = None
+        objective = self.main_metric
+        if hasattr(self, '_metrics_spec'):
+            from .study_analyses import compile_analyses, compile_metrics
+            metric_definitions, objective, _ = compile_metrics(
+                self.metrics.clone().freeze(), self.main_metric, dataset)
+            explanation_definitions = compile_analyses(self.explanations.clone().freeze())
+
         ### INITIAL GENERATE CANDIDATE
         init_candidate: Candidate = Candidate(
             dataset.sample(generation_sample_size),
-            main_metric=self.main_metric)
+            main_metric=objective,
+            metric_definitions=metric_definitions,
+            explanation_definitions=explanation_definitions)
 
         # Select metrics used to evaluate performances
-        for metric \
-            in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-            init_candidate.add_metric(metric)
+        if metric_definitions is None:
+            for metric in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
+                init_candidate.add_metric(metric)
+
+        if self.initial_preprocessor is not None:
+            initial_step = SklearnPreprocessor(self.initial_preprocessor)
+            initial_step.fit(init_candidate.dataset)
+            init_candidate = init_candidate.add_to_pipeline(initial_step)
 
         # Generate candidates
         candidates = baseline_pipe.run(init_candidate)
@@ -335,7 +440,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             if candidate.pipeline.predictor is not None]
 
         for candidate in candidates:
-            candidate.pipeline.fit(dataset.X, dataset.y)
+            candidate.pipeline.fit(
+                dataset.X, dataset.y, metrics=candidate.metrics,
+                explanations=[definition.component
+                              for definition in candidate.explanation_definitions or ()])
 
         return candidates
 
@@ -368,16 +476,16 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         callback: callable = None,
         verbose: int = 1,
         log_callback: callable = None) -> list[Candidate]:
-        """Run Pipeline to fit steps and models on X & y data. 
+        """Run Pipeline to fit steps and models on X & y data.
 
-        :param pd.DataFrame X: Training features 
+        :param pd.DataFrame X: Training features
         :param pd.DataFrame y: Training labels
-        :param pd.DataFrame, optional groups: Dataframe used to split data by groups. 
+        :param pd.DataFrame, optional groups: Dataframe used to split data by groups.
             Default to None.
-        :param list[str], optional groups_columns: List of column names used to split data by 
+        :param list[str], optional groups_columns: List of column names used to split data by
             groups. Default to None.
         :param int, optional patience: Max generation without improvement. Default to -1.
-        :param int, optional generation_sample_size: Size of the sample dataset used to generate 
+        :param int, optional generation_sample_size: Size of the sample dataset used to generate
             first generation of candidates (default 200).
         :param int, optional n_candidates: Number of candidates to return. Default to 1.
         :param callable, optional callback: Method call after each big step of training.
@@ -389,6 +497,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         if groups_columns is None:
             groups_columns = []
 
+        self._prepare_flow()
         self.check_pipeline() # Raise error if the pipeline is not valid
 
         Logger().verbose = verbose # Set logger verbose
@@ -396,7 +505,20 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             Logger().set_callback(log_callback)
 
         start_time = time.monotonic()
-        self.executor = TimedPoolExecutor(max_workers=self.max_workers)
+        self._search_deadline = (math.inf if self.max_duration == -1 else
+                                 start_time + max(0.0, self.max_duration))
+        self.executor = TimedPoolExecutor(
+            max_workers=self.max_workers,
+            deadline=None if math.isinf(self._search_deadline) else self._search_deadline)
+        self._evaluation_jobs = {}
+        self._evaluation_keys = {}
+        self._evaluation_queue = deque()
+        self._evaluation_sequence = 0
+        self._evaluation_progress = None
+        self._evaluation_results = {}
+        self._completed_evaluations = {}
+        self._evaluation_datasets = {}
+        self._evaluation_splitter_contexts = {}
         self.training_history = []
         self._training_history_seen = set()
 
@@ -424,9 +546,69 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             self.descriptive_statistics = None
 
             ### INITIAL GENERATE CANDIDATE
+            metric_definitions = None
+            explanation_definitions = None
+            statistic_definitions = None
+            objective = self.main_metric
+            self._study_snapshot = None
+            analysis_specs = {}
+            if hasattr(self, '_explanations_spec'):
+                from .study_analyses import compile_analyses
+                analysis_specs = {field: getattr(self, field).clone().freeze()
+                                  for field in ('metrics', 'statistics', 'explanations')}
+                explanation_definitions = compile_analyses(analysis_specs['explanations'])
+                # Validate result keys before fitting, even for on-demand analyses.
+                statistic_definitions = compile_analyses(analysis_specs['statistics'])
+            metric_recipe = getattr(self, '_metrics_spec', None)
+            metric_recipe_edited = (metric_recipe is not None and (
+                metric_recipe.tag is None or metric_recipe.children
+                or metric_recipe.excluded or metric_recipe._removed_ids
+                or any(getattr(node, '_declared_params', ()) or node.alias
+                       for node in metric_recipe._walk() if hasattr(node, 'parameters'))))
+            if (metric_recipe is not None
+                    and (getattr(self, '_flow_active', False)
+                         or getattr(self, '_metrics_explicit', False)
+                         or metric_recipe_edited)):
+                from .study_analyses import compile_metrics
+                metric_definitions, objective, metric_report = compile_metrics(
+                    analysis_specs['metrics'], self.main_metric, dataset)
+                resolved = getattr(self._flow_execution_root, '_flow_resolved_spec', None)
+                self._study_snapshot = {
+                    'pipeline': resolved.describe().to_dict() if resolved is not None else None,
+                    **{field: recipe.describe().to_dict()
+                       for field, recipe in analysis_specs.items()},
+                    'objective': objective,
+                    'metric_report': metric_report,
+                    'compiled_analyses': {
+                        field: [{
+                            'key': definition.key,
+                            'component': (type(definition.component).__module__ + '.'
+                                          + type(definition.component).__qualname__),
+                            'configuration': deepcopy(definition.configuration),
+                        } for definition in definitions]
+                        for field, definitions in (
+                            ('metrics', metric_definitions),
+                            ('statistics', statistic_definitions),
+                            ('explanations', explanation_definitions))
+                    },
+                }
+                from importlib.metadata import version, PackageNotFoundError
+                versions = {}
+                for package in (
+                        'PyIAML', 'numpy', 'pandas', 'scikit-learn', 'imbalanced-learn', 'shap'):
+                    try:
+                        versions[package] = version(package)
+                    except PackageNotFoundError:
+                        pass
+                self._study_snapshot['versions'] = versions
+                self._study_snapshot['catalogue'] = deepcopy(
+                    getattr(self._flow_execution_root, '_flow_catalogue', []))
             self.init_candidate: Candidate = Candidate(
                 dataset.sample(generation_sample_size),
-                main_metric=self.main_metric)
+                main_metric=objective,
+                metric_definitions=metric_definitions,
+                explanation_definitions=explanation_definitions,
+                study_snapshot=self._study_snapshot if hasattr(self, '_study_snapshot') else None)
 
             if self.initial_preprocessor is not None:
                 # Encode the generation sample so both branches can discover
@@ -437,11 +619,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 self.init_candidate = self.init_candidate.add_to_pipeline(initial_step)
 
             # Select metrics used to evaluate performances
-            for metric \
-                in self.__metrics_selection(dataset.X, dataset.y, dataset.type_of_target):
-                self.init_candidate.add_metric(metric)
+            if metric_definitions is None:
+                for metric in self.__metrics_selection(
+                        dataset.X, dataset.y, dataset.type_of_target):
+                    self.init_candidate.add_metric(metric)
 
-            minimal_candidates = self.__generate_minimal_candidates(self.init_candidate)
+            minimal_candidates = ([] if getattr(self, '_flow_active', False) else
+                                  self.__generate_minimal_candidates(self.init_candidate))
 
             # Generate candidates
             pipeline_candidates = self.__run(self.init_candidate)
@@ -454,26 +638,35 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 if candidate.pipeline.predictor is not None]
             self.candidates = candidates
 
+            if not candidates and getattr(self, '_flow_active', False):
+                raise ValueError('No applicable candidate pipeline matches the declared recipe')
+
             if minimal_candidates:
                 Logger().info(f"{len(minimal_candidates)} minimalist pipelines generated")
             Logger().info(f"{len(candidates)} generated pipelines")
 
 
+            sampling_started_at = time.monotonic()
+            warmup_dataset = dataset
+
             # Warmup is real CV, so it must use the same interruptible executor
             # and shared search/stage budgets as every subsequent evaluation.
-            # Minimal candidates already lead the pool and provide a quick,
-            # honestly evaluated starting point without removing full pipelines.
+            # Prefer a declared fast or baseline predictor without adding a
+            # model or changing the preprocessing specified by the recipe.
             warmup_candidate = None
             if candidates and remain_time() >= 1:
                 # A single slow baseline must leave time to evaluate the other
                 # candidates. Unlimited searches retain the stage duration cap.
                 remaining = remain_time()
                 warmup_timeout = remaining / 5
+                warmup_index = min(range(len(candidates)),
+                                   key=lambda index: self.__warmup_priority(candidates[index]))
+                warmup_input = candidates[warmup_index]
                 Logger().info(
                     f"Warming up (at most {min(warmup_timeout, self.max_stage_duration):.2f}s): "
-                    f"{candidates[0].pipeline.name}")
+                    f"{warmup_input.pipeline.name}")
                 warmup_candidates = self.__run_evaluations(
-                    candidates[:1], dataset, timeout=remaining, callback=callback,
+                    [warmup_input], dataset, timeout=remaining, callback=callback,
                     stage_timeout=warmup_timeout)
                 if warmup_candidates:
                     warmup_candidate = warmup_candidates[0]
@@ -482,36 +675,48 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     Logger().info("No warmup result within the stage budget.")
                     # Try alternatives before retrying the same candidate,
                     # especially when only one worker is available.
-                    candidates = candidates[1:] + candidates[:1]
+                    candidates = (candidates[:warmup_index] + candidates[warmup_index + 1:]
+                                  + [warmup_input])
 
             ### INITIAL EVALUATION
             # Evaluate candidates
             gen0_candidates = []
-            i = 0
-            can_be_downsize = True
-            while can_be_downsize and not gen0_candidates and remain_time() >= 1:
-                # If process is too long and dataset big enough,
-                # we can downsize it to get quicker training
-                if i > 0:
+            while not gen0_candidates and remain_time() >= 1:
+                can_be_downsize = (math.isfinite(self.time_before_sample_use)
+                                   and dataset.X.shape[0] >= 500)
+                sampling_delay = self.time_before_sample_use - (
+                    time.monotonic() - sampling_started_at)
+                if can_be_downsize and sampling_delay <= 0:
                     dataset = dataset.sample(0.1)
                     Logger().warning(f"Training is too time consuming. \
                         Let's try again with dataset sample. \
                         New features shape {dataset.X.shape}")
-                i+= 1
-                can_be_downsize = dataset.X.shape[0] >= 500
+                    sampling_started_at = time.monotonic()
+                    sampling_delay = self.time_before_sample_use
+                    can_be_downsize = dataset.X.shape[0] >= 500
 
-                timeout = min(remain_time(), self.time_before_sample_use) \
+                timeout = min(remain_time(), sampling_delay) \
                     if can_be_downsize else remain_time()
 
                 gen0_candidates = self.__run_evaluations(candidates,
                             dataset, timeout=timeout, callback=callback)
+                if not gen0_candidates and not self.__evaluations_pending():
+                    break
 
             if not gen0_candidates:
-                if warmup_candidate and warmup_candidate.computed_metrics:
+                fallback_candidates, fallback_dataset = self.__previous_population(dataset)
+                if fallback_candidates:
+                    Logger().warning(
+                        "No current-population result before timeout; using completed evaluations "
+                        "from one earlier search population."
+                    )
+                    gen0_candidates, dataset = fallback_candidates, fallback_dataset
+                elif warmup_candidate and warmup_candidate.computed_metrics:
                     Logger().warning(
                         "No candidates evaluated before timeout; using warmup candidate."
                     )
                     gen0_candidates = [warmup_candidate]
+                    dataset = warmup_dataset
                 elif remain_time() < 1:
                     raise TimeoutError('IAML was unable to generate a model within the \
                         imposed time limit. Try increasing the processing time')
@@ -527,6 +732,19 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                                         patience=patience,
                                         callback=callback)
 
+            # A finished optimizer or patience limit must not discard slower
+            # evaluations that were carried across earlier stage boundaries.
+            if self.__evaluations_pending():
+                trailing_candidates = self.__run_evaluations(
+                    [], dataset, timeout=remain_time(), callback=callback,
+                    drain_pending=True)
+                candidates = self.__merge_evaluated_candidates(candidates, trailing_candidates)
+
+            # Scores from earlier search populations remain available, but can
+            # enter this ranking only after evaluation on the current data.
+            candidates = self.__compare_completed_candidates(
+                candidates, dataset, timeout=remain_time(), callback=callback)
+
             ### FINAL FIT
             self.executor.shutdown()
 
@@ -539,12 +757,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                 Cache.reset()
                 current_candidate = deepcopy(candidate)
                 try:
-                    Logger().info(f"Final fit: {len(refit_X)} rows, {current_candidate.pipeline.name}")
+                    Logger().info(
+                        f"Final fit: {len(refit_X)} rows, {current_candidate.pipeline.name}")
                     current_candidate.pipeline.fit(
                         refit_X,
                         refit_y,
                         groups_columns=refit_groups_columns,
                         metrics=current_candidate.metrics,
+                        explanations=[definition.component for definition
+                                      in current_candidate.explanation_definitions or ()],
                     )
                 except (ValueError, np.linalg.LinAlgError) as exc:
                     Logger().warning(
@@ -560,6 +781,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
             self.chosen_candidate = fit_candidates[0]
             self.last_stage_candidates = candidates
+            if getattr(self, '_study_snapshot', None) is not None:
+                self._study_snapshot['evaluated_candidates'] = [
+                    candidate.pipeline_audit_summary() for candidate in candidates]
 
             return fit_candidates
         except TerminatedError:
@@ -569,6 +793,14 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             raise ex
         finally:
             self.executor.shutdown()
+            self._evaluation_progress = None
+            self._evaluation_jobs.clear()
+            self._evaluation_keys.clear()
+            self._evaluation_queue.clear()
+            self._evaluation_results.clear()
+            self._completed_evaluations.clear()
+            self._evaluation_datasets.clear()
+            self._evaluation_splitter_contexts.clear()
 
     @property
     def chosen_model(self) -> 'IAMLPipeline':
@@ -583,6 +815,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def visualize_descriptive_statistics(self) -> list[StatisticPlot]:
         """Return a list of plots that show descriptive statistics."""
+        if hasattr(self, '_statistics_spec') and self._last_dataset is not None:
+            self.get_descriptive_statistics()
         if self.descriptive_statistics is None and self._last_dataset is not None:
             self.__ensure_descriptive_statistics(self._last_dataset)
 
@@ -590,7 +824,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             return []
 
         plots: list[StatisticPlot] = []
-        stats_df = self.descriptive_statistics
+        from .study_analyses import canonical_statistics
+        stats_df = canonical_statistics(self.descriptive_statistics)
 
         def group_columns_by_feature(dataframe: pd.DataFrame) -> dict[str, list[str]]:
             columns = list(dataframe.columns)
@@ -630,15 +865,45 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         return plots
 
-    def get_descriptive_statistics(self) -> pd.DataFrame:
-        """Return descriptive statistics, computing them on demand if needed."""
-        if self.descriptive_statistics is None and self._last_dataset is not None:
-            self.__ensure_descriptive_statistics(self._last_dataset)
-
-        return self.descriptive_statistics if self.descriptive_statistics is not None else pd.DataFrame()
+    def get_descriptive_statistics(self, X=None, y=None) -> pd.DataFrame:
+        """Describe supplied data, or the last raw search dataset, without fitting."""
+        if X is None and y is not None:
+            raise ValueError('X and y must be supplied together')
+        if X is not None:
+            if y is None:
+                raise ValueError('The explicit descriptive request requires y')
+            dataset = Dataset(deepcopy(X), deepcopy(y))
+        else:
+            dataset = self._last_dataset
+        if dataset is None:
+            return pd.DataFrame()
+        if hasattr(self, '_statistics_spec'):
+            from .study_analyses import (compile_analyses, compute_statistics,
+                                         analyses_signature, copy_statistics)
+            definitions = compile_analyses(self.statistics)
+            signature = analyses_signature(definitions)
+            key = (dataset.fingerprint(), signature)
+            if signature is not None and key in self._descriptive_cache:
+                table, report = self._descriptive_cache[key]
+            else:
+                table, report = compute_statistics(definitions, dataset)
+                if signature is not None:
+                    self._descriptive_cache[key] = (copy_statistics(table), deepcopy(report))
+            self._analysis_reports['statistics'] = deepcopy(report)
+            if X is None:
+                self.descriptive_statistics = copy_statistics(table)
+            return copy_statistics(table)
+        if X is not None:
+            return self.__compute_descriptive_statistics(dataset).copy(deep=True)
+        self.__ensure_descriptive_statistics(dataset)
+        return (self.descriptive_statistics.copy(deep=True)
+                if self.descriptive_statistics is not None else pd.DataFrame())
 
     def __ensure_descriptive_statistics(self, dataset: Dataset) -> None:
         """Compute descriptive statistics once, for on-demand usage."""
+        if hasattr(self, '_statistics_spec'):
+            self.get_descriptive_statistics()
+            return
         if self.descriptive_statistics is not None:
             return
 
@@ -661,7 +926,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def check_pipeline(self) -> None:
         """Raise Exception if pipeline is not valid
-        
+
         :raise AttributeError: Step Pipeline must contains at least one predictor
         """
         steps = self.__all_steps()
@@ -672,6 +937,13 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         # TODO Others tests ?
 
+    @staticmethod
+    def __warmup_priority(candidate):
+        model = candidate.pipeline.predictor[1]
+        tags = set(model.tags or ())
+        return (not bool(tags & {'fast_predictor', 'baseline_predictor'}),
+                len(candidate.pipeline.transformers))
+
     def __run_evaluations(
         self,
         candidates: list[Candidate],
@@ -679,9 +951,10 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         timeout: float = None,
         stage_number: int = None,
         callback: callable = None,
-        stage_timeout: float = None) -> list[Candidate]:
+        stage_timeout: float = None,
+        drain_pending: bool = False) -> list[Candidate]:
         """Evaluate candidates
-        
+
         :param list[Candidate] candidates: Candidates to evaluate.
         :param Dataset dataset: Dataset used for evaluation.
         :param float, optional timeout: Budget including preparation and submission.
@@ -690,16 +963,37 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param callable, optional callback: Method called after evaluation. Default to None.
         :param float, optional stage_timeout: Additional cap for this evaluation only;
             the callback still reports the remaining ``timeout`` budget.
+        :param bool, optional drain_pending: Finish evaluations carried over from
+            earlier stages, bounded only by the remaining global search budget.
         """
         start_time = time.monotonic()
-        budget = self.max_stage_duration if timeout is None else min(timeout, self.max_stage_duration)
+        global_deadline = getattr(self, '_search_deadline', None)
+        if global_deadline is None:
+            global_deadline = (math.inf if timeout is None else
+                               start_time + max(0.0, timeout))
+        budget = (global_deadline - start_time if drain_pending else
+                  self.max_stage_duration if timeout is None else
+                  min(timeout, self.max_stage_duration))
         if stage_timeout is not None:
             budget = min(budget, stage_timeout)
-        deadline = start_time + max(0.0, budget)
+        deadline = min(global_deadline, start_time + max(0.0, budget))
+        if not hasattr(self, '_evaluation_jobs'):
+            self._evaluation_jobs = {}
+            self._evaluation_keys = {}
+            self._evaluation_queue = deque()
+            self._evaluation_sequence = 0
+            self._evaluation_results = {}
+            self._completed_evaluations = {}
+            self._evaluation_datasets = {}
+            self._evaluation_splitter_contexts = {}
         new_candidates: list[Candidate] = []
         splitter_fingerprint = hash_evaluation_context(self.splitter)
-        dataset_key = dataset.fingerprint() if splitter_fingerprint is not None else None
-        evaluation_cache_keys: set[str] = set()
+        dataset_key = dataset.fingerprint()
+        self._evaluation_datasets[dataset_key] = dataset
+        if candidates or dataset_key not in self._evaluation_splitter_contexts:
+            self._evaluation_splitter_contexts[dataset_key] = (
+                id(self.splitter), splitter_fingerprint)
+        evaluation_cache_keys = {}
         with Logger().progress as progress:
             task = progress.add_task(
                 f'Stage {stage_number}' if stage_number is not None else "Initial evaluation",
@@ -708,33 +1002,99 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             def update_progressbar(*args): # pylint: disable=unused-argument
                 progress.update(task, advance=1)
 
-            self.executor.set_callback(update_progressbar)
+            self._evaluation_progress = update_progressbar
             for candidate in candidates:
-                if time.monotonic() >= deadline:
-                    break
                 cache_key = self.__evaluation_cache_key(candidate, splitter_fingerprint)
-                if cache_key is not None:
-                    evaluation_cache_keys.add(cache_key)
+                # Pending evaluations can share a callable's identity without
+                # making its unpickleable context eligible for persistent caching.
+                signature = candidate.evaluation_context_signature()
+                key = ((cache_key, dataset_key) if cache_key is not None else
+                       (candidate.pipeline.fingerprint(), signature,
+                        id(self.splitter), dataset_key, self.keep_training_history)
+                       if signature is not None else (id(candidate), dataset_key))
+                if key in self._evaluation_keys:
+                    continue
+                if time.monotonic() >= deadline:
+                    self.__queue_evaluation(candidate, dataset, key, cache_key, dataset_key)
+                    continue
                 from_cache = Cache().from_cache(cache_key, dataset_key) if cache_key else None
 
                 if from_cache:
                     self.__hydrate_cached_candidate(candidate, from_cache, dataset)
                     new_candidates.append(candidate)
+                    self._evaluation_results[id(candidate)] = (ref(candidate), key)
                     update_progressbar() # Update progressbar even if data come from cache
                 else:
-                    submitted = self.executor.submit(
-                            process_executor,
-                            candidate,
-                            dataset,
-                            deadline=deadline,
-                            splitter=self.splitter,
-                            store_audit=self.keep_training_history,
-                        )
-                    if not submitted:
-                        break
+                    self.__queue_evaluation(candidate, dataset, key, cache_key, dataset_key)
+                if cache_key is not None:
+                    evaluation_cache_keys[candidate.pipeline.fingerprint()] = (
+                        cache_key, dataset_key)
+
+            while self._evaluation_queue and time.monotonic() < deadline:
+                job_id = self._evaluation_queue[0]
+                job = self._evaluation_jobs.get(job_id)
+                if job is None:
+                    self._evaluation_queue.popleft()
+                    continue
+
+                def completed(result=Ellipsis, evaluation_id=job_id):
+                    current_progress = self._evaluation_progress
+                    if current_progress is not None:
+                        current_progress()
+                    if result is None:
+                        failed_job = self._evaluation_jobs.pop(evaluation_id, None)
+                        if failed_job is not None:
+                            self._evaluation_keys.pop(failed_job['key'], None)
+
+                self.executor.set_callback(completed)
+                submitted = self.executor.submit(
+                    process_executor, job['candidate'], job['dataset'], deadline=deadline,
+                    splitter=job['splitter'], store_audit=job['store_audit'],
+                    evaluation_id=job_id, queued_at=job['queued_at'])
+                if not submitted:
+                    break
+                self._evaluation_queue.popleft()
 
             # Preparation and submission have already consumed part of the budget.
-            new_candidates += self.executor.join(max(0.0, deadline - time.monotonic()))
+            cancel_pending = (drain_pending or deadline >= global_deadline
+                              or not getattr(self.executor, 'sliding_stages', True))
+            results = self.executor.join(
+                max(0.0, deadline - time.monotonic()), cancel_pending=cancel_pending)
+            self._evaluation_progress = None
+            for result in results:
+                if isinstance(result, tuple) and len(result) == 2:
+                    job_id, candidate = result
+                    job = self._evaluation_jobs.pop(job_id, None)
+                    if job is None:
+                        continue
+                    self._evaluation_keys.pop(job['key'], None)
+                    self._evaluation_results[id(candidate)] = (ref(candidate), job['key'])
+                    self.__cache_evaluation(candidate, job['cache_key'], job['dataset_key'])
+                else:
+                    # Retain the original Candidate result contract for custom
+                    # executors that do not forward the internal job identifier.
+                    candidate = result
+                    cache_context = evaluation_cache_keys.get(candidate.pipeline.fingerprint())
+                    if cache_context is not None:
+                        self.__cache_evaluation(candidate, *cache_context)
+                    for job_id, job in list(self._evaluation_jobs.items()):
+                        if (job['candidate'].pipeline.fingerprint()
+                                == candidate.pipeline.fingerprint()):
+                            self._evaluation_jobs.pop(job_id, None)
+                            self._evaluation_keys.pop(job['key'], None)
+                            self._evaluation_results[id(candidate)] = (ref(candidate), job['key'])
+                            break
+                new_candidates.append(candidate)
+            if cancel_pending and time.monotonic() >= global_deadline:
+                self._evaluation_jobs.clear()
+                self._evaluation_keys.clear()
+                self._evaluation_queue.clear()
+            elif cancel_pending and not drain_pending:
+                deferred = set(self._evaluation_queue)
+                for job_id, job in list(self._evaluation_jobs.items()):
+                    if job_id not in deferred:
+                        self._evaluation_jobs.pop(job_id, None)
+                        self._evaluation_keys.pop(job['key'], None)
             self.__collect_training_history(new_candidates)
 
             if new_candidates:
@@ -743,7 +1103,18 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                     Logger().warning(
                         f"Skipped {skipped} candidates with no computed metrics."
                     )
-                new_candidates = [candidate for candidate in new_candidates if candidate.computed_metrics]
+                new_candidates = [candidate for candidate in new_candidates
+                                  if candidate.computed_metrics]
+
+            for candidate in new_candidates:
+                context = self._evaluation_results.get(id(candidate))
+                if context is not None and context[0]() is candidate:
+                    self._completed_evaluations[context[1]] = candidate
+
+            # A result carried across a downsizing boundary belongs to the
+            # population on which its worker actually evaluated it.
+            new_candidates = [candidate for candidate in new_candidates
+                              if self.__evaluation_matches(candidate, dataset_key)]
 
             new_candidates.sort(reverse=True)
 
@@ -754,16 +1125,6 @@ class IAML:  # pylint: disable=too-many-instance-attributes
             else:
                 progress.tasks[task].description = f'{progress.tasks[task].description} \
                     (no result)'
-
-        # Add to cache
-        for candidate in new_candidates:
-            cache_key = self.__evaluation_cache_key(candidate, splitter_fingerprint)
-            if cache_key in evaluation_cache_keys and not Cache().from_cache(cache_key, dataset_key):
-                Cache().add_to_cache(
-                    cache_key,
-                    dataset_key,
-                    self.__build_cached_candidate(candidate),
-                )
 
         best_metric = new_candidates[0].get_main_metric_value() if new_candidates else None
         remaining_time = (budget if timeout is None else timeout) - (time.monotonic() - start_time)
@@ -778,14 +1139,115 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         return new_candidates
 
+    def __queue_evaluation(self, candidate, dataset, key, cache_key, dataset_key):
+        """Keep both submitted and deferred candidates across stage boundaries."""
+        self._evaluation_sequence += 1
+        job_id = self._evaluation_sequence
+        self._evaluation_jobs[job_id] = {
+            'candidate': candidate, 'dataset': dataset, 'key': key,
+            'cache_key': cache_key, 'dataset_key': dataset_key,
+            'splitter': self.splitter, 'store_audit': self.keep_training_history,
+            'queued_at': time.monotonic() if Logger().verbose > 1 else None,
+        }
+        self._evaluation_keys[key] = job_id
+        self._evaluation_queue.append(job_id)
+        Logger().info(f"Evaluation {job_id} queued on {len(dataset.X)} rows: "
+                      f"{candidate.pipeline.name}")
+
+    def __cache_evaluation(self, candidate, cache_key, dataset_key):
+        """Cache completed scores with their original evaluation context."""
+        if (candidate.computed_metrics and cache_key is not None
+                and not Cache().from_cache(cache_key, dataset_key)):
+            Cache().add_to_cache(cache_key, dataset_key, self.__build_cached_candidate(candidate))
+
+    def __evaluations_pending(self):
+        """Whether submitted or deferred evaluation work remains."""
+        return bool(getattr(self, '_evaluation_jobs', {}))
+
+    def __evaluation_matches(self, candidate, dataset_key):
+        context = getattr(self, '_evaluation_results', {}).get(id(candidate))
+        if context is not None and context[0]() is candidate:
+            key = context[1]
+            evaluated_dataset = key[3] if len(key) == 5 else key[-1]
+            if evaluated_dataset != dataset_key:
+                return False
+            splitter_id, splitter_key = self._evaluation_splitter_contexts[dataset_key]
+            if len(key) == 2 and isinstance(key[0], str) and key[0].startswith('IAML_'):
+                return key[0].startswith(f'IAML_{splitter_key}_')
+            return len(key) != 5 or key[2] == splitter_id
+        audit_key = (candidate.training_audit or {}).get('dataset_fingerprint')
+        return audit_key is None or audit_key == dataset_key
+
+    def __previous_population(self, current_dataset):
+        """Choose one population with completed scores without comparing populations."""
+        populations = getattr(self, '_evaluation_datasets', {})
+        current_key = current_dataset.fingerprint()
+        ordered_keys = [current_key] + [key for key in reversed(populations) if key != current_key]
+        completed = list(getattr(self, '_completed_evaluations', {}).values())
+        for dataset_key in ordered_keys:
+            candidates = [candidate for candidate in completed
+                          if self.__evaluation_matches(candidate, dataset_key)]
+            if candidates:
+                return self.__merge_evaluated_candidates([], candidates), populations.get(
+                    dataset_key, current_dataset)
+        return [], current_dataset
+
+    def __compare_completed_candidates(self, candidates, dataset, timeout, callback=None):
+        """Use remaining search time to bring earlier candidates onto common data."""
+        dataset_key = dataset.fingerprint()
+        completed = list(getattr(self, '_completed_evaluations', {}).values())
+        comparable = [candidate for candidate in candidates + completed
+                      if self.__evaluation_matches(candidate, dataset_key)]
+        comparable = self.__merge_evaluated_candidates([], comparable)
+        signatures = {(candidate.pipeline.fingerprint(), candidate.evaluation_context_signature())
+                      for candidate in comparable}
+        missing = {}
+        for candidate in completed:
+            signature = candidate.pipeline.fingerprint(), candidate.evaluation_context_signature()
+            if signature not in signatures:
+                missing.setdefault(signature, candidate)
+        if missing and timeout > 0:
+            Logger().info(f"Comparing {len(missing)} earlier pipelines on {len(dataset.X)} rows")
+            previous_context = self._evaluation_splitter_contexts.get(dataset_key)
+            completed = self.__run_evaluations(
+                [copy(candidate) for candidate in missing.values()], dataset,
+                timeout=timeout, callback=callback, drain_pending=True)
+            merged = self.__merge_evaluated_candidates(comparable, completed)
+            current = [candidate for candidate in merged
+                       if self.__evaluation_matches(candidate, dataset_key)]
+            if current:
+                comparable = current
+            elif previous_context is not None:
+                self._evaluation_splitter_contexts[dataset_key] = previous_context
+        return comparable
+
+    def __merge_evaluated_candidates(self, previous, completed):
+        """Retain scored pipelines while incorporating later stage results."""
+        merged = {}
+        for candidate in previous + completed:
+            signature = candidate.evaluation_context_signature()
+            audit = candidate.training_audit or {}
+            context = getattr(self, '_evaluation_results', {}).get(id(candidate))
+            key = context[1] if context is not None and context[0]() is candidate else (
+                candidate.pipeline.fingerprint(),
+                hash_evaluation_context(signature), audit.get('dataset_fingerprint'))
+            existing = merged.get(key)
+            if (existing is None
+                    or candidate.get_main_metric_score() >= existing.get_main_metric_score()):
+                merged[key] = candidate
+        return sorted(merged.values(), reverse=True)
+
     def __evaluation_cache_key(
         self, candidate: Candidate, splitter_fingerprint: str | None
     ) -> str | None:
         """Keep scores separate for each splitter and metric configuration."""
         if splitter_fingerprint is None:
             return None
+        signature = candidate.evaluation_context_signature()
+        if signature is None:
+            return None
         context = hash_evaluation_context(
-            candidate.pipeline.fingerprint(), candidate.metrics, candidate.main_metric,
+            candidate.pipeline.fingerprint(), signature,
             self.keep_training_history,
         )
         if context is None:
@@ -798,10 +1260,15 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
     def __build_cached_candidate(self, candidate: Candidate) -> dict[str, Any] | dict[str, float]:
         """Build the payload stored in cache for evaluated candidates."""
-        if self.keep_training_history and candidate.training_audit is not None:
+        if (self.keep_training_history and candidate.training_audit is not None
+                or getattr(candidate, 'metric_coverage', None)):
             return {
                 "__computed_metrics__": deepcopy(candidate.computed_metrics),
-                "__training_audit__": deepcopy(candidate.training_audit),
+                "__training_audit__": (deepcopy(candidate.training_audit)
+                                       if self.keep_training_history else None),
+                "__metric_coverage__": deepcopy(candidate.metric_coverage),
+                "__fold_metrics__": deepcopy(candidate.fold_metrics),
+                "__metric_report__": deepcopy(candidate.metric_report),
             }
         return deepcopy(candidate.computed_metrics)
 
@@ -817,6 +1284,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         if isinstance(payload, dict) and "__computed_metrics__" in payload:
             candidate.computed_metrics = deepcopy(payload["__computed_metrics__"])
+            candidate.metric_coverage = deepcopy(payload.get('__metric_coverage__', {}))
+            candidate.fold_metrics = deepcopy(payload.get('__fold_metrics__', []))
+            candidate.metric_report = deepcopy(payload.get('__metric_report__', []))
             audit = payload.get("__training_audit__")
             if audit is not None:
                 candidate.training_audit = deepcopy(audit)
@@ -862,7 +1332,7 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         max_duration: int = -1,
         callback: callable = None) -> list[Candidate]:
         """Optimize candidates.
-        
+
         :param Dataset dataset: Dataset used for optimization.
         :param list[Candidate], optional candidates: Candidates to optimize.
         :param Optimizer, optional optimizer: Optimizer to use.
@@ -915,14 +1385,23 @@ class IAML:  # pylint: disable=too-many-instance-attributes
                         callback=callback)
 
             # Remove not computed (error or timeout)
-            evaluated_candidates = [candidate for candidate in evaluated_candidates if candidate.computed_metrics]
+            evaluated_candidates = [candidate for candidate in evaluated_candidates
+                                    if candidate.computed_metrics]
 
             if not evaluated_candidates:
-                Logger().warning('No candidates produced a valid evaluation; keeping previous best candidates.')
                 candidates = previous_candidates
-                break
+                if not self.__evaluations_pending():
+                    Logger().warning(
+                        'No candidates produced a valid evaluation; keeping previous best candidates.')
+                    break
+                # A stage timeout only pauses result collection. In particular,
+                # it must not spend patience before slower jobs can be scored.
+                duration = time.monotonic() - starting_time
+                iterations_count += 1
+                continue
 
-            candidates = evaluated_candidates
+            candidates = self.__merge_evaluated_candidates(
+                previous_candidates, evaluated_candidates)
             previous_candidates = candidates
 
             # Improvement ?
@@ -1003,7 +1482,9 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :return: List of all the generated candidates. Sorted by performances.
         """
         Logger().info("Generate candidate...")
-        self.candidates = self.first_step.run(candidate)
+        root = (self._flow_execution_root if getattr(self, '_flow_active', False)
+                else self.first_step)
+        self.candidates = root.run(candidate)
 
         return self.candidates
 
@@ -1016,13 +1497,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         :return: Loaded Pipeline in a JSON format
         """
+        if self.first_step is None:
+            self._prepare_flow()
         return self.first_step.json_pipeline()
 
     def all_configurations(self) -> list[dict]:
-        """Return a dict with configurations of all steps. 
+        """Return a dict with configurations of all steps.
 
-        :return: Configurations of all steps. 
+        :return: Configurations of all steps.
         """
+        if self.first_step is None:
+            self._prepare_flow()
         return self.first_step.all_configurations()
 
     def configure_all(self, configs: dict) -> None:
@@ -1031,11 +1516,17 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         :param dict configs: key is a step_id and value is the configuration to set.
         """
         all_steps = self.__all_steps()
+        recipe_nodes = ({node.node_id: node for node in self.pipeline._walk()}
+                        if self.pipeline is not None else {})
 
         for step_id, config in configs.items():
             current_step: Step = self.__find_step_by_id(all_steps, step_id)
             if current_step:
-                for key, value in config:
+                updates = dict(config)
+                recipe = recipe_nodes.get(getattr(current_step, '_flow_node_id', None))
+                if recipe is not None and hasattr(recipe, 'configure'):
+                    recipe.configure(**updates)
+                for key, value in updates.items():
                     current_step.configure(key, value)  # pylint: disable=no-member
 
     def __all_steps(self) -> list[Step]:
@@ -1043,6 +1534,8 @@ class IAML:  # pylint: disable=too-many-instance-attributes
 
         :return: All flatten pipelines's steps
         """
+        if self.first_step is None:
+            self._prepare_flow()
         return self.first_step.all_steps()
 
     def __find_step_by_id(self, step_list: list[Step], step_id: int) -> Step | None:
@@ -1058,15 +1551,37 @@ class IAML:  # pylint: disable=too-many-instance-attributes
         return None
 
 
-def process_executor(candidate: Candidate, *args, **kwargs) -> 'Candidate':
+class _EvaluationResult(NamedTuple):
+    """Associate an internal job identifier with its public candidate result."""
+
+    evaluation_id: int
+    candidate: Candidate
+
+    def __str__(self):
+        return str(self.candidate)
+
+
+def process_executor(candidate: Candidate, *args, evaluation_id=None, queued_at=None, **kwargs):
     """Wrap candidate training to run it in subprocess
 
     :param Candidate candidate: Not trained candidate.
     :param tuple, optional \\*args: Additional parameters.
     :param dict, optional \\**kwargs: Additional parameters.
-    :return: Trained candidate.
+    :return: Trained candidate, paired with the internal evaluation identifier
+        when called by the search orchestrator.
     """
-    # Deepcopy -> Without it, process end is never detected. Strange...
+    logger = Logger()
+    started_at = time.monotonic() if logger.verbose > 1 else None
+    if started_at is not None:
+        wait = max(0.0, started_at - queued_at) if queued_at is not None else 0.0
+        logger.info(f"Evaluation {evaluation_id} started after {wait:.2f}s waiting: "
+                    f"{candidate.pipeline.name}")
     candidate = deepcopy(candidate)
-    candidate.training_evaluate(*args, **kwargs)
-    return candidate
+    try:
+        candidate.training_evaluate(*args, **kwargs)
+        return candidate if evaluation_id is None else _EvaluationResult(evaluation_id, candidate)
+    finally:
+        if started_at is not None:
+            status = 'success' if candidate.computed_metrics else 'failed'
+            logger.info(f"Evaluation {evaluation_id} finished in "
+                        f"{time.monotonic() - started_at:.2f}s ({status})")

@@ -34,9 +34,9 @@ For this section, use the :ref:`build-probabilities` configuration when creating
 ``search``, before fitting. With a binary probability model, IAML explains the
 second probability column, ``predict_proba(X)[:, 1]``. Check
 ``model.pipeline.classes_[1]`` to identify the class being explained. In the
-synthetic Build example, class ``1`` has no clinical meaning. Define its meaning
-explicitly for your study's outcome.
-This choice does not change when a metric uses a different positive label.
+synthetic Build example this is label ``1``; see :ref:`evaluate-positive-class`
+for defining the event of interest. A metric's ``pos_label`` does not change
+which output SHAP explains.
 
 Start with a few held-out rows to inspect individual predictions:
 
@@ -106,6 +106,50 @@ In a notebook, display the same image directly:
 
 The same ``plot.image`` interface is available for the performance figures
 described in :doc:`evaluation`.
+
+.. _configure-explanations-for-the-study:
+.. _explain-configure-collection:
+
+Reuse explanation settings across candidates
+============================================
+
+For repeated analyses, an optional ``explanations`` collection records the
+methods and parameters to use. Add this configuration to the binary Build
+example before ``fit``; fitting itself does not calculate these explanations:
+
+.. code-block:: python
+
+    from iaml import ConfusionMatrixPlot
+    from iaml.explainers import KernelSHAP
+    from iaml.flow import explanations, use
+
+    search.explanations.replace(explanations(
+        use(ConfusionMatrixPlot).named("confusion"),
+        use(KernelSHAP, nsamples=20).named("shap"),
+    ))
+
+After fitting, request calculations on the held-out observations:
+
+.. code-block:: python
+
+    results = model.explain(X_test.iloc[:5], y_test.iloc[:5])
+    print(model.explanation_report)
+    if "shap" in results:
+        print(results["shap"].to_markdown_shap())
+    if "confusion" in results:
+        print(results["confusion"].title)
+
+The result dictionary uses the configured aliases. Each successful value
+keeps its native type: an ``Explanation`` for SHAP or a plot object for a
+performance figure. Calculations run only when requested. The report
+distinguishes successful, inapplicable and failed methods; an individual
+failure preserves the other successful outputs. SHAP is imported on demand.
+Without ``y``, methods that need observed outcomes are inapplicable.
+
+Each candidate retains the configuration from its training run; later edits
+to ``search.explanations`` apply to the next run. The direct calls illustrated
+above remain available. See :ref:`pipelines-study-explanations` for collection
+editing and :ref:`pipelines-study-implementation` for report details.
 
 Next: :doc:`scientific` explains which settings and outputs to retain for a
 study report.

@@ -2,10 +2,9 @@
 From data to explanations
 =========================
 
-The :doc:`quick_start` gives you a trained, usable pipeline. This example shows
-what you can obtain from the same workflow with **performance plots, SHAP
-explanations and a record of the analysis**. All figures below come from one
-IAML run.
+Apply the workflow from :doc:`quick_start` to one dataset, then read its
+performance plots and SHAP explanations. All figures below come from one
+IAML run; the complete script also saves a record of the analysis.
 
 The question is concrete: can measurements in the breast cancer dataset bundled
 with scikit-learn distinguish malignant from benign samples? To keep the example
@@ -16,9 +15,10 @@ The script reverses the original dataset labels to make that convention explicit
 Read the results
 ================
 
-IAML compares candidates using five-fold cross-validation, then fits the
-selected pipeline on the training observations. In the illustrated run it
-selected a **CatBoost classifier**, with no additional feature transformation.
+By default, IAML compares candidates using three-fold cross-validation, then
+fits the selected pipeline on the training observations. The illustrated run
+used five folds and selected a **CatBoost classifier**, with no additional
+feature transformation.
 The ROC AUC on the held-out observations is **0.967** in this run.
 
 .. figure:: _static/showcase/roc.png
@@ -37,8 +37,9 @@ The ROC AUC on the held-out observations is **0.967** in this run.
 
 ``chosen_model.explain_model_performance(X_test, y_test)`` generates these
 figures together with a precision–recall curve, classification report and
-prediction-error plot. The script chooses ROC AUC as its objective so that the
-selected classifier supports the probabilities needed by these plots.
+prediction-error plot. The script optimizes ROC AUC. ROC and precision–recall
+curves accept decision scores or probabilities; the classifier in this
+illustrated run also supplied probabilities for its SHAP explanations.
 
 .. _precision-recall:
 
@@ -102,5 +103,6 @@ The illustration uses ``nsamples=64`` with six features. This controls SHAP's
 sampling effort, separately from the five observations being explained.
 See :doc:`explainability` for the explained output, background and interpretation.
 
-To adapt the workflow to your own study, continue with :doc:`usage`,
-:doc:`evaluation` and :doc:`scientific`.
+To adapt the data format, validation design or training budget, continue with
+:doc:`usage`. The :doc:`evaluation`, :doc:`explainability` and
+:doc:`scientific` guides explain the individual outputs and reporting choices.

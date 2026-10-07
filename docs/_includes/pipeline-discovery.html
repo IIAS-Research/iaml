@@ -1,0 +1,463 @@
+<div class="iaml-demo iaml-pipeline-discovery" data-iaml-demo>
+  <div class="iaml-story-pin">
+    <div class="iaml-story-topline iaml-story-topline--pipeline">
+      <a class="iaml-story-skip" href="index.html">← Discover IAML</a>
+      <a class="iaml-story-skip" href="pipelines/index.html">Explore advanced guides ↗</a>
+    </div>
+    <nav class="iaml-story-controls" data-scroll-steps aria-label="Jump to a step in Customize IAML">
+      <button type="button" data-story-step="0">01 <span>Intro</span></button>
+      <button type="button" data-story-step="1">02 <span>Adapt</span></button>
+      <button type="button" data-story-step="2">03 <span>Compose</span></button>
+      <button type="button" data-story-step="3">04 <span>Add</span></button>
+      <button type="button" data-story-step="4">05 <span>Exclude</span></button>
+      <button type="button" data-story-step="5">06 <span>Configure</span></button>
+      <button type="button" data-story-step="6">07 <span>Reuse</span></button>
+      <button type="button" data-story-step="7">08 <span>Extend</span></button>
+      <button type="button" data-story-step="8">09 <span>Study</span></button>
+      <button type="button" data-story-step="9">10 <span>Search</span></button>
+      <button type="button" data-story-step="10">11 <span>Inspect</span></button>
+      <button type="button" data-story-step="11">12 <span>Continue</span></button>
+    </nav>
+    <div class="iaml-story-scene">
+      <section class="iaml-story-phase iaml-story-welcome" data-story-phase="0" aria-labelledby="pipeline-welcome-title">
+        <div class="iaml-story-caption" data-story-caption="0">
+          <span class="iaml-story-label">CUSTOMIZE IAML</span>
+          <h2 id="pipeline-welcome-title">Make IAML work your team's way.</h2>
+          <p>Adapt the ready-to-use workflow or compose your own. Reuse recipes, plug in your team's methods and configure the whole study. IAML keeps the search, validation and fitting.</p>
+          <nav class="iaml-advanced-overview" aria-label="Choose a part of the advanced workflow">
+            <a href="#story-api-title" data-story-step="2">Build recipes</a>
+            <a href="#pipeline-extend-title" data-story-step="7">Add your methods</a>
+            <a href="#pipeline-study-title" data-story-step="8">Configure a study</a>
+          </nav>
+        </div>
+        <a class="iaml-story-invitation" href="#pipeline-adapt-title" data-story-step="1"><span aria-hidden="true">↓</span> Scroll to explore advanced IAML</a>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="1" aria-labelledby="pipeline-adapt-title">
+        <div class="iaml-story-caption" data-story-caption="1">
+          <span class="iaml-story-label">01 / ADAPT THE BUILT-IN WORKFLOW</span>
+          <h3 id="pipeline-adapt-title">Start with everything. Keep what you need.</h3>
+          <p>The built-in workflow is an editable recipe. Narrow a component family or remove a strategy using the same operations as your own pipelines.</p>
+        </div>
+        <div class="iaml-api-workbench">
+          <div class="iaml-api-editor">
+            <div class="iaml-api-editor-header"><span class="iaml-story-label">ADAPT THE PRESET</span><span>Python</span></div>
+            <div id="api-panel-adapt" class="iaml-api-panel" role="region" aria-label="Python recipe: adapt the default workflow" tabindex="0">
+              <pre><code>from iaml.flow import PipelineSpec
+from iaml.steps import MaxAbsScaler, UnitNormScaler
+
+pipeline = PipelineSpec.<span class="iaml-api-code-call">default</span>()
+pipeline.main.normalize.<span class="iaml-api-code-call">remove</span>(UnitNormScaler, MaxAbsScaler)
+pipeline.<span class="iaml-api-code-call">remove</span>("minimal")</code></pre>
+              <p>Edit <code>IAML().pipeline</code> directly, or prepare a recipe with <code>PipelineSpec.default()</code>.</p>
+            </div>
+            <div class="iaml-api-run"><span aria-hidden="true">→</span><code>IAML(pipeline=pipeline).fit(X, y)</code></div>
+          </div>
+          <div class="iaml-api-visual iaml-advanced-visual">
+            <div class="iaml-advanced-cards">
+              <div class="iaml-advanced-card"><span class="iaml-story-label">THE DEFAULT PRESET</span><strong>main + minimal</strong><p>Two visible strategies, ready to train.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">YOUR SEARCH SCOPE</span><strong>Keep the main strategy</strong><p>Explore its normalizers, except UnitNormScaler and MaxAbsScaler. The minimal branch is removed.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">YOUR TEAM'S FAMILIES</span><strong>Discover, then subtract</strong><p><code>normalizers()</code> and <code>predictors()</code> gather registered methods into editable groups.</p></div>
+            </div>
+            <a class="iaml-story-stage-link" href="pipelines/guide.html#start-from-the-preset-or-your-own-recipe">Adapt the preset or build from scratch ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="2" aria-labelledby="story-api-title">
+        <div class="iaml-story-caption" data-story-caption="2">
+          <span class="iaml-story-label">02 / COMPOSE THE RECIPE</span>
+          <h3 id="story-api-title">Compose reusable methods.</h3>
+          <p>Connect steps with <code>&gt;&gt;</code> and declare alternatives with <code>choice</code>. One recipe describes every permitted combination.</p>
+        </div>
+        <div class="iaml-api-demo" data-api-state="compose">
+          <div class="iaml-api-workbench">
+            <div class="iaml-api-editor">
+              <div class="iaml-api-editor-header"><span class="iaml-story-label">COMPOSE THE RECIPE</span><span>Python</span></div>
+              <div id="api-panel-compose" class="iaml-api-panel" role="region" aria-label="Python recipe: compose" tabindex="0" data-api-panel="compose">
+                <pre><code>pipeline = (
+    use(SimpleImputer).named("cleaning")
+    <span class="iaml-story-code-operator">&gt;&gt;</span> <span class="iaml-api-code-call">choice</span>(
+        StandardScaler, RobustScaler,
+    ).named("normalize")
+    <span class="iaml-story-code-operator">&gt;&gt;</span> <span class="iaml-api-code-call">choice</span>(
+        LogisticRegression,
+        use(RandomForestClassifier).named("forest"),
+    ).named("models")
+)</code></pre>
+                <p>Aliases such as <code>normalize</code> and <code>forest</code> let you target these objects in later edits.</p>
+              </div>
+              <div class="iaml-api-run"><span aria-hidden="true">→</span><code>IAML(pipeline=pipeline).fit(X, y)</code></div>
+            </div>
+            <div class="iaml-api-visual">
+              <div class="iaml-api-scope"><strong data-api-count>4</strong><span>permitted pipeline structures</span></div>
+              <div class="iaml-api-map" role="img" aria-label="Imputation, a choice of Standard or Robust scaling, then a choice of logistic regression or random forest: four permitted structures." data-api-map>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Prepare</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Impute</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Normalize</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Standard</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node" data-api-robust>Robust</span></div>
+                </div>
+                <div class="iaml-api-stage iaml-api-stage-optional" data-api-sampling hidden>
+                  <span class="iaml-api-stage-kind">Resample</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">SMOTE</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node iaml-api-node-skip">Skip</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Predict</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Logistic</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node" data-api-forest>Forest</span></div>
+                </div>
+              </div>
+              <p class="iaml-api-state-note" data-api-note>2 normalizations × 2 models.</p>
+              <p class="iaml-api-budget">IAML explores the applicable combinations within your search budget.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="3" aria-labelledby="pipeline-add-title">
+        <div class="iaml-story-caption" data-story-caption="3">
+          <span class="iaml-story-label">03 / ADD TO THE RECIPE</span>
+          <h3 id="pipeline-add-title">Add a step where it belongs.</h3>
+          <p>Extend the same recipe with optional resampling before the models. AutoML can explore the path with SMOTE and the path without it.</p>
+        </div>
+        <div class="iaml-api-demo" data-api-state="add">
+          <div class="iaml-api-workbench">
+            <div class="iaml-api-editor">
+              <div class="iaml-api-editor-header"><span class="iaml-story-label">ADD TO THE RECIPE</span><span>Python</span></div>
+              <div id="api-panel-add" class="iaml-api-panel" role="region" aria-label="Python recipe: add" tabindex="0" data-api-panel="add">
+                <pre><code>pipeline.<span class="iaml-api-code-call">add</span>(
+    <span class="iaml-api-code-call">optional</span>(use(SMOTE)),
+    before="models",
+)</code></pre>
+                <p><code>before="models"</code> positions the new step using the group's alias.</p>
+              </div>
+              <div class="iaml-api-run"><span aria-hidden="true">→</span><code>IAML(pipeline=pipeline).fit(X, y)</code></div>
+            </div>
+            <div class="iaml-api-visual">
+              <div class="iaml-api-scope"><strong data-api-count>8</strong><span>permitted pipeline structures</span></div>
+              <div class="iaml-api-map" role="img" aria-label="Imputation, Standard or Robust scaling, optional SMOTE, then logistic regression or random forest: eight permitted structures." data-api-map>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Prepare</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Impute</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Normalize</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Standard</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node" data-api-robust>Robust</span></div>
+                </div>
+                <div class="iaml-api-stage iaml-api-stage-optional" data-api-sampling>
+                  <span class="iaml-api-stage-kind">Resample</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">SMOTE</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node iaml-api-node-skip">Skip</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Predict</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Logistic</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node" data-api-forest>Forest</span></div>
+                </div>
+              </div>
+              <p class="iaml-api-state-note" data-api-note>2 normalizations × SMOTE or skip × 2 models.</p>
+              <p class="iaml-api-budget">Resampling runs on training folds; validation and prediction data keep their original rows.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="4" aria-labelledby="pipeline-exclude-title">
+        <div class="iaml-story-caption" data-story-caption="4">
+          <span class="iaml-story-label">04 / EXCLUDE AN ALTERNATIVE</span>
+          <h3 id="pipeline-exclude-title">Keep the alternatives you want.</h3>
+          <p>Remove RobustScaler from the normalization group. The other steps and their settings stay in the recipe.</p>
+        </div>
+        <div class="iaml-api-demo" data-api-state="remove">
+          <div class="iaml-api-workbench">
+            <div class="iaml-api-editor">
+              <div class="iaml-api-editor-header"><span class="iaml-story-label">EXCLUDE AN ALTERNATIVE</span><span>Python</span></div>
+              <div id="api-panel-remove" class="iaml-api-panel" role="region" aria-label="Python recipe: remove" tabindex="0" data-api-panel="remove">
+                <pre><code>pipeline.normalize.<span class="iaml-api-code-call">remove</span>(RobustScaler)</code></pre>
+                <p>Navigate <code>pipeline.normalize</code> to edit that group's attached recipe.</p>
+              </div>
+              <div class="iaml-api-run"><span aria-hidden="true">→</span><code>IAML(pipeline=pipeline).fit(X, y)</code></div>
+            </div>
+            <div class="iaml-api-visual">
+              <div class="iaml-api-scope"><strong data-api-count>4</strong><span>permitted pipeline structures</span></div>
+              <div class="iaml-api-map" role="img" aria-label="Imputation, Standard scaling, optional SMOTE, then logistic regression or random forest. Robust scaling is excluded: four permitted structures." data-api-map>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Prepare</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Impute</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Normalize</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Standard</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node is-excluded" aria-label="Robust scaling excluded" data-api-robust>Robust</span></div>
+                </div>
+                <div class="iaml-api-stage iaml-api-stage-optional" data-api-sampling>
+                  <span class="iaml-api-stage-kind">Resample</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">SMOTE</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node iaml-api-node-skip">Skip</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Predict</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Logistic</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node" data-api-forest>Forest</span></div>
+                </div>
+              </div>
+              <p class="iaml-api-state-note" data-api-note>1 normalization × SMOTE or skip × 2 models.</p>
+              <p class="iaml-api-budget">An excluded method is unavailable throughout the search.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="5" aria-labelledby="pipeline-configure-title">
+        <div class="iaml-story-caption" data-story-caption="5">
+          <span class="iaml-story-label">05 / SET PARAMETER DOMAINS</span>
+          <h3 id="pipeline-configure-title">Decide what AutoML can optimize.</h3>
+          <p>Configure the named forest: explore 100 to 500 trees, start at 200, and fix its maximum depth at 8.</p>
+        </div>
+        <div class="iaml-api-demo" data-api-state="configure">
+          <div class="iaml-api-workbench">
+            <div class="iaml-api-editor">
+              <div class="iaml-api-editor-header"><span class="iaml-story-label">SET PARAMETER DOMAINS</span><span>Python</span></div>
+              <div id="api-panel-configure" class="iaml-api-panel" role="region" aria-label="Python recipe: configure" tabindex="0" data-api-panel="configure">
+                <pre><code>pipeline["forest"].<span class="iaml-api-code-call">configure</span>(
+    n_estimators=<span class="iaml-api-code-call">Int</span>(100, 500, initial=200),
+    max_depth=<span class="iaml-api-code-call">Const</span>(8),
+)</code></pre>
+                <p><code>Int</code> sets a search range; <code>Const</code> fixes a value.</p>
+              </div>
+              <div class="iaml-api-run"><span aria-hidden="true">→</span><code>IAML(pipeline=pipeline).fit(X, y)</code></div>
+            </div>
+            <div class="iaml-api-visual">
+              <div class="iaml-api-scope"><strong data-api-count>4</strong><span>permitted pipeline structures</span></div>
+              <div class="iaml-api-map" role="img" aria-label="Four permitted structures with imputation, Standard scaling, optional SMOTE and two models. Random forest explores 100 to 500 trees, starting at 200, with depth fixed at 8." data-api-map>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Prepare</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Impute</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Normalize</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Standard</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node is-excluded" aria-label="Robust scaling excluded" data-api-robust>Robust</span></div>
+                </div>
+                <div class="iaml-api-stage iaml-api-stage-optional" data-api-sampling>
+                  <span class="iaml-api-stage-kind">Resample</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">SMOTE</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node iaml-api-node-skip">Skip</span></div>
+                </div>
+                <div class="iaml-api-stage">
+                  <span class="iaml-api-stage-kind">Predict</span>
+                  <div class="iaml-api-choices"><span class="iaml-api-node">Logistic</span><span class="iaml-api-or" aria-hidden="true">or</span><span class="iaml-api-node is-configured" aria-label="Forest: 100 to 500 trees, initially 200, depth fixed at 8" data-api-forest>Forest</span></div>
+                </div>
+              </div>
+              <p class="iaml-api-state-note" data-api-note>Forest: 100–500 trees, starting at 200. Depth fixed at 8.</p>
+              <p class="iaml-api-budget">Parameter search explores values within each permitted pipeline structure.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="6" aria-labelledby="pipeline-reuse-title">
+        <div class="iaml-story-caption" data-story-caption="6">
+          <span class="iaml-story-label">06 / REUSE YOUR BUILDING BLOCKS</span>
+          <h3 id="pipeline-reuse-title">Write once. Adapt each study.</h3>
+          <p>Share preparation fragments across model recipes. Each composition owns its copy; clone a complete recipe when a study needs its own changes.</p>
+        </div>
+        <div class="iaml-api-workbench">
+          <div class="iaml-api-editor">
+            <div class="iaml-api-editor-header"><span class="iaml-story-label">FRAGMENTS AND COPIES</span><span>Python</span></div>
+            <div id="api-panel-reuse" class="iaml-api-panel" role="region" aria-label="Python recipe: reuse and clone pipeline fragments" tabindex="0">
+              <pre><code>preparation = (
+    use(SimpleImputer)
+    <span class="iaml-story-code-operator">&gt;&gt;</span> choice(StandardScaler, RobustScaler).named("normalize")
+)
+linear = preparation <span class="iaml-story-code-operator">&gt;&gt;</span> use(LogisticRegression)
+forest = preparation <span class="iaml-story-code-operator">&gt;&gt;</span> use(RandomForestClassifier)
+
+forest_variant = forest.<span class="iaml-api-code-call">clone</span>()
+forest_variant.normalize.<span class="iaml-api-code-call">remove</span>(RobustScaler)</code></pre>
+              <p>The shared fragment and both original recipes retain their two normalizers.</p>
+            </div>
+            <div class="iaml-api-run"><span aria-hidden="true">→</span><code>IAML(pipeline=forest_variant).fit(X, y)</code></div>
+          </div>
+          <div class="iaml-api-visual iaml-advanced-visual">
+            <div class="iaml-advanced-cards">
+              <div class="iaml-advanced-card"><span class="iaml-story-label">REUSABLE PREPARATION</span><strong>Impute → Standard or Robust</strong><p>A shared fragment expresses your team's preparation policy.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">TWO INDEPENDENT RECIPES</span><strong>Linear model · Forest model</strong><p>Both receive a copy of the preparation fragment.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">ONE TAILORED STUDY</span><strong>Impute → Standard → Forest</strong><p>Removing Robust from the clone leaves every original recipe unchanged.</p></div>
+            </div>
+            <a class="iaml-story-stage-link" href="pipelines/guide.html#reuse-recipes-independently">Reuse and safely edit recipes ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="7" aria-labelledby="pipeline-extend-title">
+        <div class="iaml-story-caption" data-story-caption="7">
+          <span class="iaml-story-label">07 / ADD YOUR TEAM'S COMPONENTS</span>
+          <h3 id="pipeline-extend-title">Your methods become reusable steps.</h3>
+          <p>Implement the component interface, register your class and place it with <code>use</code>. Here, a study transformation adds a squared age feature before preprocessing.</p>
+        </div>
+        <div class="iaml-api-workbench">
+          <div class="iaml-api-editor">
+            <div class="iaml-api-editor-header"><span class="iaml-story-label">A CUSTOM TRANSFORMATION</span><span>Python</span></div>
+            <div id="api-panel-extend" class="iaml-api-panel" role="region" aria-label="Python recipe: define and insert a custom IAML transformation" tabindex="0">
+              <pre><code>@is_step("features_precleaning")
+class AgeSquared(Actionable):
+    name = "Squared age"
+    def __init__(self):
+        self.optimizable = False
+    def suitable(self, dataset):
+        return "age" in dataset.X.select_dtypes("number")
+    def fit(self, dataset):
+        return self
+    def transform(self, X):
+        return X.assign(age_squared=X["age"] ** 2)
+pipeline.<span class="iaml-api-code-call">add</span>(use(AgeSquared), before="cleaning")</code></pre>
+              <p>Import <code>Actionable</code> from <code>iaml</code> and <code>is_step</code> from <code>iaml.decorators.is_step</code>. Keep reusable classes in an importable module such as <code>study_components.py</code>.</p>
+            </div>
+            <div class="iaml-api-run"><span aria-hidden="true">→</span><code>IAML(pipeline=pipeline).fit(X, y)</code></div>
+          </div>
+          <div class="iaml-api-visual iaml-advanced-visual">
+            <div class="iaml-advanced-flow" role="img" aria-label="Raw data passes through the team's squared-age transformation before IAML prepares the data and fits the model, with cross-validation and final fitting managed by IAML.">
+              <span class="iaml-advanced-node">Raw data</span><span aria-hidden="true">→</span>
+              <span class="iaml-advanced-node iaml-advanced-node--custom">Your AgeSquared step</span><span aria-hidden="true">→</span>
+              <span class="iaml-advanced-node">IAML preparation + model</span>
+            </div>
+            <div class="iaml-advanced-cards">
+              <div class="iaml-advanced-card"><span class="iaml-story-label">PART OF THE AUTOML WORKFLOW</span><strong>Fit within each training fold</strong><p>IAML checks applicability, runs the step inside cross-validation and reuses it for prediction.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">EXTENSIBLE THROUGHOUT</span><strong>Beyond transformations</strong><p>Add predictors, resamplers, metrics, splitters, optimizers, statistics or plots through their corresponding interfaces.</p></div>
+            </div>
+            <a class="iaml-story-stage-link" href="adaptability.html#extend-transformations">Implement and connect your own components ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="8" aria-labelledby="pipeline-study-title">
+        <div class="iaml-story-caption" data-story-caption="8">
+          <span class="iaml-story-label">08 / CONFIGURE THE WHOLE STUDY</span>
+          <h3 id="pipeline-study-title">Your study goes beyond the model.</h3>
+          <p>Choose the summaries, scoring objective and explanations with the same component API. Each collection runs its applicable methods; calculation settings stay fixed.</p>
+        </div>
+        <div class="iaml-api-workbench">
+          <div class="iaml-api-editor">
+            <div class="iaml-api-editor-header"><span class="iaml-story-label">ONE STUDY, THREE COLLECTIONS</span><span>Python</span></div>
+            <div id="advanced-panel-study" class="iaml-api-panel" role="region" aria-label="Python example: configure study analyses" tabindex="0">
+              <pre><code>analyses = dict(
+    metrics=<span class="iaml-api-code-call">metrics</span>(
+        use(RecallMetric, pos_label=1).named("event_recall"),
+    ),
+    main_metric="event_recall",
+    statistics=<span class="iaml-api-code-call">statistics</span>(SummaryTableStatistic),
+    explanations=<span class="iaml-api-code-call">explanations</span>(
+        use(KernelSHAP, nsamples=100).named("shap"),
+    ),
+)
+study = IAML(pipeline=pipeline, **analyses)
+summary = study.get_descriptive_statistics(X, y)</code></pre>
+              <p>The alias selects the scoring objective. Descriptive statistics can run before any training.</p>
+            </div>
+          </div>
+          <div class="iaml-api-visual iaml-advanced-visual">
+            <div class="iaml-advanced-cards">
+              <div class="iaml-advanced-card"><span class="iaml-story-label">BEFORE TRAINING</span><strong>Describe your cohort</strong><p><code>get_descriptive_statistics(X, y)</code> computes the configured summaries of the supplied data.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">DURING VALIDATION</span><strong>Optimize event recall</strong><p><code>event_recall</code> ranks candidates. Other configured metrics keep their own scores and coverage.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">AFTER FITTING, ON REQUEST</span><strong>Explain selected predictions</strong><p><code>model.explain(X_test, y_test)</code> runs the candidate's configured explanations. SHAP loads when requested.</p></div>
+            </div>
+            <a class="iaml-story-stage-link" href="pipelines/study.html#pipelines-study-collections">Configure metrics, statistics and explanations ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="9" aria-labelledby="pipeline-search-title">
+        <div class="iaml-story-caption" data-story-caption="9">
+          <span class="iaml-story-label">09 / CONTROL THE SEARCH</span>
+          <h3 id="pipeline-search-title">Choose how IAML explores your recipe.</h3>
+          <p>Set the optimizer, validation folds, evaluation budget and workers. A partial start changes the initial candidates while keeping the other declared alternatives available.</p>
+        </div>
+        <div class="iaml-api-workbench">
+          <div class="iaml-api-editor">
+            <div class="iaml-api-editor-header"><span class="iaml-story-label">SEARCH SETTINGS</span><span>Python</span></div>
+            <div id="advanced-panel-search" class="iaml-api-panel" role="region" aria-label="Python example: control optimizer and validation" tabindex="0">
+              <pre><code>pipeline.models.<span class="iaml-api-code-call">start</span>("forest")
+search = IAML(
+    pipeline=pipeline,
+    optimizer=GeneticOptimizer,
+    splitter=partial(kfold_splitter, nb_folds=3),
+    max_duration=120,
+    max_stage_duration=30,
+    max_workers=2,
+    keep_training_history=True,
+    **analyses,
+)</code></pre>
+              <p>Shared <code>analyses</code> keep the study's objective and collections. A partial start requires <code>GeneticOptimizer</code> or another component-switching optimizer; <code>start()</code> restores a full start.</p>
+            </div>
+            <div class="iaml-api-run"><span aria-hidden="true">→</span><code>search.fit(X, y)</code></div>
+          </div>
+          <div class="iaml-api-visual iaml-advanced-visual">
+            <div class="iaml-advanced-flow iaml-advanced-flow--vertical" role="img" aria-label="Start with the forest. Genetic optimization can also reach the permitted logistic alternative. Evaluations use three validation folds; up to two candidates can be evaluated concurrently.">
+              <div class="iaml-advanced-node"><span class="iaml-story-label">INITIAL CANDIDATES</span><strong>Forest</strong></div>
+              <span class="iaml-advanced-arrow" aria-hidden="true">↓</span>
+              <div class="iaml-advanced-node"><span class="iaml-story-label">PERMITTED MODEL ALTERNATIVES</span><strong>Forest · Logistic</strong></div>
+              <span class="iaml-advanced-arrow" aria-hidden="true">↓</span>
+              <div class="iaml-advanced-node"><span class="iaml-story-label">SEARCH EXECUTION</span><strong>3 folds · 2 candidate workers</strong></div>
+            </div>
+            <p class="iaml-api-budget">The 120-second search budget does not include all initialization and final fitting time. Validation records remain available in <code>search.training_history</code>.</p>
+            <a class="iaml-story-stage-link" href="pipelines/study.html#pipelines-study-search">Choose validation and execution settings ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="10" aria-labelledby="pipeline-inspect-title">
+        <div class="iaml-story-caption" data-story-caption="10">
+          <span class="iaml-story-label">10 / INSPECT AND SHARE</span>
+          <h3 id="pipeline-inspect-title">Make each iteration reviewable.</h3>
+          <p>Inspect a recipe, compare changes and export its reconstruction code. Clones are independent; editing recipes prepares future runs while trained candidates keep their own definitions.</p>
+        </div>
+        <div class="iaml-api-workbench">
+          <div class="iaml-api-editor">
+            <div class="iaml-api-editor-header"><span class="iaml-story-label">REVIEW A VARIANT</span><span>Python</span></div>
+            <div id="advanced-panel-inspect" class="iaml-api-panel" role="region" aria-label="Python example: inspect, compare and export a recipe" tabindex="0">
+              <pre><code>base = pipeline.<span class="iaml-api-code-call">clone</span>()
+variant = base.<span class="iaml-api-code-call">clone</span>()
+variant["forest"].configure(n_estimators=300)
+
+print(variant.<span class="iaml-api-code-call">describe</span>())
+print(variant.<span class="iaml-api-code-call">diff</span>(base))
+code = variant.<span class="iaml-api-code-call">to_code</span>()</code></pre>
+              <p>Changing the starting value to 300 keeps the forest's 100–500 search domain. The base recipe keeps its original starting value.</p>
+            </div>
+          </div>
+          <div class="iaml-api-visual iaml-advanced-visual">
+            <div class="iaml-advanced-cards">
+              <div class="iaml-advanced-card"><span class="iaml-story-label">DESCRIBE</span><strong>A readable, structured recipe</strong><p>Inspect the tree, alternatives, initial values, domains and constants.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">DIFF</span><strong>A concrete change to review</strong><p><code>n_estimators: 200 → 300</code><br>The domain remains <code>100–500</code>.</p></div>
+              <div class="iaml-advanced-card"><span class="iaml-story-label">TO_CODE</span><strong>Reconstruction code to share</strong><p>Preserve aliases and active or retained domains. Code references importable components; it does not contain fitted model state.</p></div>
+            </div>
+            <a class="iaml-story-stage-link" href="pipelines/reference.html#pipelines-ref-inspection">Inspect recipes and completed launches ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="iaml-story-phase" data-story-phase="11" aria-labelledby="pipeline-continue-title">
+        <div class="iaml-story-caption" data-story-caption="11">
+          <h3 id="pipeline-continue-title">Bring your team's methods to the next study.</h3>
+          <p>Keep recipes, components and study settings as reusable Python objects. Start with the guide that matches what you want to customize.</p>
+        </div>
+        <div class="iaml-discovery-next" tabindex="0" aria-label="Reusable study building blocks and advanced IAML guides">
+          <div class="iaml-story-card iaml-discovery-analyses">
+            <span class="iaml-story-label">YOUR TEAM'S TOOLKIT</span>
+            <div class="iaml-discovery-analysis"><code>Recipes</code><span>Compose, adapt, clone and review complete workflows.</span></div>
+            <div class="iaml-discovery-analysis"><code>Components</code><span>Share preprocessing, models, metrics and your own methods.</span></div>
+            <div class="iaml-discovery-analysis"><code>Study settings</code><span>Reuse analyses, validation and search policies across studies.</span></div>
+          </div>
+          <nav class="iaml-discovery-resources" aria-label="Continue with advanced IAML">
+            <a class="iaml-story-cta" href="examples/pipelines/README.html#run-an-example">Try the Python examples →</a>
+            <a href="pipelines/guide.html">Build and edit pipelines</a>
+            <a href="adaptability.html">Add your team's components</a>
+            <a href="pipelines/study.html">Configure study analyses</a>
+            <a href="pipelines/study.html#pipelines-study-search">Choose validation and search settings</a>
+            <a href="pipelines/reference.html">Explore the API reference</a>
+          </nav>
+        </div>
+      </section>
+    </div>
+    <div class="iaml-story-bottom">
+      <div class="iaml-story-progress" role="progressbar" aria-label="Progress through Customize IAML" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+      <div><span class="iaml-story-direction">Scroll to explore advanced IAML ↓</span><small>Recipes · components · complete studies · <a href="pipelines/index.html">Pipeline guide ↗</a></small></div>
+    </div>
+  </div>
+</div>

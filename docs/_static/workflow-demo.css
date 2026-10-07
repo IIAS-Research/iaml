@@ -1,4 +1,4 @@
-/* The homepage tells one recorded analysis through native, reversible scrolling. */
+/* Discovery pages tell their stories through native, reversible scrolling. */
 .content:has(.iaml-demo) {
   flex: 1;
   min-width: 0;
@@ -61,6 +61,11 @@
   font-weight: 700;
 }
 .iaml-story-controls button:hover { background: color-mix(in srgb, var(--iaml-accent) 12%, transparent); }
+.iaml-pipeline-discovery .iaml-story-controls { justify-content: flex-start; gap: .35rem; padding: .35rem .2rem; overflow-x: auto; scrollbar-width: thin; flex-shrink: 0; }
+.iaml-pipeline-discovery .iaml-story-controls button { flex: 0 0 5rem; }
+.iaml-advanced-overview { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.iaml-advanced-overview a { display: inline-flex; align-items: center; min-height: 36px; padding: .35rem .65rem; border: 1px solid var(--color-background-border); border-radius: 7px; color: var(--color-brand-primary); background: var(--color-background-primary); font-size: .72rem; text-decoration: none; }
+.iaml-advanced-overview a:hover { border-color: var(--color-brand-primary); }
 .iaml-demo :focus-visible { outline: 2px solid var(--color-brand-content); outline-offset: 3px; }
 .iaml-story-phase { display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
 .iaml-story-phase + .iaml-story-phase { margin-top: 3rem; }
@@ -135,6 +140,64 @@
 .iaml-story-delivery-copy { display: flex; flex-direction: column; gap: 1rem; font-size: .85rem; }
 .iaml-story-delivery-copy ul { padding-left: 1.25rem; margin: 0; line-height: 1.8; }
 .iaml-story-delivery-copy p { margin: 0; font-size: .75rem; }
+.iaml-story-go-further { padding-top: .6rem; border-top: 1px solid var(--color-background-border); }
+.iaml-story-go-further > span { display: block; margin-bottom: .25rem; color: var(--color-foreground-secondary); font-size: .65rem; }
+.iaml-story-go-further > a { font-weight: 650; }
+.iaml-story-topline--pipeline { justify-content: space-between; }
+.iaml-discovery-next { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 1.25rem; flex: 1; min-height: 0; }
+.is-scroll-story .iaml-discovery-next { overflow: auto; }
+.iaml-discovery-analysis { display: grid; grid-template-columns: 8.5rem 1fr; gap: .75rem; align-items: start; padding: .8rem 0; font-size: .8rem; line-height: 1.5; }
+.iaml-discovery-analysis + .iaml-discovery-analysis { border-top: 1px solid var(--color-background-border); }
+.iaml-discovery-analysis code { color: var(--color-brand-primary); font-size: .72rem; }
+.iaml-discovery-resources { display: flex; flex-direction: column; align-items: stretch; gap: .85rem; font-size: .8rem; }
+.iaml-discovery-resources > a:not(.iaml-story-cta) { min-height: 28px; display: inline-flex; align-items: center; }
+.iaml-story-code-operator { color: var(--color-brand-content); font-weight: 700; }
+.iaml-api-demo { display: flex; flex-direction: column; gap: .75rem; flex: 1; min-height: 0; }
+.iaml-api-demo [hidden] { display: none !important; }
+.iaml-api-workbench { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .9fr); gap: 1rem; flex: 1; min-height: 0; }
+.iaml-api-workbench > * { min-width: 0; min-height: 0; }
+.iaml-api-editor { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--color-background-border); border-radius: 10px; background: var(--color-background-primary); box-shadow: 0 8px 22px rgb(0 0 0 / .04); }
+.iaml-api-editor-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem .85rem; border-bottom: 1px solid var(--color-background-border); background: var(--color-background-secondary); }
+.iaml-api-editor-header > span:last-child { color: var(--color-foreground-secondary); font-size: .65rem; }
+.iaml-api-panel { flex: 1; min-height: 0; overflow: auto; }
+.iaml-api-panel:focus-visible { outline-offset: -3px; }
+.iaml-api-panel pre { margin: 0; padding: .75rem .85rem; overflow-x: auto; font-size: .72rem; line-height: 1.6; white-space: pre; }
+.iaml-api-panel pre code { padding: 0; background: transparent; font: inherit; color: inherit; }
+.iaml-api-code-call { color: var(--color-brand-primary); font-weight: 650; }
+.iaml-api-panel > p { margin: 0; padding: .25rem .85rem .75rem; color: var(--color-foreground-secondary); font-size: .75rem; line-height: 1.45; }
+.iaml-api-run { display: flex; align-items: center; gap: .6rem; padding: .6rem .85rem; border-top: 1px solid var(--color-background-border); background: var(--color-background-secondary); font-size: .7rem; }
+.iaml-api-run > span { color: var(--color-brand-content); }
+.iaml-api-run code { padding: 0; background: transparent; font-size: inherit; }
+.iaml-api-visual { display: flex; flex-direction: column; justify-content: center; gap: .6rem; padding: .25rem .5rem; overflow: auto; }
+.iaml-api-scope { display: flex; justify-content: center; align-items: center; gap: .6rem; color: var(--color-brand-primary); }
+.iaml-api-scope strong { font-size: 2.25rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.iaml-api-scope > span { max-width: 17ch; font-size: .72rem; line-height: 1.3; }
+.iaml-api-map { display: grid; gap: .8rem; padding: .25rem 0; }
+.iaml-api-stage { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: .25rem; }
+.iaml-api-stage + .iaml-api-stage::before { content: "↓"; position: absolute; top: -.9rem; left: 50%; translate: -50% 0; color: var(--color-brand-content); font-size: .75rem; line-height: 1; }
+.iaml-api-stage-kind { text-align: center; color: var(--color-foreground-secondary); font-size: .55rem; letter-spacing: .08em; text-transform: uppercase; }
+.iaml-api-choices { display: flex; align-items: center; justify-content: center; gap: .35rem; }
+.iaml-api-node { min-width: 0; flex: 1; max-width: 8rem; padding: .3rem .4rem; border: 1px solid var(--color-brand-primary); border-radius: 6px; background: color-mix(in srgb, var(--iaml-green) 7%, var(--color-background-primary)); color: var(--color-brand-primary); text-align: center; font-size: .72rem; line-height: 1.3; }
+.iaml-api-or { color: var(--color-foreground-secondary); font-size: .55rem; }
+.iaml-api-stage-optional .iaml-api-node { border-color: var(--color-brand-content); background: color-mix(in srgb, var(--iaml-accent) 9%, var(--color-background-primary)); color: var(--color-foreground-primary); }
+.iaml-api-node-skip { border-style: dashed; }
+.iaml-api-node.is-excluded { border-color: var(--color-background-border); border-style: dashed; background: var(--color-background-secondary); color: var(--color-foreground-secondary); text-decoration: line-through; opacity: .55; }
+.iaml-api-node.is-configured { border-color: var(--color-brand-content); box-shadow: inset 0 0 0 1px var(--color-brand-content); }
+.iaml-api-state-note, .iaml-api-budget { margin: 0; text-align: center; font-size: .65rem; line-height: 1.4; }
+.iaml-api-state-note { color: var(--color-brand-content); }
+.iaml-api-budget { color: var(--color-foreground-secondary); }
+.iaml-advanced-visual { justify-content: safe center; }
+.iaml-advanced-cards { display: grid; gap: .65rem; }
+.iaml-advanced-card { padding: .8rem; border: 1px solid var(--color-background-border); border-radius: 9px; background: var(--color-background-primary); }
+.iaml-advanced-card > strong { display: block; margin-bottom: .3rem; color: var(--color-brand-primary); font-size: .85rem; }
+.iaml-advanced-card p { margin: 0; color: var(--color-foreground-secondary); font-size: .72rem; line-height: 1.5; }
+.iaml-advanced-card code { font-size: .7rem; }
+.iaml-advanced-flow { display: flex; align-items: center; justify-content: center; gap: .45rem; flex-wrap: wrap; }
+.iaml-advanced-flow--vertical { flex-direction: column; flex-wrap: nowrap; }
+.iaml-advanced-node { padding: .45rem .6rem; border: 1px solid var(--color-brand-primary); border-radius: 7px; color: var(--color-brand-primary); background: color-mix(in srgb, var(--iaml-green) 7%, var(--color-background-primary)); font-size: .72rem; text-align: center; }
+.iaml-advanced-node--custom { border-color: var(--color-brand-content); background: color-mix(in srgb, var(--iaml-accent) 12%, var(--color-background-primary)); }
+.iaml-advanced-arrow { color: var(--color-brand-content); }
+.iaml-story-stage-link { align-self: flex-start; display: inline-flex; align-items: center; min-height: 32px; font-size: .72rem; }
 .iaml-story-cta { display: block; padding: .75rem 1rem; background: var(--iaml-green); border-radius: 6px; color: #fff !important; text-align: center; text-decoration: none; font-weight: 600; }
 .iaml-story-guides { display: flex; justify-content: space-between; gap: .6rem; border-top: 1px solid var(--color-background-border); padding-top: .7rem; font-size: .8rem; }
 .iaml-story-bottom { margin-top: auto; }
@@ -189,6 +252,9 @@
   .iaml-story-controls { gap: .2rem; }
   .iaml-story-controls button { font-size: .62rem; }
   .iaml-story-controls button > span { display: block; white-space: nowrap; }
+  .iaml-pipeline-discovery .iaml-story-controls button { flex-basis: 4.2rem; }
+  .iaml-advanced-overview { gap: .35rem; margin-top: .65rem; }
+  .iaml-advanced-overview a { min-height: 32px; padding: .3rem .5rem; font-size: .62rem; }
   .iaml-story-caption { padding: .5rem 0 0 .5rem; }
   .iaml-story-caption h3 { font-size: 1.3rem; }
   .iaml-story-caption p { font-size: .76rem; line-height: 1.45; }
@@ -234,11 +300,49 @@
   .iaml-story-result small { font-size: .55rem; }
   .iaml-story-delivery-copy { font-size: .7rem; gap: .7rem; }
   .iaml-story-delivery-copy p { font-size: .65rem; }
+  .iaml-story-go-further > span { font-size: .58rem; }
+  .iaml-discovery-next { grid-template-columns: 1fr; gap: .85rem; }
+  .iaml-discovery-analysis { grid-template-columns: 7rem 1fr; gap: .5rem; padding: .5rem 0; font-size: .65rem; }
+  .iaml-discovery-analysis code { font-size: .62rem; }
+  .iaml-discovery-resources { gap: .5rem; font-size: .7rem; }
+  .iaml-api-demo { gap: .5rem; }
+  .iaml-api-workbench { grid-template-columns: 1fr; gap: .5rem; }
+  .is-scroll-story .iaml-api-workbench { grid-template-rows: auto minmax(0, 1fr); }
+  .iaml-api-visual { order: -1; padding: 0; gap: .35rem; overflow: visible; }
+  .iaml-api-scope strong { font-size: 1.25rem; }
+  .iaml-api-scope > span { max-width: none; font-size: .6rem; }
+  .iaml-api-map { display: flex; gap: .6rem; padding: .1rem 0; }
+  .iaml-api-stage { flex: 1; min-width: 0; }
+  .iaml-api-stage + .iaml-api-stage::before { content: "→"; top: 55%; left: -.5rem; translate: 0 -50%; font-size: .6rem; }
+  .iaml-api-stage-kind { font-size: .48rem; letter-spacing: .015em; }
+  .iaml-api-choices { flex-direction: column; gap: .1rem; }
+  .iaml-api-node { align-self: stretch; flex: none; max-width: none; padding: .15rem .1rem; font-size: .58rem; }
+  .iaml-api-or { font-size: .48rem; line-height: 1; }
+  .iaml-api-state-note { font-size: .58rem; }
+  .iaml-api-budget { display: none; }
+  .iaml-advanced-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; }
+  .iaml-advanced-card { padding: .45rem; }
+  .iaml-advanced-card > strong { margin-bottom: .2rem; font-size: .67rem; }
+  .iaml-advanced-card p { font-size: .6rem; line-height: 1.4; }
+  .iaml-advanced-card code { font-size: .59rem; }
+  .iaml-advanced-flow { gap: .25rem; }
+  .iaml-advanced-node { padding: .3rem; font-size: .6rem; }
+  .iaml-story-stage-link { font-size: .62rem; }
+  .iaml-api-editor-header { padding: .35rem .6rem; }
+  .iaml-api-panel pre { padding: .5rem .6rem; font-size: .64rem; line-height: 1.4; }
+  .iaml-api-panel > p { padding: .15rem .6rem .5rem; font-size: .62rem; }
+  .iaml-api-run { padding: .35rem .6rem; font-size: .6rem; }
   .iaml-story-cta { padding: .6rem .4rem; }
   .iaml-story-guides { font-size: .68rem; }
   .iaml-story-bottom > div { flex-wrap: wrap; gap: .2rem; }
   .iaml-story-direction { font-size: .65rem; }
   .iaml-story-bottom small { font-size: .55rem; }
+}
+@media screen and (max-width: 40em) and (max-height: 650px) {
+  .is-scroll-story .iaml-api-stage-kind { display: none; }
+  .is-scroll-story .iaml-api-visual { gap: .2rem; }
+  .is-scroll-story .iaml-api-editor-header { padding-block: .25rem; }
+  .is-scroll-story .iaml-api-panel > p { display: none; }
 }
 @media (max-height: 740px) and (min-width: 41em) {
   .iaml-story-pin { gap: .6rem; padding: .75rem 0; }

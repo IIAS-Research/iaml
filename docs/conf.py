@@ -42,6 +42,7 @@ language = 'en'
 html_theme = 'furo'
 html_title = 'IAML'
 html_logo = '_static/iias-logo.svg'
+html_favicon = '_static/iias-favicon.png'
 html_theme_options = {
     'light_css_variables': {
         'color-brand-primary': '#176b63',
@@ -63,9 +64,9 @@ html_static_path = ['_static']
 html_css_files = ['iaml.css', 'workflow-demo.css']
 
 
-def add_homepage_scripts(app, pagename, _templatename, _context, _doctree):
-    """Load the locally bundled animation library only on the homepage."""
-    if pagename == 'index':
+def add_discovery_scripts(app, pagename, _templatename, _context, _doctree):
+    """Load the locally bundled walkthrough scripts on the discovery pages."""
+    if pagename in {'index', 'discover_pipelines'}:
         for filename in (
             'vendor/gsap/gsap.min.js',
             'vendor/gsap/ScrollTrigger.min.js',
@@ -75,4 +76,4 @@ def add_homepage_scripts(app, pagename, _templatename, _context, _doctree):
 
 
 def setup(app):
-    app.connect('html-page-context', add_homepage_scripts)
+    app.connect('html-page-context', add_discovery_scripts)

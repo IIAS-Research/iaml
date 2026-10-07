@@ -66,7 +66,7 @@ jobs:
           enable-cache: false
       - name: Build documentation (warnings are errors)
         if: github.event_name == 'pull_request' || steps.current.outputs.deploy == 'true'
-        run: uv run --locked sphinx-build -W --keep-going -b html docs public
+        run: uv run --locked sphinx-build -W --keep-going -b html -d docs/_build/doctrees docs public
       - name: Save documentation preview
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

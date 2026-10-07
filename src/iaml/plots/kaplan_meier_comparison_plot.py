@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 class KaplanMeierModelComparisonPlot(MetricPlot):
     """[PLOT] Kaplan-Meier Model Comparison Survival"""
 
+    needed_prediction = "predict_survival_function"
+    """Prediction output required when this explanation is configured."""
+
     title: str = "Kaplan-Meier Model Comparison"
     description: str = textwrap.dedent("""
         The Kaplan-Meier Model Comparison Plot is a diagnostic tool used to evaluate the performance of 

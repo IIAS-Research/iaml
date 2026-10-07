@@ -1,4 +1,4 @@
-"""[STEP] Normalizer"""
+"""[STEP] Unit norm scaler (historical alias: ActNormalizer)."""
 import textwrap
 import numpy as np
 import pandas as pd
@@ -11,15 +11,15 @@ from ...decorators.all import is_step
 
 
 @is_step('normalize')
-class ActNormalizer(Actionable):
-    """[STEP] Normalizer"""
+class ActUnitNormScaler(Actionable):
+    """Scale each numeric row to unit norm; exposed as steps.UnitNormScaler."""
 
-    name: str = "Normalizer"
+    name: str = "Unit Norm Scaler"
     _description: str = textwrap.dedent('''\
-        Normalizer scales each sample so its L1 or L2 norm equals one,
-        keeping per-sample magnitudes comparable.''')
+        UnitNormScaler scales each numeric row so its L1 or L2 norm equals one.
+        Rows containing only zeros stay unchanged.''')
     _description_long: str = textwrap.dedent('''\
-        Normalizer rescales each row independently by dividing its values
+        UnitNormScaler rescales each row independently by dividing its values
         by the L1 or L2 norm. This preserves the direction of each sample
         while making their magnitudes comparable, which is helpful when
         features represent frequencies, counts, or embeddings.''')
@@ -93,3 +93,7 @@ class ActNormalizer(Actionable):
         norms = norms[nonzero]
         mean_deviation = float(np.mean(np.abs(norms - 1.0)))
         return min(1.0, mean_deviation)
+
+
+# Keep historical imports and saved pipelines compatible with the same class.
+ActNormalizer = ActUnitNormScaler

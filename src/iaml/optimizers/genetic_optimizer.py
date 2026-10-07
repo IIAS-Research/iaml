@@ -7,6 +7,7 @@ from ..candidate import Candidate
 from .optimizer import Optimizer
 from ..step import Step
 from ..void_step import VoidStep
+from ..search_policy import has_finite_range, parameter_keys, within_parameter_range
 
 
 class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attributes
@@ -17,6 +18,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
     :param float, optional initial_modifier: Maximum modification value possible. Default to 5.
     :param int, optional duration: Used to compute a mutation ratio. Default to None.
     """
+    supports_component_swap: bool = True
 
     def __init__(
         self,
@@ -133,9 +135,9 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
                     is_int = isinstance(config['value'], int)
 
                     new_value = None
-                    if 'range' in config: # Random in range
+                    if has_finite_range(config): # Uniform sampling needs two finite bounds
                         new_value = random.uniform(*config['range'])
-                    else: # Kind of strong mutate
+                    else: # Explore open ranges relative to the current value
                         # Randomly choose a positive or negative editing
                         if bool(random.getrandbits(1)):
                             # Negative -> Multiply value by something between 0.01 and 1
@@ -231,6 +233,18 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
     @staticmethod
     def __interchange(step: Step) -> Step:
         """Choose another implementation, allowing optional preprocessing to be removed."""
+        if getattr(step, '_flow_explicit', False):
+            templates = getattr(step, '_flow_alternatives', ())
+            current = getattr(step, '_flow_variant_id', None)
+            choices = [item for item in templates
+                       if getattr(item, '_flow_variant_id', None) != current]
+            if not choices:
+                return step
+            replacement = deepcopy(random.choice(choices))
+            replacement._flow_alternatives = templates
+            replacement._flow_choice_id = getattr(step, '_flow_choice_id', None)
+            replacement.is_interchangeable = True
+            return replacement
         choices = [sibling for sibling in step.step_with_same_tags()
                    if sibling is not type(step)]
         if (not isinstance(step, VoidStep) and step.can_be_disabled
@@ -253,9 +267,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         :param Step step: The step we want the config
         :return: List of config keys for this step
         """
-        if not step.optimizable:
-            return []
-        return list(set(step.configuration.keys()) - self.ignored_configs)
+        return parameter_keys(step, self.ignored_configs)
 
     def __valide_config(self, config: dict, value: Any) -> bool:
         """Is the configuration range valid ?
@@ -263,9 +275,7 @@ class GeneticOptimizer(Optimizer): # pylint: disable=too-many-instance-attribute
         :param dict config: The config to validate.
         :return: Valid ?
         """
-        if 'range' not in config.keys():
-            return True
-        return config['range'][0] <= value <= config['range'][1]
+        return within_parameter_range(config, value)
 
     def __unique(self, candidates: list[Candidate]) -> list[Candidate]:
         """Get a list of unique Candidates

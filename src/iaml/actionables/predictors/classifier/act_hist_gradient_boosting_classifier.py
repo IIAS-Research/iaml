@@ -129,6 +129,9 @@ class ActHistGradientBoostingClassifier(Predictor):
     def predict(self, X):
         return super().predict(self._select_features(X))
 
+    def decision_function(self, X):
+        return super().decision_function(self._select_features(X))
+
     def predict_proba(self, X):
         return super().predict_proba(self._select_features(X))
 

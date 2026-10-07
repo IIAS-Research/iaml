@@ -6,50 +6,74 @@ Overview
 teams working with tabular clinical data. It combines preprocessing, model
 search and evaluation for classification, regression and survival analysis.
 
+IAML offers an integrated workflow with ready-to-use defaults and a pipeline
+API for teams that want to define their own methods. Both use the same search,
+cross-validation and final fitting engine.
+
 Who is it for?
 ==============
 
-IAML is intended for clinical researchers and data scientists who work with
-Python and pandas. It automates the search for prediction pipelines while
-keeping the selected methods and parameters available for review. Researchers
-define the study population, outcome, features and evaluation design.
+Clinical researchers and data scientists working with Python and pandas.
+Researchers define the study population, outcome, features and evaluation
+design; IAML searches prediction pipelines within that design. The selected
+methods and parameters remain available for review.
 
-Adapt it to your research
-=========================
+An integrated workflow, ready to use
+====================================
 
-IAML includes a broad set of preprocessing, modeling and evaluation methods.
-Teams can extend this set with steps, predictors, metrics, validation splitters
-or search optimizers that reflect the practices and requirements of their
-research domain. These contributions can be shared and reused across studies.
-The :doc:`adaptability` guide explains how to implement them in your own
-Python modules.
+Start with ``IAML().fit(X, y)`` to search preprocessing methods, predictors and
+their parameters using the built-in pipeline. You do not need to construct
+a pipeline or configure each step to obtain trained candidates.
+
+Follow :doc:`quick_start` to run a first analysis. The :doc:`worked_example`
+connects the same calls to performance figures, explanations and saved outputs.
+
+A pipeline API for teams going further
+======================================
+
+Adapt the preset or compose a recipe from reusable components. Choose the
+permitted alternatives, edit parameter domains and configure the analyses
+around training. Your own components can join these recipes through the
+extension interfaces.
+
+:doc:`discover_pipelines` introduces these possibilities visually.
+:doc:`pipelines/index` directs you to the construction, study configuration
+and extension guides when you are ready to customize a workflow.
 
 What does a run produce?
 ========================
 
-The search returns trained **candidates**: each contains a preprocessing pipeline,
-a predictor and its cross-validation scores. You can then:
+The search compares **candidates** by cross-validation. Each candidate combines
+preprocessing, a predictor and its scores; retained candidates are then refitted
+on the chosen training population, using all training rows by default.
+``search.chosen_candidate`` is the selected fitted
+candidate, including the preprocessing needed for new observations.
 
-- Evaluate predictions on data held out from the search.
-- Inspect the selected steps and their configuration.
-- Request feature explanations and performance plots supported by the model.
-- Export method summaries and optionally retain cross-validation records.
+The study continues through the following outputs:
 
-IAML uses genetic search by default. See :doc:`architecture` for how generation,
-evaluation and optimization fit together.
+.. list-table::
+   :header-rows: 1
+   :widths: 23 50 27
 
-Where to start
-==============
+   * - Stage
+     - Output
+     - Guide
+   * - Describe and train
+     - Cohort summaries on request, then fitted candidates and validation scores.
+     - :doc:`usage`
+   * - Evaluate
+     - Held-out scores and task-specific performance figures.
+     - :doc:`evaluation`
+   * - Explain
+     - Selected methods and feature contributions for predictions.
+     - :doc:`explainability`
+   * - Report
+     - Saved outputs, experiment settings and method references.
+     - :doc:`scientific`
 
-Explore :doc:`worked_example` to see a pipeline's evaluation, plots and
-explanations on a concrete dataset.
-
-Follow the :doc:`quick_start` to obtain a trained pipeline, evaluated on held-out
-data and ready to make predictions. The :doc:`usage`, :doc:`evaluation` and
-:doc:`explainability` guides explain the choices behind these results and help
-you refine the workflow for your study.
-The :doc:`scientific` guide explains how to retain outputs and document the
-settings used in an analysis, including the software citation.
+Descriptive statistics, figures and explanations are calculated when requested.
+They do not all run automatically during ``fit``. See :doc:`architecture` for
+how candidate generation, evaluation and optimization fit together.
 
 Project and contributions
 =========================

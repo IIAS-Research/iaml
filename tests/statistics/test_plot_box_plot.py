@@ -52,16 +52,6 @@ class TestBoxPlot(unittest.TestCase):
         self.assertIsInstance(image, (bytes, bytearray))
         self.assertGreater(len(image), 0)
 
-    def _ensure_bxp(self) -> bool:
-        if hasattr(plt, "bxp"):
-            return False
-
-        def _bxp_stub(*_args, **_kwargs):
-            return []
-
-        plt.bxp = _bxp_stub
-        return True
-
     def test_numeric_box_plot(self) -> None:
         stats_df = pd.DataFrame(
             {
@@ -71,14 +61,12 @@ class TestBoxPlot(unittest.TestCase):
             index=["min", "max", "quantile_0.25", "quantile_0.5", "quantile_0.75"],
         )
 
-        stubbed_bxp = self._ensure_bxp()
-        try:
-            plot = BoxPlot().compute(stats_df, base_name="num_1")
-        finally:
-            if stubbed_bxp and hasattr(plt, "bxp"):
-                delattr(plt, "bxp")
+        open_figures = plt.get_fignums()
+        plot = BoxPlot().compute(stats_df, base_name="num_1")
 
         self._assert_plot_image(plot)
+        self.assertTrue(plot.image.startswith(b"\x89PNG\r\n\x1a\n"))
+        self.assertEqual(plt.get_fignums(), open_figures)
 
     def test_missing_required_rows_placeholder(self) -> None:
         stats_df = pd.DataFrame({"num_1_all": [1.0]}, index=["min"])
