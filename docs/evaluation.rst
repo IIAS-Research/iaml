@@ -173,12 +173,10 @@ and the training targets to estimate censoring. Supply the relevant
 ``X_train`` and ``y_train`` when using these plot classes, and check that
 evaluation times fall within the supported follow-up range.
 
-The current ``explain_model_performance`` method requests every plot registered
-for the task. Its survival set includes a cumulative-hazard plot whose required
-prediction method is not exposed by ``IAMLPipeline``. Therefore, do not use that
-all-plots call as a general survival example. Select a compatible plot explicitly
-and check its API requirements, or start with the numerical survival metrics
-returned by ``evaluate``.
+``explain_model_performance`` requests every plot registered for the task.
+Each plot requires compatible prediction outputs from the fitted predictor.
+Select a compatible plot explicitly, or verify support for survival functions
+and cumulative hazards before requesting all survival plots.
 
 .. _configure-metrics-before-fitting:
 .. _evaluate-configure-metrics:

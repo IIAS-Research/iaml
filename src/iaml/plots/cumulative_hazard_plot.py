@@ -52,8 +52,8 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         # Current model prediction
         hazard_predictions = estimator.predict_cumulative_hazard_function(X)
 
-        mean_hazard_prob = np.mean([fn.y for fn in hazard_predictions], axis=0)
         mean_hazard_time = hazard_predictions[0].x
+        mean_hazard_prob = np.mean([fn(mean_hazard_time) for fn in hazard_predictions], axis=0)
 
         plt.step(mean_hazard_time, mean_hazard_prob,
                 where="post", label="Model prediction", color="green")
@@ -62,7 +62,7 @@ class CumulativeHazardModelComparisonPlot(MetricPlot):
         plt.title("Cumulative Hazard Curve vs Model Predicted")
         plt.xlabel("Time")
         plt.ylabel("Cumulative Hazard")
-        plt.ylim([0, 1])
+        plt.ylim(bottom=0)
         plt.legend()
 
         plt.savefig(self._binary_image, format='png')

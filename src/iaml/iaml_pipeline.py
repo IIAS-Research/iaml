@@ -460,6 +460,30 @@ class IAMLPipeline(Pipeline):
             X = X.reindex(columns=self._trained_columns, fill_value=0)
         return self.predictor[1].predict_survival_function(X)
 
+    def predict_cumulative_hazard_function(
+        self,
+        X: pd.DataFrame,
+        model_only: bool = False,
+        **kwargs) -> list:
+        """Predict cumulative hazard functions after the fitted preprocessing.
+
+        :param pd.DataFrame X: Features used for prediction.
+        :param bool, optional model_only: Use already transformed features. Defaults to False.
+        :param dict, optional \\**kwargs: Additional preprocessing parameters.
+        :raise ValueError: A predictor must be set before prediction.
+        :raise AttributeError: The predictor does not support cumulative hazard functions.
+        :return: One cumulative hazard function per observation.
+        """
+        if not self.have_model:
+            raise ValueError("Model need to be set before predict")
+
+        if not model_only:
+            X = self.transform(X, **kwargs)
+
+        if model_only and self._trained_columns and isinstance(X, pd.DataFrame):
+            X = X.reindex(columns=self._trained_columns, fill_value=0)
+        return self.predictor[1].predict_cumulative_hazard_function(X)
+
     def predict_proba(self, X: pd.DataFrame, model_only: bool = False, **kwargs) -> list:
         """Run all the steps to predict labels from candidate data
 

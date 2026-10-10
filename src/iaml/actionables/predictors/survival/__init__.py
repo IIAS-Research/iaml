@@ -9,4 +9,5 @@ from .act_survival_tree import ActSurvivalTree
 from .act_coxnet_survival_analysis import ActCoxnetSurvivalAnalysis
 from .act_fast_survival_svm import ActFastSurvivalSVM
 from .act_gradient_boosting_survival_analysis import ActGradientBoostingSurvivalAnalysis
+from .act_survival_xgboost import ActSurvivalXGBoost
 from .act_weibull_aft import ActWeibullAFT

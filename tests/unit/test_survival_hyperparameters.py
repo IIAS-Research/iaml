@@ -14,7 +14,8 @@ from iaml.actionables.predictors.survival.act_survival_component_wise_gboost imp
 )
 from iaml.actionables.predictors.survival.act_survival_tree import ActSurvivalTree
 from iaml.actionables.predictors.survival.act_survival_xgboost import (
-    ActGradientBoostingSurvivalAnalysis as ActSurvivalXGBoost,
+    ActGradientBoostingSurvivalAnalysis as LegacyGradientBoostingSurvivalAnalysis,
+    ActSurvivalXGBoost,
 )
 from iaml.dataset import Dataset
 from tests.helpers.datasets import make_survival_data
@@ -26,7 +27,7 @@ ENSEMBLE_STEPS = (
     ActGradientBoostingSurvivalAnalysis,
     ActComponentwiseGradientBoostingSurvivalAnalysis,
 )
-SURVIVAL_STEPS = ENSEMBLE_STEPS + (ActCox, ActSurvivalTree)
+SURVIVAL_STEPS = ENSEMBLE_STEPS + (ActCox, ActSurvivalTree, ActSurvivalXGBoost)
 
 
 class TestSurvivalHyperparameters(unittest.TestCase):
@@ -118,9 +119,22 @@ class TestSurvivalHyperparameters(unittest.TestCase):
         """The regular gradient-boosting step honors its configured stages and trees."""
         self._check_gradient_boosting(ActGradientBoostingSurvivalAnalysis)
 
-    def test_survival_xgboost_uses_configured_parameters(self):
+    def test_legacy_survival_xgboost_import_uses_configured_parameters(self):
         """The legacy import retains configurable parameters on the canonical model."""
-        self._check_gradient_boosting(ActSurvivalXGBoost)
+        self._check_gradient_boosting(LegacyGradientBoostingSurvivalAnalysis)
+
+    def test_survival_xgboost_uses_configured_parameters(self):
+        """Every exposed Cox boosting option reaches the real XGBoost estimator."""
+        model = self._fit_configured(ActSurvivalXGBoost, {
+            "n_estimators": 7, "max_depth": 2, "learning_rate": 0.3,
+            "subsample": 0.8, "colsample_bytree": 0.7, "min_child_weight": 2.5,
+            "reg_alpha": 0.2, "reg_lambda": 3.0, "gamma": 0.1, "random_state": 41,
+        })
+        self.assertEqual(model.get_booster().num_boosted_rounds(), 7)
+        actual = model.get_params()
+        self.assertEqual(actual["objective"], "survival:cox")
+        self.assertEqual(actual["tree_method"], "hist")
+        self.assertEqual(actual["n_jobs"], 1)
 
     def test_componentwise_boosting_uses_configured_parameters(self):
         """Componentwise boosting fits the requested number of stages and learning rate."""

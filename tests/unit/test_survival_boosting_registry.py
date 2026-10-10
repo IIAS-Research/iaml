@@ -10,17 +10,33 @@ from iaml.actionables.predictors.survival.act_gradient_boosting_survival_analysi
 )
 from iaml.actionables.predictors.survival.act_survival_xgboost import (
     ActGradientBoostingSurvivalAnalysis as LegacyGradientBoostingSurvivalAnalysis,
+    ActSurvivalXGBoost,
 )
 from iaml.candidate import Candidate
 from iaml.dataset import Dataset
 from iaml.decorators.all import find_steps_by_tag
+from iaml.flow import PipelineSpec
 from iaml.metastep import MetaStep
 from iaml.step import Step
+from iaml.steps import SurvivalXGBoost
 from tests.helpers.datasets import make_survival_data
 
 
 class TestSurvivalBoostingRegistry(unittest.TestCase):
     """Import compatibility must not add duplicate choices to model exploration."""
+
+    def test_xgboost_is_exported_and_selected_once_in_default_search(self):
+        self.assertIs(SurvivalXGBoost, ActSurvivalXGBoost)
+        self.assertIs(iaml.ActSurvivalXGBoost, ActSurvivalXGBoost)
+        self.assertIsNot(ActSurvivalXGBoost, LegacyGradientBoostingSurvivalAnalysis)
+        registered = [
+            step_class for step_class in Step.available_steps
+            if step_class.__name__ == 'ActSurvivalXGBoost'
+        ]
+        self.assertEqual(registered, [ActSurvivalXGBoost])
+        recipe = PipelineSpec.default()
+        for stage in (recipe.predictor, recipe.minimal_predictor):
+            self.assertEqual([node.component for node in stage].count(ActSurvivalXGBoost), 1)
 
     def test_public_and_historical_imports_share_one_class(self):
         for exported in (
